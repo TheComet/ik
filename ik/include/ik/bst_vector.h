@@ -66,9 +66,9 @@ bstv_destroy(struct bstv_t* bstv);
  * @param[in] value The data to insert into the bstv.
  * @note The value is **not** copied into the bstv, only referenced. For this
  * reason don't insert stack allocated items into the bstv.
- * @return Returns 1 if insertion was successful, 0 if otherwise.
+ * @return Returns 0 if insertion was successful, -1 if otherwise.
  */
-IK_PUBLIC_API char
+IK_PUBLIC_API int
 bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value);
 
 /*!
@@ -120,9 +120,9 @@ bstv_get_any_element(const struct bstv_t* bstv);
  * @brief Returns 1 if the specified hash exists, 0 if otherwise.
  * @param bstv The bstv to find the hash in.
  * @param hash The hash to search for.
- * @return 1 if the hash was found, 0 if the hash was not found.
+ * @return 0 if the hash was found, -1 if the hash was not found.
  */
-IK_PUBLIC_API char
+IK_PUBLIC_API int
 bstv_hash_exists(struct bstv_t* bstv, uint32_t hash);
 
 /*!
@@ -183,13 +183,13 @@ bstv_clear_free(struct bstv_t* bstv);
  * @param[in] var The name to give the variable pointing to the current
  * element.
  */
-#define BSTV_FOR_EACH(bstv, var_t, hash_v, var_v) {                                                                 \
+#define BSTV_FOR_EACH(bstv, var_t, hash_v, var_v) {                                                      \
     uint32_t i_##var_v;                                                                                  \
-    uint32_t hash_v;                                                                                                 \
-    var_t* var_v;                                                                                                   \
+    uint32_t hash_v;                                                                                     \
+    var_t* var_v;                                                                                        \
     for(i_##var_v = 0;                                                                                   \
         i_##var_v != bstv_count(bstv) &&                                                                 \
-            ((hash_v = ((struct bstv_hash_value_t*) (bstv)->vector.data)[i_##var_v].hash) || 1) &&        \
+            ((hash_v = ((struct bstv_hash_value_t*) (bstv)->vector.data)[i_##var_v].hash) || 1) &&       \
             ((var_v  = (var_t*)((struct bstv_hash_value_t*)(bstv)->vector.data)[i_##var_v].value) || 1); \
         ++i_##var_v) {
 

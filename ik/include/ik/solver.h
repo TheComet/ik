@@ -11,7 +11,7 @@ struct solver_t;
 struct node_t;
 
 typedef void (*ik_solver_destroy_func)(struct solver_t*);
-typedef char (*ik_solver_solve_func)(struct solver_t*);
+typedef int (*ik_solver_solve_func)(struct solver_t*);
 typedef void (*ik_solver_constraint_cb_func)(struct solver_t*);
 
 enum algorithm_e
@@ -56,7 +56,7 @@ ik_solver_destroy(struct solver_t* solver);
 struct node_t*
 ik_solver_create_tree_root(struct solver_t* solver, uint32_t guid);
 
-char
+int
 ik_solver_solve(struct solver_t* solver);
 
 C_HEADER_END

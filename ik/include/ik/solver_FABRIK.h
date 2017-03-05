@@ -27,10 +27,10 @@ struct fabrik_t
 struct solver_t*
 solver_FABRIK_create(void);
 
-struct solver_t*
+void
 solver_FABRIK_destroy(struct solver_t* solver);
 
-char
+int
 solver_FABRIK_solve(struct solver_t* solver);
 
 C_HEADER_END

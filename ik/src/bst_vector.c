@@ -75,7 +75,7 @@ bstv_find_lower_bound(const struct bstv_t* bstv, uint32_t hash)
 }
 
 /* ------------------------------------------------------------------------- */
-char
+int
 bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
 {
     struct bstv_hash_value_t* emplaced_data;
@@ -85,12 +85,12 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
 
     /* don't insert reserved hashes */
     if(hash == BST_VECTOR_INVALID_HASH)
-        return 0;
+        return -1;
 
     /* lookup location in bstv to insert */
     lower_bound = bstv_find_lower_bound(bstv, hash);
     if(lower_bound && lower_bound->hash == hash)
-        return 0;
+        return -1;
 
     /* either push back or insert, depending on whether there is already data
      * in the bstv */
@@ -101,13 +101,13 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
                           lower_bound - (struct bstv_hash_value_t*)bstv->vector.data);
 
     if(!emplaced_data)
-        return 0;
+        return -1;
 
     memset(emplaced_data, 0, sizeof *emplaced_data);
     emplaced_data->hash = hash;
     emplaced_data->value = value;
 
-    return 1;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -163,7 +163,7 @@ bstv_get_any_element(const struct bstv_t* bstv)
 }
 
 /* ------------------------------------------------------------------------- */
-char
+int
 bstv_hash_exists(struct bstv_t* bstv, uint32_t hash)
 {
     struct bstv_hash_value_t* data;
@@ -172,8 +172,8 @@ bstv_hash_exists(struct bstv_t* bstv, uint32_t hash)
 
     data = bstv_find_lower_bound(bstv, hash);
     if(data && data->hash == hash)
-        return 1;
-    return 0;
+        return 0;
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */

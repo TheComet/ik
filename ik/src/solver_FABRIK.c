@@ -1,35 +1,7 @@
 #include "ik/solver_FABRIK.h"
 #include "ik/node.h"
 #include "ik/memory.h"
-
-/* ------------------------------------------------------------------------- */
-struct fabrik_t*
-solver_FABRIK_create(void)
-{
-    struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
-    if(solver == NULL)
-        return NULL;
-
-    ordered_vector_construct(&solver->base.fabrik.chain_list);
-}
-
-/* ------------------------------------------------------------------------- */
-struct fabrik_t*
-solver_FABRIK_destroy(struct fabrik_t* solver)
-{
-    ordered_vector_clear_free(&solver->base.fabrik.chain_list);
-    FREE(solver);
-}
-
-/* ------------------------------------------------------------------------- */
-char
-solver_FABRIK_solve(struct solver_t* solver)
-{
-
-}
-
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+#include "ik/chain.h"
 
 /*!
  * @brief Breaks down the relevant nodes of the scene graph into a list of
@@ -58,12 +30,46 @@ solver_FABRIK_solve(struct solver_t* solver)
  * So even though a node might share two effectors, if one of them is
  * deactivated, then the node is no longer considered a sub-base node.
  */
-static char
+static int
 FABRIK_rebuild_chain_list(struct fabrik_t* solver, struct node_t* root);
 
 /* ------------------------------------------------------------------------- */
-static char
+struct solver_t*
+solver_FABRIK_create(void)
+{
+    struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
+    if(solver == NULL)
+        return NULL;
+
+    ordered_vector_construct(&solver->base.fabrik.chain_list, sizeof(struct chain_t));
+    return (struct solver_t*)solver;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+solver_FABRIK_destroy(struct solver_t* solver)
+{
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    ordered_vector_clear_free(&fabrik->base.fabrik.chain_list);
+    FREE(solver);
+}
+
+/* ------------------------------------------------------------------------- */
+int
+solver_FABRIK_solve(struct solver_t* solver)
+{
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    FABRIK_rebuild_chain_list(fabrik, fabrik->base.solver.tree);
+
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+/* ------------------------------------------------------------------------- */
+static int
 FABRIK_rebuild_chain_list(struct fabrik_t* solver, struct node_t* root)
 {
-
+    return -1;
 }

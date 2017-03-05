@@ -85,10 +85,10 @@ ordered_vector_clear_free(struct ordered_vector_t* vector);
  * @param[in] data The data to copy into the vector. It is assumed that
  * sizeof(data) is equal to what was specified when the vector was first
  * created. If this is not the case then it could cause undefined behaviour.
- * @return Returns non-zero if the data was successfully pushed, zero if
+ * @return Returns 0 if the data was successfully pushed, -1 if
  * otherwise.
  */
-IK_PUBLIC_API char
+IK_PUBLIC_API int
 ordered_vector_push(struct ordered_vector_t* vector, void* data);
 
 /*!
@@ -107,9 +107,9 @@ ordered_vector_push_emplace(struct ordered_vector_t* vector);
 
 /*!
  * @brief Copies the contents of another vector and pushes it into the vector.
- * @return Returns non-zero if successful, false if otherwise.
+ * @return Returns 0 if successful, -1 if otherwise.
  */
-IK_PUBLIC_API char
+IK_PUBLIC_API int
 ordered_vector_push_vector(struct ordered_vector_t* vector, struct ordered_vector_t* source_vector);
 
 /*!
@@ -167,7 +167,7 @@ ordered_vector_insert_emplace(struct ordered_vector_t* vector, uint32_t index);
  * sizeof(data) is equal to what was specified when the vector was first
  * created. If this is not the case then it could cause undefined behaviour.
  */
-IK_PUBLIC_API char
+IK_PUBLIC_API int
 ordered_vector_insert(struct ordered_vector_t* vector, uint32_t index, void* data);
 
 /*!

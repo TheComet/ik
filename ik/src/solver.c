@@ -47,7 +47,7 @@ ik_solver_create_tree(struct solver_t* solver, uint32_t guid)
 }
 
 /* ------------------------------------------------------------------------- */
-char
+int
 ik_solver_solve(struct solver_t* solver)
 {
     return solver->base.solver.solve(solver);
