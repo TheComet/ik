@@ -1,0 +1,120 @@
+/* ----------------------------------------------------------------
+ * Export and visibility amcros
+ * ----------------------------------------------------------------
+ * Substitution variables:
+ *  - PROJECT_NAME          : All-caps variable identifying the
+ *                            name of the project being built.
+ *  - BUILD_TYPE            : Set to either SHARED or STATIC.
+ * Global definitions (non substitution)
+ *  - PROJECT_NAME_BUILDING : Define this if the library is being
+ *                            built.
+ * ------------------------------------------------------------- */
+
+#ifndef @PROJECT_NAME@_EXPORT_H
+#   define @PROJECT_NAME@_EXPORT_H
+
+    /* set @BUILD_TYPE@ to SHARED or STATIC */
+#   define @PROJECT_NAME@_@BUILD_TYPE@
+
+    /* --------------------------------------------------------------
+     * define visibility macros
+     * --------------------------------------------------------------*/
+
+    /* define platform dependent and build dependent visibility macro helpers */
+#   if defined(@PROJECT_NAME@_SHARED)
+#       if defined(@PROJECT_NAME@_PLATFORM_WINDOWS)
+#           if defined(__GNUC__)
+                /* cygwin visbibility */
+#               define @PROJECT_NAME@_HELPER_API_EXPORT __attribute__ ((dllexport))
+#               define @PROJECT_NAME@_HELPER_API_IMPORT __attribute__ ((dllimport))
+#           else
+                /* msvc visibility */
+#               define @PROJECT_NAME@_HELPER_API_EXPORT __declspec(dllexport)
+#               define @PROJECT_NAME@_HELPER_API_IMPORT __declspec(dllimport)
+                /* disable warnings */
+#               pragma warning(disable: 4996) /* 'strcpy': This function or variable may be unsafe */
+#           endif
+#           define @PROJECT_NAME@_HELPER_API_LOCAL
+#       else
+#           if __GNUC__ >= 4
+                /* gcc 4+ visibility */
+#               define @PROJECT_NAME@_HELPER_API_EXPORT __attribute__ ((visibility ("default")))
+#               define @PROJECT_NAME@_HELPER_API_IMPORT __attribute__ ((visibility ("default")))
+#               define @PROJECT_NAME@_HELPER_API_LOCAL  __attribute__ ((visibility ("hidden")))
+#           else
+                /* gcc lower than 4 doesn't have any explicit visibility, everything is exported */
+#               define @PROJECT_NAME@_HELPER_API_EXPORT
+#               define @PROJECT_NAME@_HELPER_API_IMPORT
+#               define @PROJECT_NAME@_HELPER_API_LOCAL
+#           endif
+#       endif
+#   elif defined(@PROJECT_NAME@_STATIC)
+        /* static build */
+#       define @PROJECT_NAME@_HELPER_API_EXPORT
+#       define @PROJECT_NAME@_HELPER_API_IMPORT
+#       define @PROJECT_NAME@_HELPER_API_LOCAL
+#   else
+#       error Please define @PROJECT_NAME@_SHARED or @PROJECT_NAME@_STATIC
+#   endif
+
+    /*
+     * define public API macro, depending on whether the library is being
+     * built or being linked against.
+     */
+#   if defined(@PROJECT_NAME@_BUILDING) /* defined by CMake when library is being compiled */
+#       define @PROJECT_NAME@_PUBLIC_API @PROJECT_NAME@_HELPER_API_EXPORT
+#   else
+#       define @PROJECT_NAME@_PUBLIC_API @PROJECT_NAME@_HELPER_API_IMPORT
+#   endif
+
+    /*
+     * define local visibility macro. If we're testing, everything
+     * is visible
+     */
+#   if defined(TESTING)
+#       define @PROJECT_NAME@_LOCAL_API @PROJECT_NAME@_PUBLIC_API
+#   else
+#       define @PROJECT_NAME@_LOCAL_API @PROJECT_NAME@_HELPER_API_LOCAL
+#   endif
+
+    /*
+     * define class member visibility macros. If we're testing, everything
+     * is public
+     */
+#   if defined(TESTING)
+#       define PUBLIC public
+#       define PROTECTED public
+#       define PRIVATE public
+#   else
+#       define PUBLIC public
+#       define PROTECTED protected
+#       define PRIVATE private
+#   endif
+
+    /* --------------------------------------------------------------
+     * typeof support
+     * --------------------------------------------------------------*/
+
+#   if defined(__GNUC__)
+#       define TYPEOF(x) __typeof__(x)
+#   else
+#       undef TYPEOF
+#   endif
+
+    /* --------------------------------------------------------------
+     * C linkage
+     * --------------------------------------------------------------*/
+
+#   ifdef __cplusplus
+#       define C_HEADER_BEGIN extern "C" {
+#   else
+#       define C_HEADER_BEGIN
+#   endif
+
+#   ifdef __cplusplus
+#       define C_HEADER_END }
+#   else
+#       define C_HEADER_END
+#   endif
+
+#endif /* @PROJECT_NAME@_EXPORT_H */

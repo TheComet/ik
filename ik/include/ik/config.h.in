@@ -1,0 +1,26 @@
+/* --------------------------------------------------------------
+ * Configures prerequisits for this library
+ * --------------------------------------------------------------*/
+
+#ifndef @PROJECT_NAME@_CONFIG_HPP
+#   define @PROJECT_NAME@_CONFIG_HPP
+
+#   include "ik/export.h"
+
+    /* --------------------------------------------------------------
+     * build settings
+     * --------------------------------------------------------------*/
+
+#   define OFF    0
+#   define ON     1
+#   define SHARED 2
+#   define STATIC 3
+
+#   define @PROJECT_NAME@_BUILD_TYPE @BUILD_TYPE@
+#   define ik_real @IK_REAL@
+#   define IK_MEMORY_DEBUGGING @IK_MEMORY_DEBUGGING@
+#   if IK_MEMORY_DEBUGGING == ON
+#       define IK_MEMORY_BACKTRACE @IK_MEMORY_BACKTRACE@
+#   endif
+
+#endif /* @PROJECT_NAME@_CONFIG_HPP */

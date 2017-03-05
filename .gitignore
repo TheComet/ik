@@ -1,0 +1,5 @@
+# build folders
+build/
+
+# IDE files
+*.kdev4
