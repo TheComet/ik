@@ -17,10 +17,11 @@ struct node_t
     struct bstv_t children;
     struct vector3_t position;
     struct quaternion_t rotation;
-    ik_real mininum_distance;
-    ik_real maximum_distance;
+
+    struct effector_t* effector;
 
     uint32_t guid;
+    void* user_data;
 };
 
 IK_PUBLIC_API struct node_t*
@@ -36,7 +37,7 @@ IK_PUBLIC_API void
 node_destroy(struct node_t* node);
 
 IK_PUBLIC_API void
-node_add_child(struct node_t* node, struct node_t* parent);
+node_add_child(struct node_t* node, struct node_t* child);
 
 IK_PUBLIC_API void
 node_remove_child(struct node_t* node);

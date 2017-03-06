@@ -2,6 +2,15 @@
 #include "ik/node.h"
 #include "ik/memory.h"
 #include "ik/chain.h"
+#include "ik/bst_vector.h"
+#include "ik/log.h"
+
+struct chain_t
+{
+    struct ordered_vector_t nodes;  /* list of node_t objects */
+    struct vector3_t* base_position;
+    struct vector3_t* target_position;
+};
 
 /*!
  * @brief Breaks down the relevant nodes of the scene graph into a list of
@@ -31,7 +40,7 @@
  * deactivated, then the node is no longer considered a sub-base node.
  */
 static int
-FABRIK_rebuild_chain_list(struct fabrik_t* solver, struct node_t* root);
+rebuild_chain_list(struct fabrik_t* solver, struct node_t* root);
 
 /* ------------------------------------------------------------------------- */
 struct solver_t*
@@ -40,6 +49,9 @@ solver_FABRIK_create(void)
     struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
     if(solver == NULL)
         return NULL;
+
+    solver->base.solver.private_.destroy = solver_FABRIK_destroy;
+    solver->base.solver.private_.solve = solver_FABRIK_solve;
 
     ordered_vector_construct(&solver->base.fabrik.chain_list, sizeof(struct chain_t));
     return (struct solver_t*)solver;
@@ -56,10 +68,17 @@ solver_FABRIK_destroy(struct solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
+solver_FABRIK_rebuild_data(struct solver_t* solver)
+{
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+int
 solver_FABRIK_solve(struct solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
-    FABRIK_rebuild_chain_list(fabrik, fabrik->base.solver.tree);
+    rebuild_chain_list(fabrik, fabrik->base.solver.private_.tree);
 
     return -1;
 }
@@ -67,9 +86,48 @@ solver_FABRIK_solve(struct solver_t* solver)
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
+static int
+recursively_mark_involved_nodes(struct solver_t* solver, struct bstv_t* involved_nodes)
+{
+    /*
+     * Traverse the chain of parents starting at each effector node and ending
+     * at the root node of the tree and mark every node on the way.
+     */
+    struct node_t* root = solver->private_.tree;
+    ORDERED_VECTOR_FOR_EACH(&solver->private_.effector_nodes_list, struct node_t, effector_node)
+        struct node_t* node;
+        for(node = effector_node; node != root; node = node->parent)
+        {
+            if(bstv_insert(involved_nodes, node->guid, NULL) < 0)
+            {
+                ik_log_message(&solver->log, "Ran out of memory while marking involved nodes");
+                return -1;
+            }
+        }
+    ORDERED_VECTOR_END_EACH
+
+    /* mark root node as well */
+    if(bstv_insert(involved_nodes, root->guid, NULL) < 0)
+    {
+        ik_log_message(&solver->log, "Ran out of memory while marking involved nodes");
+        return -1;
+    }
+
+    return 0;
+}
+
 /* ------------------------------------------------------------------------- */
 static int
-FABRIK_rebuild_chain_list(struct fabrik_t* solver, struct node_t* root)
+rebuild_chain_list(struct fabrik_t* solver, struct node_t* root)
 {
+    struct bstv_t involved_nodes;
+    struct ordered_vector_t* chain_list = &solver->base.fabrik.chain_list;
+
+    bstv_construct(&involved_nodes);
+    if(recursively_mark_involved_nodes(solver, &involved_nodes) < 0)
+        return -1;
+
+    ordered_vector_clear(chain_list);
+
     return -1;
 }

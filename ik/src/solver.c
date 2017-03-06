@@ -1,9 +1,13 @@
+#include "ik/effector.h"
+#include "ik/log.h"
+#include "ik/memory.h"
+#include "ik/node.h"
 #include "ik/solver.h"
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
-#include "ik/node.h"
-#include "ik/memory.h"
+
+static int recursive_get_all_effector_nodes(struct node_t* node, struct ordered_vector_t* effector_nodes_list);
 
 /* ------------------------------------------------------------------------- */
 struct solver_t*
@@ -15,14 +19,21 @@ ik_solver_create(enum algorithm_e algorithm)
     {
     case ALGORITHM_FABRIK:
         solver = (struct solver_t*)solver_FABRIK_create();
-        solver->base.solver.destroy = solver_FABRIK_destroy;
-        solver->base.solver.solve = solver_FABRIK_solve;
         break;
 
     case ALGORITHM_JACOBIAN_INVERSE:
     case ALGORITHM_JACOBIAN_TRANSPOSE:
-        /* not implemented yet */
         break;
+    }
+
+    if(solver == NULL)
+        return NULL;
+
+    solver->log = ik_log_create();
+    if(solver->log == NULL)
+    {
+        solver->private_.destroy(solver);
+        solver = NULL;
     }
 
     return solver;
@@ -32,23 +43,63 @@ ik_solver_create(enum algorithm_e algorithm)
 void
 ik_solver_destroy(struct solver_t* solver)
 {
-    solver->base.solver.destroy(solver);
+    if(solver->private_.tree)
+        node_destroy(solver->private_.tree);
+    ik_log_destroy(solver->log);
+    solver->private_.destroy(solver);
 }
 
 /* ------------------------------------------------------------------------- */
-struct node_t*
-ik_solver_create_tree(struct solver_t* solver, uint32_t guid)
+void
+ik_solver_set_tree(struct solver_t* solver, struct node_t* root)
 {
-    if(solver->base.solver.tree != NULL)
-        node_destroy(solver->base.solver.tree);
+    solver->private_.tree = root;
+}
 
-    solver->base.solver.tree = node_create(guid);
-    return solver->base.solver.tree;
+/* ------------------------------------------------------------------------- */
+int
+ik_solver_rebuild_data(struct solver_t* solver)
+{
+    /* If the solver has no tree, then there's nothing to do */
+    if(solver->private_.tree == NULL)
+    {
+        ik_log_message(&solver->log, "No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
+        return -1;
+    }
+
+    /*
+     * Traverse the entire tree and generate a list of the effectors. This
+     * makes the process of building the chain list for FABRIK much easier.
+     */
+    ordered_vector_clear(&solver->private_.effector_nodes_list);
+    if(recursive_get_all_effector_nodes(solver->private_.tree,
+                                        &solver->private_.effector_nodes_list) < 0)
+    {
+        ik_log_message(&solver->log, "Ran out of memory while building the effector nodes list");
+        return -1;
+    }
+
+    return solver->private_.rebuild_data(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 int
 ik_solver_solve(struct solver_t* solver)
 {
-    return solver->base.solver.solve(solver);
+    return solver->private_.solve(solver);
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+recursive_get_all_effector_nodes(struct node_t* node, struct ordered_vector_t* effector_nodes_list)
+{
+    if(node->effector != NULL)
+        if(ordered_vector_push(effector_nodes_list, &node) < 0)
+         return -1;
+
+    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+        return recursive_get_all_effector_nodes(child, effector_nodes_list);
+    BSTV_END_EACH
+
+    return 0;
 }

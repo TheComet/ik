@@ -12,8 +12,6 @@ struct node_t;
 
 struct effector_t
 {
-    struct node_t* effector_node;
-
     struct vector3_t target_position;
     struct quaternion_t target_rotation;
     uint16_t chain_length;
@@ -27,6 +25,9 @@ effector_construct(struct effector_t* effector);
 
 IK_PUBLIC_API void
 effector_destroy(struct effector_t* effector);
+
+IK_PUBLIC_API void
+effector_attach(struct effector_t* effector, struct node_t* node);
 
 C_HEADER_END
 

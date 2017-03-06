@@ -1,5 +1,6 @@
 #include "ik/effector.h"
 #include "ik/memory.h"
+#include "ik/node.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
@@ -26,4 +27,14 @@ void
 effector_destroy(struct effector_t* effector)
 {
     FREE(effector);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+effector_attach(struct effector_t* effector, struct node_t* node)
+{
+    if(node->effector != NULL)
+        effector_destroy(node->effector);
+
+    node->effector = effector;
 }

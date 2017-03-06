@@ -90,7 +90,7 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
     /* lookup location in bstv to insert */
     lower_bound = bstv_find_lower_bound(bstv, hash);
     if(lower_bound && lower_bound->hash == hash)
-        return -1;
+        return 1;
 
     /* either push back or insert, depending on whether there is already data
      * in the bstv */

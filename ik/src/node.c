@@ -45,10 +45,10 @@ node_destroy(struct node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-node_add_child(struct node_t* node, struct node_t* parent)
+node_add_child(struct node_t* node, struct node_t* child)
 {
-    node->parent = parent;
-    bstv_insert(&parent->children, node->guid, node);
+    child->parent = node;
+    bstv_insert(&node->children, node->guid, child);
 }
 
 /* ------------------------------------------------------------------------- */
