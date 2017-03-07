@@ -127,7 +127,8 @@ bstv_set(struct bstv_t* bstv, uint32_t hash, void* value)
 void*
 bstv_find(const struct bstv_t* bstv, uint32_t hash)
 {
-    return *bstv_find_ptr(bstv, hash);
+    void** result = bstv_find_ptr(bstv, hash);
+    return result == NULL ? NULL : *result;
 }
 
 /* ------------------------------------------------------------------------- */

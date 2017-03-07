@@ -6,6 +6,7 @@
 #include "ik/solver_FABRIK.h"
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 struct chain_t
 {
@@ -14,10 +15,11 @@ struct chain_t
     struct vector3_t* end_position;
 };
 
-enum chain_markings_e
+enum node_marking_e
 {
-    CHAIN_SECTION,
-    CHAIN_BASE
+    MARK_NONE = 0,
+    MARK_SPLIT,
+    MARK_SECTION
 };
 
 void
@@ -116,18 +118,29 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 
         /*
          * Mark nodes that are at the base of the chain differently, so the
-         * chains can be split correctly later.
+         * chains can be split correctly later. Section markings will overwrite
+         * break markings.
          */
         for(; node != NULL; node = node->parent)
         {
-            enum chain_markings_e marking = CHAIN_SECTION;
+            enum node_marking_e* current_marking;
+            enum node_marking_e marking = MARK_SECTION;
             if(chain_length_counter == 0)
-                marking = CHAIN_BASE;
+                marking = MARK_SPLIT;
 
-            if(bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
+            current_marking = (enum node_marking_e*)bstv_find_ptr(involved_nodes, node->guid);
+            if(current_marking == NULL)
             {
-                ik_log_message("Ran out of memory while marking involved nodes");
-                return -1;
+                if(bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
+                {
+                    ik_log_message("Ran out of memory while marking involved nodes");
+                    return -1;
+                }
+            }
+            else
+            {
+                if(chain_length_counter != 0)
+                    *current_marking = marking;
             }
 
             if(chain_length_counter-- == 0)
@@ -177,19 +190,19 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
                              struct node_t* current_node,
                              struct chain_t* previous_chain)
 {
-    int mark_count;
-    int break_chain_here;
+    int marked_children_count;
     struct chain_t* chain;
     struct node_t* next_chain_beginning = chain_beginning;
     struct node_t* previous_chain_beginning = NULL;
 
     /*
-     * If this node is not marked, cut off any previous chain and recursive
-     * into children. It's possible that there are isolated chains somewhere
-     * further down the tree.
+     * If this node is not marked at all, cut off any previous chain and
+     * recursive into children. It's possible that there are isolated chains
+     * somewhere further down the tree.
      */
-    mark_count = (int)(intptr_t)bstv_erase(involved_nodes, current_node->guid);
-    if(mark_count == 0)
+    enum node_marking_e marking =
+        (enum node_marking_e)(intptr_t)bstv_erase(involved_nodes, current_node->guid);
+    if(marking == MARK_NONE)
     {
         BSTV_FOR_EACH(&current_node->children, struct node_t, child_guid, child)
             recursively_build_chain_list(chain_list, involved_nodes, child, child, NULL);
@@ -198,17 +211,24 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
     }
 
     /*
-     * If the current node has a marked child with the same mark count, then
-     * the chain cannot be broken at this point.
+     * If this node was marked as the base of a chain then split the chain at
+     * this point.
      */
-    break_chain_here = 1;
+    if(marking == MARK_SPLIT)
+        next_chain_beginning = current_node;
+
+    /*
+     * If the current node has at least two children marked as sections, then
+     * we must also split the chain at this point.
+     */
+    marked_children_count = 0;
     BSTV_FOR_EACH(&current_node->children, struct node_t, child_guid, child)
-        int child_mark_count = (int)(intptr_t)bstv_find(involved_nodes, child_guid);
-        if(mark_count == child_mark_count)
-        {
-            break_chain_here = 0;
-            break;
-        }
+        if((enum node_marking_e)(intptr_t)bstv_find(involved_nodes, child_guid) == MARK_SECTION)
+            if(++marked_children_count == 2)
+            {
+                next_chain_beginning = current_node;
+                break;
+            }
     BSTV_END_EACH
 
     /*
@@ -228,7 +248,11 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
      * that is, it has exactly one marked child, then there is no need to
      * create a new chain.
      */
-    if(marked_child_count == 1)
+    if(marked_children_count == 1)
+        return previous_chain;
+
+    /* Avoid creating chains that only have one node */
+    if(current_node == chain_beginning)
         return previous_chain;
 
     if(previous_chain != NULL)
@@ -253,11 +277,55 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
 
     ordered_vector_construct(&chain->nodes, sizeof(struct node_t*));
     for(; current_node != chain_beginning; current_node = current_node->parent)
-        ordered_vector_push(&chain->nodes, current_node);
-    ordered_vector_push(&chain->nodes, chain_beginning);
+        ordered_vector_push(&chain->nodes, &current_node);
+    ordered_vector_push(&chain->nodes, &chain_beginning);
 
     return chain;
 }
+
+/* ------------------------------------------------------------------------- */
+static void
+recursively_dump_tree_to_dot(FILE* fp, struct node_t* node)
+{
+    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+        fprintf(fp, "    %d -- %d;\n", node->guid, guid);
+        recursively_dump_tree_to_dot(fp, child);
+    BSTV_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+void
+dump_chain_list_to_dot(struct node_t* tree, struct ordered_vector_t* chain_list, const char* file_name)
+{
+    FILE* fp = fopen(file_name, "w");
+    if(fp == NULL)
+    {
+        ik_log_message("Failed to open file %s", file_name);
+        return;
+    }
+
+    fprintf(fp, "graph graphname {\n");
+    recursively_dump_tree_to_dot(fp, tree);
+    {
+        float hue_step = 1.0f / ordered_vector_count(chain_list);
+        float hue = 0.0f;
+        ORDERED_VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
+            uint32_t chain_len = ordered_vector_count(&chain->nodes);
+            struct node_t** chain_start = ordered_vector_get_element(&chain->nodes, chain_len - 1);
+            struct node_t** chain_end = ordered_vector_get_element(&chain->nodes, 0);
+            fprintf(fp, "    %d [shape=record];\n", (*chain_start)->guid);
+            fprintf(fp, "    %d [shape=record];\n", (*chain_end)->guid);
+            ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, node)
+                fprintf(fp, "    %d [color=\"%f 0.5 1.0\"];\n", (*node)->guid, hue);
+            ORDERED_VECTOR_END_EACH
+            hue += hue_step;
+        ORDERED_VECTOR_END_EACH
+    }
+    fprintf(fp, "}\n");
+
+    fclose(fp);
+}
+
 
 /* ------------------------------------------------------------------------- */
 static int
@@ -275,6 +343,7 @@ rebuild_chain_list(struct fabrik_t* solver)
 
     clear_chain_list(chain_list);
     recursively_build_chain_list(chain_list, &involved_nodes, root, root, NULL);
+    dump_chain_list_to_dot(root, chain_list, "tree.dot");
 
     ik_log_message("There are %d effector(s)",
                    ordered_vector_count(&solver->base.solver.private_.effector_nodes_list));

@@ -39,14 +39,12 @@ void scenario1()
     node_attach_effector(child4, eff1);
     node_attach_effector(child7, eff2);
     node_attach_effector(child11, eff3);
-    eff1->chain_length = 3;
+    eff1->chain_length = 1;
     eff2->chain_length = 4;
-    eff3->chain_length = 7;
+    eff3->chain_length = 0;
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
-
-    node_dump_to_dot(root, "tree.dot");
 
     ik_solver_destroy(solver);
 }
@@ -83,7 +81,8 @@ void scenario3()
     effector_t* eff2 = effector_create();
     node_attach_effector(child4, eff1);
     node_attach_effector(child6, eff2);
-    eff1->chain_length = 1;
+    eff1->chain_length = 2;
+    eff2->chain_length = 2;
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
@@ -95,8 +94,8 @@ int main()
     ik_memory_init();
     ik_log_init(LOG_STDOUT);
 
-    scenario1();
-    scenario2();
+    //scenario1();
+    //scenario2();
     scenario3();
 
     ik_log_deinit();
