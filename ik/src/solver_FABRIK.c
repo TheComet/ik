@@ -103,11 +103,15 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
     struct ordered_vector_t* effector_nodes_list = &solver->base.solver.private_.effector_nodes_list;
     ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct node_t*, p_effector_node)
 
-        /* Set up chain length counter. */
+        /*
+         * Set up chain length counter. If the chain length is 0 then it is
+         * infinitely long. Set the counter to -1 in this case to skip the
+         * escape condition.
+         */
         int chain_length_counter;
         struct node_t* node = *p_effector_node;
         assert(node->effector != NULL);
-        chain_length_counter = (int)node->effector->chain_length;
+        chain_length_counter = node->effector->chain_length == 0 ? -1 : (int)node->effector->chain_length;
 
         for(; node != NULL; node = node->parent)
         {
@@ -117,7 +121,7 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
                 ik_log_message("Ran out of memory while marking involved nodes");
                 return -1;
             }
-            if(--chain_length_counter == 0)
+            if(chain_length_counter-- == 0)
                 break;
         }
     ORDERED_VECTOR_END_EACH
@@ -244,13 +248,13 @@ rebuild_chain_list(struct fabrik_t* solver)
 
     bstv_construct(&involved_nodes);
     if(mark_involved_nodes(solver, &involved_nodes) < 0)
-        return -1;
+        goto mark_involved_nodes_failed;
 
     ik_log_message("There are %d involved nodes", bstv_count(&involved_nodes));
 
     clear_chain_list(chain_list);
     if(recursively_build_chain_list(chain_list, &involved_nodes, root, root, NULL) == NULL)
-        return -1;
+        goto build_chain_list_failed;
 
     ik_log_message("There are %d effectors",
                    ordered_vector_count(&solver->base.solver.private_.effector_nodes_list));
@@ -260,4 +264,8 @@ rebuild_chain_list(struct fabrik_t* solver)
     bstv_clear_free(&involved_nodes);
 
     return 0;
+
+    build_chain_list_failed    :
+    mark_involved_nodes_failed : bstv_clear_free(&involved_nodes);
+    return -1;
 }

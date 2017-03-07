@@ -28,7 +28,7 @@ int main()
 
     effector_t* eff1 = effector_create();
     //effector_t* eff2 = effector_create();
-    //eff1->chain_length = 1;
+    eff1->chain_length = 1;
     node_attach_effector(child3, eff1);
     //node_attach_effector(child7, eff2);
 
