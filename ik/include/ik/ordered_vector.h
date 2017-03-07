@@ -70,6 +70,18 @@ IK_PUBLIC_API void
 ordered_vector_clear_free(struct ordered_vector_t* vector);
 
 /*!
+ * @brief Sets the size of the vector to exactly the size specified. If the
+ * vector was smaller then memory will be reallocated. If the vector was larger
+ * then no reallocation will occur. The capacity will remain the same and the
+ * size will be decreased.
+ * @param[in] vector The vector to resize.
+ * @param[in] size The new size of the vector.
+ * @return Returns -1 on failure, 0 on success.
+ */
+IK_PUBLIC_API int
+ordered_vector_resize(struct ordered_vector_t* vector, uint32_t size);
+
+/*!
  * @brief Gets the number of elements that have been inserted into the vector.
  */
 #define ordered_vector_count(x) ((x)->count)

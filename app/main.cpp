@@ -7,7 +7,7 @@
 int main()
 {
     ik_memory_init();
-    ik_log_init();
+    ik_log_init(LOG_STDOUT);
 
     solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
     node_t* root = node_create(0);

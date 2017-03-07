@@ -135,7 +135,7 @@ clear_chain_list(struct ordered_vector_t* chain_list)
 
     /*
      * Every chain frees its own end position, so there remains a single
-     * un-freed base position in the root node.
+     * un-freed base position in the root chain.
      */
     if(chain_size > 0)
     {
@@ -237,9 +237,16 @@ rebuild_chain_list(struct fabrik_t* solver)
     if(mark_involved_nodes(solver, &involved_nodes) < 0)
         return -1;
 
+    ik_log_message("There are %d involved nodes", bstv_count(&involved_nodes));
+
     clear_chain_list(chain_list);
     if(recursively_build_chain_list(chain_list, &involved_nodes, root, root, NULL) == NULL)
         return -1;
+
+    ik_log_message("There are %d effectors",
+                   ordered_vector_count(&solver->base.solver.private_.effector_nodes_list));
+    ik_log_message("%d chains were created",
+                   ordered_vector_count(chain_list));
 
     bstv_clear_free(&involved_nodes);
 

@@ -83,6 +83,21 @@ ordered_vector_clear_free(struct ordered_vector_t* vector)
 }
 
 /* ------------------------------------------------------------------------- */
+int
+ordered_vector_resize(struct ordered_vector_t* vector, uint32_t size)
+{
+    int result = 0;
+
+    assert(vector);
+
+    if(vector->count < size)
+        result = ordered_vector_expand(vector, -1, size);
+    vector->count = size;
+
+    return result;
+}
+
+/* ------------------------------------------------------------------------- */
 void*
 ordered_vector_push_emplace(struct ordered_vector_t* vector)
 {
