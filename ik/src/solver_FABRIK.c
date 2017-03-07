@@ -170,7 +170,7 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
 
     /* We aren't interested in nodes that aren't marked */
     if(bstv_erase(involved_nodes, current_node->guid) == NULL)
-        return 0;
+        return previous_chain;
 
     /*
      * If the current node has two or more marked children, it means that the
