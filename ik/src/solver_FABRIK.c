@@ -129,7 +129,26 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 void
 clear_chain_list(struct ordered_vector_t* chain_list)
 {
+    struct node_t* previous_chain_end = NULL;
     ORDERED_VECTOR_FOR_EACH_R(chain_list, struct chain_t, chain)
+        /*
+         * Some chains share a common vector3_t object with their parents or
+         * children, so we must be careful not to call free() twice on the same
+         * object.
+         *
+         * The strategy used here is to begin with the root chain and work our
+         * way down the tree of chains. The vector3_t objects at the end of
+         * each chain can be freed without any danger. The vector3_t object
+         * at the base is freed on the first encounter, then skipped for every
+         * proceeding chain that shares this base with a parent chain's end.
+         */
+        uint32_t node_count = ordered_vector_count(&chain->nodes);
+        struct node_t* chain_beginning = ordered_vector_get_element(&chain->nodes, node_count - 1);
+        if(chain_beginning != previous_chain_end)
+            FREE(chain->base_position);
+        FREE(chain->end_position);
+        previous_chain_end = ordered_vector_get_element(&chain->nodes, 0);;
+
         ordered_vector_clear_free(&chain->nodes);
     ORDERED_VECTOR_END_EACH
 
