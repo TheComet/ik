@@ -239,6 +239,14 @@ ordered_vector_get_element(struct ordered_vector_t*, uint32_t index);
         (DATA_POINTER_TYPE*)var != internal_##var_end_of_vector;             \
         var = (var_type*)(((DATA_POINTER_TYPE*)var) + (vector)->element_size)) {
 
+
+#define ORDERED_VECTOR_FOR_EACH_R(vector, var_type, var) {                   \
+    var_type* var;                                                           \
+    DATA_POINTER_TYPE* internal_##var_start_of_vector = (vector)->data - (vector)->element_size; \
+    for(var = (var_type*)((vector)->data + (vector)->count * (vector)->element_size - (vector)->element_size); \
+        (DATA_POINTER_TYPE*)var != internal_##var_start_of_vector;          \
+        var = (var_type*)(((DATA_POINTER_TYPE*)var) - (vector)->element_size)) {
+
 /*!
  * @brief Convenient macro for iterating a range of a vector's elements.
  * @param[in] vector A pointer to the vector to iterate.

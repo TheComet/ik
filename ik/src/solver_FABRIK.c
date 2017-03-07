@@ -1,9 +1,11 @@
-#include "ik/solver_FABRIK.h"
-#include "ik/node.h"
-#include "ik/memory.h"
-#include "ik/chain.h"
 #include "ik/bst_vector.h"
+#include "ik/chain.h"
+#include "ik/effector.h"
 #include "ik/log.h"
+#include "ik/memory.h"
+#include "ik/node.h"
+#include "ik/solver_FABRIK.h"
+#include <assert.h>
 
 struct chain_t
 {
@@ -94,13 +96,20 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 {
     /*
      * Traverse the chain of parents starting at each effector node and ending
-     * at the root node of the tree and mark every node on the way.
+     * at the root node of the tree and mark every node on the way. Each
+     * effector specifies a maximum chain length, which means it's possible
+     * that we won't hit the root node.
      */
-    struct node_t* root = solver->base.solver.private_.tree;
     struct ordered_vector_t* effector_nodes_list = &solver->base.solver.private_.effector_nodes_list;
-    ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct node_t*, effector_node)
-        struct node_t* node;
-        for(node = *effector_node; node != root; node = node->parent)
+    ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct node_t*, p_effector_node)
+
+        /* Set up chain length counter. */
+        int chain_length_counter;
+        struct node_t* node = *p_effector_node;
+        assert(node->effector != NULL);
+        chain_length_counter = (int)node->effector->chain_length;
+
+        for(; node != NULL; node = node->parent)
         {
             /* NOTE Insert 1 instead of NULL so we can use bstv_erase() */
             if(bstv_insert(involved_nodes, node->guid, (void*)1) < 0)
@@ -108,16 +117,10 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
                 ik_log_message("Ran out of memory while marking involved nodes");
                 return -1;
             }
+            if(--chain_length_counter == 0)
+                break;
         }
     ORDERED_VECTOR_END_EACH
-
-    /* mark root node as well */
-    /* NOTE Insert 1 instead of NULL so we can use bstv_erase() */
-    if(bstv_insert(involved_nodes, root->guid, (void*)1) < 0)
-    {
-        ik_log_message("Ran out of memory while marking involved nodes");
-        return -1;
-    }
 
     return 0;
 }
@@ -126,22 +129,9 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 void
 clear_chain_list(struct ordered_vector_t* chain_list)
 {
-    uint32_t chain_size = ordered_vector_count(chain_list);
-
-    ORDERED_VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        FREE(chain->end_position);
+    ORDERED_VECTOR_FOR_EACH_R(chain_list, struct chain_t, chain)
         ordered_vector_clear_free(&chain->nodes);
     ORDERED_VECTOR_END_EACH
-
-    /*
-     * Every chain frees its own end position, so there remains a single
-     * un-freed base position in the root chain.
-     */
-    if(chain_size > 0)
-    {
-        struct chain_t* root_chain = ordered_vector_get_element(chain_list, chain_size - 1);
-        FREE(root_chain->base_position);
-    }
 
     ordered_vector_clear(chain_list);
 }

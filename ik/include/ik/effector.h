@@ -26,9 +26,6 @@ effector_construct(struct effector_t* effector);
 IK_PUBLIC_API void
 effector_destroy(struct effector_t* effector);
 
-IK_PUBLIC_API void
-effector_attach(struct effector_t* effector, struct node_t* node);
-
 C_HEADER_END
 
 #endif /* EFFECTOR_H */

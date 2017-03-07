@@ -82,3 +82,10 @@ node_find_child(struct node_t* node, uint32_t guid)
 
     return NULL;
 }
+
+/* ------------------------------------------------------------------------- */
+void
+node_attach_effector(struct node_t* node, struct effector_t* effector)
+{
+    node->effector = effector;
+}

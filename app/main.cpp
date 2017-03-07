@@ -26,8 +26,10 @@ int main()
     node_add_child(child5, child6);
     node_add_child(child6, child7);
 
-    child4->effector = effector_create();
-    child7->effector = effector_create();
+    effector_t* eff1 = effector_create();
+    effector_t* eff2 = effector_create();
+    node_attach_effector(child3, eff1);
+    node_attach_effector(child7, eff2);
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
