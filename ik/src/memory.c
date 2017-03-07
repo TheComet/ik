@@ -26,7 +26,7 @@ struct report_info_t
 
 /* ------------------------------------------------------------------------- */
 void
-memory_init(void)
+ik_memory_init(void)
 {
     g_allocations = 0;
     d_deg_allocations = 0;
@@ -87,7 +87,7 @@ malloc_wrapper(intptr_t size)
 #   endif
 
             /* insert into bstv */
-            if(!bstv_insert(&report, (uintptr_t)p, info))
+            if(bstv_insert(&report, (uintptr_t)p, info) == 1)
             {
                 fprintf(stderr,
                 "[memory] WARNING: Hash collision occurred when inserting\n"
@@ -193,7 +193,7 @@ free_wrapper(void* ptr)
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-memory_deinit(void)
+ik_memory_deinit(void)
 {
     uintptr_t leaks;
 

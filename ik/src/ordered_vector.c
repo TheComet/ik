@@ -40,7 +40,7 @@ ordered_vector_create(const uint32_t element_size)
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_init_vector(struct ordered_vector_t* vector, const uint32_t element_size)
+ordered_vector_construct(struct ordered_vector_t* vector, const uint32_t element_size)
 {
     assert(vector);
     memset(vector, 0, sizeof(struct ordered_vector_t));

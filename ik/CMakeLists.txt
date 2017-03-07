@@ -38,7 +38,7 @@ list (APPEND IK_HEADERS
     "${EXPORT_H_TEMPLATE}")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    file (GLOB IK_PLATFORM_SOURCES "src/platform/linux/*.cpp")
+    file (GLOB IK_PLATFORM_SOURCES "src/platform/linux/*.c")
 endif ()
 list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
 

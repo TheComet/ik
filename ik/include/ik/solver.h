@@ -41,8 +41,6 @@ struct solver_t
     int32_t                            max_iterations;
     float                              tolerance;
 
-    struct log_t*                      log;
-
     struct
     {
         /* Derived structure callbacks */

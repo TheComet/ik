@@ -22,7 +22,7 @@ C_HEADER_BEGIN
  * memory reports and backtraces, if enabled.
  */
 IK_PUBLIC_API void
-memory_init(void);
+ik_memory_init(void);
 
 /*!
  * @brief De-initialises the memory system.
@@ -32,7 +32,7 @@ memory_init(void);
  * @return Returns the number of memory leaks.
  */
 IK_PUBLIC_API uintptr_t
-memory_deinit(void);
+ik_memory_deinit(void);
 
 #if IK_MEMORY_DEBUGGING == ON
 /*!

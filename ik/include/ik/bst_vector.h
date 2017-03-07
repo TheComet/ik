@@ -66,7 +66,8 @@ bstv_destroy(struct bstv_t* bstv);
  * @param[in] value The data to insert into the bstv.
  * @note The value is **not** copied into the bstv, only referenced. For this
  * reason don't insert stack allocated items into the bstv.
- * @return Returns 0 if insertion was successful, -1 if otherwise.
+ * @return Returns 0 if insertion was successful. Returns 1 if the key already
+ * existed (in which case nothing is inserted). Returns -1 on failure.
  */
 IK_PUBLIC_API int
 bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value);

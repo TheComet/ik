@@ -58,4 +58,4 @@ message (STATUS "Global settings")
 message (STATUS "------------------------------------------------------------")
 
 add_subdirectory ("ik")
-
+add_subdirectory ("app")

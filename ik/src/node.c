@@ -1,5 +1,6 @@
 #include "ik/node.h"
 #include "ik/memory.h"
+#include "ik/effector.h"
 #include <string.h>
 #include <assert.h>
 
@@ -32,6 +33,9 @@ node_destruct(struct node_t* node)
         node_destroy(child);
     BSTV_END_EACH
 
+    if(node->effector)
+        effector_destroy(node->effector);
+
     bstv_clear_free(&node->children);
 }
 
@@ -48,7 +52,7 @@ void
 node_add_child(struct node_t* node, struct node_t* child)
 {
     child->parent = node;
-    bstv_insert(&node->children, node->guid, child);
+    bstv_insert(&node->children, child->guid, child);
 }
 
 /* ------------------------------------------------------------------------- */
