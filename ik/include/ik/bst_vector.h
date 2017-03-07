@@ -97,6 +97,18 @@ IK_PUBLIC_API void*
 bstv_find(const struct bstv_t* bstv, uint32_t hash);
 
 /*!
+ * @brief Looks for an element in the bstv and returns a pointer to the element
+ * in the structure. This is useful if you need to store data directly in the
+ * memory occupied by the pointer and wish to modify it.
+ * @note The returned pointer can be invalidated if any insertions or deletions
+ * are performed.
+ * @param[in] bstv The bstv to search in.
+ * @param[in] hash The has to search for.
+ */
+IK_PUBLIC_API void**
+bstv_find_ptr(const struct bstv_t* bstv, uint32_t hash);
+
+/*!
  * @brief Finds the specified element in the bstv and returns its key.
  * @note Complexity is O(n).
  * @param[in] bstv The bstv to search.

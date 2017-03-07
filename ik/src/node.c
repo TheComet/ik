@@ -1,8 +1,10 @@
-#include "ik/node.h"
-#include "ik/memory.h"
 #include "ik/effector.h"
+#include "ik/log.h"
+#include "ik/memory.h"
+#include "ik/node.h"
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
 struct node_t*
@@ -88,4 +90,35 @@ void
 node_attach_effector(struct node_t* node, struct effector_t* effector)
 {
     node->effector = effector;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+recursively_dump_dot(FILE* fp, struct node_t* node)
+{
+    if(node->effector != NULL)
+        fprintf(fp, "    %d [color=\"1.0 0.5 1.0\"];\n", node->guid);
+
+    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+        fprintf(fp, "    %d -- %d;\n", node->guid, guid);
+        recursively_dump_dot(fp, child);
+    BSTV_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+void
+node_dump_to_dot(struct node_t* node, const char* file_name)
+{
+    FILE* fp = fopen(file_name, "w");
+    if(fp == NULL)
+    {
+        ik_log_message("Failed to open file %s", file_name);
+        return;
+    }
+
+    fprintf(fp, "graph graphname {\n");
+    recursively_dump_dot(fp, node);
+    fprintf(fp, "}\n");
+
+    fclose(fp);
 }

@@ -127,6 +127,13 @@ bstv_set(struct bstv_t* bstv, uint32_t hash, void* value)
 void*
 bstv_find(const struct bstv_t* bstv, uint32_t hash)
 {
+    return *bstv_find_ptr(bstv, hash);
+}
+
+/* ------------------------------------------------------------------------- */
+void**
+bstv_find_ptr(const struct bstv_t* bstv, uint32_t hash)
+{
     struct bstv_hash_value_t* data;
 
     assert(bstv);
@@ -134,7 +141,7 @@ bstv_find(const struct bstv_t* bstv, uint32_t hash)
     data = bstv_find_lower_bound(bstv, hash);
     if(!data || data->hash != hash)
         return NULL;
-    return data->value;
+    return &data->value;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -1,17 +1,23 @@
 #include "ik/bst_vector.h"
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/memory.h"
 #include "ik/node.h"
 #include "ik/solver_FABRIK.h"
 #include <assert.h>
+#include <string.h>
 
 struct chain_t
 {
     struct ordered_vector_t nodes;  /* list of node_t objects */
     struct vector3_t* base_position;
     struct vector3_t* end_position;
+};
+
+enum chain_markings_e
+{
+    CHAIN_SECTION,
+    CHAIN_BASE
 };
 
 void
@@ -34,12 +40,6 @@ clear_chain_list(struct ordered_vector_t* chain_list);
  * beginning results in traversing the sub-base nodes breadth-last. This is
  * important.
  *
- * The following constraints must be true in order to avoid malfunctions
- * and segfaults.
- *   + FABRIK assumes all chains have at *least* two nodes. If an IKRoot
- *     and IKEffector component share the same node, or if an IKEffector
- *     happens to be attached to a sub-base node,
- *
  * @note Effectors that are deactivated or invalid are ignored in this search.
  * So even though a node might share two effectors, if one of them is
  * deactivated, then the node is no longer considered a sub-base node.
@@ -54,6 +54,7 @@ solver_FABRIK_create(void)
     struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
     if(solver == NULL)
         return NULL;
+    memset(solver, 0, sizeof *solver);
 
     solver->base.solver.private_.destroy = solver_FABRIK_destroy;
     solver->base.solver.private_.rebuild_data = solver_FABRIK_rebuild_data;
@@ -113,17 +114,26 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
         assert(node->effector != NULL);
         chain_length_counter = node->effector->chain_length == 0 ? -1 : (int)node->effector->chain_length;
 
+        /*
+         * Mark nodes that are at the base of the chain differently, so the
+         * chains can be split correctly later.
+         */
         for(; node != NULL; node = node->parent)
         {
-            /* NOTE Insert 1 instead of NULL so we can use bstv_erase() */
-            if(bstv_insert(involved_nodes, node->guid, (void*)1) < 0)
+            enum chain_markings_e marking = CHAIN_SECTION;
+            if(chain_length_counter == 0)
+                marking = CHAIN_BASE;
+
+            if(bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
             {
                 ik_log_message("Ran out of memory while marking involved nodes");
                 return -1;
             }
+
             if(chain_length_counter-- == 0)
                 break;
         }
+
     ORDERED_VECTOR_END_EACH
 
     return 0;
@@ -167,27 +177,38 @@ recursively_build_chain_list(struct ordered_vector_t* chain_list,
                              struct node_t* current_node,
                              struct chain_t* previous_chain)
 {
+    int mark_count;
+    int break_chain_here;
     struct chain_t* chain;
     struct node_t* next_chain_beginning = chain_beginning;
     struct node_t* previous_chain_beginning = NULL;
-    int marked_child_count = 0;
-
-    /* We aren't interested in nodes that aren't marked */
-    if(bstv_erase(involved_nodes, current_node->guid) == NULL)
-        return previous_chain;
 
     /*
-     * If the current node has two or more marked children, it means that the
-     * current node is a sub-base node and the chain must be split at this
-     * point.
+     * If this node is not marked, cut off any previous chain and recursive
+     * into children. It's possible that there are isolated chains somewhere
+     * further down the tree.
      */
+    mark_count = (int)(intptr_t)bstv_erase(involved_nodes, current_node->guid);
+    if(mark_count == 0)
+    {
+        BSTV_FOR_EACH(&current_node->children, struct node_t, child_guid, child)
+            recursively_build_chain_list(chain_list, involved_nodes, child, child, NULL);
+        BSTV_END_EACH
+        return NULL;
+    }
+
+    /*
+     * If the current node has a marked child with the same mark count, then
+     * the chain cannot be broken at this point.
+     */
+    break_chain_here = 1;
     BSTV_FOR_EACH(&current_node->children, struct node_t, child_guid, child)
-        if(bstv_hash_exists(involved_nodes, child_guid) == 0)
-            if(++marked_child_count == 2)
-            {
-                next_chain_beginning = current_node;
-                break;
-            }
+        int child_mark_count = (int)(intptr_t)bstv_find(involved_nodes, child_guid);
+        if(mark_count == child_mark_count)
+        {
+            break_chain_here = 0;
+            break;
+        }
     BSTV_END_EACH
 
     /*
@@ -250,22 +271,20 @@ rebuild_chain_list(struct fabrik_t* solver)
     if(mark_involved_nodes(solver, &involved_nodes) < 0)
         goto mark_involved_nodes_failed;
 
-    ik_log_message("There are %d involved nodes", bstv_count(&involved_nodes));
+    ik_log_message("There are %d involved node(s)", bstv_count(&involved_nodes));
 
     clear_chain_list(chain_list);
-    if(recursively_build_chain_list(chain_list, &involved_nodes, root, root, NULL) == NULL)
-        goto build_chain_list_failed;
+    recursively_build_chain_list(chain_list, &involved_nodes, root, root, NULL);
 
-    ik_log_message("There are %d effectors",
+    ik_log_message("There are %d effector(s)",
                    ordered_vector_count(&solver->base.solver.private_.effector_nodes_list));
-    ik_log_message("%d chains were created",
+    ik_log_message("%d chain(s) were created",
                    ordered_vector_count(chain_list));
 
     bstv_clear_free(&involved_nodes);
 
     return 0;
 
-    build_chain_list_failed    :
     mark_involved_nodes_failed : bstv_clear_free(&involved_nodes);
     return -1;
 }

@@ -48,6 +48,9 @@ node_find_child(struct node_t* node, uint32_t guid);
 IK_PUBLIC_API void
 node_attach_effector(struct node_t* node, struct effector_t* effector);
 
+IK_PUBLIC_API void
+node_dump_to_dot(struct node_t* node, const char* file_name);
+
 C_HEADER_END
 
 #endif /* IK_NODE_H */
