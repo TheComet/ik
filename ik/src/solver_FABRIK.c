@@ -83,18 +83,21 @@ solver_FABRIK_rebuild_data(struct solver_t* solver)
     return rebuild_chain_list((struct fabrik_t*)solver);
 }
 
+static struct vector3_t
+solve_chain_forwards(struct chain_t* chain)
+{
+    struct node_t* effector_node = ordered_vector_get_element(&chain->nodes, 0);
+    struct vector3_t target = effector_node->effector->target_position;
+}
+
 /* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(struct solver_t* solver)
-{/*
+{
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+
     ORDERED_VECTOR_FOR_EACH(&fabrik->base.fabrik.chain_list, struct chain_t, chain)
-        struct effector_t* effector = ordered_vector_get_element(&chain->nodes, 0);
-        ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, pnode)
-            struct node_t* node = *pnode;
-            effector->target_position;
-        ORDERED_VECTOR_END_EACH
-    ORDERED_VECTOR_END_EACH*/
+    ORDERED_VECTOR_END_EACH
     return -1;
 }
 
