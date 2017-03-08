@@ -86,7 +86,15 @@ solver_FABRIK_rebuild_data(struct solver_t* solver)
 /* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(struct solver_t* solver)
-{
+{/*
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    ORDERED_VECTOR_FOR_EACH(&fabrik->base.fabrik.chain_list, struct chain_t, chain)
+        struct effector_t* effector = ordered_vector_get_element(&chain->nodes, 0);
+        ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, pnode)
+            struct node_t* node = *pnode;
+            effector->target_position;
+        ORDERED_VECTOR_END_EACH
+    ORDERED_VECTOR_END_EACH*/
     return -1;
 }
 
@@ -316,7 +324,10 @@ dump_chain_list_to_dot(struct node_t* tree, struct ordered_vector_t* chain_list,
             fprintf(fp, "    %d [shape=record];\n", (*chain_start)->guid);
             fprintf(fp, "    %d [shape=record];\n", (*chain_end)->guid);
             ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, node)
-                fprintf(fp, "    %d [color=\"%f 0.5 1.0\"];\n", (*node)->guid, hue);
+                if((*node)->effector == NULL)
+                    fprintf(fp, "    %d [color=\"%f 0.2 1.0\"];\n", (*node)->guid, hue);
+                else
+                    fprintf(fp, "    %d [color=\"1.0 1.0 1.0\"];\n", (*node)->guid);
             ORDERED_VECTOR_END_EACH
             hue += hue_step;
         ORDERED_VECTOR_END_EACH

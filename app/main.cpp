@@ -89,14 +89,42 @@ void scenario3()
     ik_solver_destroy(solver);
 }
 
+void scenario4()
+{
+    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
+    node_t* root = node_create(0);
+    node_t* child1 = node_create(1);
+    node_t* child2 = node_create(2);
+    node_t* child3 = node_create(3);
+    node_t* child4 = node_create(4);
+    node_t* child5 = node_create(5);
+    node_t* child6 = node_create(6);
+    node_add_child(root, child1);
+    node_add_child(child1, child2);
+    node_add_child(child2, child3);
+    node_add_child(child3, child4);
+    node_add_child(child4, child5);
+    node_add_child(child5, child6);
+
+    effector_t* eff1 = effector_create();
+    effector_t* eff2 = effector_create();
+    node_attach_effector(child3, eff1);
+    node_attach_effector(child6, eff2);
+
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild_data(solver);
+    ik_solver_destroy(solver);
+}
+
 int main()
 {
     ik_memory_init();
     ik_log_init(LOG_STDOUT);
 
-    //scenario1();
-    //scenario2();
+    scenario1();
+    scenario2();
     scenario3();
+    scenario4();
 
     ik_log_deinit();
     ik_memory_deinit();
