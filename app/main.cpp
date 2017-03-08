@@ -106,9 +106,9 @@ void scenario4()
     node_add_child(child4, child5);
     node_add_child(child5, child6);
 
-    //effector_t* eff1 = effector_create();
+    effector_t* eff1 = effector_create();
     effector_t* eff2 = effector_create();
-    //node_attach_effector(child3, eff1);
+    node_attach_effector(child3, eff1);
     node_attach_effector(child6, eff2);
 
     ik_solver_set_tree(solver, root);
@@ -132,7 +132,7 @@ static void buildTree(node_t* parent, int depth, int* guid)
     node_add_child(child4, child5);
     node_add_child(child5, child6);
 
-    if(depth < 2)
+    if(depth < 5)
     {
         buildTree(child3, depth+1, guid);
         buildTree(child6, depth+1, guid);

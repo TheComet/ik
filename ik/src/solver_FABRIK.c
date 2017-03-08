@@ -87,17 +87,17 @@ solver_FABRIK_create(void)
         goto alloc_solver_filed;
     memset(solver, 0, sizeof *solver);
 
-    solver->base.solver.private_.destroy = solver_FABRIK_destroy;
-    solver->base.solver.private_.rebuild_data = solver_FABRIK_rebuild_data;
-    solver->base.solver.private_.solve = solver_FABRIK_solve;
+    solver->destroy = solver_FABRIK_destroy;
+    solver->rebuild_data = solver_FABRIK_rebuild_data;
+    solver->solve = solver_FABRIK_solve;
 
-    solver->base.solver.max_iterations = 20;
-    solver->base.solver.tolerance = 1e-4;
+    solver->max_iterations = 20;
+    solver->tolerance = 1e-4;
 
-    solver->base.fabrik.chain_tree = (struct chain_t*)MALLOC(sizeof(struct chain_t));
-    if(solver->base.fabrik.chain_tree == NULL)
+    solver->chain_tree = (struct chain_t*)MALLOC(sizeof(struct chain_t));
+    if(solver->chain_tree == NULL)
         goto alloc_chain_tree_failed;
-    chain_construct(solver->base.fabrik.chain_tree);
+    chain_construct(solver->chain_tree);
 
     return (struct solver_t*)solver;
 
@@ -110,8 +110,8 @@ void
 solver_FABRIK_destroy(struct solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
-    chain_destruct(fabrik->base.fabrik.chain_tree);
-    FREE(fabrik->base.fabrik.chain_tree);
+    chain_destruct(fabrik->chain_tree);
+    FREE(fabrik->chain_tree);
     FREE(solver);
 }
 
@@ -138,7 +138,7 @@ solver_FABRIK_solve(struct solver_t* solver)
     while(iteration--)
     {
         const struct chain_t* previous_chain = NULL;
-        const struct ordered_vector_t* chain_list = &fabrik->base.fabrik.chain_list;
+        const struct ordered_vector_t* chain_list = &fabrik->chain_list;
         int chain_id = 0;
         while(chain_id != ordered_vector_count(chain_list))
         {
@@ -189,7 +189,7 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
      * effector specifies a maximum chain length, which means it's possible
      * that we won't hit the root node.
      */
-    struct ordered_vector_t* effector_nodes_list = &solver->base.solver.private_.effector_nodes_list;
+    struct ordered_vector_t* effector_nodes_list = &solver->effector_nodes_list;
     ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct node_t*, p_effector_node)
 
         /*
@@ -232,7 +232,6 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
             if(chain_length_counter-- == 0)
                 break;
         }
-
     ORDERED_VECTOR_END_EACH
 
     return 0;
@@ -246,7 +245,6 @@ recursively_build_chain_tree(struct chain_t* chain_current,
                              struct bstv_t* involved_nodes)
 {
     int marked_children_count;
-    int create_chain = 0;
     struct node_t* child_node_base = node_base;
     struct chain_t* child_chain = chain_current;
 
@@ -257,18 +255,9 @@ recursively_build_chain_tree(struct chain_t* chain_current,
      */
     enum node_marking_e marking =
         (enum node_marking_e)(intptr_t)bstv_erase(involved_nodes, node_current->guid);
-    if(marking == MARK_NONE)
-    {
-        BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child)
-            if(recursively_build_chain_tree(chain_current, child, child, involved_nodes) < 0)
-                return -1;
-        BSTV_END_EACH
-        return 0;
-    }
-
     /*
      * If this node was marked as the base of a chain then split the chain at
-     * this point.
+     * this point by updating the base node.
      */
     if(marking == MARK_SPLIT)
         child_node_base = node_current;
@@ -281,36 +270,42 @@ recursively_build_chain_tree(struct chain_t* chain_current,
     BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child)
         if((enum node_marking_e)(intptr_t)bstv_find(involved_nodes, child_guid) == MARK_SECTION)
             if(++marked_children_count == 2)
-            {
-                create_chain = 1;
                 break;
-            }
     BSTV_END_EACH
 
-    if(marked_children_count == 0)
-        create_chain = 1;
-
-    if(node_current == node_base)
-        create_chain = 0;
-
-    if(create_chain)
+    if(marked_children_count != 1 && node_current != node_base)
     {
+        /*
+         * Emplace a chain object into the current chain's vector of children
+         * and initialise it.
+         */
         struct node_t* node;
         child_chain = ordered_vector_push_emplace(&chain_current->children);
         if(child_chain == NULL)
             return -1;
         chain_construct(child_chain);
-        child_node_base = node_current;
 
+        /*
+         * Add points to all nodes that are part of this chain into the chain's
+         * list, starting with the end node.
+         */
         for(node = node_current; node != node_base; node = node->parent)
             ordered_vector_push(&child_chain->nodes, &node);
         ordered_vector_push(&child_chain->nodes, &node_base);
+
+        /*
+         * Update the base node to be this node so deeper chains are built back
+         * to this node
+         */
+        child_node_base = node_current;
     }
 
     /*
      * Recurse into children of the current node.
      */
     BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child_node)
+        if(marking == MARK_NONE)
+            child_node_base = child_node;
         if(recursively_build_chain_tree(
                 child_chain,
                 child_node_base,
@@ -318,25 +313,6 @@ recursively_build_chain_tree(struct chain_t* chain_current,
                 involved_nodes) < 0)
             return -1;
     BSTV_END_EACH
-
-    /*
-     * If the current node is not a sub-base node and is also not a leaf node,
-     * that is, it has exactly one marked child, then there is no need to
-     * create a new chain.
-     *
-    if(marked_children_count != 1 && current_node != chain_beginning)
-    {
-        struct node_t* cur_node = current_node;
-        (void)cur_node;
-        current_chain = ordered_vector_push_emplace(&parent_chain->children);
-        if(current_chain == NULL)
-            return -1;
-        chain_construct(current_chain);
-
-        for(; current_node != chain_beginning; current_node = current_node->parent)
-            ordered_vector_push(&current_chain->nodes, &current_node);
-        ordered_vector_push(&current_chain->nodes, &chain_beginning);
-    }*/
 
     return 0;
 }
@@ -403,24 +379,34 @@ static int
 rebuild_chain_tree(struct fabrik_t* solver)
 {
     struct bstv_t involved_nodes;
-    struct chain_t* chain_tree = solver->base.fabrik.chain_tree;
-    struct node_t* root = solver->base.solver.private_.tree;
+    char buffer[20];
+    static int file_name_counter = 0;
+    struct chain_t* chain_tree = solver->chain_tree;
+    struct node_t* root = solver->tree;
     int chain_count = 0;
 
+    /*
+     * Build a set of all nodes that are in a direct path with all of the
+     * effectors.
+     */
     bstv_construct(&involved_nodes);
     if(mark_involved_nodes(solver, &involved_nodes) < 0)
         goto mark_involved_nodes_failed;
 
     ik_log_message("There are %d involved node(s)", bstv_count(&involved_nodes));
 
+    /* Build a tree of chains */
     chain_clear_free(chain_tree);
     recursively_build_chain_tree(chain_tree, root, root, &involved_nodes);
-    dump_to_dot(root, chain_tree, "tree.dot");
+
+    /* DEBUG: Save chain tree to DOT */
+    sprintf(buffer, "tree%d.dot", file_name_counter++);
+    dump_to_dot(root, chain_tree, buffer);
 
     ik_log_message("There are %d effector(s)",
-                   ordered_vector_count(&solver->base.solver.private_.effector_nodes_list));
+                   ordered_vector_count(&solver->effector_nodes_list));
     count_chains(chain_tree, &chain_count);
-    ik_log_message("There are %d chain(s)", chain_count);
+    ik_log_message("There are %d chain(s)", chain_count - 1);
 
     bstv_clear_free(&involved_nodes);
 

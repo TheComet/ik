@@ -9,19 +9,10 @@ C_HEADER_BEGIN
 
 struct chain_t;
 
-struct FABRIK_data_t
+struct fabrik_t
 {
     SOLVER_DATA_HEAD
     struct chain_t* chain_tree;
-};
-
-struct fabrik_t
-{
-    union
-    {
-        struct solver_t solver;
-        struct FABRIK_data_t fabrik;
-    } base;
 };
 
 struct solver_t*

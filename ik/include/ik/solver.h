@@ -30,35 +30,26 @@ enum algorithm_e
 
 /*!
  * @brief This is a base struct for all solvers.
- * @note Custom polymorphism, using information from here:
- * http://www.deleveld.dds.nl/inherit.htm
  */
+#define SOLVER_DATA_HEAD                                             \
+    ik_solver_apply_constraint_cb_func apply_constraint;             \
+    ik_solver_apply_result_cb_func     apply_result;                 \
+                                                                     \
+    int32_t                            max_iterations;               \
+    float                              tolerance;                    \
+                                                                     \
+    /* Derived structure callbacks */                                \
+    ik_solver_destroy_func             destroy;                      \
+    ik_solver_solve_func               solve;                        \
+    ik_solver_rebuild_data_func        rebuild_data;                 \
+                                                                     \
+    struct ordered_vector_t            effector_nodes_list;          \
+                                                                     \
+    struct node_t* tree;
 struct solver_t
 {
-    ik_solver_apply_constraint_cb_func apply_constraint;
-    ik_solver_apply_result_cb_func     apply_result;
-
-    int32_t                            max_iterations;
-    float                              tolerance;
-
-    struct
-    {
-        /* Derived structure callbacks */
-        ik_solver_destroy_func             destroy;
-        ik_solver_solve_func               solve;
-        ik_solver_rebuild_data_func        rebuild_data;
-
-        struct ordered_vector_t            effector_nodes_list;
-
-        struct node_t* tree;
-    } private_;
-
+    SOLVER_DATA_HEAD
 };
-#define SOLVER_DATA_HEAD             \
-    union                            \
-    {                                \
-        struct solver_t solver;      \
-    } base;
 
 IK_PUBLIC_API struct solver_t*
 ik_solver_create(enum algorithm_e algorithm);
