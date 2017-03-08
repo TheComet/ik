@@ -95,7 +95,7 @@ recursive_get_all_effector_nodes(struct node_t* node, struct ordered_vector_t* e
 {
     if(node->effector != NULL)
         if(ordered_vector_push(effector_nodes_list, &node) < 0)
-         return -1;
+            return -1;
 
     BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
         if(recursive_get_all_effector_nodes(child, effector_nodes_list) < 0)

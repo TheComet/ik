@@ -62,6 +62,9 @@ solver_FABRIK_create(void)
     solver->base.solver.private_.rebuild_data = solver_FABRIK_rebuild_data;
     solver->base.solver.private_.solve = solver_FABRIK_solve;
 
+    solver->base.solver.max_iterations = 20;
+    solver->base.solver.tolerance = 1e-4;
+
     ordered_vector_construct(&solver->base.fabrik.chain_list, sizeof(struct chain_t));
     return (struct solver_t*)solver;
 }
@@ -95,9 +98,14 @@ int
 solver_FABRIK_solve(struct solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    int iteration = solver->max_iterations;
+    while(iteration--)
+    {
+        ORDERED_VECTOR_FOR_EACH(&fabrik->base.fabrik.chain_list, struct chain_t, chain)
+            solve_chain_forwards(chain);
+        ORDERED_VECTOR_END_EACH
+    }
 
-    ORDERED_VECTOR_FOR_EACH(&fabrik->base.fabrik.chain_list, struct chain_t, chain)
-    ORDERED_VECTOR_END_EACH
     return -1;
 }
 
