@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cloc ik app tests/src tests/include/ gource cmake CMakeLists.txt

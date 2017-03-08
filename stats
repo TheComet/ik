@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import subprocess
+import operator
+import re
+
+aliases = {
+    # alias
+    "TheComet": "Alex Murray"
+}
+
+exclude_folders = [
+    'tests/googletest',
+    'tests/googlemock',
+]
+
+def get_real_name(alias):
+    if alias in aliases:
+        return aliases[alias]
+    return alias
+
+def commit_counts():
+    ret = dict()
+    for author in subprocess.getoutput('git log --no-merges --pretty=format:"%an"').split('\n'):
+        author = get_real_name(author)
+        if not author in ret:
+            ret[author] = 0
+        ret[author] += 1
+
+    print('commit counts')
+    for author, commits in sorted(ret.items(), key=lambda x: x[1], reverse=True):
+        print('  {0:<20}: {1}'.format(author, commits))
+
+def insertions_deletions():
+    ret = dict()
+    pattern = re.compile('\d+')
+    exclude_str = '. ":(exclude){}"'.format('" . ":(exclude)'.join(exclude_folders))
+    cmd = 'git log --shortstat --no-merges --pretty=format:"%an" -- {0}'.format(exclude_str)
+    for chunk in subprocess.getoutput(cmd).split('\n\n'):
+        author, insdel = chunk.split('\n')
+        files_changed, insertions, deletions = (pattern.findall(insdel) + [0] * 2)[:3]
+        author = get_real_name(author)
+        if not author in ret:
+            ret[author] = {'insertions': 0, 'deletions': 0, 'files changed': 0, 'max insertions': 0}
+        ret[author]['insertions']    += int(insertions)
+        ret[author]['deletions']     += int(deletions)
+        ret[author]['files changed'] += int(files_changed)
+        if ret[author]['max insertions'] < int(insertions):
+            ret[author]['max insertions'] = int(insertions)
+
+    print('insertions')
+    for author, insertions in sorted(ret.items(), key=lambda x: x[1]['insertions'], reverse=True):
+        print('  {0:<20}: {1}'.format(author, ret[author]['insertions']))
+    print('deletions')
+    for author, deletions in sorted(ret.items(), key=lambda x: x[1]['deletions'], reverse=True):
+        print('  {0:<20}: {1}'.format(author, ret[author]['deletions']))
+    print('files changed')
+    for author, files_changed in sorted(ret.items(), key=lambda x: x[1]['files changed'], reverse=True):
+        print('  {0:<20}: {1}'.format(author, ret[author]['files changed']))
+    print('maximum insertions in a single commit')
+    for author, max_insertions in sorted(ret.items(), key=lambda x: x[1]['max insertions'], reverse=True):
+        print('  {0:<20}: {1}'.format(author, ret[author]['max insertions']))
+
+if __name__ == '__main__':
+    commit_counts()
+    insertions_deletions()
+

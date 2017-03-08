@@ -1,0 +1,8 @@
+#!/bin/bash
+
+printf '%s' "$(
+git log --pretty=format:"%h - %an, %ar|%s" |
+    while IFS='|' read left right
+    do
+        printf '%-50s : %s\n' "$left" "$right"
+    done)" | less
