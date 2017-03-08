@@ -316,7 +316,7 @@ recursively_build_chain_tree(struct chain_t* chain_current,
 
     return 0;
 }
-
+/*
 static void
 dump_chain(struct chain_t* chain, FILE* fp)
 {
@@ -372,18 +372,18 @@ count_chains(struct chain_t* chain, int* counter)
         count_chains(child, counter);
     ORDERED_VECTOR_END_EACH
     ++(*counter);
-}
+}*/
 
 /* ------------------------------------------------------------------------- */
 static int
 rebuild_chain_tree(struct fabrik_t* solver)
 {
     struct bstv_t involved_nodes;
-    char buffer[20];
-    static int file_name_counter = 0;
+    /*char buffer[20];*/
+    /*static int file_name_counter = 0;*/
     struct chain_t* chain_tree = solver->chain_tree;
     struct node_t* root = solver->tree;
-    int chain_count = 0;
+    /*int chain_count = 0;*/
 
     /*
      * Build a set of all nodes that are in a direct path with all of the
@@ -399,14 +399,14 @@ rebuild_chain_tree(struct fabrik_t* solver)
     chain_clear_free(chain_tree);
     recursively_build_chain_tree(chain_tree, root, root, &involved_nodes);
 
-    /* DEBUG: Save chain tree to DOT */
+    /* DEBUG: Save chain tree to DOT *
     sprintf(buffer, "tree%d.dot", file_name_counter++);
-    dump_to_dot(root, chain_tree, buffer);
+    dump_to_dot(root, chain_tree, buffer);*/
 
     ik_log_message("There are %d effector(s)",
                    ordered_vector_count(&solver->effector_nodes_list));
-    count_chains(chain_tree, &chain_count);
-    ik_log_message("There are %d chain(s)", chain_count - 1);
+    /*count_chains(chain_tree, &chain_count);
+    ik_log_message("There are %d chain(s)", chain_count - 1);*/
 
     bstv_clear_free(&involved_nodes);
 

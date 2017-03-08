@@ -14,6 +14,8 @@
 #include "ik/config.h"
 #include "ik/pstdint.h"
 
+C_HEADER_BEGIN
+
 #define DATA_POINTER_TYPE unsigned char
 struct ordered_vector_t
 {
@@ -289,5 +291,7 @@ ordered_vector_get_element(struct ordered_vector_t*, uint32_t index);
     ordered_vector_erase_element(vector, element);                                     \
     element = (element_type*)(((DATA_POINTER_TYPE*)element) - (vector)->element_size); \
     internal_##var_end_of_vector = (vector)->data + (vector)->count * (vector)->element_size;
+
+C_HEADER_END
 
 #endif /* ORDERED_VECTOR_H */

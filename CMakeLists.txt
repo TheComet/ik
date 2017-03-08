@@ -24,9 +24,9 @@ set (CMAKE_MACOSX_RPATH OFF)
 ###############################################################################
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
-    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter)
+    add_definitions (-W -Wall)
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter)
+    add_definitions (-W -Wall)
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
     add_definitions (-D_CRT_SECURE_NO_WARNINGS)
@@ -49,6 +49,8 @@ endif ()
 
 set (EXPORT_H_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/templates/export.h.in")
 
+option (IK_TESTS "Whether to build unit tests or not (requires C++)" ON)
+
 ###############################################################################
 # Dependency settings
 ###############################################################################
@@ -58,4 +60,4 @@ message (STATUS "Global settings")
 message (STATUS "------------------------------------------------------------")
 
 add_subdirectory ("ik")
-add_subdirectory ("app")
+add_subdirectory ("tests")

@@ -27,6 +27,26 @@ configure_file ("include/ik/config.h.in"
 include_directories ("${CMAKE_CURRENT_BINARY_DIR}/include")
 
 ###############################################################################
+# compiler flags
+###############################################################################
+
+if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter)
+elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter)
+elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
+elseif (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
+    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+        STRING(REGEX REPLACE "/MDd" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+        add_definitions (-MTd)
+    elseif (CMAKE_BUILD_TYPE MATCHES Release)
+        STRING(REGEX REPLACE "/MD" "" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+        add_definitions (-MT)
+    endif ()
+endif ()
+
+###############################################################################
 # source files and library definition
 ###############################################################################
 
