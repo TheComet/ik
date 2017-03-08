@@ -7,12 +7,12 @@
 
 C_HEADER_BEGIN
 
-struct node_t;
+struct chain_t;
 
 struct FABRIK_data_t
 {
     SOLVER_DATA_HEAD
-    struct ordered_vector_t chain_list;  /* chain_t structures */
+    struct chain_t* chain_tree;
 };
 
 struct fabrik_t

@@ -81,8 +81,8 @@ void scenario3()
     effector_t* eff2 = effector_create();
     node_attach_effector(child4, eff1);
     node_attach_effector(child6, eff2);
-    eff1->chain_length = 2;
-    eff2->chain_length = 2;
+    eff1->chain_length = 1;
+    //eff2->chain_length = 2;
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
@@ -106,10 +106,52 @@ void scenario4()
     node_add_child(child4, child5);
     node_add_child(child5, child6);
 
-    effector_t* eff1 = effector_create();
+    //effector_t* eff1 = effector_create();
     effector_t* eff2 = effector_create();
-    node_attach_effector(child3, eff1);
+    //node_attach_effector(child3, eff1);
     node_attach_effector(child6, eff2);
+
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild_data(solver);
+    ik_solver_destroy(solver);
+}
+
+static void buildTree(node_t* parent, int depth, int* guid)
+{
+    node_t* child1 = node_create(++(*guid));
+    node_t* child2 = node_create(++(*guid));
+    node_t* child3 = node_create(++(*guid));
+    node_t* child4 = node_create(++(*guid));
+    node_t* child5 = node_create(++(*guid));
+    node_t* child6 = node_create(++(*guid));
+    node_add_child(parent, child1);
+    node_add_child(child1, child2);
+    node_add_child(child2, child3);
+
+    node_add_child(parent, child4);
+    node_add_child(child4, child5);
+    node_add_child(child5, child6);
+
+    if(depth < 2)
+    {
+        buildTree(child3, depth+1, guid);
+        buildTree(child6, depth+1, guid);
+    }
+    else
+    {
+        effector_t* eff1 = effector_create();
+        effector_t* eff2 = effector_create();
+        node_attach_effector(child3, eff1);
+        node_attach_effector(child6, eff2);
+    }
+}
+
+void scenario5()
+{
+    int guid = 0;
+    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
+    node_t* root = node_create(0);
+    buildTree(root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
@@ -125,6 +167,7 @@ int main()
     scenario2();
     scenario3();
     scenario4();
+    scenario5();
 
     ik_log_deinit();
     ik_memory_deinit();

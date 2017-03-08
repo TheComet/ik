@@ -13,15 +13,15 @@ struct effector_t;
 
 struct node_t
 {
-    struct node_t* parent;
-    struct bstv_t children;
+    void* user_data;
+    uint32_t guid;
     struct vector3_t position;
     struct quaternion_t rotation;
 
+    struct node_t* parent;
+    struct bstv_t children;
     struct effector_t* effector;
 
-    uint32_t guid;
-    void* user_data;
 };
 
 IK_PUBLIC_API struct node_t*
