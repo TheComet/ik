@@ -102,8 +102,8 @@ TEST(NAME, pop_returns_pushed_values)
     ASSERT_EQ(23, *(int*)ordered_vector_pop(vec));
     ASSERT_EQ(2, *(int*)ordered_vector_pop(vec));
     ASSERT_EQ(3, *(int*)ordered_vector_pop(vec));
-    ASSERT_EQ(0, vec->count);
-    ASSERT_EQ(4, vec->capacity);
+    ASSERT_EQ(0u, vec->count);
+    ASSERT_EQ(4u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
     ordered_vector_destroy(vec);
 }
@@ -121,8 +121,8 @@ TEST(NAME, pop_returns_push_emplaced_values)
     ASSERT_EQ(28, *(int*)ordered_vector_pop(vec));
     ASSERT_EQ(24, *(int*)ordered_vector_pop(vec));
     ASSERT_EQ(53, *(int*)ordered_vector_pop(vec));
-    ASSERT_EQ(0, vec->count);
-    ASSERT_EQ(4, vec->capacity);
+    ASSERT_EQ(0u, vec->count);
+    ASSERT_EQ(4u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
     ordered_vector_destroy(vec);
 }
@@ -133,8 +133,8 @@ TEST(NAME, pop_empty_vector)
     *(int*)ordered_vector_push_emplace(vec) = 21;
     ordered_vector_pop(vec);
     ASSERT_EQ(NULL, ordered_vector_pop(vec));
-    ASSERT_EQ(0, vec->count);
-    ASSERT_EQ(2, vec->capacity);
+    ASSERT_EQ(0u, vec->count);
+    ASSERT_EQ(2u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
     ordered_vector_destroy(vec);
 }
@@ -143,8 +143,8 @@ TEST(NAME, pop_clear_freed_vector)
 {
     struct ordered_vector_t* vec = ordered_vector_create(sizeof(int));
     ASSERT_EQ(NULL, ordered_vector_pop(vec));
-    ASSERT_EQ(0, vec->count);
-    ASSERT_EQ(0, vec->capacity);
+    ASSERT_EQ(0u, vec->count);
+    ASSERT_EQ(0u, vec->capacity);
     ASSERT_EQ(NULL, vec->data);
     ordered_vector_destroy(vec);
 }

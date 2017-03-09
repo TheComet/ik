@@ -104,7 +104,7 @@ TEST(NAME, clear_keeps_underlying_vector)
     // this should delete all entries but keep the underlying vector
     bstv_clear(bstv);
 
-    ASSERT_EQ(0, bstv->vector.count);
+    ASSERT_EQ(0u, bstv->vector.count);
     EXPECT_THAT(bstv->vector.data, NotNull());
 
     bstv_destroy(bstv);
@@ -122,7 +122,7 @@ TEST(NAME, clear_free_deletes_underlying_vector)
     // this should delete all entries + free the underlying vector
     bstv_clear_free(bstv);
 
-    ASSERT_EQ(0, bstv->vector.count);
+    ASSERT_EQ(0u, bstv->vector.count);
     ASSERT_EQ(NULL, bstv->vector.data);
 
     bstv_destroy(bstv);
@@ -137,7 +137,7 @@ TEST(NAME, count_returns_correct_number)
     bstv_insert(bstv, 1, &a);
     bstv_insert(bstv, 2, &a);
 
-    ASSERT_EQ(3, bstv_count(bstv));
+    ASSERT_EQ(3u, bstv_count(bstv));
 
     bstv_destroy(bstv);
 }
@@ -309,7 +309,7 @@ TEST(NAME, generating_hashes_do_not_conflict_with_existing_ascending_hashes)
 
 TEST(NAME, generating_hashes_do_not_conflict_with_existing_descending_hashes)
 {
-        intptr_t hash;
+    intptr_t hash;
     struct bstv_t* bstv = bstv_create();
     bstv_insert(bstv, 5, NULL);
     bstv_insert(bstv, 3, NULL);
@@ -353,7 +353,7 @@ TEST(NAME, find_element)
     bstv_insert(bstv, 183, NULL);
     bstv_insert(bstv, 38, NULL);
 
-    EXPECT_THAT(bstv_find_element(bstv, &a), Eq(28));
+    EXPECT_THAT(bstv_find_element(bstv, &a), Eq(28u));
 
     bstv_destroy(bstv);
 }
@@ -444,11 +444,11 @@ TEST(NAME, iterate_5_random_items)
     BSTV_FOR_EACH(bstv, int, hash, value)
         switch(counter)
         {
-            case 0 : ASSERT_EQ(243, hash); ASSERT_EQ(a, *value); break;
-            case 1 : ASSERT_EQ(256, hash); ASSERT_EQ(b, *value); break;
-            case 2 : ASSERT_EQ(456, hash); ASSERT_EQ(c, *value); break;
-            case 3 : ASSERT_EQ(468, hash); ASSERT_EQ(d, *value); break;
-            case 4 : ASSERT_EQ(969, hash); ASSERT_EQ(e, *value); break;
+            case 0 : ASSERT_EQ(243u, hash); ASSERT_EQ(a, *value); break;
+            case 1 : ASSERT_EQ(256u, hash); ASSERT_EQ(b, *value); break;
+            case 2 : ASSERT_EQ(456u, hash); ASSERT_EQ(c, *value); break;
+            case 3 : ASSERT_EQ(468u, hash); ASSERT_EQ(d, *value); break;
+            case 4 : ASSERT_EQ(969u, hash); ASSERT_EQ(e, *value); break;
             default: ASSERT_EQ(0, 1); break;
         }
         ++counter;
@@ -472,11 +472,11 @@ TEST(NAME, iterate_5_null_items)
     BSTV_FOR_EACH(bstv, int, hash, value)
         switch(counter)
         {
-            case 0 : ASSERT_EQ(243, hash); ASSERT_EQ(NULL, value); break;
-            case 1 : ASSERT_EQ(256, hash); ASSERT_EQ(NULL, value); break;
-            case 2 : ASSERT_EQ(456, hash); ASSERT_EQ(NULL, value); break;
-            case 3 : ASSERT_EQ(468, hash); ASSERT_EQ(NULL, value); break;
-            case 4 : ASSERT_EQ(969, hash); ASSERT_EQ(NULL, value); break;
+            case 0 : ASSERT_EQ(243u, hash); ASSERT_EQ(NULL, value); break;
+            case 1 : ASSERT_EQ(256u, hash); ASSERT_EQ(NULL, value); break;
+            case 2 : ASSERT_EQ(456u, hash); ASSERT_EQ(NULL, value); break;
+            case 3 : ASSERT_EQ(468u, hash); ASSERT_EQ(NULL, value); break;
+            case 4 : ASSERT_EQ(969u, hash); ASSERT_EQ(NULL, value); break;
             default: ASSERT_EQ(0, 1); break;
         }
         ++counter;
@@ -498,7 +498,7 @@ TEST(NAME, erase_in_for_loop)
     bstv_insert(bstv, 969, &e);
 
     BSTV_FOR_EACH(bstv, int, hash, value)
-        if(hash == 256)
+        if(hash == 256u)
             BSTV_ERASE_CURRENT_ITEM_IN_FOR_LOOP(bstv, value);
     BSTV_END_EACH
 
