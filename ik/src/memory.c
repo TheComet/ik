@@ -244,8 +244,8 @@ ik_memory_deinit(void)
 
 #else /* IK_MEMORY_DEBUGGING */
 
-void memory_init(void) {}
-uintptr_t memory_deinit(void) { return 0; }
+void ik_memory_init(void) {}
+uintptr_t ik_memory_deinit(void) { return 0; }
 
 #endif /* IK_MEMORY_DEBUGGING */
 

@@ -7,7 +7,11 @@
 
 C_HEADER_BEGIN
 
-struct chain_t;
+struct chain_t
+{
+    struct ordered_vector_t nodes;    /* list of node_t* references */
+    struct ordered_vector_t children; /* list of chain_t objects */
+};
 
 struct fabrik_t
 {

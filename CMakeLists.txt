@@ -24,9 +24,9 @@ set (CMAKE_MACOSX_RPATH OFF)
 ###############################################################################
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
-    add_definitions (-W -Wall)
+    add_definitions (-W -Wall -fno-omit-frame-pointer)
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-    add_definitions (-W -Wall)
+    add_definitions (-W -Wall -fno-omit-frame-pointer)
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
 elseif (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
     add_definitions (-D_CRT_SECURE_NO_WARNINGS)

@@ -2,12 +2,34 @@
 #include "ik/solver.h"
 #include "ik/node.h"
 #include "ik/effector.h"
+#include "ik/log.h"
+#include "ik/solver_FABRIK.h"
 
 #define NAME FABRIK
 
-TEST(NAME, weird_tree)
+using namespace ::testing;
+
+class NAME : public Test
 {
-    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
+public:
+    NAME() : solver(NULL) {}
+
+    virtual void SetUp()
+    {
+        solver = ik_solver_create(ALGORITHM_FABRIK);
+    }
+
+    virtual void TearDown()
+    {
+        ik_solver_destroy(solver);
+    }
+
+protected:
+    solver_t* solver;
+};
+
+TEST_F(NAME, weird_tree)
+{
     node_t* root = node_create(0);
     node_t* child1 = node_create(1);
     node_t* child2 = node_create(2);
@@ -47,23 +69,91 @@ TEST(NAME, weird_tree)
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
 
-    ik_solver_destroy(solver);
+    fabrik_t* fabrik = (fabrik_t*)solver;
+
+    // There are two separate chain trees
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
+
+    // First has length 2
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
+    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(4u));
+    EXPECT_THAT(node, Eq(child4));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(3u));
+    EXPECT_THAT(node, Eq(child3));
+
+    // Second has length 4
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+    ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(4u));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(6u));
+    EXPECT_THAT(node, Eq(child6));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(5u));
+    EXPECT_THAT(node, Eq(child5));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(2u));
+    EXPECT_THAT(node, Eq(child2));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 3);
+    EXPECT_THAT(node->guid, Eq(1u));
+    EXPECT_THAT(node, Eq(child1));
+
+    // First Sub-chain with length 2
+    ASSERT_THAT(ordered_vector_count(&chain2->children), Eq(2u));
+    chain_t* chain3 = (chain_t*)ordered_vector_get_element(&chain2->children, 0);
+    ASSERT_THAT(ordered_vector_count(&chain3->nodes), Eq(2u));
+    node = *(node_t**)ordered_vector_get_element(&chain3->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(7u));
+    EXPECT_THAT(node, Eq(child7));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain3->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(6u));
+    EXPECT_THAT(node, Eq(child6));
+
+    // Second sub-chain with length 5
+    chain_t* chain4 = (chain_t*)ordered_vector_get_element(&chain2->children, 1);
+    ASSERT_THAT(ordered_vector_count(&chain4->nodes), Eq(5u));
+    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(11u));
+    EXPECT_THAT(node, Eq(child11));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(10u));
+    EXPECT_THAT(node, Eq(child10));
+    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(9u));
+    EXPECT_THAT(node, Eq(child9));
+    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 3);
+    EXPECT_THAT(node->guid, Eq(8u));
+    EXPECT_THAT(node, Eq(child8));
+    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 4);
+    EXPECT_THAT(node->guid, Eq(6u));
+    EXPECT_THAT(node, Eq(child6));
+
+    // These chains should have no children
+    EXPECT_THAT(ordered_vector_count(&chain1->children), Eq(0u));
+    EXPECT_THAT(ordered_vector_count(&chain3->children), Eq(0u));
+    EXPECT_THAT(ordered_vector_count(&chain4->children), Eq(0u));
 }
 
-TEST(NAME, just_one_node)
+TEST_F(NAME, just_one_node)
 {
-    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
     node_t* root = node_create(0);
     effector_t* eff = effector_create();
     node_attach_effector(root, eff);
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
-    ik_solver_destroy(solver);
+
+    // We expect no chains to be created
+    fabrik_t* fabrik = (fabrik_t*)solver;
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(0u));
 }
 
-TEST(NAME, two_arms_meet_at_same_node)
+TEST_F(NAME, two_arms_meet_at_same_node)
 {
-    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
     node_t* root = node_create(0);
     node_t* child1 = node_create(1);
     node_t* child2 = node_create(2);
@@ -87,12 +177,99 @@ TEST(NAME, two_arms_meet_at_same_node)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
-    ik_solver_destroy(solver);
+
+    fabrik_t* fabrik = (fabrik_t*)solver;
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+
+    // First arm
+    ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(3u));
+    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(4u));
+    EXPECT_THAT(node, Eq(child4));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(3u));
+    EXPECT_THAT(node, Eq(child3));
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(2u));
+    EXPECT_THAT(node, Eq(child2));
+
+    // Second arm
+    ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(3u));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(6u));
+    EXPECT_THAT(node, Eq(child6));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(5u));
+    EXPECT_THAT(node, Eq(child5));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(2u));
+    EXPECT_THAT(node, Eq(child2));
+
+    // These chains should have no children
+    EXPECT_THAT(ordered_vector_count(&chain1->children), Eq(0u));
+    EXPECT_THAT(ordered_vector_count(&chain2->children), Eq(0u));
 }
 
-TEST(NAME, effector_in_middle_of_chain)
+TEST_F(NAME, two_separate_arms)
 {
-    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
+    node_t* root = node_create(0);
+    node_t* child1 = node_create(1);
+    node_t* child2 = node_create(2);
+    node_t* child3 = node_create(3);
+    node_t* child4 = node_create(4);
+    node_t* child5 = node_create(5);
+    node_add_child(root, child1);
+    node_add_child(child1, child2);
+    node_add_child(child2, child3);
+    node_add_child(child1, child4);
+    node_add_child(child4, child5);
+
+    effector_t* eff1 = effector_create();
+    effector_t* eff2 = effector_create();
+    node_attach_effector(child3, eff1);
+    node_attach_effector(child5, eff2);
+    eff1->chain_length = 1;
+    eff2->chain_length = 1;
+
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild_data(solver);
+
+    fabrik_t* fabrik = (fabrik_t*)solver;
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+
+    // First arm
+    ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
+    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(3u));
+    EXPECT_THAT(node, Eq(child3));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(2u));
+    EXPECT_THAT(node, Eq(child2));
+
+    // Second arm
+    ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(2u));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(5u));
+    EXPECT_THAT(node, Eq(child5));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(4u));
+    EXPECT_THAT(node, Eq(child4));
+
+    // These chains should have no children
+    EXPECT_THAT(ordered_vector_count(&chain1->children), Eq(0u));
+    EXPECT_THAT(ordered_vector_count(&chain2->children), Eq(0u));
+}
+
+TEST_F(NAME, effector_in_middle_of_chain)
+{
     node_t* root = node_create(0);
     node_t* child1 = node_create(1);
     node_t* child2 = node_create(2);
@@ -114,10 +291,51 @@ TEST(NAME, effector_in_middle_of_chain)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
-    ik_solver_destroy(solver);
+
+    // We expect the chain to be broken into 2 parts, one as a child of the other
+    fabrik_t* fabrik = (fabrik_t*)solver;
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(1u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    ASSERT_THAT(ordered_vector_count(&chain1->children), Eq(1u));
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&chain1->children, 0);
+
+    // Bottom section
+    ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(4u));
+    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(3u));
+    EXPECT_THAT(node, Eq(child3));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(2u));
+    EXPECT_THAT(node, Eq(child2));
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(1u));
+    EXPECT_THAT(node, Eq(child1));
+    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 3);
+    EXPECT_THAT(node->guid, Eq(0u));
+    EXPECT_THAT(node, Eq(root));
+
+    // Top section
+    ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(4u));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    EXPECT_THAT(node->guid, Eq(6u));
+    EXPECT_THAT(node, Eq(child6));
+    EXPECT_THAT(node->effector, NotNull());
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    EXPECT_THAT(node->guid, Eq(5u));
+    EXPECT_THAT(node, Eq(child5));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    EXPECT_THAT(node->guid, Eq(4u));
+    EXPECT_THAT(node, Eq(child4));
+    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 3);
+    EXPECT_THAT(node->guid, Eq(3u));
+    EXPECT_THAT(node, Eq(child3));
+
+    // These chains should have no children
+    EXPECT_THAT(ordered_vector_count(&chain2->children), Eq(0u));
 }
 
-static void buildTree(node_t* parent, int depth, int* guid)
+static void buildTreeLongChains(node_t* parent, int depth, int* guid)
 {
     node_t* child1 = node_create(++(*guid));
     node_t* child2 = node_create(++(*guid));
@@ -133,10 +351,10 @@ static void buildTree(node_t* parent, int depth, int* guid)
     node_add_child(child4, child5);
     node_add_child(child5, child6);
 
-    if(depth < 5)
+    if(depth < 4)
     {
-        buildTree(child3, depth+1, guid);
-        buildTree(child6, depth+1, guid);
+        buildTreeLongChains(child3, depth+1, guid);
+        buildTreeLongChains(child6, depth+1, guid);
     }
     else
     {
@@ -147,14 +365,43 @@ static void buildTree(node_t* parent, int depth, int* guid)
     }
 }
 
-TEST(NAME, binary_tree)
+TEST_F(NAME, binary_tree_with_long_chains)
 {
     int guid = 0;
-    solver_t* solver = ik_solver_create(ALGORITHM_FABRIK);
     node_t* root = node_create(0);
-    buildTree(root, 0, &guid);
+    buildTreeLongChains(root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
-    ik_solver_destroy(solver);
+}
+
+static void buildTreeShortChains(node_t* parent, int depth, int* guid)
+{
+    node_t* child1 = node_create(++(*guid));
+    node_t* child2 = node_create(++(*guid));
+    node_add_child(parent, child1);
+    node_add_child(parent, child2);
+
+    if(depth < 4)
+    {
+        buildTreeLongChains(child1, depth+1, guid);
+        buildTreeLongChains(child2, depth+1, guid);
+    }
+    else
+    {
+        effector_t* eff1 = effector_create();
+        effector_t* eff2 = effector_create();
+        node_attach_effector(child1, eff1);
+        node_attach_effector(child2, eff2);
+    }
+}
+
+TEST_F(NAME, binary_tree_with_short_chains)
+{
+    int guid = 0;
+    node_t* root = node_create(0);
+    buildTreeShortChains(root, 0, &guid);
+
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild_data(solver);
 }
