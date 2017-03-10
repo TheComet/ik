@@ -7,18 +7,18 @@
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
 
-static int recursive_get_all_effector_nodes(struct node_t* node, struct ordered_vector_t* effector_nodes_list);
+static int recursive_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list);
 
 /* ------------------------------------------------------------------------- */
-struct solver_t*
+struct ik_solver_t*
 ik_solver_create(enum algorithm_e algorithm)
 {
-    struct solver_t* solver = NULL;
+    struct ik_solver_t* solver = NULL;
 
     switch(algorithm)
     {
     case ALGORITHM_FABRIK:
-        solver = (struct solver_t*)solver_FABRIK_create();
+        solver = (struct ik_solver_t*)solver_FABRIK_create();
         break;
 
     case ALGORITHM_JACOBIAN_INVERSE:
@@ -29,17 +29,17 @@ ik_solver_create(enum algorithm_e algorithm)
     if(solver == NULL)
         return NULL;
 
-    ordered_vector_construct(&solver->effector_nodes_list, sizeof(struct node_t*));
+    ordered_vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
 
     return solver;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_destroy(struct solver_t* solver)
+ik_solver_destroy(struct ik_solver_t* solver)
 {
     if(solver->tree)
-        node_destroy(solver->tree);
+        ik_node_destroy(solver->tree);
 
     ordered_vector_clear_free(&solver->effector_nodes_list);
 
@@ -48,17 +48,17 @@ ik_solver_destroy(struct solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_set_tree(struct solver_t* solver, struct node_t* root)
+ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
     if(solver->tree)
-        node_destroy(solver->tree);
+        ik_node_destroy(solver->tree);
 
     solver->tree = root;
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_rebuild_data(struct solver_t* solver)
+ik_solver_rebuild_data(struct ik_solver_t* solver)
 {
     /* If the solver has no tree, then there's nothing to do */
     if(solver->tree == NULL)
@@ -84,20 +84,20 @@ ik_solver_rebuild_data(struct solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_solve(struct solver_t* solver)
+ik_solver_solve(struct ik_solver_t* solver)
 {
     return solver->solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 static int
-recursive_get_all_effector_nodes(struct node_t* node, struct ordered_vector_t* effector_nodes_list)
+recursive_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list)
 {
     if(node->effector != NULL)
         if(ordered_vector_push(effector_nodes_list, &node) < 0)
             return -1;
 
-    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
         if(recursive_get_all_effector_nodes(child, effector_nodes_list) < 0)
             return -1;
     BSTV_END_EACH

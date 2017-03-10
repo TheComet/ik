@@ -7,20 +7,20 @@
 #include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
-struct node_t*
-node_create(uint32_t guid)
+struct ik_node_t*
+ik_node_create(uint32_t guid)
 {
-    struct node_t* node = (struct node_t*)MALLOC(sizeof *node);
+    struct ik_node_t* node = (struct ik_node_t*)MALLOC(sizeof *node);
     if(node == NULL)
         return NULL;
 
-    node_construct(node, guid);
+    ik_node_construct(node, guid);
     return node;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-node_construct(struct node_t* node, uint32_t guid)
+ik_node_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
     bstv_construct(&node->children);
@@ -29,29 +29,29 @@ node_construct(struct node_t* node, uint32_t guid)
 
 /* ------------------------------------------------------------------------- */
 void
-node_destruct(struct node_t* node)
+ik_node_destruct(struct ik_node_t* node)
 {
-    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
-        node_destroy(child);
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+        ik_node_destroy(child);
     BSTV_END_EACH
 
     if(node->effector)
-        effector_destroy(node->effector);
+        ik_effector_destroy(node->effector);
 
     bstv_clear_free(&node->children);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-node_destroy(struct node_t* node)
+ik_node_destroy(struct ik_node_t* node)
 {
-    node_destruct(node);
+    ik_node_destruct(node);
     FREE(node);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-node_add_child(struct node_t* node, struct node_t* child)
+ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child)
 {
     child->parent = node;
     bstv_insert(&node->children, child->guid, child);
@@ -59,7 +59,7 @@ node_add_child(struct node_t* node, struct node_t* child)
 
 /* ------------------------------------------------------------------------- */
 void
-node_remove_child(struct node_t* node)
+ik_node_remove_child(struct ik_node_t* node)
 {
     if(node->parent == NULL)
         return;
@@ -69,17 +69,17 @@ node_remove_child(struct node_t* node)
 }
 
 /* ------------------------------------------------------------------------- */
-struct node_t*
-node_find_child(struct node_t* node, uint32_t guid)
+struct ik_node_t*
+ik_node_find_child(struct ik_node_t* node, uint32_t guid)
 {
     {
-        struct node_t* child = bstv_find(&node->children, guid);
+        struct ik_node_t* child = bstv_find(&node->children, guid);
         if(child != NULL)
             return child;
     }
 
-    BSTV_FOR_EACH(&node->children, struct node_t, child_guid, child)
-        return node_find_child(child, child_guid);
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, child_guid, child)
+        return ik_node_find_child(child, child_guid);
     BSTV_END_EACH
 
     return NULL;
@@ -87,19 +87,19 @@ node_find_child(struct node_t* node, uint32_t guid)
 
 /* ------------------------------------------------------------------------- */
 void
-node_attach_effector(struct node_t* node, struct effector_t* effector)
+ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* effector)
 {
     node->effector = effector;
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-recursively_dump_dot(FILE* fp, struct node_t* node)
+recursively_dump_dot(FILE* fp, struct ik_node_t* node)
 {
     if(node->effector != NULL)
         fprintf(fp, "    %d [color=\"1.0 0.5 1.0\"];\n", node->guid);
 
-    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
         fprintf(fp, "    %d -- %d;\n", node->guid, guid);
         recursively_dump_dot(fp, child);
     BSTV_END_EACH
@@ -107,7 +107,7 @@ recursively_dump_dot(FILE* fp, struct node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-node_dump_to_dot(struct node_t* node, const char* file_name)
+node_dump_to_dot(struct ik_node_t* node, const char* file_name)
 {
     FILE* fp = fopen(file_name, "w");
     if(fp == NULL)

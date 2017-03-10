@@ -26,7 +26,7 @@ chain_destruct(struct chain_t* chain);
 void
 chain_construct(struct chain_t* chain)
 {
-    ordered_vector_construct(&chain->nodes, sizeof(struct node_t*));
+    ordered_vector_construct(&chain->nodes, sizeof(struct ik_node_t*));
     ordered_vector_construct(&chain->children, sizeof(struct chain_t));
 }
 
@@ -73,7 +73,7 @@ static int
 rebuild_chain_tree(struct fabrik_t* solver);
 
 /* ------------------------------------------------------------------------- */
-struct solver_t*
+struct ik_solver_t*
 solver_FABRIK_create(void)
 {
     struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
@@ -93,7 +93,7 @@ solver_FABRIK_create(void)
         goto alloc_chain_tree_failed;
     chain_construct(solver->chain_tree);
 
-    return (struct solver_t*)solver;
+    return (struct ik_solver_t*)solver;
 
     alloc_chain_tree_failed : FREE(solver);
     alloc_solver_filed      : return NULL;
@@ -101,7 +101,7 @@ solver_FABRIK_create(void)
 
 /* ------------------------------------------------------------------------- */
 void
-solver_FABRIK_destroy(struct solver_t* solver)
+solver_FABRIK_destroy(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     chain_destruct(fabrik->chain_tree);
@@ -111,7 +111,7 @@ solver_FABRIK_destroy(struct solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
-solver_FABRIK_rebuild_data(struct solver_t* solver)
+solver_FABRIK_rebuild_data(struct ik_solver_t* solver)
 {
     return rebuild_chain_tree((struct fabrik_t*)solver);
 }
@@ -120,7 +120,7 @@ solver_FABRIK_rebuild_data(struct solver_t* solver)
 static void
 initialise_chain_segments_for_solving(struct chain_t* chain)
 {
-    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, pnode)
+    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct ik_node_t*, pnode)
         (*pnode)->solved_position = (*pnode)->position;
         (*pnode)->solved_rotation = (*pnode)->rotation;
     ORDERED_VECTOR_END_EACH
@@ -155,9 +155,9 @@ solve_chain_forwards(struct chain_t* chain)
     }
     else
     {
-        struct node_t* effector_node;
+        struct ik_node_t* effector_node;
         assert(ordered_vector_count(&chain->nodes) > 1);
-        effector_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
         assert(effector_node->effector != NULL);
         target_position = effector_node->effector->target_position;
     }
@@ -168,8 +168,8 @@ solve_chain_forwards(struct chain_t* chain)
     node_count = ordered_vector_count(&chain->nodes);
     for(node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct node_t* child_node  = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct node_t* parent_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* move node to target */
         child_node->solved_position = target_position;
@@ -195,7 +195,7 @@ solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
      */
     if(node_idx > 1)
     {
-        struct node_t* base_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
+        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
         base_node->solved_position = target_position;
     }
 
@@ -205,8 +205,8 @@ solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
      */
     while(node_idx-- > 1)
     {
-        struct node_t* child_node  = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
-        struct node_t* parent_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 0);
+        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
+        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 0);
 
         /* point segment to child node and set target position to its beginning */
         vec3_sub_vec3(&target_position, &child_node->solved_position);  /* child points to parent */
@@ -225,7 +225,7 @@ solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
 
 /* ------------------------------------------------------------------------- */
 int
-solver_FABRIK_solve(struct solver_t* solver)
+solver_FABRIK_solve(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
@@ -256,7 +256,7 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
      * that we won't hit the root node.
      */
     struct ordered_vector_t* effector_nodes_list = &solver->effector_nodes_list;
-    ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct node_t*, p_effector_node)
+    ORDERED_VECTOR_FOR_EACH(effector_nodes_list, struct ik_node_t*, p_effector_node)
 
         /*
          * Set up chain length counter. If the chain length is 0 then it is
@@ -264,7 +264,7 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
          * escape condition.
          */
         int chain_length_counter;
-        struct node_t* node = *p_effector_node;
+        struct ik_node_t* node = *p_effector_node;
         assert(node->effector != NULL);
         chain_length_counter = node->effector->chain_length == 0 ? -1 : (int)node->effector->chain_length;
 
@@ -306,12 +306,12 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 /* ------------------------------------------------------------------------- */
 static int
 recursively_build_chain_tree(struct chain_t* chain_current,
-                             struct node_t* node_base,
-                             struct node_t* node_current,
+                             struct ik_node_t* node_base,
+                             struct ik_node_t* node_current,
                              struct bstv_t* involved_nodes)
 {
     int marked_children_count;
-    struct node_t* child_node_base = node_base;
+    struct ik_node_t* child_node_base = node_base;
     struct chain_t* child_chain = chain_current;
 
     /* can remove the mark from the set to speed up future checks */
@@ -344,7 +344,7 @@ recursively_build_chain_tree(struct chain_t* chain_current,
              * chain at this point.
              */
             marked_children_count = 0;
-            BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child)
+            BSTV_FOR_EACH(&node_current->children, struct ik_node_t, child_guid, child)
                 if((enum node_marking_e)(intptr_t)bstv_find(involved_nodes, child_guid) == MARK_SECTION)
                     if(++marked_children_count == 2)
                         break;
@@ -355,7 +355,7 @@ recursively_build_chain_tree(struct chain_t* chain_current,
                  * Emplace a chain object into the current chain's vector of children
                  * and initialise it.
                  */
-                struct node_t* node;
+                struct ik_node_t* node;
                 child_chain = ordered_vector_push_emplace(&chain_current->children);
                 if(child_chain == NULL)
                     return -1;
@@ -379,7 +379,7 @@ recursively_build_chain_tree(struct chain_t* chain_current,
     }
 
     /* Recurse into children of the current node. */
-    BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child_node)
+    BSTV_FOR_EACH(&node_current->children, struct ik_node_t, child_guid, child_node)
         if(recursively_build_chain_tree(
                 child_chain,
                 child_node_base,
@@ -398,10 +398,10 @@ compute_segment_lengths(struct chain_t* chain)
     int last_idx = ordered_vector_count(&chain->nodes) - 1;
     while(last_idx-- > 0)
     {
-        struct node_t* child_node =
-            *(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0);
-        struct node_t* parent_node =
-            *(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1);
+        struct ik_node_t* child_node =
+            *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0);
+        struct ik_node_t* parent_node =
+            *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1);
 
         struct vec3_t diff = child_node->position;
         vec3_sub_vec3(&diff, &parent_node->position);
@@ -422,16 +422,16 @@ dump_chain(struct chain_t* chain, FILE* fp)
     if(last_idx > 0)
     {
         fprintf(fp, "    %d [shape=record];\n",
-            (*(struct node_t**)ordered_vector_get_element(&chain->nodes, 0))->guid);
+            (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))->guid);
         fprintf(fp, "    %d [shape=record];\n",
-            (*(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx))->guid);
+            (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx))->guid);
     }
 
     while(last_idx-- > 0)
     {
         fprintf(fp, "    %d -- %d [color=\"1.0 0.5 1.0\"];\n",
-            (*(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0))->guid,
-            (*(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1))->guid);
+            (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0))->guid,
+            (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1))->guid);
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
@@ -439,17 +439,17 @@ dump_chain(struct chain_t* chain, FILE* fp)
     ORDERED_VECTOR_END_EACH
 }
 static void
-dump_node(struct node_t* node, FILE* fp)
+dump_node(struct ik_node_t* node, FILE* fp)
 {
     if(node->effector != NULL)
         fprintf(fp, "    %d [color=\"0.6 0.5 1.0\"];\n", node->guid);
-    BSTV_FOR_EACH(&node->children, struct node_t, guid, child)
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
         fprintf(fp, "    %d -- %d;\n", node->guid, guid);
         dump_node(child, fp);
     BSTV_END_EACH
 }
 static void
-dump_to_dot(struct node_t* node, struct chain_t* chain, const char* file_name)
+dump_to_dot(struct ik_node_t* node, struct chain_t* chain, const char* file_name)
 {
     FILE* fp = fopen(file_name, "w");
     if(fp == NULL)
@@ -473,7 +473,7 @@ rebuild_chain_tree(struct fabrik_t* solver)
     char buffer[20];
     static int file_name_counter = 0;
 #endif
-    struct node_t* root = solver->tree;
+    struct ik_node_t* root = solver->tree;
 
     /*
      * Build a set of all nodes that are in a direct path with all of the
