@@ -3,8 +3,8 @@
 
 #include "ik/config.h"
 #include "ik/pstdint.h"
-#include "ik/vector3.h"
-#include "ik/quaternion.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_HEADER_BEGIN
 
@@ -12,8 +12,8 @@ struct node_t;
 
 struct effector_t
 {
-    struct vector3_t target_position;
-    struct quaternion_t target_rotation;
+    struct vec3_t target_position;
+    struct quat_t target_rotation;
     uint16_t chain_length;
 };
 

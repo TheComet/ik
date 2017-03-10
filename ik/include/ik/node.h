@@ -4,8 +4,8 @@
 #include "ik/config.h"
 #include "ik/pstdint.h"
 #include "ik/bst_vector.h"
-#include "ik/vector3.h"
-#include "ik/quaternion.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_HEADER_BEGIN
 
@@ -15,13 +15,16 @@ struct node_t
 {
     void* user_data;
     uint32_t guid;
-    struct vector3_t position;
-    struct quaternion_t rotation;
+    struct vec3_t position;
+    struct quat_t rotation;
+
+    struct vec3_t solved_position;
+    struct quat_t solved_rotation;
+    ik_real segment_length;
 
     struct node_t* parent;
     struct bstv_t children;
     struct effector_t* effector;
-
 };
 
 IK_PUBLIC_API struct node_t*

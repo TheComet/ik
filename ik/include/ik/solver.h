@@ -4,8 +4,8 @@
 #include "ik/config.h"
 #include "ik/pstdint.h"
 #include "ik/ordered_vector.h"
-#include "ik/vector3.h"
-#include "ik/quaternion.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_HEADER_BEGIN
 
@@ -19,7 +19,7 @@ typedef int (*ik_solver_solve_func)(struct solver_t*);
 typedef int (*ik_solver_rebuild_data_func)(struct solver_t*);
 
 typedef void (*ik_solver_apply_constraint_cb_func)(struct node_t*);
-typedef void (*ik_solver_apply_result_cb_func)(struct node_t*, struct vector3_t, struct quaternion_t);
+typedef void (*ik_solver_apply_result_cb_func)(struct node_t*, struct vec3_t, struct quat_t);
 
 enum algorithm_e
 {

@@ -115,59 +115,131 @@ solver_FABRIK_rebuild_data(struct solver_t* solver)
 {
     return rebuild_chain_tree((struct fabrik_t*)solver);
 }
-/*
-static struct vector3_t
-solve_chain_forwards(struct chain_t* chain, struct vector3_t target_position)
+
+/* ------------------------------------------------------------------------- */
+static void
+initialise_chain_segments_for_solving(struct chain_t* chain)
 {
-    struct node_t* effector_node = ordered_vector_get_element(&chain->nodes, 0);
-    struct vector3_t target = effector_node->effector->target_position;
-}*/
+    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct node_t*, pnode)
+        (*pnode)->solved_position = (*pnode)->position;
+        (*pnode)->solved_rotation = (*pnode)->rotation;
+    ORDERED_VECTOR_END_EACH
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        initialise_chain_segments_for_solving(child);
+    ORDERED_VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+static struct vec3_t
+solve_chain_forwards(struct chain_t* chain)
+{
+    int node_count, node_idx;
+    struct vec3_t target_position = {0, 0, 0};
+    float average_count = 0;
+
+    /*
+     * Target position is the average of all solved child chain base positions.
+     * If there are no child chains, then the first node in the chain must
+     * contain an effector. The target position is the effector's target
+     * position.
+     */
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        const struct vec3_t base_position = solve_chain_forwards(child);
+        vec3_add_vec3(&target_position, &base_position);
+        ++average_count;
+    ORDERED_VECTOR_END_EACH
+    if(average_count != 0)
+    {
+        vec3_divide_scalar(&target_position, average_count);
+    }
+    else
+    {
+        struct node_t* effector_node;
+        assert(ordered_vector_count(&chain->nodes) > 1);
+        effector_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        assert(effector_node->effector != NULL);
+        target_position = effector_node->effector->target_position;
+    }
+
+    /*
+     * Iterate through each segment and apply the FABRIK algorithm.
+     */
+    node_count = ordered_vector_count(&chain->nodes);
+    for(node_idx = 0; node_idx < node_count - 1; ++node_idx)
+    {
+        struct node_t* child_node  = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        struct node_t* parent_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+
+        /* move node to target */
+        child_node->solved_position = target_position;
+
+        /* point segment to previous node and set target position to its end */
+        vec3_sub_vec3(&target_position, &parent_node->solved_position); /* parent points to child */
+        vec3_normalise(&target_position);                               /* normalise */
+        vec3_mul_scalar(&target_position, -child_node->segment_length); /* child points to parent */
+        vec3_add_vec3(&target_position, &child_node->solved_position);  /* attach to child -- this is the new target */
+    }
+
+    return target_position;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
+{
+    int node_idx = ordered_vector_count(&chain->nodes);
+
+    /*
+     * The base node must be set to the target position before iterating.
+     */
+    if(node_idx > 1)
+    {
+        struct node_t* base_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
+        base_node->solved_position = target_position;
+    }
+
+    /*
+     * Iterate through each segment the other way around and apply the FABRIK
+     * algorithm.
+     */
+    while(node_idx-- > 1)
+    {
+        struct node_t* child_node  = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
+        struct node_t* parent_node = *(struct node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 0);
+
+        /* point segment to child node and set target position to its beginning */
+        vec3_sub_vec3(&target_position, &child_node->solved_position);  /* child points to parent */
+        vec3_normalise(&target_position);                               /* normalise */
+        vec3_mul_scalar(&target_position, -child_node->segment_length); /* parent points to child */
+        vec3_add_vec3(&target_position, &parent_node->solved_position); /* attach to parent -- this is the new target */
+
+        /* move node to target */
+        child_node->solved_position = target_position;
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        solve_chain_backwards(child, target_position);
+    ORDERED_VECTOR_END_EACH
+}
 
 /* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(struct solver_t* solver)
-{/*
+{
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
+
+    initialise_chain_segments_for_solving(fabrik->chain_tree);
+
     while(iteration--)
     {
-        const struct chain_t* previous_chain = NULL;
-        const struct ordered_vector_t* chain_list = &fabrik->chain_list;
-        int chain_id = 0;
-        while(chain_id != ordered_vector_count(chain_list))
-        {
-            struct chain_t* chain = ordered_vector_get_element(chain_list, chain_id);
-            struct node_t* chain_end = *ordered_vector_get_element(&chain->nodes, 0);
-            struct node_t
+        ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct chain_t, chain)
+            solve_chain_backwards(chain, solve_chain_forwards(chain));
+        ORDERED_VECTOR_END_EACH
+    }
 
-            *
-             * Determine if the current chain is attached to the previous
-             * chain's base.
-             *
-            if(previous_chain != NULL)
-            {
-                struct node_t** pprevious_chain_beginning =
-                    ordered_vector_get_element(&previous_chain->nodes,
-                        ordered_vector_count(&previous_chain->nodes) - 1);
-
-                if(chain_end == previous_chain_beginning)
-                {
-
-                }
-            }
-
-            struct effector_t* effector = chain_end->effector;
-            if(effector != NULL)
-                *chain->end_position = effector->target_position;
-            else if(previous_chain != NULL)
-                *chain->end_position = *previous_chain->base_position;
-            vector3_set_zero(chain->base_position);
-
-            solve_chain_forwards(chain);
-        }
-    }*/
-
-    return -1;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -232,7 +304,7 @@ mark_involved_nodes(struct fabrik_t* solver, struct bstv_t* involved_nodes)
 }
 
 /* ------------------------------------------------------------------------- */
-int
+static int
 recursively_build_chain_tree(struct chain_t* chain_current,
                              struct node_t* node_base,
                              struct node_t* node_current,
@@ -249,6 +321,13 @@ recursively_build_chain_tree(struct chain_t* chain_current,
     switch(marking)
     {
         /*
+         * If this node was marked as the base of a chain then split the chain at
+         * this point by moving the pointer to the base node down the tree to us.
+         */
+        case MARK_SPLIT:
+            child_node_base = node_current;
+            break;
+        /*
          * If this node is not marked at all, cut off any previous chain but
          * continue (fall through) as if a section was marked. It's possible
          * that there are isolated chains somewhere further down the tree.
@@ -258,8 +337,11 @@ recursively_build_chain_tree(struct chain_t* chain_current,
 
         case MARK_SECTION:
             /*
-             * If the current node has at least two children marked as sections, then
-             * we must also split the chain at this point.
+             * If the current node has at least two children marked as sections
+             * or if the current node is an effector node, but only if the base
+             * node is not equal to this node (that is, we need to avoid chains
+             * that would have less than 2 nodes), then we must also split the
+             * chain at this point.
              */
             marked_children_count = 0;
             BSTV_FOR_EACH(&node_current->children, struct node_t, child_guid, child)
@@ -267,7 +349,6 @@ recursively_build_chain_tree(struct chain_t* chain_current,
                     if(++marked_children_count == 2)
                         break;
             BSTV_END_EACH
-
             if((marked_children_count == 2 || node_current->effector != NULL) && node_current != node_base)
             {
                 /*
@@ -295,14 +376,6 @@ recursively_build_chain_tree(struct chain_t* chain_current,
                 child_node_base = node_current;
             }
             break;
-
-        /*
-         * If this node was marked as the base of a chain then split the chain at
-         * this point by moving the pointer to the base node down the tree to us.
-         */
-        case MARK_SPLIT:
-            child_node_base = node_current;
-            break;
     }
 
     /* Recurse into children of the current node. */
@@ -316,6 +389,28 @@ recursively_build_chain_tree(struct chain_t* chain_current,
     BSTV_END_EACH
 
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+compute_segment_lengths(struct chain_t* chain)
+{
+    int last_idx = ordered_vector_count(&chain->nodes) - 1;
+    while(last_idx-- > 0)
+    {
+        struct node_t* child_node =
+            *(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0);
+        struct node_t* parent_node =
+            *(struct node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1);
+
+        struct vec3_t diff = child_node->position;
+        vec3_sub_vec3(&diff, &parent_node->position);
+        child_node->segment_length = vec3_length(&diff);
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        compute_segment_lengths(child);
+    ORDERED_VECTOR_END_EACH
 }
 
 static void
@@ -384,7 +479,6 @@ rebuild_chain_tree(struct fabrik_t* solver)
     struct bstv_t involved_nodes;
     char buffer[20];
     static int file_name_counter = 0;
-    struct chain_t* chain_tree = solver->chain_tree;
     struct node_t* root = solver->tree;
     /*int chain_count = 0;*/
 
@@ -399,16 +493,20 @@ rebuild_chain_tree(struct fabrik_t* solver)
     ik_log_message("There are %d involved node(s)", bstv_count(&involved_nodes));
 
     /* Build a tree of chains */
-    chain_clear_free(chain_tree);
-    recursively_build_chain_tree(chain_tree, root, root, &involved_nodes);
+    chain_clear_free(solver->chain_tree);
+    recursively_build_chain_tree(solver->chain_tree, root, root, &involved_nodes);
+
+    /* Pre-compute offsets for each node in the chain tree in relation to their
+     * parents */
+    compute_segment_lengths(solver->chain_tree);
 
     /* DEBUG: Save chain tree to DOT */
     sprintf(buffer, "tree%d.dot", file_name_counter++);
-    dump_to_dot(root, chain_tree, buffer);
+    dump_to_dot(root, solver->chain_tree, buffer);
 
     ik_log_message("There are %d effector(s)",
                    ordered_vector_count(&solver->effector_nodes_list));
-    /*count_chains(chain_tree, &chain_count);
+    /*count_chains(&solver->chain_tree, &chain_count);
     ik_log_message("There are %d chain(s)", chain_count - 1);*/
 
     bstv_clear_free(&involved_nodes);

@@ -68,6 +68,7 @@ TEST_F(NAME, weird_tree)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 
     fabrik_t* fabrik = (fabrik_t*)solver;
 
@@ -146,6 +147,7 @@ TEST_F(NAME, just_one_node)
     node_attach_effector(root, eff);
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 
     // We expect no chains to be created
     fabrik_t* fabrik = (fabrik_t*)solver;
@@ -177,6 +179,7 @@ TEST_F(NAME, two_arms_meet_at_same_node)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 
     fabrik_t* fabrik = (fabrik_t*)solver;
     ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
@@ -237,6 +240,7 @@ TEST_F(NAME, two_separate_arms)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 
     fabrik_t* fabrik = (fabrik_t*)solver;
     ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
@@ -291,6 +295,7 @@ TEST_F(NAME, effector_in_middle_of_chain)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 
     // We expect the chain to be broken into 2 parts, one as a child of the other
     fabrik_t* fabrik = (fabrik_t*)solver;
@@ -373,6 +378,7 @@ TEST_F(NAME, binary_tree_with_long_chains)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 }
 
 static void buildTreeShortChains(node_t* parent, int depth, int* guid)
@@ -404,4 +410,5 @@ TEST_F(NAME, binary_tree_with_short_chains)
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
+    ik_solver_solve(solver);
 }
