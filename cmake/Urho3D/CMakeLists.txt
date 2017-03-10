@@ -45,9 +45,9 @@ option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for 
 set (EXPORT_H_TEMPLATE )
 
 configure_file ("../../ik/include/ik/export.h.in"
-                "../../include/ik/export.h")
+                "../../include/ik/gen/export.h")
 configure_file ("../../ik/include/ik/config.h.in"
-                "../../include/ik/config.h")
+                "../../include/ik/gen/config.h")
 
 ###############################################################################
 # compiler flags
@@ -95,9 +95,5 @@ add_definitions (-DIK_BUILDING)
 ###############################################################################
 
 # Install headers for building and using the Urho3D library
-install_header_files (
-    FILES
-        ${IK_HEADERS}
-        ${CMAKE_CURRENT_BINARY_DIR}/../../include/ik/config.h
-        ${CMAKE_CURRENT_BINARY_DIR}/../../include/ik/export.h
-    DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/ik)
+install_header_files (DIRECTORY ../../ik/include/ik/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/ik)
+install_header_files (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../include/ik/gen/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/ik/gen)

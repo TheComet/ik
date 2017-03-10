@@ -5,7 +5,7 @@
 #ifndef @PROJECT_NAME@_CONFIG_HPP
 #   define @PROJECT_NAME@_CONFIG_HPP
 
-#   include "ik/export.h"
+#   include "ik/gen/export.h"
 
     /* --------------------------------------------------------------
      * build settings

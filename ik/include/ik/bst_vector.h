@@ -9,7 +9,7 @@
 #define IK_BST_VECTOR_H
 
 #include "ik/pstdint.h"
-#include "ik/config.h"
+#include "ik/gen/config.h"
 #include "ik/ordered_vector.h"
 
 C_HEADER_BEGIN

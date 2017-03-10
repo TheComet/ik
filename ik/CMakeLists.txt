@@ -21,9 +21,9 @@ set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
 option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 
 configure_file ("include/ik/export.h.in"
-                "include/ik/export.h")
+                "include/ik/gen/export.h")
 configure_file ("include/ik/config.h.in"
-                "include/ik/config.h")
+                "include/ik/gen/config.h")
 
 include_directories ("${CMAKE_CURRENT_BINARY_DIR}/include")
 

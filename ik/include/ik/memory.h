@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "ik/config.h"
+#include "ik/gen/config.h"
 #include "ik/pstdint.h"
 
 #if IK_MEMORY_DEBUGGING == ON

@@ -1,7 +1,7 @@
 #ifndef QUATERNION_H
 #define QUATERNION_H
 
-#include "ik/config.h"
+#include "ik/gen/config.h"
 
 C_HEADER_BEGIN
 

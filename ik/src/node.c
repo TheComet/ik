@@ -107,7 +107,7 @@ recursively_dump_dot(FILE* fp, struct ik_node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-node_dump_to_dot(struct ik_node_t* node, const char* file_name)
+ik_node_dump_to_dot(struct ik_node_t* node, const char* file_name)
 {
     FILE* fp = fopen(file_name, "w");
     if(fp == NULL)

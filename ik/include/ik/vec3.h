@@ -1,7 +1,7 @@
 #ifndef VEC3_H
 #define VEC3_H
 
-#include "ik/config.h"
+#include "ik/gen/config.h"
 
 C_HEADER_BEGIN
 

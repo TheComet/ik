@@ -1,7 +1,7 @@
 #ifndef IK_SOLVER_JACOBIAN_TRANSPOSE_H
 #define IK_SOLVER_JACOBIAN_TRANSPOSE_H
 
-#include "ik/config.h"
+#include "ik/gen/config.h"
 
 C_HEADER_BEGIN
 
