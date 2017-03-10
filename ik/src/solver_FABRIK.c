@@ -413,6 +413,8 @@ compute_segment_lengths(struct chain_t* chain)
     ORDERED_VECTOR_END_EACH
 }
 
+/* ------------------------------------------------------------------------- */
+#if IK_DOT_OUTPUT == ON
 static void
 dump_chain(struct chain_t* chain, FILE* fp)
 {
@@ -436,7 +438,6 @@ dump_chain(struct chain_t* chain, FILE* fp)
         dump_chain(child, fp);
     ORDERED_VECTOR_END_EACH
 }
-
 static void
 dump_node(struct node_t* node, FILE* fp)
 {
@@ -447,7 +448,6 @@ dump_node(struct node_t* node, FILE* fp)
         dump_node(child, fp);
     BSTV_END_EACH
 }
-
 static void
 dump_to_dot(struct node_t* node, struct chain_t* chain, const char* file_name)
 {
@@ -462,25 +462,18 @@ dump_to_dot(struct node_t* node, struct chain_t* chain, const char* file_name)
 
     fclose(fp);
 }
-/*
-static void
-count_chains(struct chain_t* chain, int* counter)
-{
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        count_chains(child, counter);
-    ORDERED_VECTOR_END_EACH
-    ++(*counter);
-}*/
+#endif
 
 /* ------------------------------------------------------------------------- */
 static int
 rebuild_chain_tree(struct fabrik_t* solver)
 {
     struct bstv_t involved_nodes;
+#if IK_DOT_OUTPUT == ON
     char buffer[20];
     static int file_name_counter = 0;
+#endif
     struct node_t* root = solver->tree;
-    /*int chain_count = 0;*/
 
     /*
      * Build a set of all nodes that are in a direct path with all of the
@@ -501,13 +494,13 @@ rebuild_chain_tree(struct fabrik_t* solver)
     compute_segment_lengths(solver->chain_tree);
 
     /* DEBUG: Save chain tree to DOT */
+#if IK_DOT_OUTPUT == ON
     sprintf(buffer, "tree%d.dot", file_name_counter++);
     dump_to_dot(root, solver->chain_tree, buffer);
+#endif
 
     ik_log_message("There are %d effector(s)",
                    ordered_vector_count(&solver->effector_nodes_list));
-    /*count_chains(&solver->chain_tree, &chain_count);
-    ik_log_message("There are %d chain(s)", chain_count - 1);*/
 
     bstv_clear_free(&involved_nodes);
 

@@ -18,6 +18,7 @@ else ()
 endif ()
 
 set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
+option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 
 configure_file ("${EXPORT_H_TEMPLATE}"
                 "include/ik/export.h")
