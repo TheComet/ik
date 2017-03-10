@@ -44,14 +44,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif ()
 
 ###############################################################################
-# set where the export.h template file is
-###############################################################################
-
-set (EXPORT_H_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/templates/export.h.in")
-
-option (IK_TESTS "Whether to build unit tests or not (requires C++)" ON)
-
-###############################################################################
 # Dependency settings
 ###############################################################################
 
@@ -60,4 +52,8 @@ message (STATUS "Global settings")
 message (STATUS "------------------------------------------------------------")
 
 add_subdirectory ("ik")
-add_subdirectory ("tests")
+
+option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
+if (IK_TESTS)
+    add_subdirectory ("tests")
+endif ()

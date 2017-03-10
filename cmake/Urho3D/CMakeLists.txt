@@ -1,3 +1,25 @@
+# Copyright (c) 2008-2017 the Urho3D project.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+# For our own config.h.in
 set (PROJECT_NAME "IK")
 set (BUILD_TYPE "STATIC")
 
@@ -20,12 +42,12 @@ endif ()
 set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
 option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 
-configure_file ("include/ik/export.h.in"
-                "include/ik/export.h")
-configure_file ("include/ik/config.h.in"
-                "include/ik/config.h")
+set (EXPORT_H_TEMPLATE )
 
-include_directories ("${CMAKE_CURRENT_BINARY_DIR}/include")
+configure_file ("../../ik/include/ik/export.h.in"
+                "include/ik/export.h")
+configure_file ("../../ik/include/ik/config.h.in"
+                "include/ik/config.h")
 
 ###############################################################################
 # compiler flags
@@ -51,24 +73,19 @@ endif ()
 # source files and library definition
 ###############################################################################
 
-file (GLOB IK_HEADERS "include/ik/*.h")
-file (GLOB IK_SOURCES "src/*.c")
-
-list (APPEND IK_HEADERS
-    "include/ik/config.h.in"
-    "include/ik/export.h.in")
+file (GLOB IK_HEADERS "../../ik/include/ik/*.h")
+file (GLOB IK_SOURCES "../../ik/src/*.c")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    file (GLOB IK_PLATFORM_SOURCES "src/platform/linux/*.c")
+    file (GLOB IK_PLATFORM_SOURCES "../../ik/src/platform/linux/*.c")
 endif ()
 list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
 
-include_directories ("include")
+set (TARGET_NAME ik)
+set (SOURCE_FILES ${IK_SOURCES} ${IK_HEADERS})
+set (INCLUDE_DIRS ../../ik/include ${CMAKE_CURRENT_BINARY_DIR}/include)
 
-add_library (ik ${BUILD_TYPE}
-    ${IK_HEADERS}
-    ${IK_SOURCES}
-)
+setup_library ()
 
 # The library is being built
 add_definitions (-DIK_BUILDING)
@@ -77,14 +94,6 @@ add_definitions (-DIK_BUILDING)
 # install targets
 ###############################################################################
 
-# only install if shared library
-if (${BUILD_TYPE} STREQUAL "SHARED")
-    install (
-        TARGETS
-            ik
-        LIBRARY DESTINATION
-            "lib"
-        RUNTIME DESTINATION
-            "bin"
-    )
-endif ()
+# Install headers for building and using the Urho3D library
+install_header_files (DIRECTORY ../../ik/include/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/ik FILES_MATCHING PATTERN *.h)  # Note: the trailing slash is significant
+install_header_files (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../include/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/ik FILES_MATCHING PATTERN *.h)
