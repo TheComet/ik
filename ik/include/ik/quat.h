@@ -28,10 +28,16 @@ IK_PUBLIC_API ik_real
 quat_mag(const ik_real* q);
 
 IK_PUBLIC_API void
+quat_conj(ik_real* q);
+
+IK_PUBLIC_API void
 quat_normalise(ik_real* q);
 
 IK_PUBLIC_API void
 quat_mul(ik_real* q1, const ik_real* q2);
+
+IK_PUBLIC_API void
+quat_rotate_vec(ik_real* v, const ik_real* q);
 
 C_HEADER_END
 

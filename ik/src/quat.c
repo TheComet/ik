@@ -19,6 +19,15 @@ quat_mag(const ik_real* q)
 
 /* ------------------------------------------------------------------------- */
 void
+quat_conj(ik_real* q)
+{
+    q[0] = -q[0];
+    q[1] = -q[1];
+    q[2] = -q[2];
+}
+
+/* ------------------------------------------------------------------------- */
+void
 quat_normalise(ik_real* q)
 {
     ik_real mag = quat_mag(q);
@@ -47,4 +56,25 @@ quat_mul(ik_real* q1, const ik_real* q2)
     vec3_add_vec3(q1, v2);
 
     quat_normalise(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+quat_rotate_vec(ik_real* v, const ik_real* q)
+{
+    /* P' = RPR' */
+    quat_t result;
+    quat_t conj;
+    quat_t point;
+
+    memcpy(point.f, v, sizeof(ik_real) * 3);
+    point.q.w = 0.0;
+
+    conj = *(quat_t*)q;
+    quat_conj(conj.f);
+
+    result = *(quat_t*)q;
+    quat_mul(result.f, point.f);
+    quat_mul(result.f, conj.f);
+    memcpy(v, result.f, sizeof(ik_real) * 3);
 }

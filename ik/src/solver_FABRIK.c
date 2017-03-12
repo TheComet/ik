@@ -77,9 +77,16 @@ rebuild_chain_tree(struct fabrik_t* solver);
 struct ik_solver_t*
 solver_FABRIK_create(void)
 {
-    struct fabrik_t* solver = (struct fabrik_t*)MALLOC(sizeof *solver);
+    struct fabrik_t* solver;
+
+    ik_log_message("Creating FABRIK solver");
+
+    solver = (struct fabrik_t*)MALLOC(sizeof *solver);
     if(solver == NULL)
+    {
+        ik_log_message("Ran out of memory in solver_FABRIK_create()");
         goto alloc_solver_filed;
+    }
     memset(solver, 0, sizeof *solver);
 
     solver->destroy = solver_FABRIK_destroy;
@@ -88,11 +95,14 @@ solver_FABRIK_create(void)
     solver->reset = solver_FABRIK_reset;
 
     solver->max_iterations = 20;
-    solver->tolerance = 1e-4;
+    solver->tolerance = 1e-3;
 
     solver->chain_tree = (struct chain_t*)MALLOC(sizeof(struct chain_t));
     if(solver->chain_tree == NULL)
+    {
+        ik_log_message("Ran out of memory in solver_FABRIK_create()");
         goto alloc_chain_tree_failed;
+    }
     chain_construct(solver->chain_tree);
 
     return (struct ik_solver_t*)solver;
@@ -105,7 +115,11 @@ solver_FABRIK_create(void)
 void
 solver_FABRIK_destroy(struct ik_solver_t* solver)
 {
-    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    struct fabrik_t* fabrik;
+
+    ik_log_message("Destroying FABRIK solver");
+
+    fabrik = (struct fabrik_t*)solver;
     chain_destruct(fabrik->chain_tree);
     FREE(fabrik->chain_tree);
     FREE(solver);
@@ -226,7 +240,7 @@ solve_chain_backwards(struct chain_t* chain, vec3_t target_position)
 }
 
 static void
-calculate_delta_angles(struct chain_t* chain)
+calculate_global_angles(struct chain_t* chain, quat_t* accumulated_delta_angles)
 {
     int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
@@ -236,18 +250,27 @@ calculate_delta_angles(struct chain_t* chain)
         struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
         struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
-        /*vec3_t segment_original = child_node->position;*/
-        vec3_t segment_original = {{1, 0, 0}};
+        vec3_t segment_original = child_node->position;
         vec3_t segment_solved   = child_node->solved_position;
+        vec3_sub_vec3(segment_original.f, parent_node->position.f);
         vec3_sub_vec3(segment_solved.f, parent_node->solved_position.f);
+
+        /*
+         * Rotate original segment by the accumulated delta angles from
+         * previous nodes to get the correct angle.
+         */
+        /*quat_rotate_vec(segment_original.f, accumulated_delta_angles->f);*/
 
         /* Calculate angle between original segment and solved segment */
         denominator = 1.0 / vec3_length(segment_original.f) / vec3_length(segment_solved.f);
-        /* segment_original is already normalised */
+        vec3_mul_scalar(segment_original.f, denominator);
         vec3_mul_scalar(segment_solved.f, denominator);
         cos_a = vec3_dot(segment_original.f, segment_solved.f) * denominator;
-        if(cos_a < 1.0 && cos_a > -1.0)
+        if(cos_a < -1.0 || cos_a > 1.0)
+            quat_set_identity(parent_node->solved_rotation.f);
+        else
         {
+            quat_t temp;
             angle = acos(cos_a);
 
             /* calculate axis of rotation and write it to the quaternion's vector section */
@@ -261,17 +284,20 @@ calculate_delta_angles(struct chain_t* chain)
             vec3_mul_scalar(parent_node->solved_rotation.f, sin_a);
             parent_node->solved_rotation.q.w = cos_a;
 
+            /* TODO: Is this necessary? quat_mul normalises anyway */
             quat_normalise(parent_node->solved_rotation.f);
+
+            quat_mul(accumulated_delta_angles->f, parent_node->solved_rotation.f);
+
+            temp = parent_node->rotation;
+            quat_mul(temp.f, parent_node->solved_rotation.f);
+            parent_node->solved_rotation = temp;
         }
-        else
-        {
-            quat_set_identity(parent_node->solved_rotation.f);
-        }
-        /*quat_mul(&accumulated_delta_angles, parent_node->solved_rotation.f);*/
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        calculate_delta_angles(child);
+        quat_t copy_accumulated_delta_angles = *accumulated_delta_angles;
+        calculate_global_angles(child, &copy_accumulated_delta_angles);
     ORDERED_VECTOR_END_EACH
 }
 
@@ -303,6 +329,8 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
+    quat_t initial_rotation;
+    quat_set_identity(initial_rotation.f);
 
     solver_reset_recursive(fabrik->chain_tree);
 
@@ -319,7 +347,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
         ORDERED_VECTOR_END_EACH
     }
 
-    calculate_delta_angles(fabrik->chain_tree);
+    calculate_global_angles(fabrik->chain_tree, &initial_rotation);
     solver_apply_results_back(solver, fabrik->chain_tree);
 
     return 0;
@@ -505,6 +533,17 @@ compute_segment_lengths(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
+static int
+count_chains(struct chain_t* chain)
+{
+    int counter = 1;
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        counter += count_chains(child);
+    ORDERED_VECTOR_END_EACH
+    return counter;
+}
+
+/* ------------------------------------------------------------------------- */
 #if IK_DOT_OUTPUT == ON
 static void
 dump_chain(struct chain_t* chain, FILE* fp)
@@ -560,6 +599,7 @@ static int
 rebuild_chain_tree(struct fabrik_t* solver)
 {
     struct bstv_t involved_nodes;
+    int involved_nodes_count;
 #if IK_DOT_OUTPUT == ON
     char buffer[20];
     static int file_name_counter = 0;
@@ -572,8 +612,7 @@ rebuild_chain_tree(struct fabrik_t* solver)
     bstv_construct(&involved_nodes);
     if(mark_involved_nodes(solver, &involved_nodes) < 0)
         goto mark_involved_nodes_failed;
-
-    ik_log_message("There are %d involved node(s)", bstv_count(&involved_nodes));
+    involved_nodes_count = bstv_count(&involved_nodes);
 
     /*
      * The user can choose to set the root node as a chain terminator (default)
@@ -609,8 +648,10 @@ rebuild_chain_tree(struct fabrik_t* solver)
     dump_to_dot(root, solver->chain_tree, buffer);
 #endif
 
-    ik_log_message("There are %d effector(s)",
-                   ordered_vector_count(&solver->effector_nodes_list));
+    ik_log_message("There are %d effector(s) involving %d node(s). %d chain(s) were created",
+                   ordered_vector_count(&solver->effector_nodes_list),
+                   involved_nodes_count,
+                   count_chains(solver->chain_tree) - 1); /* don't count root chain which always exists */
 
     bstv_clear_free(&involved_nodes);
 

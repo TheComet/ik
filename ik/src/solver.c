@@ -79,6 +79,7 @@ ik_solver_rebuild_data(struct ik_solver_t* solver)
      * Traverse the entire tree and generate a list of the effectors. This
      * makes the process of building the chain list for FABRIK much easier.
      */
+    ik_log_message("Rebuilding effector nodes list");
     ordered_vector_clear(&solver->effector_nodes_list);
     if(recursive_get_all_effector_nodes(solver->tree,
                                         &solver->effector_nodes_list) < 0)
