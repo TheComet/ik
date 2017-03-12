@@ -18,7 +18,7 @@ static void log_stdout_callback(const char* msg)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_init(enum log_e options)
+ik_log_init(enum ik_log_e options)
 {
     if(g_log != NULL)
         return;
@@ -30,7 +30,7 @@ ik_log_init(enum log_e options)
     ordered_vector_construct(&g_log->listeners, sizeof(ik_log_cb_func));
     ordered_vector_construct(&g_log->message_buffer, sizeof(char));
 
-    if(options == LOG_STDOUT)
+    if(options == IK_LOG_STDOUT)
         ik_log_register_listener(log_stdout_callback);
 }
 

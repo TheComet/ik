@@ -19,10 +19,6 @@
 # THE SOFTWARE.
 #
 
-# For our own config.h.in
-set (PROJECT_NAME "IK")
-set (BUILD_TYPE "STATIC")
-
 # memory debugging
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ON)
@@ -69,6 +65,9 @@ elseif (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
     endif ()
 endif ()
 
+# The library is being built
+add_definitions (-DIK_BUILDING)
+
 ###############################################################################
 # source files and library definition
 ###############################################################################
@@ -81,14 +80,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif ()
 list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
 
-set (TARGET_NAME ik)
+set (TARGET_NAME IK)
 set (SOURCE_FILES ${IK_SOURCES} ${IK_HEADERS})
 set (INCLUDE_DIRS ../../ik/include ${CMAKE_CURRENT_BINARY_DIR}/../../include)
 
 setup_library ()
-
-# The library is being built
-add_definitions (-DIK_BUILDING)
 
 ###############################################################################
 # install targets

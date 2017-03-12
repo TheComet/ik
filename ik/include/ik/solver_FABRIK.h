@@ -31,6 +31,9 @@ solver_FABRIK_rebuild_data(struct ik_solver_t* solver);
 int
 solver_FABRIK_solve(struct ik_solver_t* solver);
 
+void
+solver_FABRIK_reset(struct ik_solver_t* solver);
+
 C_HEADER_END
 
 #endif /* IK_SOLVER_FABRIK_H */

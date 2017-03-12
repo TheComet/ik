@@ -12,8 +12,8 @@ struct ik_node_t;
 
 struct ik_effector_t
 {
-    struct vec3_t target_position;
-    struct quat_t target_rotation;
+    vec3_t target_position;
+    quat_t target_rotation;
     uint16_t chain_length;
 };
 

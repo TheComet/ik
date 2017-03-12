@@ -200,7 +200,7 @@ ik_memory_deinit(void)
     --g_allocations; /* this is the single allocation still held by the report vector */
 
     printf("=========================================\n");
-    printf("Memory Report\n");
+    printf("Inverse Kinematics Memory Report\n");
     printf("=========================================\n");
 
     /* report details on any g_allocations that were not de-allocated */
@@ -230,8 +230,8 @@ ik_memory_deinit(void)
 
     /* overall report */
     leaks = (g_allocations > d_deg_allocations ? g_allocations - d_deg_allocations : d_deg_allocations - g_allocations);
-    printf("g_allocations: %lu\n", g_allocations);
-    printf("d_deg_allocations: %lu\n", d_deg_allocations);
+    printf("allocations: %lu\n", g_allocations);
+    printf("deallocations: %lu\n", d_deg_allocations);
     printf("memory leaks: %lu\n", leaks);
     printf("=========================================\n");
 

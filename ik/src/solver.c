@@ -17,12 +17,12 @@ ik_solver_create(enum algorithm_e algorithm)
 
     switch(algorithm)
     {
-    case ALGORITHM_FABRIK:
+    case SOLVER_FABRIK:
         solver = (struct ik_solver_t*)solver_FABRIK_create();
         break;
 
-    case ALGORITHM_JACOBIAN_INVERSE:
-    case ALGORITHM_JACOBIAN_TRANSPOSE:
+    case SOLVER_JACOBIAN_INVERSE:
+    case SOLVER_JACOBIAN_TRANSPOSE:
         break;
     }
 
@@ -50,10 +50,18 @@ ik_solver_destroy(struct ik_solver_t* solver)
 void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
-    if(solver->tree)
-        ik_node_destroy(solver->tree);
-
+    ik_solver_destroy_tree(solver);
     solver->tree = root;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_destroy_tree(struct ik_solver_t* solver)
+{
+    if(solver->tree == NULL)
+        return;
+    ik_node_destroy(solver->tree);
+    solver->tree = NULL;
 }
 
 /* ------------------------------------------------------------------------- */

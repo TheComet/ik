@@ -5,39 +5,45 @@
 
 C_HEADER_BEGIN
 
-struct vec3_t
+typedef union vec3_t
 {
-    ik_real x;
-    ik_real y;
-    ik_real z;
-};
+    struct {
+        ik_real x;
+        ik_real y;
+        ik_real z;
+    } v;
+    ik_real f[3];
+} vec3_t;
 
 IK_PUBLIC_API void
-vec3_set_zero(struct vec3_t* v);
+vec3_set_zero(ik_real* v);
 
 IK_PUBLIC_API void
-vec3_add_vec3(struct vec3_t* v1, const struct vec3_t* v2);
+vec3_add_vec3(ik_real* v1, const ik_real* v2);
 
 IK_PUBLIC_API void
-vec3_sub_vec3(struct vec3_t* v1, const struct vec3_t* v2);
+vec3_sub_vec3(ik_real* v1, const ik_real* v2);
 
 IK_PUBLIC_API void
-vec3_mul_scalar(struct vec3_t* v1, ik_real scalar);
+vec3_mul_scalar(ik_real* v1, ik_real scalar);
 
 IK_PUBLIC_API void
-vec3_divide_scalar(struct vec3_t* v, ik_real scalar);
+vec3_divide_scalar(ik_real* v, ik_real scalar);
 
 IK_PUBLIC_API ik_real
-vec3_length_squared(const struct vec3_t* v);
+vec3_length_squared(const ik_real* v);
 
 IK_PUBLIC_API ik_real
-vec3_length(const struct vec3_t* v);
+vec3_length(const ik_real* v);
 
 IK_PUBLIC_API void
-vec3_normalise(struct vec3_t* v);
+vec3_normalise(ik_real* v);
 
 IK_PUBLIC_API ik_real
-vec3_dot(const struct vec3_t* v1, const struct vec3_t* v2);
+vec3_dot(const ik_real* v1, const ik_real* v2);
+
+IK_PUBLIC_API void
+vec3_cross(ik_real* v1, const ik_real* v2);
 
 C_HEADER_END
 

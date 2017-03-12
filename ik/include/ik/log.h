@@ -7,14 +7,14 @@ C_HEADER_BEGIN
 
 typedef void (*ik_log_cb_func)(const char*);
 
-enum log_e
+enum ik_log_e
 {
-    LOG_NONE,
-    LOG_STDOUT
+    IK_LOG_NONE,
+    IK_LOG_STDOUT
 };
 
 IK_PUBLIC_API void
-ik_log_init(enum log_e options);
+ik_log_init(enum ik_log_e options);
 
 IK_PUBLIC_API void
 ik_log_deinit(void);

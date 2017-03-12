@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 enum node_marking_e
 {
@@ -84,6 +85,7 @@ solver_FABRIK_create(void)
     solver->destroy = solver_FABRIK_destroy;
     solver->rebuild_data = solver_FABRIK_rebuild_data;
     solver->solve = solver_FABRIK_solve;
+    solver->reset = solver_FABRIK_reset;
 
     solver->max_iterations = 20;
     solver->tolerance = 1e-4;
@@ -118,7 +120,7 @@ solver_FABRIK_rebuild_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-initialise_chain_segments_for_solving(struct chain_t* chain)
+solver_reset_recursive(struct chain_t* chain)
 {
     ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct ik_node_t*, pnode)
         (*pnode)->solved_position = (*pnode)->position;
@@ -126,16 +128,16 @@ initialise_chain_segments_for_solving(struct chain_t* chain)
     ORDERED_VECTOR_END_EACH
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        initialise_chain_segments_for_solving(child);
+        solver_reset_recursive(child);
     ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
-static struct vec3_t
+static vec3_t
 solve_chain_forwards(struct chain_t* chain)
 {
     int node_count, node_idx;
-    struct vec3_t target_position = {0, 0, 0};
+    vec3_t target_position = {{0, 0, 0}};
     float average_count = 0;
 
     /*
@@ -145,13 +147,13 @@ solve_chain_forwards(struct chain_t* chain)
      * position.
      */
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        const struct vec3_t base_position = solve_chain_forwards(child);
-        vec3_add_vec3(&target_position, &base_position);
+        const vec3_t base_position = solve_chain_forwards(child);
+        vec3_add_vec3(target_position.f, base_position.f);
         ++average_count;
     ORDERED_VECTOR_END_EACH
     if(average_count != 0)
     {
-        vec3_divide_scalar(&target_position, average_count);
+        vec3_divide_scalar(target_position.f, average_count);
     }
     else
     {
@@ -175,10 +177,10 @@ solve_chain_forwards(struct chain_t* chain)
         child_node->solved_position = target_position;
 
         /* point segment to previous node and set target position to its end */
-        vec3_sub_vec3(&target_position, &parent_node->solved_position); /* parent points to child */
-        vec3_normalise(&target_position);                               /* normalise */
-        vec3_mul_scalar(&target_position, -child_node->segment_length); /* child points to parent */
-        vec3_add_vec3(&target_position, &child_node->solved_position);  /* attach to child -- this is the new target */
+        vec3_sub_vec3(target_position.f, parent_node->solved_position.f); /* parent points to child */
+        vec3_normalise(target_position.f);                               /* normalise */
+        vec3_mul_scalar(target_position.f, -child_node->segment_length); /* child points to parent */
+        vec3_add_vec3(target_position.f, child_node->solved_position.f);  /* attach to child -- this is the new target */
     }
 
     return target_position;
@@ -186,16 +188,16 @@ solve_chain_forwards(struct chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 static void
-solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
+solve_chain_backwards(struct chain_t* chain, vec3_t target_position)
 {
-    int node_idx = ordered_vector_count(&chain->nodes);
+    int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
     /*
      * The base node must be set to the target position before iterating.
      */
     if(node_idx > 1)
     {
-        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
+        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
         base_node->solved_position = target_position;
     }
 
@@ -203,16 +205,16 @@ solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
      * Iterate through each segment the other way around and apply the FABRIK
      * algorithm.
      */
-    while(node_idx-- > 1)
+    while(node_idx-- > 0)
     {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 1);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx - 0);
+        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* point segment to child node and set target position to its beginning */
-        vec3_sub_vec3(&target_position, &child_node->solved_position);  /* child points to parent */
-        vec3_normalise(&target_position);                               /* normalise */
-        vec3_mul_scalar(&target_position, -child_node->segment_length); /* parent points to child */
-        vec3_add_vec3(&target_position, &parent_node->solved_position); /* attach to parent -- this is the new target */
+        vec3_sub_vec3(target_position.f, child_node->solved_position.f);  /* child points to parent */
+        vec3_normalise(target_position.f);                               /* normalise */
+        vec3_mul_scalar(target_position.f, -child_node->segment_length); /* parent points to child */
+        vec3_add_vec3(target_position.f, parent_node->solved_position.f); /* attach to parent -- this is the new target */
 
         /* move node to target */
         child_node->solved_position = target_position;
@@ -223,6 +225,78 @@ solve_chain_backwards(struct chain_t* chain, struct vec3_t target_position)
     ORDERED_VECTOR_END_EACH
 }
 
+static void
+calculate_delta_angles(struct chain_t* chain)
+{
+    int node_idx = ordered_vector_count(&chain->nodes) - 1;
+
+    while(node_idx-- > 0)
+    {
+        ik_real cos_a, sin_a, angle, denominator;
+        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+
+        /*vec3_t segment_original = child_node->position;*/
+        vec3_t segment_original = {{1, 0, 0}};
+        vec3_t segment_solved   = child_node->solved_position;
+        vec3_sub_vec3(segment_solved.f, parent_node->solved_position.f);
+
+        /* Calculate angle between original segment and solved segment */
+        denominator = 1.0 / vec3_length(segment_original.f) / vec3_length(segment_solved.f);
+        /* segment_original is already normalised */
+        vec3_mul_scalar(segment_solved.f, denominator);
+        cos_a = vec3_dot(segment_original.f, segment_solved.f) * denominator;
+        if(cos_a < 1.0 && cos_a > -1.0)
+        {
+            angle = acos(cos_a);
+
+            /* calculate axis of rotation and write it to the quaternion's vector section */
+            parent_node->solved_rotation.vw.v = segment_original;
+            vec3_cross(parent_node->solved_rotation.vw.v.f, segment_solved.f);
+            vec3_normalise(parent_node->solved_rotation.f);
+
+            /* quaternion's vector needs to be weighted with sin_a */
+            cos_a = cos(angle * 0.5);
+            sin_a = sin(angle * 0.5);
+            vec3_mul_scalar(parent_node->solved_rotation.f, sin_a);
+            parent_node->solved_rotation.q.w = cos_a;
+
+            quat_normalise(parent_node->solved_rotation.f);
+        }
+        else
+        {
+            quat_set_identity(parent_node->solved_rotation.f);
+        }
+        /*quat_mul(&accumulated_delta_angles, parent_node->solved_rotation.f);*/
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        calculate_delta_angles(child);
+    ORDERED_VECTOR_END_EACH
+}
+
+static void
+solver_apply_results_back(struct ik_solver_t* solver, struct chain_t* chain)
+{
+    int node_idx;
+
+    /*
+     * Apply from base to tips (breadth first), omit the base node for each
+     * chain because that would be redundant (it is shared with the tip of the
+     * parent chain).
+     */
+    node_idx = ordered_vector_count(&chain->nodes);
+    while(node_idx-- > 0)
+    {
+        struct ik_node_t* node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
+        solver->apply_result(node, node->solved_position, node->solved_rotation);
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        solver_apply_results_back(solver, child);
+    ORDERED_VECTOR_END_EACH
+}
+
 /* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(struct ik_solver_t* solver)
@@ -230,16 +304,33 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
 
-    initialise_chain_segments_for_solving(fabrik->chain_tree);
+    solver_reset_recursive(fabrik->chain_tree);
 
     while(iteration--)
     {
         ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct chain_t, chain)
-            solve_chain_backwards(chain, solve_chain_forwards(chain));
+            vec3_t root_position;
+            assert(ordered_vector_count(&chain->nodes) > 1);
+            root_position = (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
+                    ordered_vector_count(&chain->nodes) - 1))->position;
+
+            solve_chain_forwards(chain);
+            solve_chain_backwards(chain, root_position);
         ORDERED_VECTOR_END_EACH
     }
 
+    calculate_delta_angles(fabrik->chain_tree);
+    solver_apply_results_back(solver, fabrik->chain_tree);
+
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+solver_FABRIK_reset(struct ik_solver_t* solver)
+{
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    solver_reset_recursive(fabrik->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -403,9 +494,9 @@ compute_segment_lengths(struct chain_t* chain)
         struct ik_node_t* parent_node =
             *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1);
 
-        struct vec3_t diff = child_node->position;
-        vec3_sub_vec3(&diff, &parent_node->position);
-        child_node->segment_length = vec3_length(&diff);
+        vec3_t diff = child_node->position;
+        vec3_sub_vec3(diff.f, parent_node->position.f);
+        child_node->segment_length = vec3_length(diff.f);
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
@@ -473,7 +564,6 @@ rebuild_chain_tree(struct fabrik_t* solver)
     char buffer[20];
     static int file_name_counter = 0;
 #endif
-    struct ik_node_t* root = solver->tree;
 
     /*
      * Build a set of all nodes that are in a direct path with all of the
@@ -485,9 +575,29 @@ rebuild_chain_tree(struct fabrik_t* solver)
 
     ik_log_message("There are %d involved node(s)", bstv_count(&involved_nodes));
 
-    /* Build a tree of chains */
+    /*
+     * The user can choose to set the root node as a chain terminator (default)
+     * or choose to exclude the root node, in which case each immediate child
+     * of the tree is a chain terminator. In this case we need to build the
+     * chain tree for each child individually.
+     */
     chain_clear_free(solver->chain_tree);
-    recursively_build_chain_tree(solver->chain_tree, root, root, &involved_nodes);
+    switch(solver->build_mode)
+    {
+        case SOLVER_INCLUDE_ROOT:
+        {
+            struct ik_node_t* root = solver->tree;
+            recursively_build_chain_tree(solver->chain_tree, root, root, &involved_nodes);
+            break;
+        }
+
+        case SOLVER_EXCLUDE_ROOT:
+        {
+            BSTV_FOR_EACH(&solver->tree->children, struct ik_node_t, guid, child)
+                recursively_build_chain_tree(solver->chain_tree, child, child, &involved_nodes);
+            BSTV_END_EACH
+        }
+    }
 
     /* Pre-compute offsets for each node in the chain tree in relation to their
      * parents */

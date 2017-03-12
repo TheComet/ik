@@ -10,22 +10,28 @@
 C_HEADER_BEGIN
 
 struct ik_effector_t;
-struct log_t;
 struct ik_node_t;
 struct ik_solver_t;
 
 typedef void (*ik_solver_destroy_func)(struct ik_solver_t*);
-typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
 typedef int (*ik_solver_rebuild_data_func)(struct ik_solver_t*);
+typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
+typedef void (*ik_solver_reset_func)(struct ik_solver_t*);
 
 typedef void (*ik_solver_apply_constraint_cb_func)(struct ik_node_t*);
-typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*, struct vec3_t, struct quat_t);
+typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*, vec3_t, quat_t);
 
 enum algorithm_e
 {
-    ALGORITHM_FABRIK,
-    ALGORITHM_JACOBIAN_INVERSE,
-    ALGORITHM_JACOBIAN_TRANSPOSE
+    SOLVER_FABRIK,
+    SOLVER_JACOBIAN_INVERSE,
+    SOLVER_JACOBIAN_TRANSPOSE
+};
+
+enum build_mode_e
+{
+    SOLVER_INCLUDE_ROOT = 0,
+    SOLVER_EXCLUDE_ROOT
 };
 
 /*!
@@ -37,15 +43,17 @@ enum algorithm_e
                                                                      \
     int32_t                            max_iterations;               \
     float                              tolerance;                    \
+    enum build_mode_e                  build_mode;                   \
                                                                      \
     /* Derived structure callbacks */                                \
     ik_solver_destroy_func             destroy;                      \
-    ik_solver_solve_func               solve;                        \
     ik_solver_rebuild_data_func        rebuild_data;                 \
+    ik_solver_solve_func               solve;                        \
+    ik_solver_reset_func               reset;                        \
                                                                      \
     struct ordered_vector_t            effector_nodes_list;          \
                                                                      \
-    struct ik_node_t* tree;
+    struct ik_node_t*                  tree;
 struct ik_solver_t
 {
     SOLVER_DATA_HEAD
@@ -60,11 +68,17 @@ ik_solver_destroy(struct ik_solver_t* solver);
 IK_PUBLIC_API void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
 
+IK_PUBLIC_API void
+ik_solver_destroy_tree(struct ik_solver_t* solver);
+
 IK_PUBLIC_API int
 ik_solver_rebuild_data(struct ik_solver_t* solver);
 
 IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver_t* solver);
+
+IK_PUBLIC_API void
+ik_solver_reset(struct ik_solver_t* solver);
 
 C_HEADER_END
 

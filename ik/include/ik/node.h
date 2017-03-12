@@ -15,11 +15,11 @@ struct ik_node_t
 {
     void* user_data;
     uint32_t guid;
-    struct vec3_t position;
-    struct quat_t rotation;
+    vec3_t position;
+    quat_t rotation;
 
-    struct vec3_t solved_position;
-    struct quat_t solved_rotation;
+    vec3_t solved_position;
+    quat_t solved_rotation;
     ik_real segment_length;
 
     struct ik_node_t* parent;
@@ -43,13 +43,16 @@ IK_PUBLIC_API void
 ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
 
 IK_PUBLIC_API void
-ik_node_remove_child(struct ik_node_t* node);
+ik_node_unlink(struct ik_node_t* node);
 
 IK_PUBLIC_API struct ik_node_t*
 ik_node_find_child(struct ik_node_t* node, uint32_t guid);
 
 IK_PUBLIC_API void
 ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* effector);
+
+IK_PUBLIC_API void
+ik_node_destroy_effector(struct ik_node_t* node);
 
 IK_PUBLIC_API void
 ik_node_dump_to_dot(struct ik_node_t* node, const char* file_name);
