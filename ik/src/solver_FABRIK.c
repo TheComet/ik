@@ -305,35 +305,6 @@ calculate_global_angles(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-iterate_tree_recursive(struct ik_solver_t* solver, struct chain_t* chain)
-{
-    int node_idx;
-
-    /*
-     * Apply from base to tips (breadth first), omit the base node for each
-     * chain because that would be redundant (it is shared with the tip of the
-     * parent chain).
-     */
-    node_idx = ordered_vector_count(&chain->nodes);
-    while(node_idx-- > 0)
-    {
-        struct ik_node_t* node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
-        solver->apply_result(node);
-    }
-
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        iterate_tree_recursive(solver, child);
-    ORDERED_VECTOR_END_EACH
-}
-void
-ik_solver_iterate_tree(struct ik_solver_t* solver)
-{
-    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
-    iterate_tree_recursive(solver, fabrik->chain_tree);
-}
-
-/* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(struct ik_solver_t* solver)
 {
