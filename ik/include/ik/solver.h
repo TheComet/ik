@@ -19,7 +19,7 @@ typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
 typedef void (*ik_solver_reset_func)(struct ik_solver_t*);
 
 typedef void (*ik_solver_apply_constraint_cb_func)(struct ik_node_t*);
-typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*, vec3_t, quat_t);
+typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*);
 
 enum algorithm_e
 {
@@ -59,26 +59,70 @@ struct ik_solver_t
     SOLVER_DATA_HEAD
 };
 
+/*!
+ * @brief Allocates a new solver object according to the specified algorithm.
+ * @param[in] algorithm The algorithm to use. Currently, only FABRIK is
+ * supported.
+ */
 IK_PUBLIC_API struct ik_solver_t*
 ik_solver_create(enum algorithm_e algorithm);
 
+/*!
+ * @brief Destroys the solver and all nodes/effectors that are part of the
+ * solver. Any pointers to tree nodes are invalid after this function returns.
+ */
 IK_PUBLIC_API void
 ik_solver_destroy(struct ik_solver_t* solver);
 
+/*!
+ * @brief Sets the tree to solve. The solver takes ownership of the tree, so
+ * destroying the solver will destroy all nodes in the tree. Note that you will
+ * have to call ik_solver_rebuild_data() before being able to solve it.
+ */
 IK_PUBLIC_API void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
 
+/*!
+ * @brief The solver releases any references to a previously set tree and
+ * returns the root node of said tree. Any proceeding calls that involve the
+ * tree (e.g. solve or rebuild) will have no effect until a new tree is set.
+ * @return If the solver has no tree then NULL is returned.
+ */
+IK_PUBLIC_API struct ik_node_t*
+ik_solver_release_tree(struct ik_solver_t* solver);
+
+/*!
+ * @brief The solver releases any references to a previously set tree and
+ * destroys it.
+ */
 IK_PUBLIC_API void
 ik_solver_destroy_tree(struct ik_solver_t* solver);
 
+/*!
+ * @brief Causes the set tree to be processed into more optimal data structures
+ * for solving. Must be called before ik_solver_solve().
+ */
 IK_PUBLIC_API int
 ik_solver_rebuild_data(struct ik_solver_t* solver);
 
+/*!
+ * @brief Solves the IK problem. The node solutions will be provided via a
+ * callback function, which can be registered to the solver by assigning it to
+ * solver->apply_result.
+ */
 IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver_t* solver);
 
+/*!
+ * @brief A convenience function to iterate all nodes in the internal tree.
+ * This will call the solver->apply_result callback function for every node.
+ * This function is called internally when calling ik_solver_solve(), but
+ * another use case might be to reset your external tree to its initial state
+ * by applying node->position and node->rotation instead of
+ * node->solved_position and node->solved_rotation.
+ */
 IK_PUBLIC_API void
-ik_solver_reset(struct ik_solver_t* solver);
+ik_solver_iterate_tree(struct ik_solver_t* solver);
 
 C_HEADER_END
 

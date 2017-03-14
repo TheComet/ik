@@ -242,6 +242,18 @@ solve_chain_backwards(struct chain_t* chain, vec3_t target_position)
 static void
 calculate_global_angles(struct chain_t* chain)
 {
+    /*
+     * Calculates the "global" (world) angles of each joint and writes them to
+     * each node->solved_rotation slot.
+     *
+     * The angle between the original and solved segments are calculated using
+     * standard vector math (dot product). The axis of rotation is calculated
+     * with the cross product. From this data, a quaternion is constructed,
+     * describing this delta rotation. Finally, in order to make the rotations
+     * global instead of relative, the delta rotation is multiplied with
+     * node->rotation, which should be a quaternion describing the node's
+     * global rotation in the unsolved tree.
+     */
     int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
     while(node_idx-- > 0)
@@ -250,6 +262,7 @@ calculate_global_angles(struct chain_t* chain)
         struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
         struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
+        /* calculate original and solved segment */
         vec3_t segment_original = child_node->position;
         vec3_t segment_solved   = child_node->solved_position;
         vec3_sub_vec3(segment_original.f, parent_node->position.f);
@@ -262,30 +275,35 @@ calculate_global_angles(struct chain_t* chain)
             quat_set_identity(parent_node->solved_rotation.f);
         else
         {
-            angle = acos(cos_a);
-
             /* calculate axis of rotation and write it to the quaternion's vector section */
             parent_node->solved_rotation.vw.v = segment_original;
             vec3_cross(parent_node->solved_rotation.vw.v.f, segment_solved.f);
             vec3_normalise(parent_node->solved_rotation.f);
 
             /* quaternion's vector needs to be weighted with sin_a */
+            angle = acos(cos_a);
             cos_a = cos(angle * 0.5);
             sin_a = sin(angle * 0.5);
             vec3_mul_scalar(parent_node->solved_rotation.f, sin_a);
             parent_node->solved_rotation.q.w = cos_a;
 
+            /*
+             * Apply initial global rotation to calculated delta rotation to
+             * obtain the solved global rotation.
+             */
             quat_mul(parent_node->solved_rotation.f, parent_node->rotation.f);
         }
     }
 
+    /* Recursive into children chains */
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
         calculate_global_angles(child);
     ORDERED_VECTOR_END_EACH
 }
 
+/* ------------------------------------------------------------------------- */
 static void
-solver_apply_results_back(struct ik_solver_t* solver, struct chain_t* chain)
+iterate_tree_recursive(struct ik_solver_t* solver, struct chain_t* chain)
 {
     int node_idx;
 
@@ -298,12 +316,18 @@ solver_apply_results_back(struct ik_solver_t* solver, struct chain_t* chain)
     while(node_idx-- > 0)
     {
         struct ik_node_t* node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
-        solver->apply_result(node, node->solved_position, node->solved_rotation);
+        solver->apply_result(node);
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        solver_apply_results_back(solver, child);
+        iterate_tree_recursive(solver, child);
     ORDERED_VECTOR_END_EACH
+}
+void
+ik_solver_iterate_tree(struct ik_solver_t* solver)
+{
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    iterate_tree_recursive(solver, fabrik->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -329,7 +353,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     }
 
     calculate_global_angles(fabrik->chain_tree);
-    solver_apply_results_back(solver, fabrik->chain_tree);
+    ik_solver_iterate_tree(solver);
 
     return 0;
 }
