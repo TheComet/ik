@@ -240,7 +240,7 @@ solve_chain_backwards(struct chain_t* chain, vec3_t target_position)
 }
 
 static void
-calculate_global_angles(struct chain_t* chain, quat_t* accumulated_delta_angles)
+calculate_global_angles(struct chain_t* chain)
 {
     int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
@@ -255,22 +255,13 @@ calculate_global_angles(struct chain_t* chain, quat_t* accumulated_delta_angles)
         vec3_sub_vec3(segment_original.f, parent_node->position.f);
         vec3_sub_vec3(segment_solved.f, parent_node->solved_position.f);
 
-        /*
-         * Rotate original segment by the accumulated delta angles from
-         * previous nodes to get the correct angle.
-         */
-        /*quat_rotate_vec(segment_original.f, accumulated_delta_angles->f);*/
-
         /* Calculate angle between original segment and solved segment */
         denominator = 1.0 / vec3_length(segment_original.f) / vec3_length(segment_solved.f);
-        vec3_mul_scalar(segment_original.f, denominator);
-        vec3_mul_scalar(segment_solved.f, denominator);
         cos_a = vec3_dot(segment_original.f, segment_solved.f) * denominator;
         if(cos_a < -1.0 || cos_a > 1.0)
             quat_set_identity(parent_node->solved_rotation.f);
         else
         {
-            quat_t temp;
             angle = acos(cos_a);
 
             /* calculate axis of rotation and write it to the quaternion's vector section */
@@ -284,20 +275,12 @@ calculate_global_angles(struct chain_t* chain, quat_t* accumulated_delta_angles)
             vec3_mul_scalar(parent_node->solved_rotation.f, sin_a);
             parent_node->solved_rotation.q.w = cos_a;
 
-            /* TODO: Is this necessary? quat_mul normalises anyway */
-            quat_normalise(parent_node->solved_rotation.f);
-
-            quat_mul(accumulated_delta_angles->f, parent_node->solved_rotation.f);
-
-            temp = parent_node->rotation;
-            quat_mul(temp.f, parent_node->solved_rotation.f);
-            parent_node->solved_rotation = temp;
+            quat_mul(parent_node->solved_rotation.f, parent_node->rotation.f);
         }
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        quat_t copy_accumulated_delta_angles = *accumulated_delta_angles;
-        calculate_global_angles(child, &copy_accumulated_delta_angles);
+        calculate_global_angles(child);
     ORDERED_VECTOR_END_EACH
 }
 
@@ -329,8 +312,6 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
-    quat_t initial_rotation;
-    quat_set_identity(initial_rotation.f);
 
     solver_reset_recursive(fabrik->chain_tree);
 
@@ -347,7 +328,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
         ORDERED_VECTOR_END_EACH
     }
 
-    calculate_global_angles(fabrik->chain_tree, &initial_rotation);
+    calculate_global_angles(fabrik->chain_tree);
     solver_apply_results_back(solver, fabrik->chain_tree);
 
     return 0;
