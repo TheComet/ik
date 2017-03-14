@@ -31,11 +31,11 @@ enum solver_algorithm_e
 
 enum solver_flags_e
 {
-    SOLVER_EXCLUDE_ROOT                = 1,
-    SOLVER_CALCULATE_FINAL_ANGLES      = 2,
-    SOLVER_CALCULATE_CONSTRAINT_ANGLES = 4,
-    SOLVER_SKIP_RESET                  = 8,
-    SOLVER_SKIP_APPLY                  = 16
+    SOLVER_EXCLUDE_ROOT                = 0x01,
+    SOLVER_CALCULATE_FINAL_ANGLES      = 0x02,
+    SOLVER_CALCULATE_CONSTRAINT_ANGLES = 0x04,
+    SOLVER_SKIP_RESET                  = 0x08,
+    SOLVER_SKIP_APPLY                  = 0x10
 };
 
 /*!
@@ -47,7 +47,7 @@ enum solver_flags_e
                                                                      \
     int32_t                            max_iterations;               \
     float                              tolerance;                    \
-    enum solver_flags_e                flags;                        \
+    uint8_t                            flags;                        \
                                                                      \
     /* Derived structure callbacks */                                \
     ik_solver_destroy_func             destroy;                      \
