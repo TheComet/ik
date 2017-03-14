@@ -11,12 +11,38 @@ C_HEADER_BEGIN
 
 struct ik_effector_t;
 
+/*!
+ * @brief Represents one node in the tree to be solved.
+ */
 struct ik_node_t
 {
+    /*!
+     * @brief Allows the user of this library to store custom data per node
+     * @note Can be set and retrieved directly without issue.
+     *
+     * This is especially useful in c++ applications which need to store the
+     * "this" pointer to their own scene graph nodes. The user data can be
+     * accessed in callback functions to make object calls again.
+     */
     void* user_data;
-    uint32_t guid;
+
+    /*!
+     * @brief The initial global position (in world space).
+     * @note Must be set by the user to get correct results. This value can
+     * be set and retrieved at any time.
+     * @note The default value is (0, 0, 0).
+     */
     vec3_t position;
+
+    /*!
+     * @brief The initial global rotation (in world space).
+     * @note Must be set by the user to get correct results if the solver has
+     * angle computations enabled.
+     * @note The default value is the identity quaternion.
+     */
     quat_t rotation;
+
+    uint32_t guid;
 
     vec3_t solved_position;
     quat_t solved_rotation;

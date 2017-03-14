@@ -7,11 +7,12 @@
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
 
-static int recursive_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list);
+static int
+recursive_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list);
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_create(enum algorithm_e algorithm)
+ik_solver_create(enum solver_algorithm_e algorithm)
 {
     struct ik_solver_t* solver = NULL;
 
@@ -55,13 +56,31 @@ ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 }
 
 /* ------------------------------------------------------------------------- */
+struct ik_node_t*
+ik_solver_unlink_tree(struct ik_solver_t* solver)
+{
+    struct ik_node_t* root = solver->tree;
+    if(root == NULL)
+        return NULL;
+    solver->tree = NULL;
+
+    /*
+     * Effectors are owned by the nodes, but we need to release references to
+     * them.
+     */
+    ordered_vector_clear(&solver->effector_nodes_list);
+
+    return root;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_solver_destroy_tree(struct ik_solver_t* solver)
 {
-    if(solver->tree == NULL)
+    struct ik_node_t* root;
+    if((root = ik_solver_unlink_tree(solver)) == NULL)
         return;
-    ik_node_destroy(solver->tree);
-    solver->tree = NULL;
+    ik_node_destroy(root);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -89,6 +108,13 @@ ik_solver_rebuild_data(struct ik_solver_t* solver)
     }
 
     return solver->rebuild_data(solver);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_recalculate_segment_lengths(struct ik_solver_t* solver)
+{
+    solver->recalculate_segment_lengths(solver);
 }
 
 /* ------------------------------------------------------------------------- */

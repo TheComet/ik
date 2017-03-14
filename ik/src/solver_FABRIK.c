@@ -16,15 +16,17 @@ enum node_marking_e
     MARK_SECTION
 };
 
-void
+static void
 chain_construct(struct chain_t* chain);
-void
+static void
 chain_clear_free(struct chain_t* chain);
-void
+static void
 chain_destruct(struct chain_t* chain);
+static void
+calculate_segment_lengths_recursive(struct chain_t* chain);
 
 /* ------------------------------------------------------------------------- */
-void
+static void
 chain_construct(struct chain_t* chain)
 {
     ordered_vector_construct(&chain->nodes, sizeof(struct ik_node_t*));
@@ -32,7 +34,7 @@ chain_construct(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-void
+static void
 chain_clear_free(struct chain_t* chain)
 {
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child_chain)
@@ -43,7 +45,7 @@ chain_clear_free(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-void
+static void
 chain_destruct(struct chain_t* chain)
 {
     chain_clear_free(chain);
@@ -91,6 +93,7 @@ solver_FABRIK_create(void)
 
     solver->destroy = solver_FABRIK_destroy;
     solver->rebuild_data = solver_FABRIK_rebuild_data;
+    solver->recalculate_segment_lengths = solver_FABRIK_recalculate_segment_lengths;
     solver->solve = solver_FABRIK_solve;
     solver->reset = solver_FABRIK_reset;
 
@@ -337,7 +340,8 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration = solver->max_iterations;
 
-    solver_reset_recursive(fabrik->chain_tree);
+    if(!(solver->flags & SOLVER_SKIP_RESET))
+        solver_reset_recursive(fabrik->chain_tree);
 
     while(iteration--)
     {
@@ -352,10 +356,21 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
         ORDERED_VECTOR_END_EACH
     }
 
-    calculate_global_angles(fabrik->chain_tree);
-    ik_solver_iterate_tree(solver);
+    if(solver->flags & SOLVER_CALCULATE_FINAL_ANGLES)
+        calculate_global_angles(fabrik->chain_tree);
+
+    if(!(solver->flags & SOLVER_SKIP_APPLY))
+        ik_solver_iterate_tree(solver);
 
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+solver_FABRIK_recalculate_segment_lengths(struct ik_solver_t* solver)
+{
+    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    calculate_segment_lengths_recursive(fabrik->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -517,7 +532,7 @@ recursively_build_chain_tree(struct chain_t* chain_current,
 
 /* ------------------------------------------------------------------------- */
 static void
-compute_segment_lengths(struct chain_t* chain)
+calculate_segment_lengths_recursive(struct chain_t* chain)
 {
     int last_idx = ordered_vector_count(&chain->nodes) - 1;
     while(last_idx-- > 0)
@@ -533,7 +548,7 @@ compute_segment_lengths(struct chain_t* chain)
     }
 
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        compute_segment_lengths(child);
+        calculate_segment_lengths_recursive(child);
     ORDERED_VECTOR_END_EACH
 }
 
@@ -626,26 +641,20 @@ rebuild_chain_tree(struct fabrik_t* solver)
      * chain tree for each child individually.
      */
     chain_clear_free(solver->chain_tree);
-    switch(solver->build_mode)
+    if(solver->flags & SOLVER_EXCLUDE_ROOT)
     {
-        case SOLVER_INCLUDE_ROOT:
-        {
-            struct ik_node_t* root = solver->tree;
-            recursively_build_chain_tree(solver->chain_tree, root, root, &involved_nodes);
-            break;
-        }
-
-        case SOLVER_EXCLUDE_ROOT:
-        {
-            BSTV_FOR_EACH(&solver->tree->children, struct ik_node_t, guid, child)
-                recursively_build_chain_tree(solver->chain_tree, child, child, &involved_nodes);
-            BSTV_END_EACH
-        }
+        BSTV_FOR_EACH(&solver->tree->children, struct ik_node_t, guid, child)
+            recursively_build_chain_tree(solver->chain_tree, child, child, &involved_nodes);
+        BSTV_END_EACH
+    }
+    else
+    {
+        recursively_build_chain_tree(solver->chain_tree, solver->tree, solver->tree, &involved_nodes);
     }
 
     /* Pre-compute offsets for each node in the chain tree in relation to their
      * parents */
-    compute_segment_lengths(solver->chain_tree);
+    calculate_segment_lengths_recursive(solver->chain_tree);
 
     /* DEBUG: Save chain tree to DOT */
 #if IK_DOT_OUTPUT == ON

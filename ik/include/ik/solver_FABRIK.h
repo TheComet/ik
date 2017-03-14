@@ -28,6 +28,9 @@ solver_FABRIK_destroy(struct ik_solver_t* solver);
 int
 solver_FABRIK_rebuild_data(struct ik_solver_t* solver);
 
+void
+solver_FABRIK_recalculate_segment_lengths(struct ik_solver_t* solver);
+
 int
 solver_FABRIK_solve(struct ik_solver_t* solver);
 
