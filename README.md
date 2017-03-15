@@ -41,14 +41,14 @@ static void results_callback(struct ik_node_t* ikNode)
     /* Extract our scene graph node again */
     Node* node = (Node)ikNode->user_data;
 
-    /* Apply results back to our engine's tree
+    /* Apply results back to our engine's tree */
     node->SetWorldPosition(ikNode->solved_position);
     node->SetWorldRotation(ikNode->solved_rotation);
 }
 
 int main()
 {
-    /* Create a tree that splits into two arms
+    /* Create a tree that splits into two arms */
     struct node_t* root = node_create(0);
     struct node_t* child1 = node_create(1);
     struct node_t* child2 = node_create(2);
