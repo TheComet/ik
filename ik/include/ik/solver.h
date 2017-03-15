@@ -23,18 +23,51 @@ typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*);
 
 enum solver_algorithm_e
 {
-    SOLVER_FABRIK,
+    SOLVER_FABRIK
+    /* TODO Not implemented
     SOLVER_JACOBIAN_INVERSE,
-    SOLVER_JACOBIAN_TRANSPOSE
+    SOLVER_JACOBIAN_TRANSPOSE */
 };
 
 enum solver_flags_e
 {
-    SOLVER_EXCLUDE_ROOT                = 0x01,
-    SOLVER_CALCULATE_FINAL_ANGLES      = 0x02,
-    SOLVER_CALCULATE_CONSTRAINT_ANGLES = 0x04,
-    SOLVER_SKIP_RESET                  = 0x08,
-    SOLVER_SKIP_APPLY                  = 0x10
+    /*!
+     * @brief Causes the root node in the tree to be excluded from the list of
+     * nodes to solve for. It won't be affected by the solver, but it may still
+     * be passed through to the result callback function.
+     */
+    SOLVER_EXCLUDE_ROOT                   = 0x01,
+
+    /*!
+     * @brief This is a post-processing step which an optionally be enabled.
+     * Causes the correct global angles to be calculated for each node in the
+     * solved tree. The results can be retrieved from node->solved_rotation.
+     * This should definitely be enabled for skinned models.
+     */
+    SOLVER_CALCULATE_FINAL_ROTATIONS      = 0x02,
+
+    /* (not yet implemented)
+     * Calculate node angles for each iteration, which may be useful in the
+     * solver->apply_constraint callback function.
+     */
+    SOLVER_CALCULATE_CONSTRAINT_ROTATIONS = 0x04,
+
+    /*!
+     * @brief The solver will not reset the solved data to its initial state
+     * before solving. The result is a more "continuous" or "ongoing" solution
+     * to the tree, because it will use the previous solved tree as a bases for
+     * solving the next tree.
+     */
+    SOLVER_SKIP_RESET                     = 0x08,
+
+    /*!
+     * @brief The solver will not call the solver->apply_result callback
+     * function after solving. The results are still calculated. This is useful
+     * if you wish to delay the point at which the solved data is applied. You
+     * can later call ik_solver_iterate_tree() to initiate calls to the
+     * callback function.
+     */
+    SOLVER_SKIP_APPLY                     = 0x10
 };
 
 /*!
@@ -68,6 +101,12 @@ struct ik_solver_t
  * various features depending on your needs.
  *
  * The following attributes can be changed at any point.
+ *  + solver->apply_result
+ *       This is the main mechanism with which to obtain the solved data.
+ *       Assign a callback function here and it will be called for every node
+ *       in the tree when a new target position/rotation has been calculated.
+ *       You can use the node->user_data attribute to store external node
+ *       specific data, which can be accessed again the in callback function.
  *  + solver->max_iterations
  *       Specifies the maximum number of iterations. The more iterations, the
  *       more exact the result will be. The default value for the FABRIK solver
