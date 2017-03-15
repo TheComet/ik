@@ -63,6 +63,36 @@ struct ik_solver_t
 
 /*!
  * @brief Allocates a new solver object according to the specified algorithm.
+ *
+ * Once the solver is created, you can configure the solver to enable/disable
+ * various features depending on your needs.
+ *
+ * The following attributes can be changed at any point.
+ *  + solver->max_iterations
+ *       Specifies the maximum number of iterations. The more iterations, the
+ *       more exact the result will be. The default value for the FABRIK solver
+ *       is 20, but you can get away with values as low as 5.
+ *  + solver->tolerance
+ *       This value can be changed at any point. Specifies the acceptable
+ *       distance each effector needs to be to its target position. The solver
+ *       will stop iterating if the effectors are within this distance.
+ *  + solver->flags
+ *       Changes the behaviour of the solver. See the enum solver_flags_e for
+ *       more information.
+ *
+ * The following attributes can be accessed (read from) but should not be
+ * modified.
+ *  + solver->tree
+ *       The tree to be solved. You may modify the nodes in the tree.
+ *       @note If you add/remove nodes or if you add/remove effectors, you
+ *       must call ik_solver_rebuild_data() so the internal solver structures
+ *       are updated. Failing to do so may cause segfaults. If you're just
+ *       updating positions/rotations or any of the other public data then
+ *       there is no need to rebuild data.
+ *  + solver->effector_nodes_list
+ *       A vector containing pointers to nodes in the tree which have an
+ *       effector attached to them. You may not modify this list, but you may
+ *       iterate it.
  * @param[in] algorithm The algorithm to use. Currently, only FABRIK is
  * supported.
  */
