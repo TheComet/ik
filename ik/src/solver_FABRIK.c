@@ -159,14 +159,46 @@ solve_chain_forwards(struct chain_t* chain)
     }
     else
     {
+        /* Extract effector node and get its effector object */
         struct ik_node_t* effector_node;
+        struct ik_effector_t* effector;
         assert(ordered_vector_count(&chain->nodes) > 1);
         effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
         assert(effector_node->effector != NULL);
-        target_position = effector_node->effector->target_position;
+        effector = effector_node->effector;
+
+        /* lerp using effector weight to get actual target position */
+        target_position = effector->target_position;
         vec3_sub_vec3(target_position.f, effector_node->position.f);
-        vec3_mul_scalar(target_position.f, effector_node->effector->weight);
+        vec3_mul_scalar(target_position.f, effector->weight);
         vec3_add_vec3(target_position.f, effector_node->position.f);
+
+        /* Fancy algorithm using nlerp, makes transitions look more natural */
+        if(effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
+        {
+            ik_real distance_to_target;
+            vec3_t base_to_effector;
+            vec3_t base_to_target;
+            struct ik_node_t* base_node;
+
+            /* Need distance from base node to target and base to effector node */
+            base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
+                    ordered_vector_count(&chain->nodes) - 1);
+            base_to_effector = effector_node->position;
+            base_to_target = effector->target_position;
+            vec3_sub_vec3(base_to_effector.f, base_node->position.f);
+            vec3_sub_vec3(base_to_target.f, base_node->position.f);
+
+            /* The effective distance is a lerp between these two distances */
+            distance_to_target = vec3_length(base_to_target.f) * effector->weight;
+            distance_to_target += vec3_length(base_to_effector.f) * (1.0 - effector->weight);
+
+            /* nlerp the target position by pinning it to the base node */
+            vec3_sub_vec3(target_position.f, base_node->position.f);
+            vec3_normalise(target_position.f);
+            vec3_mul_scalar(target_position.f, distance_to_target);
+            vec3_add_vec3(target_position.f, base_node->position.f);
+        }
     }
 
     /*

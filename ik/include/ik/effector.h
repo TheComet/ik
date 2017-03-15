@@ -18,7 +18,7 @@ enum effector_flags_e
      * appealing if the solved tree diverges a lot from the original tree
      * during weight transitions.
      */
-    EFFECTOR_WEIGHT_ROTATE = 0x01
+    EFFECTOR_WEIGHT_NLERP = 0x01
 };
 
 /*!
@@ -63,6 +63,8 @@ struct ik_effector_t
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of
      * 0 means all of the parents, including the root node.
+     * @note Changing the chain length requires the solver tree to be rebuilt
+     * with ik_solver_rebuild_tree().
      */
     uint16_t chain_length;
 
