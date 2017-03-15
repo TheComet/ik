@@ -313,7 +313,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
         ORDERED_VECTOR_END_EACH
     }
 
-    if(solver->flags & SOLVER_CALCULATE_FINAL_ANGLES)
+    if(solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
         calculate_global_angles(fabrik->chain_tree);
 
     if(!(solver->flags & SOLVER_SKIP_APPLY))

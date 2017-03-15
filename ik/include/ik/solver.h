@@ -39,7 +39,7 @@ enum solver_flags_e
     SOLVER_EXCLUDE_ROOT                   = 0x01,
 
     /*!
-     * @brief This is a post-processing step which an optionally be enabled.
+     * @brief This is a post-processing step which can optionally be enabled.
      * Causes the correct global angles to be calculated for each node in the
      * solved tree. The results can be retrieved from node->solved_rotation.
      * This should definitely be enabled for skinned models.
@@ -114,7 +114,9 @@ struct ik_solver_t
  *  + solver->tolerance
  *       This value can be changed at any point. Specifies the acceptable
  *       distance each effector needs to be to its target position. The solver
- *       will stop iterating if the effectors are within this distance.
+ *       will stop iterating if the effectors are within this distance. The
+ *       default value is 1e-3. Recommended values are 100th of your world
+ *       unit.
  *  + solver->flags
  *       Changes the behaviour of the solver. See the enum solver_flags_e for
  *       more information.
@@ -202,9 +204,9 @@ ik_solver_solve(struct ik_solver_t* solver);
  * @brief Iterates all nodes in the internal tree, breadth first, and calls the
  * solver->apply_result callback function for every node.
  *
- * Typically, you would call this after solving the tree to apply the results
- * back to your own scene graph. This function could also be used to reset your
- * own scene graph to its initial state by reading the node->position and
+ * This gets called automatically for you by ik_solver_solve() if
+ * SOLVER_SKIP_APPLY is **not** set. This function could also be used to reset
+ * your own scene graph to its initial state by reading the node->position and
  * node->rotation properties.
  */
 IK_PUBLIC_API void

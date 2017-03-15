@@ -22,9 +22,9 @@ ik_solver_create(enum solver_algorithm_e algorithm)
         solver = (struct ik_solver_t*)solver_FABRIK_create();
         break;
 
-    case SOLVER_JACOBIAN_INVERSE:
+    /*case SOLVER_JACOBIAN_INVERSE:
     case SOLVER_JACOBIAN_TRANSPOSE:
-        break;
+        break;*/
     }
 
     if(solver == NULL)
