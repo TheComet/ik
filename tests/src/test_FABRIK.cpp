@@ -16,7 +16,7 @@ public:
 
     virtual void SetUp()
     {
-        solver = ik_solver_create(ALGORITHM_FABRIK);
+        solver = ik_solver_create(SOLVER_FABRIK);
     }
 
     virtual void TearDown()
@@ -25,43 +25,43 @@ public:
     }
 
 protected:
-    solver_t* solver;
+    ik_solver_t* solver;
 };
 
 TEST_F(NAME, weird_tree)
 {
-    node_t* root = node_create(0);
-    node_t* child1 = node_create(1);
-    node_t* child2 = node_create(2);
-    node_t* child3 = node_create(3);
-    node_t* child4 = node_create(4);
-    node_t* child5 = node_create(5);
-    node_t* child6 = node_create(6);
-    node_t* child7 = node_create(7);
-    node_t* child8 = node_create(8);
-    node_t* child9 = node_create(9);
-    node_t* child10 = node_create(10);
-    node_t* child11 = node_create(11);
-    node_t* child12 = node_create(12);
-    node_add_child(root, child1);
-    node_add_child(child1, child2);
-    node_add_child(child2, child3);
-    node_add_child(child3, child4);
-    node_add_child(child2, child5);
-    node_add_child(child5, child6);
-    node_add_child(child6, child7);
-    node_add_child(child6, child8);
-    node_add_child(child8, child9);
-    node_add_child(child9, child10);
-    node_add_child(child10, child11);
-    node_add_child(child11, child12);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_t* child7 = ik_node_create(7);
+    ik_node_t* child8 = ik_node_create(8);
+    ik_node_t* child9 = ik_node_create(9);
+    ik_node_t* child10 = ik_node_create(10);
+    ik_node_t* child11 = ik_node_create(11);
+    ik_node_t* child12 = ik_node_create(12);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child2, child5);
+    ik_node_add_child(child5, child6);
+    ik_node_add_child(child6, child7);
+    ik_node_add_child(child6, child8);
+    ik_node_add_child(child8, child9);
+    ik_node_add_child(child9, child10);
+    ik_node_add_child(child10, child11);
+    ik_node_add_child(child11, child12);
 
-    effector_t* eff1 = effector_create();
-    effector_t* eff2 = effector_create();
-    effector_t* eff3 = effector_create();
-    node_attach_effector(child4, eff1);
-    node_attach_effector(child7, eff2);
-    node_attach_effector(child11, eff3);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_effector_t* eff3 = ik_effector_create();
+    ik_node_attach_effector(child4, eff1);
+    ik_node_attach_effector(child7, eff2);
+    ik_node_attach_effector(child11, eff3);
     eff1->chain_length = 1;
     eff2->chain_length = 4;
     eff3->chain_length = 7;
@@ -78,27 +78,27 @@ TEST_F(NAME, weird_tree)
     // First has length 2
     chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
-    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 0);
     EXPECT_THAT(node->guid, Eq(4u));
     EXPECT_THAT(node, Eq(child4));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 1);
     EXPECT_THAT(node->guid, Eq(3u));
     EXPECT_THAT(node, Eq(child3));
 
     // Second has length 4
     chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
     ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(4u));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 0);
     EXPECT_THAT(node->guid, Eq(6u));
     EXPECT_THAT(node, Eq(child6));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 1);
     EXPECT_THAT(node->guid, Eq(5u));
     EXPECT_THAT(node, Eq(child5));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 2);
     EXPECT_THAT(node->guid, Eq(2u));
     EXPECT_THAT(node, Eq(child2));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 3);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 3);
     EXPECT_THAT(node->guid, Eq(1u));
     EXPECT_THAT(node, Eq(child1));
 
@@ -106,31 +106,31 @@ TEST_F(NAME, weird_tree)
     ASSERT_THAT(ordered_vector_count(&chain2->children), Eq(2u));
     chain_t* chain3 = (chain_t*)ordered_vector_get_element(&chain2->children, 0);
     ASSERT_THAT(ordered_vector_count(&chain3->nodes), Eq(2u));
-    node = *(node_t**)ordered_vector_get_element(&chain3->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain3->nodes, 0);
     EXPECT_THAT(node->guid, Eq(7u));
     EXPECT_THAT(node, Eq(child7));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain3->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain3->nodes, 1);
     EXPECT_THAT(node->guid, Eq(6u));
     EXPECT_THAT(node, Eq(child6));
 
     // Second sub-chain with length 5
     chain_t* chain4 = (chain_t*)ordered_vector_get_element(&chain2->children, 1);
     ASSERT_THAT(ordered_vector_count(&chain4->nodes), Eq(5u));
-    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 0);
     EXPECT_THAT(node->guid, Eq(11u));
     EXPECT_THAT(node, Eq(child11));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 1);
     EXPECT_THAT(node->guid, Eq(10u));
     EXPECT_THAT(node, Eq(child10));
-    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 2);
     EXPECT_THAT(node->guid, Eq(9u));
     EXPECT_THAT(node, Eq(child9));
-    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 3);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 3);
     EXPECT_THAT(node->guid, Eq(8u));
     EXPECT_THAT(node, Eq(child8));
-    node = *(node_t**)ordered_vector_get_element(&chain4->nodes, 4);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 4);
     EXPECT_THAT(node->guid, Eq(6u));
     EXPECT_THAT(node, Eq(child6));
 
@@ -142,9 +142,9 @@ TEST_F(NAME, weird_tree)
 
 TEST_F(NAME, just_one_node)
 {
-    node_t* root = node_create(0);
-    effector_t* eff = effector_create();
-    node_attach_effector(root, eff);
+    ik_node_t* root = ik_node_create(0);
+    ik_effector_t* eff = ik_effector_create();
+    ik_node_attach_effector(root, eff);
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
     ik_solver_solve(solver);
@@ -156,24 +156,24 @@ TEST_F(NAME, just_one_node)
 
 TEST_F(NAME, two_arms_meet_at_same_node)
 {
-    node_t* root = node_create(0);
-    node_t* child1 = node_create(1);
-    node_t* child2 = node_create(2);
-    node_t* child3 = node_create(3);
-    node_t* child4 = node_create(4);
-    node_t* child5 = node_create(5);
-    node_t* child6 = node_create(6);
-    node_add_child(root, child1);
-    node_add_child(child1, child2);
-    node_add_child(child2, child3);
-    node_add_child(child3, child4);
-    node_add_child(child2, child5);
-    node_add_child(child5, child6);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child2, child5);
+    ik_node_add_child(child5, child6);
 
-    effector_t* eff1 = effector_create();
-    effector_t* eff2 = effector_create();
-    node_attach_effector(child4, eff1);
-    node_attach_effector(child6, eff2);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_node_attach_effector(child4, eff1);
+    ik_node_attach_effector(child6, eff2);
     eff1->chain_length = 2;
     eff2->chain_length = 2;
 
@@ -188,27 +188,27 @@ TEST_F(NAME, two_arms_meet_at_same_node)
 
     // First arm
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(3u));
-    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 0);
     EXPECT_THAT(node->guid, Eq(4u));
     EXPECT_THAT(node, Eq(child4));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 1);
     EXPECT_THAT(node->guid, Eq(3u));
     EXPECT_THAT(node, Eq(child3));
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 2);
     EXPECT_THAT(node->guid, Eq(2u));
     EXPECT_THAT(node, Eq(child2));
 
     // Second arm
     ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(3u));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 0);
     EXPECT_THAT(node->guid, Eq(6u));
     EXPECT_THAT(node, Eq(child6));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 1);
     EXPECT_THAT(node->guid, Eq(5u));
     EXPECT_THAT(node, Eq(child5));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 2);
     EXPECT_THAT(node->guid, Eq(2u));
     EXPECT_THAT(node, Eq(child2));
 
@@ -219,22 +219,22 @@ TEST_F(NAME, two_arms_meet_at_same_node)
 
 TEST_F(NAME, two_separate_arms)
 {
-    node_t* root = node_create(0);
-    node_t* child1 = node_create(1);
-    node_t* child2 = node_create(2);
-    node_t* child3 = node_create(3);
-    node_t* child4 = node_create(4);
-    node_t* child5 = node_create(5);
-    node_add_child(root, child1);
-    node_add_child(child1, child2);
-    node_add_child(child2, child3);
-    node_add_child(child1, child4);
-    node_add_child(child4, child5);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child1, child4);
+    ik_node_add_child(child4, child5);
 
-    effector_t* eff1 = effector_create();
-    effector_t* eff2 = effector_create();
-    node_attach_effector(child3, eff1);
-    node_attach_effector(child5, eff2);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_node_attach_effector(child3, eff1);
+    ik_node_attach_effector(child5, eff2);
     eff1->chain_length = 1;
     eff2->chain_length = 1;
 
@@ -249,21 +249,21 @@ TEST_F(NAME, two_separate_arms)
 
     // First arm
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
-    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 0);
     EXPECT_THAT(node->guid, Eq(3u));
     EXPECT_THAT(node, Eq(child3));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 1);
     EXPECT_THAT(node->guid, Eq(2u));
     EXPECT_THAT(node, Eq(child2));
 
     // Second arm
     ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(2u));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 0);
     EXPECT_THAT(node->guid, Eq(5u));
     EXPECT_THAT(node, Eq(child5));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 1);
     EXPECT_THAT(node->guid, Eq(4u));
     EXPECT_THAT(node, Eq(child4));
 
@@ -274,24 +274,24 @@ TEST_F(NAME, two_separate_arms)
 
 TEST_F(NAME, effector_in_middle_of_chain)
 {
-    node_t* root = node_create(0);
-    node_t* child1 = node_create(1);
-    node_t* child2 = node_create(2);
-    node_t* child3 = node_create(3);
-    node_t* child4 = node_create(4);
-    node_t* child5 = node_create(5);
-    node_t* child6 = node_create(6);
-    node_add_child(root, child1);
-    node_add_child(child1, child2);
-    node_add_child(child2, child3);
-    node_add_child(child3, child4);
-    node_add_child(child4, child5);
-    node_add_child(child5, child6);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child4, child5);
+    ik_node_add_child(child5, child6);
 
-    effector_t* eff1 = effector_create();
-    effector_t* eff2 = effector_create();
-    node_attach_effector(child3, eff1);
-    node_attach_effector(child6, eff2);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_node_attach_effector(child3, eff1);
+    ik_node_attach_effector(child6, eff2);
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild_data(solver);
@@ -306,33 +306,33 @@ TEST_F(NAME, effector_in_middle_of_chain)
 
     // Bottom section
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(4u));
-    node_t* node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 0);
+    ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 0);
     EXPECT_THAT(node->guid, Eq(3u));
     EXPECT_THAT(node, Eq(child3));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 1);
     EXPECT_THAT(node->guid, Eq(2u));
     EXPECT_THAT(node, Eq(child2));
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 2);
     EXPECT_THAT(node->guid, Eq(1u));
     EXPECT_THAT(node, Eq(child1));
-    node = *(node_t**)ordered_vector_get_element(&chain1->nodes, 3);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 3);
     EXPECT_THAT(node->guid, Eq(0u));
     EXPECT_THAT(node, Eq(root));
 
     // Top section
     ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(4u));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 0);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 0);
     EXPECT_THAT(node->guid, Eq(6u));
     EXPECT_THAT(node, Eq(child6));
     EXPECT_THAT(node->effector, NotNull());
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 1);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 1);
     EXPECT_THAT(node->guid, Eq(5u));
     EXPECT_THAT(node, Eq(child5));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 2);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 2);
     EXPECT_THAT(node->guid, Eq(4u));
     EXPECT_THAT(node, Eq(child4));
-    node = *(node_t**)ordered_vector_get_element(&chain2->nodes, 3);
+    node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 3);
     EXPECT_THAT(node->guid, Eq(3u));
     EXPECT_THAT(node, Eq(child3));
 
@@ -340,21 +340,21 @@ TEST_F(NAME, effector_in_middle_of_chain)
     EXPECT_THAT(ordered_vector_count(&chain2->children), Eq(0u));
 }
 
-static void buildTreeLongChains(node_t* parent, int depth, int* guid)
+static void buildTreeLongChains(ik_node_t* parent, int depth, int* guid)
 {
-    node_t* child1 = node_create(++(*guid));
-    node_t* child2 = node_create(++(*guid));
-    node_t* child3 = node_create(++(*guid));
-    node_t* child4 = node_create(++(*guid));
-    node_t* child5 = node_create(++(*guid));
-    node_t* child6 = node_create(++(*guid));
-    node_add_child(parent, child1);
-    node_add_child(child1, child2);
-    node_add_child(child2, child3);
+    ik_node_t* child1 = ik_node_create(++(*guid));
+    ik_node_t* child2 = ik_node_create(++(*guid));
+    ik_node_t* child3 = ik_node_create(++(*guid));
+    ik_node_t* child4 = ik_node_create(++(*guid));
+    ik_node_t* child5 = ik_node_create(++(*guid));
+    ik_node_t* child6 = ik_node_create(++(*guid));
+    ik_node_add_child(parent, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
 
-    node_add_child(parent, child4);
-    node_add_child(child4, child5);
-    node_add_child(child5, child6);
+    ik_node_add_child(parent, child4);
+    ik_node_add_child(child4, child5);
+    ik_node_add_child(child5, child6);
 
     if(depth < 4)
     {
@@ -363,17 +363,17 @@ static void buildTreeLongChains(node_t* parent, int depth, int* guid)
     }
     else
     {
-        effector_t* eff1 = effector_create();
-        effector_t* eff2 = effector_create();
-        node_attach_effector(child3, eff1);
-        node_attach_effector(child6, eff2);
+        ik_effector_t* eff1 = ik_effector_create();
+        ik_effector_t* eff2 = ik_effector_create();
+        ik_node_attach_effector(child3, eff1);
+        ik_node_attach_effector(child6, eff2);
     }
 }
 
 TEST_F(NAME, binary_tree_with_long_chains)
 {
     int guid = 0;
-    node_t* root = node_create(0);
+    ik_node_t* root = ik_node_create(0);
     buildTreeLongChains(root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
@@ -381,12 +381,12 @@ TEST_F(NAME, binary_tree_with_long_chains)
     ik_solver_solve(solver);
 }
 
-static void buildTreeShortChains(node_t* parent, int depth, int* guid)
+static void buildTreeShortChains(ik_node_t* parent, int depth, int* guid)
 {
-    node_t* child1 = node_create(++(*guid));
-    node_t* child2 = node_create(++(*guid));
-    node_add_child(parent, child1);
-    node_add_child(parent, child2);
+    ik_node_t* child1 = ik_node_create(++(*guid));
+    ik_node_t* child2 = ik_node_create(++(*guid));
+    ik_node_add_child(parent, child1);
+    ik_node_add_child(parent, child2);
 
     if(depth < 4)
     {
@@ -395,17 +395,17 @@ static void buildTreeShortChains(node_t* parent, int depth, int* guid)
     }
     else
     {
-        effector_t* eff1 = effector_create();
-        effector_t* eff2 = effector_create();
-        node_attach_effector(child1, eff1);
-        node_attach_effector(child2, eff2);
+        ik_effector_t* eff1 = ik_effector_create();
+        ik_effector_t* eff2 = ik_effector_create();
+        ik_node_attach_effector(child1, eff1);
+        ik_node_attach_effector(child2, eff2);
     }
 }
 
 TEST_F(NAME, binary_tree_with_short_chains)
 {
     int guid = 0;
-    node_t* root = node_create(0);
+    ik_node_t* root = ik_node_create(0);
     buildTreeShortChains(root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
