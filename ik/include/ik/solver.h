@@ -17,7 +17,6 @@ typedef void (*ik_solver_destroy_func)(struct ik_solver_t*);
 typedef int (*ik_solver_rebuild_data_func)(struct ik_solver_t*);
 typedef void (*ik_solver_recalculate_segment_lengths_func)(struct ik_solver_t*);
 typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
-typedef void (*ik_solver_reset_func)(struct ik_solver_t*);
 
 typedef void (*ik_solver_apply_constraint_cb_func)(struct ik_node_t*);
 typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*);
@@ -54,7 +53,6 @@ enum solver_flags_e
     ik_solver_rebuild_data_func        rebuild_data;                 \
     ik_solver_recalculate_segment_lengths_func recalculate_segment_lengths; \
     ik_solver_solve_func               solve;                        \
-    ik_solver_reset_func               reset;                        \
                                                                      \
     struct ordered_vector_t            effector_nodes_list;          \
     struct ik_node_t*                  tree;
@@ -142,6 +140,14 @@ ik_solver_solve(struct ik_solver_t* solver);
  */
 IK_PUBLIC_API void
 ik_solver_iterate_tree(struct ik_solver_t* solver);
+
+/*!
+ * @brief Sets the solved positions and rotations equal to the original
+ * positions and rotations for every node in the tree. The solver will call
+ * this automatically if SOLVER_SKIP_RESET is **not** set.
+ */
+IK_PUBLIC_API void
+ik_solver_reset_solved_data(struct ik_solver_t* solver);
 
 C_HEADER_END
 

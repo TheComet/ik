@@ -95,7 +95,6 @@ solver_FABRIK_create(void)
     solver->rebuild_data = solver_FABRIK_rebuild_data;
     solver->recalculate_segment_lengths = solver_FABRIK_recalculate_segment_lengths;
     solver->solve = solver_FABRIK_solve;
-    solver->reset = solver_FABRIK_reset;
 
     solver->max_iterations = 20;
     solver->tolerance = 1e-3;
@@ -136,20 +135,6 @@ solver_FABRIK_rebuild_data(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solver_reset_recursive(struct chain_t* chain)
-{
-    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct ik_node_t*, pnode)
-        (*pnode)->solved_position = (*pnode)->position;
-        (*pnode)->solved_rotation = (*pnode)->rotation;
-    ORDERED_VECTOR_END_EACH
-
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        solver_reset_recursive(child);
-    ORDERED_VECTOR_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
 static vec3_t
 solve_chain_forwards(struct chain_t* chain)
 {
@@ -179,6 +164,9 @@ solve_chain_forwards(struct chain_t* chain)
         effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
         assert(effector_node->effector != NULL);
         target_position = effector_node->effector->target_position;
+        vec3_sub_vec3(target_position.f, effector_node->position.f);
+        vec3_mul_scalar(target_position.f, effector_node->effector->weight);
+        vec3_add_vec3(target_position.f, effector_node->position.f);
     }
 
     /*
@@ -274,9 +262,7 @@ calculate_global_angles(struct chain_t* chain)
         /* Calculate angle between original segment and solved segment */
         denominator = 1.0 / vec3_length(segment_original.f) / vec3_length(segment_solved.f);
         cos_a = vec3_dot(segment_original.f, segment_solved.f) * denominator;
-        if(cos_a < -1.0 || cos_a > 1.0)
-            quat_set_identity(parent_node->solved_rotation.f);
-        else
+        if(cos_a >= -1.0 && cos_a <= 1.0)
         {
             /* calculate axis of rotation and write it to the quaternion's vector section */
             parent_node->solved_rotation.vw.v = segment_original;
@@ -312,7 +298,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     int iteration = solver->max_iterations;
 
     if(!(solver->flags & SOLVER_SKIP_RESET))
-        solver_reset_recursive(fabrik->chain_tree);
+        ik_solver_reset_solved_data(solver);
 
     while(iteration--)
     {
@@ -342,14 +328,6 @@ solver_FABRIK_recalculate_segment_lengths(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     calculate_segment_lengths_recursive(fabrik->chain_tree);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-solver_FABRIK_reset(struct ik_solver_t* solver)
-{
-    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
-    solver_reset_recursive(fabrik->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */

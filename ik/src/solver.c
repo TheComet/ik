@@ -145,6 +145,26 @@ ik_solver_iterate_tree(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+reset_solved_data_recursive(struct ik_node_t* node)
+{
+    node->solved_position = node->position;
+    node->solved_rotation = node->rotation;
+
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+        reset_solved_data_recursive(child);
+    BSTV_END_EACH
+}
+void
+ik_solver_reset_solved_data(struct ik_solver_t* solver)
+{
+    if(solver->tree == NULL)
+        return;
+
+    reset_solved_data_recursive(solver->tree);
+}
+
+/* ------------------------------------------------------------------------- */
 static int
 recursive_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list)
 {
