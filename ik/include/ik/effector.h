@@ -18,7 +18,11 @@ enum effector_flags_e
      * appealing if the solved tree diverges a lot from the original tree
      * during weight transitions.
      */
-    EFFECTOR_WEIGHT_NLERP = 0x01
+    EFFECTOR_WEIGHT_NLERP            = 0x01,
+
+    EFFECTOR_INHERIT_PARENT_ROTATION = 0x02,
+
+    EFFECTOR_ENABLE_TARGET_ROTATION  = 0x04
 };
 
 /*!
