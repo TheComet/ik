@@ -52,13 +52,15 @@ enum solver_flags_e
      */
     SOLVER_CALCULATE_CONSTRAINT_ROTATIONS = 0x04,
 
+    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x08,
+
     /*!
      * @brief The solver will not reset the solved data to its initial state
      * before solving. The result is a more "continuous" or "ongoing" solution
      * to the tree, because it will use the previous solved tree as a bases for
      * solving the next tree.
      */
-    SOLVER_SKIP_RESET                     = 0x08,
+    SOLVER_SKIP_RESET                     = 0x10,
 
     /*!
      * @brief The solver will not call the solver->apply_result callback
@@ -67,7 +69,7 @@ enum solver_flags_e
      * can later call ik_solver_iterate_tree() to initiate calls to the
      * callback function.
      */
-    SOLVER_SKIP_APPLY                     = 0x10
+    SOLVER_SKIP_APPLY                     = 0x20
 };
 
 /*!

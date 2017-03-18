@@ -38,7 +38,7 @@ vec3_mul_scalar(ik_real* v, ik_real scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_divide_scalar(ik_real* v, ik_real scalar)
+vec3_div_scalar(ik_real* v, ik_real scalar)
 {
     v[0] /= scalar;
     v[1] /= scalar;

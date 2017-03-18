@@ -28,7 +28,7 @@ IK_PUBLIC_API void
 vec3_mul_scalar(ik_real* v1, ik_real scalar);
 
 IK_PUBLIC_API void
-vec3_divide_scalar(ik_real* v, ik_real scalar);
+vec3_div_scalar(ik_real* v, ik_real scalar);
 
 IK_PUBLIC_API ik_real
 vec3_length_squared(const ik_real* v);

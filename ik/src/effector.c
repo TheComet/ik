@@ -22,6 +22,8 @@ ik_effector_construct(struct ik_effector_t* effector)
     memset(effector, 0, sizeof *effector);
     quat_set_identity(effector->target_rotation.f);
     effector->weight = 0;
+    effector->rotation_weight = 1.0;
+    effector->rotation_decay = 0.25;
 }
 
 /* ------------------------------------------------------------------------- */

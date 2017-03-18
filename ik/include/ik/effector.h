@@ -20,9 +20,7 @@ enum effector_flags_e
      */
     EFFECTOR_WEIGHT_NLERP            = 0x01,
 
-    EFFECTOR_INHERIT_PARENT_ROTATION = 0x02,
-
-    EFFECTOR_ENABLE_TARGET_ROTATION  = 0x04
+    EFFECTOR_INHERIT_PARENT_ROTATION = 0x02
 };
 
 /*!
@@ -63,6 +61,9 @@ struct ik_effector_t
      * (weight=1.0).
      */
     ik_real  weight;
+
+    ik_real rotation_weight;
+    ik_real rotation_decay;
 
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of

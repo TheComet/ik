@@ -16,6 +16,13 @@ enum node_marking_e
     MARK_SECTION
 };
 
+struct effector_data_t
+{
+    vec3_t target_direction;
+    ik_real rotation_weight;
+    ik_real rotation_weight_decay;
+};
+
 static void
 chain_construct(struct chain_t* chain);
 static void
@@ -31,7 +38,6 @@ chain_construct(struct chain_t* chain)
 {
     ordered_vector_construct(&chain->nodes, sizeof(struct ik_node_t*));
     ordered_vector_construct(&chain->children, sizeof(struct chain_t));
-    chain->total_chain_length = 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -137,7 +143,7 @@ solver_FABRIK_rebuild_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-determine_target_data_from_effector(struct chain_t* chain, vec3_t* target_position, vec3_t* target_direction)
+determine_target_data_from_effector(struct chain_t* chain, vec3_t* target_position)
 {
     /* Extract effector node and get its effector object */
     struct ik_node_t* effector_node;
@@ -146,14 +152,6 @@ determine_target_data_from_effector(struct chain_t* chain, vec3_t* target_positi
     effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
     assert(effector_node->effector != NULL);
     effector = effector_node->effector;
-
-    {
-        /* TODO This "global direction" could be made configurable if needed */
-        target_direction->v.x = 0.0;
-        target_direction->v.y = 0.0;
-        target_direction->v.z = 1.0;
-        quat_rotate_vec(target_direction->f, effector->target_rotation.f);
-    }
 
     /* lerp using effector weight to get actual target position */
     *target_position = effector->target_position;
@@ -190,31 +188,24 @@ determine_target_data_from_effector(struct chain_t* chain, vec3_t* target_positi
 }
 
 /* ------------------------------------------------------------------------- */
-vec3_t
-solve_chain_forwards_with_target_rotation(struct chain_t* chain,
-                                          ik_real* rotation_weight,
-                                          ik_real* rotation_weight_step)
+static vec3_t
+solve_chain_forwards_with_target_rotation(struct chain_t* chain, struct effector_data_t* effector_data)
 {
     int node_count, node_idx;
     int average_count;
-    vec3_t target_direction;
     vec3_t target_position = {{0, 0, 0}};
 
     /*
      * Target position is the average of all solved child chain base positions.
      */
     average_count = 0;
-    *rotation_weight = 0;
-    *rotation_weight_step = 0;
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        ik_real child_rotation_weight;
-        ik_real child_rotation_weight_step;
-        vec3_t child_base_position = solve_chain_forwards_with_target_rotation(child, &child_rotation_weight, &child_rotation_weight_step);
-
-        *rotation_weight += child_rotation_weight;
-        *rotation_weight_step += child_rotation_weight_step;
+        struct effector_data_t child_effector_data;
+        vec3_t child_base_position = solve_chain_forwards_with_target_rotation(child, &child_effector_data);
         vec3_add_vec3(target_position.f, child_base_position.f);
-
+        vec3_add_vec3(effector_data->target_direction.f, child_effector_data.target_direction.f);
+        effector_data->rotation_weight += child_effector_data.rotation_weight;
+        effector_data->rotation_weight_decay += child_effector_data.rotation_weight_decay;
         ++average_count;
     ORDERED_VECTOR_END_EACH
 
@@ -226,30 +217,26 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain,
      */
     if(average_count == 0)
     {
-        determine_target_data_from_effector(chain, &target_position, &target_direction);
+        struct ik_node_t* effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        struct ik_effector_t* effector = effector_node->effector;
+        determine_target_data_from_effector(chain, &target_position);
 
-        if(chain->total_chain_length == 0)
-        {
-            /* Determine the number of nodes that are influenced by the effector */
-            struct ik_node_t* node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
-            int chain_counter = chain_counter = node->effector->chain_length == 0 ? -1 : node->effector->chain_length;
-            for(;node->parent != NULL && chain_counter-- != 0; node = node->parent)
-                ++chain->total_chain_length;
-        }
+        effector_data->rotation_weight = effector->rotation_weight;
+        effector_data->rotation_weight_decay = effector->rotation_decay;
+        /* TODO This "global direction" could be made configurable if needed */
+        effector_data->target_direction.v.x = 0.0;
+        effector_data->target_direction.v.y = 0.0;
+        effector_data->target_direction.v.z = 1.0;
+        quat_rotate_vec(effector_data->target_direction.f, effector->target_rotation.f);
 
-        /*
-         * Start with weight 1.0 at effector node and calculate the mount it
-         * decreases for every parent node
-         */
-        *rotation_weight_step = 2.0 / chain->total_chain_length;
-        *rotation_weight = 1.0;
     }
     else
     {
-        ik_real inv = 1.0 / average_count;
-        *rotation_weight *= inv;
-        *rotation_weight_step *= inv;
-        vec3_mul_scalar(target_position.f, inv);
+        ik_real div = 1.0 / average_count;
+        vec3_mul_scalar(target_position.f, div);
+        vec3_mul_scalar(effector_data->target_direction.f, div);
+        effector_data->rotation_weight *= div;
+        effector_data->rotation_weight_decay *= div;
     }
 
     /*
@@ -261,91 +248,32 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain,
         struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
         struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
-        *rotation_weight -= *rotation_weight_step;
-        if(*rotation_weight < 0.0)
-            *rotation_weight = 0.0;
-
         /* move node to target */
         child_node->solved_position = target_position;
 
-        vec3_add_vec3(target_position.f, target_direction.f);
+        /* lerp direction vector and segment vector */
+        vec3_sub_vec3(target_position.f, effector_data->target_direction.f);
         vec3_sub_vec3(target_position.f, parent_node->solved_position.f);
-        vec3_mul_scalar(target_position.f, *rotation_weight);
+        vec3_mul_scalar(target_position.f, effector_data->rotation_weight);
         vec3_add_vec3(target_position.f, parent_node->solved_position.f);
 
-        /* point segment to previous node and set target position to its end */
-        vec3_sub_vec3(target_position.f, parent_node->solved_position.f); /* parent points to child */
-        vec3_normalise(target_position.f);                                /* normalise */
-        vec3_mul_scalar(target_position.f, -child_node->segment_length);  /* child points to parent */
-        vec3_add_vec3(target_position.f, child_node->solved_position.f);  /* attach to child -- this is the new target */
+        vec3_sub_vec3(target_position.f, child_node->solved_position.f);
+        vec3_normalise(target_position.f);
+        vec3_mul_scalar(target_position.f, child_node->segment_length);
+        vec3_add_vec3(target_position.f, child_node->solved_position.f);
+
+        effector_data->rotation_weight *= effector_data->rotation_weight_decay;
     }
 
     return target_position;
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solve_chain_backwards_with_target_rotation(struct chain_t* chain, vec3_t target_position)
-{
-    ik_real rotation_weight = 0.0;
-    ik_real rotation_weight_step = 0.0;
-    vec3_t target_direction = {{0, 0, 1}}; /* TODO again, could be configured */
-    int node_idx = ordered_vector_count(&chain->nodes) - 1;
-
-    /*
-     * The base node must be set to the target position before iterating.
-     */
-    if(node_idx > 1)
-    {
-        struct ik_node_t* tip_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
-        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
-        base_node->solved_position = target_position;
-
-        if(tip_node->effector != NULL)
-        {
-            quat_rotate_vec(target_direction.f, tip_node->effector->target_rotation.f);
-            rotation_weight_step = 2.0 / ordered_vector_count(&chain->nodes);
-        }
-    }
-
-    /*
-     * Iterate through each segment the other way around and apply the FABRIK
-     * algorithm.
-     */
-    while(node_idx-- > 0)
-    {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
-
-        rotation_weight += rotation_weight_step;
-
-        /* point segment to child node and set target position to its beginning */
-        vec3_sub_vec3(target_position.f, child_node->solved_position.f);  /* child points to parent */
-        vec3_normalise(target_position.f);                                /* normalise */
-        vec3_mul_scalar(target_position.f, -child_node->segment_length);  /* parent points to child */
-        vec3_add_vec3(target_position.f, parent_node->solved_position.f); /* attach to parent -- this is the new target */
-
-        vec3_sub_vec3(target_position.f, target_direction.f);
-        vec3_sub_vec3(target_position.f, child_node->solved_position.f);
-        vec3_mul_scalar(target_position.f, 1.0 - rotation_weight);
-        vec3_add_vec3(target_position.f, child_node->solved_position.f);
-
-        /* move node to target */
-        child_node->solved_position = target_position;
-    }
-
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        solve_chain_backwards_with_target_rotation(child, target_position);
-    ORDERED_VECTOR_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
-vec3_t
+static vec3_t
 solve_chain_forwards(struct chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
-    vec3_t target_direction;
     vec3_t target_position = {{0, 0, 0}};
 
     /*
@@ -365,9 +293,9 @@ solve_chain_forwards(struct chain_t* chain)
      * child chains.
      */
     if(average_count == 0)
-        determine_target_data_from_effector(chain, &target_position, &target_direction);
+        determine_target_data_from_effector(chain, &target_position);
     else
-        vec3_divide_scalar(target_position.f, average_count);
+        vec3_div_scalar(target_position.f, average_count);
 
     /*
      * Iterate through each segment and apply the FABRIK algorithm.
@@ -505,31 +433,21 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     while(iteration--)
     {
         ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct chain_t, chain)
-            ik_real rotation_weight;
-            ik_real rotation_weight_step;
             vec3_t root_position;
+            struct effector_data_t effector_data;
+
             assert(ordered_vector_count(&chain->nodes) > 1);
             root_position = (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
                     ordered_vector_count(&chain->nodes) - 1))->position;
 
-            solve_chain_forwards_with_target_rotation(chain, &rotation_weight, &rotation_weight_step);
-            solve_chain_backwards_with_target_rotation(chain, root_position);
-        ORDERED_VECTOR_END_EACH
-    }
-/*
-    iteration = solver->max_iterations;
-    while(iteration--)
-    {
-        ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct chain_t, chain)
-            vec3_t root_position;
-            assert(ordered_vector_count(&chain->nodes) > 1);
-            root_position = (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
-                    ordered_vector_count(&chain->nodes) - 1))->position;
+            if(solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
+                solve_chain_forwards_with_target_rotation(chain, &effector_data);
+            else
+                solve_chain_forwards(chain);
 
-            solve_chain_forwards(chain);
             solve_chain_backwards(chain, root_position);
         ORDERED_VECTOR_END_EACH
-    }*/
+    }
 
     if(solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
         calculate_global_angles(fabrik->chain_tree);
