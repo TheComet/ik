@@ -360,7 +360,7 @@ solve_chain_backwards(struct chain_t* chain, vec3_t target_position)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_global_angles(struct chain_t* chain)
+calculate_global_rotations(struct chain_t* chain)
 {
     /*
      * Calculates the "global" (world) angles of each joint and writes them to
@@ -373,22 +373,68 @@ calculate_global_angles(struct chain_t* chain)
      * global instead of relative, the delta rotation is multiplied with
      * node->rotation, which should be a quaternion describing the node's
      * global rotation in the unsolved tree.
+     *
+     * The rotation of the base joint in the chain is returned so it can be
+     * averaged by parent chains.
      */
-    int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
+    int node_idx;
+    int average_count;
+    quat_t average_rotation = {{0, 0, 0, 0}};
+
+    /* Recursive into children chains */
+    average_count = 0;
+    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
+        quat_t rotation;
+        calculate_global_rotations(child);
+
+        /* Note: All chains that aren't the root chain *MUST* have at least two nodes */
+        assert(ordered_vector_count(&child->nodes) >= 2);
+        rotation = (*(struct ik_node_t**)
+                ordered_vector_get_element(&child->nodes,
+                    ordered_vector_count(&child->nodes) - 1))->solved_rotation;
+
+        /*
+         * Averaging quaternions taken from here
+         * http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
+         */
+        quat_normalise_sign(rotation.f);
+        quat_add_quat(average_rotation.f, rotation.f);
+        ++average_count;
+    ORDERED_VECTOR_END_EACH
+
+    /*
+     * Assuming there was more than 1 child chain and assuming we aren't the
+     * root node, then the child chains we just iterated must share the same
+     * base node as our tip node. Average the accumulated quaternion and set
+     * this node's correct solved rotation.
+     */
+    if(average_count > 0 && ordered_vector_count(&chain->nodes) != 0)
+    {
+        quat_div_scalar(average_rotation.f, average_count);
+        quat_normalise(average_rotation.f);
+        (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))
+            ->solved_rotation = average_rotation;
+    }
+
+    node_idx = ordered_vector_count(&chain->nodes) - 1;
     while(node_idx-- > 0)
     {
         ik_real cos_a, sin_a, angle, denominator;
         struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
         struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
-        /* calculate original and solved segment */
+        /* calculate vectors for original and solved segments */
         vec3_t segment_original = child_node->position;
         vec3_t segment_solved   = child_node->solved_position;
         vec3_sub_vec3(segment_original.f, parent_node->position.f);
         vec3_sub_vec3(segment_solved.f, parent_node->solved_position.f);
 
-        /* Calculate angle between original segment and solved segment */
+        /*
+         * Calculate angle between original segment and solved segment. If the
+         * angle is 0 or 180, we don't do anything. The solved rotation is
+         * initially set to the original rotation.
+         */
         denominator = 1.0 / vec3_length(segment_original.f) / vec3_length(segment_solved.f);
         cos_a = vec3_dot(segment_original.f, segment_solved.f) * denominator;
         if(cos_a >= -1.0 && cos_a <= 1.0)
@@ -409,14 +455,9 @@ calculate_global_angles(struct chain_t* chain)
              * Apply initial global rotation to calculated delta rotation to
              * obtain the solved global rotation.
              */
-            quat_mul(parent_node->solved_rotation.f, parent_node->rotation.f);
+            quat_mul_quat(parent_node->solved_rotation.f, parent_node->rotation.f);
         }
     }
-
-    /* Recursive into children chains */
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct chain_t, child)
-        calculate_global_angles(child);
-    ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -462,7 +503,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     }
 
     if(solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
-        calculate_global_angles(fabrik->chain_tree);
+        calculate_global_rotations(fabrik->chain_tree);
 
     if(!(solver->flags & SOLVER_SKIP_APPLY))
         ik_solver_iterate_tree(solver);
