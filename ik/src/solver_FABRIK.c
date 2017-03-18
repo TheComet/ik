@@ -425,6 +425,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
 {
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
     int iteration;
+    ik_real tolerance_squared = solver->tolerance * solver->tolerance;
 
     if(!(solver->flags & SOLVER_SKIP_RESET))
         ik_solver_reset_solved_data(solver);
@@ -432,9 +433,10 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     iteration = solver->max_iterations;
     while(iteration--)
     {
+        vec3_t root_position;
+        struct effector_data_t effector_data;
+
         ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct chain_t, chain)
-            vec3_t root_position;
-            struct effector_data_t effector_data;
 
             assert(ordered_vector_count(&chain->nodes) > 1);
             root_position = (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
@@ -447,6 +449,16 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
 
             solve_chain_backwards(chain, root_position);
         ORDERED_VECTOR_END_EACH
+
+        ORDERED_VECTOR_FOR_EACH(&fabrik->effector_nodes_list, struct ik_node_t*, pnode)
+            vec3_t diff = (*pnode)->solved_position;
+            vec3_sub_vec3(diff.f, (*pnode)->effector->target_position.f);
+            if(vec3_length_squared(diff.f) > tolerance_squared)
+                goto continue_iterating;
+        ORDERED_VECTOR_END_EACH
+
+        break;
+        continue_iterating:;
     }
 
     if(solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
