@@ -60,13 +60,6 @@ struct ik_node_t
     quat_t rotation;
 
     /*!
-     * @brief Global identifier for this node. The identifier must be unique
-     * within the tree, but separate trees may re-use the same IDs again. The
-     * ID can later be used to retrieve nodes from the tree again.
-     */
-    uint32_t guid;
-
-    /*!
      * @brief After the solver is executed, the solved global (world) position
      * is stored here and can be retrieved.
      */
@@ -78,6 +71,18 @@ struct ik_node_t
      */
     quat_t solved_rotation;
 
+    ik_real min_length;
+    ik_real max_length;
+    ik_real stretchiness;
+    ik_real stiffness;
+
+    /*!
+     * @brief Global identifier for this node. The identifier must be unique
+     * within the tree, but separate trees may re-use the same IDs again. The
+     * ID can later be used to retrieve nodes from the tree again.
+     */
+    uint32_t guid;
+
     /*!
      * @brief The end effector object.
      * @note This pointer should not be changed directly. You can however set
@@ -88,9 +93,10 @@ struct ik_node_t
     struct ik_effector_t* effector;
 
     /* Private data */
-    ik_real segment_length;
-    struct ik_node_t* parent;
-    struct bstv_t children;
+    ik_real segment_length;   /* length from this node to child node */
+    ik_real strain;           /* used for segment length constraints */
+    struct ik_node_t* parent; /* parent node */
+    struct bstv_t children;   /* list of node_t* objects, direct children */
 };
 
 /*!
