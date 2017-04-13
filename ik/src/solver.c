@@ -128,8 +128,8 @@ ik_solver_solve(struct ik_solver_t* solver)
 static void
 iterate_tree_recursive(struct ik_solver_t* solver, struct ik_node_t* node)
 {
-    if(solver->apply_result)
-        solver->apply_result(node);
+    if(solver->iterate_node)
+        solver->iterate_node(node);
 
     BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
         iterate_tree_recursive(solver, child);
@@ -148,8 +148,8 @@ ik_solver_iterate_tree(struct ik_solver_t* solver)
 static void
 reset_solved_data_recursive(struct ik_node_t* node)
 {
-    node->solved_position = node->position;
-    node->solved_rotation = node->rotation;
+    node->position = node->initial_position;
+    node->rotation = node->initial_rotation;
 
     BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
         reset_solved_data_recursive(child);

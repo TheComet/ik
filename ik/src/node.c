@@ -24,8 +24,8 @@ ik_node_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
     bstv_construct(&node->children);
+    quat_set_identity(node->initial_rotation.f);
     quat_set_identity(node->rotation.f);
-    quat_set_identity(node->solved_rotation.f);
     node->guid = guid;
 }
 
@@ -157,4 +157,57 @@ ik_node_dump_to_dot(struct ik_node_t* node, const char* file_name)
     fprintf(fp, "}\n");
 
     fclose(fp);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+local_to_global_recursive(struct ik_node_t* node, vec3_t acc_pos, quat_t acc_rot)
+{
+    vec3_t position;
+    quat_t rotation;
+
+    quat_rotate_vec(node->position.f, acc_rot.f);
+    position = node->position;
+    vec3_add_vec3(node->position.f, acc_pos.f);
+    vec3_add_vec3(acc_pos.f, position.f);
+
+    rotation = node->rotation;
+    quat_mul_quat(node->rotation.f, acc_rot.f);
+    quat_mul_quat(acc_rot.f, rotation.f);
+
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+        local_to_global_recursive(child, acc_pos, acc_rot);
+    BSTV_END_EACH
+}
+void
+ik_node_local_to_global(struct ik_node_t* node)
+{
+    vec3_t acc_pos = {{0, 0, 0}};
+    quat_t acc_rot = {{0, 0, 0, 1}};
+    local_to_global_recursive(node, acc_pos, acc_rot);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+global_to_local_recursive(struct ik_node_t* node, vec3_t acc_pos, quat_t acc_rot)
+{
+    quat_t inv_rotation = acc_rot;
+    quat_conj(inv_rotation.f);
+    quat_mul_quat(node->rotation.f, inv_rotation.f);
+    quat_mul_quat(acc_rot.f, node->rotation.f);
+
+    vec3_sub_vec3(node->position.f, acc_pos.f);
+    vec3_add_vec3(acc_pos.f, node->position.f);
+    quat_rotate_vec(node->position.f, inv_rotation.f);
+
+    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+        global_to_local_recursive(child, acc_pos, acc_rot);
+    BSTV_END_EACH
+}
+void
+ik_node_global_to_local(struct ik_node_t* node)
+{
+    vec3_t acc_pos = {{0, 0, 0}};
+    quat_t acc_rot = {{0, 0, 0, 1}};
+    global_to_local_recursive(node, acc_pos, acc_rot);
 }

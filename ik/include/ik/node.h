@@ -48,13 +48,25 @@ struct ik_node_t
      * be set and retrieved at any time.
      * @note The default value is (0, 0, 0).
      */
-    vec3_t position;
+    vec3_t initial_position;
 
     /*!
      * @brief The initial global rotation (in world space).
      * @note Must be set by the user to get correct results if the solver has
      * angle computations enabled (SOLVER_CALCULATE_FINAL_ANGLES).
      * @note The default value is the identity quaternion.
+     */
+    quat_t initial_rotation;
+
+    /*!
+     * @brief After the solver is executed, the solved global (world) position
+     * is stored here and can be retrieved.
+     */
+    vec3_t position;
+
+    /*!
+     * @brief After the solver is executed, the solved global (world) rotation
+     * is stored here and can be retrieved.
      */
     quat_t rotation;
 
@@ -64,18 +76,6 @@ struct ik_node_t
      * ID can later be used to retrieve nodes from the tree again.
      */
     uint32_t guid;
-
-    /*!
-     * @brief After the solver is executed, the solved global (world) position
-     * is stored here and can be retrieved.
-     */
-    vec3_t solved_position;
-
-    /*!
-     * @brief After the solver is executed, the solved global (world) rotation
-     * is stored here and can be retrieved.
-     */
-    quat_t solved_rotation;
 
     /*!
      * @brief The end effector object.
@@ -169,6 +169,12 @@ ik_node_destroy_effector(struct ik_node_t* node);
  */
 IK_PUBLIC_API void
 ik_node_dump_to_dot(struct ik_node_t* node, const char* file_name);
+
+IK_PUBLIC_API void
+ik_node_global_to_local(struct ik_node_t* node);
+
+IK_PUBLIC_API void
+ik_node_local_to_global(struct ik_node_t* node);
 
 C_HEADER_END
 

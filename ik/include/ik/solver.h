@@ -17,8 +17,8 @@ typedef int (*ik_solver_rebuild_data_func)(struct ik_solver_t*);
 typedef void (*ik_solver_recalculate_segment_lengths_func)(struct ik_solver_t*);
 typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
 
-typedef void (*ik_solver_apply_constraint_cb_func)(struct ik_node_t*);
-typedef void (*ik_solver_apply_result_cb_func)(struct ik_node_t*);
+typedef void (*ik_solver_apply_constraints_cb_func)(struct ik_solver_t*);
+typedef void (*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
 
 enum solver_algorithm_e
 {
@@ -51,45 +51,31 @@ enum solver_flags_e
      */
     SOLVER_CALCULATE_CONSTRAINT_ROTATIONS = 0x04,
 
-    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x08,
+    SOLVER_CONSTRAINT_SPACE_GLOBAL        = 0x08,
 
-    /*!
-     * @brief The solver will not reset the solved data to its initial state
-     * before solving. The result is a more "continuous" or "ongoing" solution
-     * to the tree, because it will use the previous solved tree as a bases for
-     * solving the next tree.
-     */
-    SOLVER_SKIP_RESET                     = 0x10,
-
-    /*!
-     * @brief The solver will not call the solver->apply_result callback
-     * function after solving. The results are still calculated. This is useful
-     * if you wish to delay the point at which the solved data is applied. You
-     * can later call ik_solver_iterate_tree() to initiate calls to the
-     * callback function.
-     */
-    SOLVER_SKIP_APPLY                     = 0x20
+    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x10
 };
 
 /*!
  * @brief This is a base struct for all solvers.
  */
-#define SOLVER_DATA_HEAD                                             \
-    ik_solver_apply_constraint_cb_func apply_constraint;             \
-    ik_solver_apply_result_cb_func     apply_result;                 \
-                                                                     \
-    int32_t                            max_iterations;               \
-    float                              tolerance;                    \
-    uint8_t                            flags;                        \
-                                                                     \
-    /* Derived structure callbacks */                                \
-    ik_solver_destroy_func             destroy;                      \
-    ik_solver_rebuild_data_func        rebuild_data;                 \
+#define SOLVER_DATA_HEAD                                              \
+    ik_solver_apply_constraints_cb_func apply_constraints;            \
+    ik_solver_iterate_node_cb_func      iterate_node;                 \
+    void*                               user_data;                    \
+                                                                      \
+    int32_t                             max_iterations;               \
+    float                               tolerance;                    \
+    uint8_t                             flags;                        \
+                                                                      \
+    /* Derived structure callbacks */                                 \
+    ik_solver_destroy_func              destroy;                      \
+    ik_solver_rebuild_data_func         rebuild_data;                 \
     ik_solver_recalculate_segment_lengths_func recalculate_segment_lengths; \
-    ik_solver_solve_func               solve;                        \
-                                                                     \
-    struct ordered_vector_t            effector_nodes_list;          \
-    struct ik_node_t*                  tree;
+    ik_solver_solve_func                solve;                        \
+                                                                      \
+    struct ordered_vector_t             effector_nodes_list;          \
+    struct ik_node_t*                   tree;
 struct ik_solver_t
 {
     SOLVER_DATA_HEAD

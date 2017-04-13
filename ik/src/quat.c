@@ -61,8 +61,8 @@ quat_normalise(ik_real* q)
 }
 
 /* ------------------------------------------------------------------------- */
-void
-quat_mul_quat(ik_real* q1, const ik_real* q2)
+static void
+mul_quat_no_normalise(ik_real* q1, const ik_real* q2)
 {
     ik_real v1[3];
     ik_real v2[3];
@@ -75,7 +75,11 @@ quat_mul_quat(ik_real* q1, const ik_real* q2)
     vec3_cross(q1, q2);
     vec3_add_vec3(q1, v1);
     vec3_add_vec3(q1, v2);
-
+}
+void
+quat_mul_quat(ik_real* q1, const ik_real* q2)
+{
+    mul_quat_no_normalise(q1, q2);
     quat_normalise(q1);
 }
 
@@ -131,8 +135,8 @@ quat_rotate_vec(ik_real* v, const ik_real* q)
     quat_conj(conj.f);
 
     result = *(quat_t*)q;
-    quat_mul_quat(result.f, point.f);
-    quat_mul_quat(result.f, conj.f);
+    mul_quat_no_normalise(result.f, point.f);
+    mul_quat_no_normalise(result.f, conj.f);
     memcpy(v, result.f, sizeof(ik_real) * 3);
 }
 
