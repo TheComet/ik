@@ -16,7 +16,7 @@ achieve this.
 
 Here is an example of foot placement being adjusted according to inclination.
 
-![](https://i.imgur.com/OswlUDa.gif)
+[](https://i.imgur.com/OswlUDa.gif)
 
 Here is another example of the paw of a dog  being  placed at a location using
 IK.
