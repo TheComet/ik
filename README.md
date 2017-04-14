@@ -40,8 +40,8 @@ static void results_callback(struct ik_node_t* ikNode)
     Node* node = (Node)ikNode->user_data;
 
     /* Apply results back to our engine's tree */
-    node->SetWorldPosition(ikNode->solved_position);
-    node->SetWorldRotation(ikNode->solved_rotation);
+    node->SetWorldPosition(ikNode->position);
+    node->SetWorldRotation(ikNode->rotation);
 }
 
 int main()
