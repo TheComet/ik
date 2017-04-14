@@ -8,6 +8,21 @@ A lightweight implementation of the FABRIK solver.
 Overview
 --------
 
+Supported features are
+  + Solving arbitrary trees (including disjoint trees) with any number of end effectors.
+  + Calculation of final rotations.
+  + Weighted end effectors to facilitate transitioning between the solved and initial transforms.
+  + Nlerp of weighted end effectors to make transitioning look more natural.
+  + Target rotations with weighted decay.
+  + Specifying chain length for each effector.
+  + Conversion between local and global space.
+  + Logging.
+  + Dumping trees to DOT format.
+
+Features being worked on are
+  + Weighted segments.
+  + Constraint callbacks.
+
 ![](https://cdn-standard2.discourse.org/uploads/urho3d/original/1X/a498777dc3a834d3aefd19aea937dffd27edf33c.gif)
 
 All  of the code was written in C89 and has no dependencies other than  the  C
