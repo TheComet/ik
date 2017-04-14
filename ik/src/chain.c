@@ -23,6 +23,7 @@ chain_create(void)
     struct ik_chain_t* chain = (struct ik_chain_t*)MALLOC(sizeof *chain);
     if (chain == NULL)
         ik_log_message("Failed to allocate chain: out of memory");
+    chain_construct(chain);
     return chain;
 }
 

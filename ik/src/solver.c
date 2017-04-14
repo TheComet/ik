@@ -156,9 +156,13 @@ ik_solver_rebuild_data(struct ik_solver_t* solver)
     }
 
     /* now build the chain tree */
-    rebuild_chain_tree(solver);
+    if (rebuild_chain_tree(solver) < 0)
+        return -1;
 
-    return solver->rebuild_data(solver);
+    if (solver->rebuild_data != NULL)
+        return solver->rebuild_data(solver);
+
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */

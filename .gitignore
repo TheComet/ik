@@ -3,3 +3,6 @@ build/
 
 # IDE files
 *.kdev4
+
+# Wiki repository
+ik.wiki

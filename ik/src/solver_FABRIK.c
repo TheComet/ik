@@ -24,6 +24,7 @@ solver_FABRIK_construct(struct ik_solver_t* solver)
     struct fabrik_t* fabrik = (struct fabrik_t*)solver;
 
     /* set up derived functions */
+    fabrik->destruct = solver_FABRIK_destruct;
     fabrik->solve = solver_FABRIK_solve;
 
     /* typical default values */
@@ -31,6 +32,12 @@ solver_FABRIK_construct(struct ik_solver_t* solver)
     fabrik->tolerance = 1e-3;
 
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+solver_FABRIK_destruct(struct ik_solver_t* solver)
+{
 }
 
 /* ------------------------------------------------------------------------- */
@@ -308,6 +315,10 @@ calculate_global_rotations(struct ik_chain_t* chain)
             ->rotation = average_rotation;
     }
 
+    /*
+     * Calculate all of the delta angles of the joints. The resulting delta (!)
+     * angles will be written to node->rotation
+     */
     node_idx = ordered_vector_count(&chain->nodes) - 1;
     while(node_idx-- > 0)
     {
@@ -341,14 +352,35 @@ calculate_global_rotations(struct ik_chain_t* chain)
             sin_a = sin(angle * 0.5);
             vec3_mul_scalar(parent_node->rotation.f, sin_a);
             parent_node->rotation.q.w = cos_a;
-
-            /*
-             * Apply initial global rotation to calculated delta rotation to
-             * obtain the solved global rotation.
-             */
-            quat_mul_quat(parent_node->rotation.f, parent_node->initial_rotation.f);
+        }
+        else
+        {
+            /* Important! otherwise garbage happens when applying initial rotations */
+            quat_set_identity(parent_node->rotation.f);
         }
     }
+
+    /*
+     * At this point, all nodes have calculated their delta angles *except* for
+     * the end effector nodes, which remain untouched. It makes sense to copy
+     * the delta rotation of the parent node into the effector node by default.
+     */
+    node_idx = ordered_vector_count(&chain->nodes);
+    if (node_idx > 1)
+    {
+        struct ik_node_t* effector_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 1);
+        effector_node->rotation.q = parent_node->rotation.q;
+    }
+
+    /*
+     * Finally, apply initial global rotations to calculated delta rotations to
+     * obtain the solved global rotations.
+     */
+    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct ik_node_t*, pnode)
+        struct ik_node_t* node = *pnode;
+        quat_mul_quat(node->rotation.f, node->initial_rotation.f);
+    ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */

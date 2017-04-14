@@ -15,6 +15,9 @@ struct fabrik_t
 int
 solver_FABRIK_construct(struct ik_solver_t* solver);
 
+void
+solver_FABRIK_destruct(struct ik_solver_t* solver);
+
 int
 solver_FABRIK_solve(struct ik_solver_t* solver);
 
