@@ -11,10 +11,10 @@ C_HEADER_BEGIN
 struct ik_effector_t;
 struct ik_node_t;
 struct ik_solver_t;
+struct ik_chain_t;
 
-typedef void (*ik_solver_destroy_func)(struct ik_solver_t*);
+typedef void (*ik_solver_destruct_func)(struct ik_solver_t*);
 typedef int (*ik_solver_rebuild_data_func)(struct ik_solver_t*);
-typedef void (*ik_solver_recalculate_segment_lengths_func)(struct ik_solver_t*);
 typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
 
 typedef void (*ik_solver_apply_constraints_cb_func)(struct ik_solver_t*);
@@ -69,13 +69,14 @@ enum solver_flags_e
     uint8_t                             flags;                        \
                                                                       \
     /* Derived structure callbacks */                                 \
-    ik_solver_destroy_func              destroy;                      \
+    ik_solver_destruct_func             destruct;                     \
     ik_solver_rebuild_data_func         rebuild_data;                 \
-    ik_solver_recalculate_segment_lengths_func recalculate_segment_lengths; \
     ik_solver_solve_func                solve;                        \
                                                                       \
     struct ordered_vector_t             effector_nodes_list;          \
-    struct ik_node_t*                   tree;
+    struct ik_node_t*                   tree;                         \
+    struct ik_chain_t*                  chain_tree;
+
 struct ik_solver_t
 {
     SOLVER_DATA_HEAD

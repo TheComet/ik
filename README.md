@@ -23,6 +23,9 @@ IK.
 
 ![](https://cdn-standard2.discourse.org/uploads/urho3d/original/1X/a498777dc3a834d3aefd19aea937dffd27edf33c.gif)
 
+This library provides an interface  for  building  and  solving trees. What it
+does **not** supply is any way to render the results.
+
 Supported features are
   + Solving arbitrary trees (including disjoint trees) with any number of end effectors.
   + Calculation of final rotations.
