@@ -1,7 +1,7 @@
 #ifndef EFFECTOR_H
 #define EFFECTOR_H
 
-#include "ik/config.h"
+#include "ik/gen/config.h"
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
