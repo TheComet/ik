@@ -24,7 +24,7 @@
      * common include files
      * --------------------------------------------------------------*/
 
-#   include "ik/gen/export.h"
+#   include "ik/export.h"
 #   include <stddef.h>
 
 #   if HAVE_STDINT_H == ON
