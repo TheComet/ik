@@ -8,6 +8,21 @@ A lightweight implementation of the FABRIK solver.
 Overview
 --------
 
+IK  (Inverse kinematics)  can  be  useful  in  many  situations  ranging  from
+procedural animation to small adjustments of animation. Simply put, IK is used
+when you want to position the tips of a  hierarchichal  structure  at  a known
+location and need to calculate all  of  the  rotations of the parent joints to
+achieve this.
+
+Here is an example of foot placement being adjusted according to inclination.
+
+![](http://i.imgur.com/OswlUDa.gif)
+
+Here is another example of the paw of a dog  being  placed at a location using
+IK.
+
+![](https://cdn-standard2.discourse.org/uploads/urho3d/original/1X/a498777dc3a834d3aefd19aea937dffd27edf33c.gif)
+
 Supported features are
   + Solving arbitrary trees (including disjoint trees) with any number of end effectors.
   + Calculation of final rotations.
@@ -23,7 +38,6 @@ Features being worked on are
   + Weighted segments.
   + Constraint callbacks.
 
-![](https://cdn-standard2.discourse.org/uploads/urho3d/original/1X/a498777dc3a834d3aefd19aea937dffd27edf33c.gif)
 
 All  of the code was written in C89 and has no dependencies other than  the  C
 standard  library.  Memory  debugging  facilities are in place to track memory
