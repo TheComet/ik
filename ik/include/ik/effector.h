@@ -18,8 +18,6 @@ enum effector_flags_e
      * during weight transitions.
      */
     EFFECTOR_WEIGHT_NLERP            = 0x01,
-
-    EFFECTOR_INHERIT_PARENT_ROTATION = 0x02
 };
 
 /*!

@@ -2,6 +2,7 @@
 #include "ik/effector.h"
 #include "ik/node.h"
 #include "ik/util.h"
+#include <assert.h>
 
 struct effector_data_t
 {
@@ -94,8 +95,9 @@ ik_calculate_rotation_weight_decays(struct ik_chain_t* root_chain)
      */
     ORDERED_VECTOR_FOR_EACH(&root_chain->children, struct ik_chain_t, child)
         struct effector_data_t effector_data = calculate_rotation_weight_decays_recursive(root_chain);
-        struct ik_node_t* root_node = ordered_vector_get_element(&child->nodes,
-            ordered_vector_count(&child->nodes) - 1);
+        int last_idx = ordered_vector_count(&child->nodes) - 1;
+        assert(last_idx > 0);
+        struct ik_node_t* root_node = *(struct ik_node_t**)ordered_vector_get_element(&child->nodes, last_idx);
         root_node->rotation_weight = effector_data.rotation_weight;
     ORDERED_VECTOR_END_EACH
 }
