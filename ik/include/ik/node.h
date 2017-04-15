@@ -86,7 +86,7 @@ struct ik_node_t
      */
     struct ik_effector_t* effector;
 
-    ik_real weight;
+    ik_real stiffness;
     ik_real rotation_weight;
 
     /* Private data */

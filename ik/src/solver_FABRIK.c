@@ -10,13 +10,6 @@
 #include <stdio.h>
 #include <math.h>
 
-struct effector_data_t
-{
-    vec3_t target_direction;
-    ik_real rotation_weight;
-    ik_real rotation_weight_decay;
-};
-
 /* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_construct(struct ik_solver_t* solver)
@@ -87,24 +80,28 @@ determine_target_data_from_effector(struct ik_chain_t* chain, vec3_t* target_pos
 }
 
 /* ------------------------------------------------------------------------- */
-static vec3_t
-solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain, struct effector_data_t* effector_data)
+struct position_direction_t
+{
+    vec3_t position;
+    vec3_t direction;
+};
+static struct position_direction_t
+solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
-    vec3_t target_position = {{0, 0, 0}};
+    struct position_direction_t target;
+
+    vec3_set_zero(target.position.f);
 
     /*
      * Target position is the average of all solved child chain base positions.
      */
     average_count = 0;
     ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
-        struct effector_data_t child_effector_data;
-        vec3_t child_base_position = solve_chain_forwards_with_target_rotation(child, &child_effector_data);
-        vec3_add_vec3(target_position.f, child_base_position.f);
-        vec3_add_vec3(effector_data->target_direction.f, child_effector_data.target_direction.f);
-        effector_data->rotation_weight += child_effector_data.rotation_weight;
-        effector_data->rotation_weight_decay += child_effector_data.rotation_weight_decay;
+        struct position_direction_t child_posdir = solve_chain_forwards_with_target_rotation(child);
+        vec3_add_vec3(target.position.f, child_posdir.position.f);
+        vec3_add_vec3(target.direction.f, child_posdir.direction.f);
         ++average_count;
     ORDERED_VECTOR_END_EACH
 
@@ -118,23 +115,19 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain, struct effec
     {
         struct ik_node_t* effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
         struct ik_effector_t* effector = effector_node->effector;
-        determine_target_data_from_effector(chain, &target_position);
+        determine_target_data_from_effector(chain, &target.position);
 
-        effector_data->rotation_weight = effector->rotation_weight;
-        effector_data->rotation_weight_decay = effector->rotation_decay;
         /* TODO This "global direction" could be made configurable if needed */
-        effector_data->target_direction.v.x = 0.0;
-        effector_data->target_direction.v.y = 0.0;
-        effector_data->target_direction.v.z = 1.0;
-        quat_rotate_vec(effector_data->target_direction.f, effector->target_rotation.f);
+        target.direction.v.x = 0.0;
+        target.direction.v.y = 0.0;
+        target.direction.v.z = 1.0;
+        quat_rotate_vec(target.direction.f, effector->target_rotation.f);
     }
     else
     {
         ik_real div = 1.0 / average_count;
-        vec3_mul_scalar(target_position.f, div);
-        vec3_mul_scalar(effector_data->target_direction.f, div);
-        effector_data->rotation_weight *= div;
-        effector_data->rotation_weight_decay *= div;
+        vec3_mul_scalar(target.position.f, div);
+        vec3_mul_scalar(target.direction.f, div);
     }
 
     /*
@@ -147,23 +140,21 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain, struct effec
         struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* move node to target */
-        child_node->position = target_position;
+        child_node->position = target.position;
 
         /* lerp direction vector and segment vector */
-        vec3_sub_vec3(target_position.f, effector_data->target_direction.f);
-        vec3_sub_vec3(target_position.f, parent_node->position.f);
-        vec3_mul_scalar(target_position.f, effector_data->rotation_weight);
-        vec3_add_vec3(target_position.f, parent_node->position.f);
+        vec3_sub_vec3(target.position.f, target.direction.f);
+        vec3_sub_vec3(target.position.f, parent_node->position.f);
+        vec3_mul_scalar(target.position.f, parent_node->rotation_weight);
+        vec3_add_vec3(target.position.f, parent_node->position.f);
 
-        vec3_sub_vec3(target_position.f, child_node->position.f);
-        vec3_normalise(target_position.f);
-        vec3_mul_scalar(target_position.f, child_node->segment_length);
-        vec3_add_vec3(target_position.f, child_node->position.f);
-
-        effector_data->rotation_weight *= effector_data->rotation_weight_decay;
+        vec3_sub_vec3(target.position.f, child_node->position.f);
+        vec3_normalise(target.position.f);
+        vec3_mul_scalar(target.position.f, child_node->segment_length);
+        vec3_add_vec3(target.position.f, child_node->position.f);
     }
 
-    return target_position;
+    return target;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -258,25 +249,11 @@ solve_chain_backwards(struct ik_chain_t* chain, vec3_t target_position)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_global_rotations(struct ik_chain_t* chain)
-{
-    /*
-     * Calculates the "global" (world) angles of each joint and writes them to
-     * each node->solved_rotation slot.
-     *
-     * The angle between the original and solved segments are calculated using
-     * standard vector math (dot product). The axis of rotation is calculated
-     * with the cross product. From this data, a quaternion is constructed,
-     * describing this delta rotation. Finally, in order to make the rotations
-     * global instead of relative, the delta rotation is multiplied with
-     * node->rotation, which should be a quaternion describing the node's
-     * global rotation in the unsolved tree.
-     *
-     * The rotation of the base joint in the chain is returned so it can be
-     * averaged by parent chains.
-     */
+calculate_global_rotations(struct ik_chain_t* chain);
 
-    int node_idx;
+static void
+calculate_global_rotations_of_children(struct ik_chain_t* chain)
+{
     int average_count;
     quat_t average_rotation = {{0, 0, 0, 0}};
 
@@ -314,6 +291,13 @@ calculate_global_rotations(struct ik_chain_t* chain)
         (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))
             ->rotation = average_rotation;
     }
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+calculate_delta_rotation_of_each_segment(struct ik_chain_t* chain)
+{
+    int node_idx;
 
     /*
      * Calculate all of the delta angles of the joints. The resulting delta (!)
@@ -360,6 +344,33 @@ calculate_global_rotations(struct ik_chain_t* chain)
         }
     }
 
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+calculate_global_rotations(struct ik_chain_t* chain)
+{
+    int node_idx;
+
+    /*
+     * Calculates the "global" (world) angles of each joint and writes them to
+     * each node->solved_rotation slot.
+     *
+     * The angle between the original and solved segments are calculated using
+     * standard vector math (dot product). The axis of rotation is calculated
+     * with the cross product. From this data, a quaternion is constructed,
+     * describing this delta rotation. Finally, in order to make the rotations
+     * global instead of relative, the delta rotation is multiplied with
+     * node->rotation, which should be a quaternion describing the node's
+     * global rotation in the unsolved tree.
+     *
+     * The rotation of the base joint in the chain is returned so it can be
+     * averaged by parent chains.
+     */
+
+    calculate_global_rotations_of_children(chain);
+    calculate_delta_rotation_of_each_segment(chain);
+
     /*
      * At this point, all nodes have calculated their delta angles *except* for
      * the end effector nodes, which remain untouched. It makes sense to copy
@@ -395,7 +406,6 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
     while(iteration-- > 0)
     {
         vec3_t root_position;
-        struct effector_data_t effector_data;
 
         /* Actual algorithm here */
         ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct ik_chain_t, chain)
@@ -405,7 +415,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
                     ordered_vector_count(&chain->nodes) - 1))->initial_position;
 
             if(solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
-                solve_chain_forwards_with_target_rotation(chain, &effector_data);
+                solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
 
