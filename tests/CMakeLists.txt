@@ -11,3 +11,9 @@ include_directories ("${CMAKE_BINARY_DIR}/ik/include")
 target_link_libraries (iktests ik)
 target_link_libraries (iktests gmock)
 target_link_libraries (iktests gmock_main)
+
+install (
+    TARGETS iktests
+    RUNTIME DESTINATION "bin"
+)
+

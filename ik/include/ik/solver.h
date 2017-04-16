@@ -17,7 +17,7 @@ typedef void (*ik_solver_destruct_func)(struct ik_solver_t*);
 typedef int (*ik_solver_rebuild_data_func)(struct ik_solver_t*);
 typedef int (*ik_solver_solve_func)(struct ik_solver_t*);
 
-typedef void (*ik_solver_apply_constraints_cb_func)(struct ik_solver_t*);
+typedef void (*ik_solver_apply_constraint_cb_func)(struct ik_node_t*);
 typedef void (*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
 
 enum solver_algorithm_e
@@ -45,24 +45,16 @@ enum solver_flags_e
      */
     SOLVER_CALCULATE_FINAL_ROTATIONS      = 0x02,
 
-    /* (not yet implemented)
-     * Calculate node angles for each iteration, which may be useful in the
-     * solver->apply_constraint callback function.
-     */
-    SOLVER_CALCULATE_CONSTRAINT_ROTATIONS = 0x04,
+    SOLVER_ENABLE_CONSTRAINTS             = 0x04,
 
-    SOLVER_CONSTRAINT_SPACE_GLOBAL        = 0x08,
-
-    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x10
+    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x08
 };
 
 /*!
  * @brief This is a base struct for all solvers.
  */
 #define SOLVER_DATA_HEAD                                              \
-    ik_solver_apply_constraints_cb_func apply_constraints;            \
-    ik_solver_iterate_node_cb_func      iterate_node;                 \
-    void*                               user_data;                    \
+    ik_solver_apply_constraint_cb_func  apply_constraint;             \
                                                                       \
     int32_t                             max_iterations;               \
     float                               tolerance;                    \
@@ -189,16 +181,12 @@ IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver_t* solver);
 
 /*!
- * @brief Iterates all nodes in the internal tree, breadth first, and calls the
- * solver->apply_result callback function for every node.
- *
- * This gets called automatically for you by ik_solver_solve() if
- * SOLVER_SKIP_APPLY is **not** set. This function could also be used to reset
- * your own scene graph to its initial state by reading the node->position and
- * node->rotation properties.
+ * @brief Iterates all nodes in the internal tree, breadth first, and passes
+ * each node to the specified callback function.
  */
 IK_PUBLIC_API void
-ik_solver_iterate_tree(struct ik_solver_t* solver);
+ik_solver_iterate_tree(struct ik_solver_t* solver,
+                       ik_solver_iterate_node_cb_func callback);
 
 /*!
  * @brief Sets the solved positions and rotations equal to the original

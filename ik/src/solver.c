@@ -181,22 +181,26 @@ ik_solver_solve(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-iterate_tree_recursive(struct ik_solver_t* solver, struct ik_node_t* node)
+iterate_tree_recursive(struct ik_node_t* node,
+                       ik_solver_iterate_node_cb_func callback)
 {
-    if(solver->iterate_node)
-        solver->iterate_node(node);
+    callback(node);
 
     BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
-        iterate_tree_recursive(solver, child);
+        iterate_tree_recursive(child, callback);
     BSTV_END_EACH
 }
 void
-ik_solver_iterate_tree(struct ik_solver_t* solver)
+ik_solver_iterate_tree(struct ik_solver_t* solver,
+                       ik_solver_iterate_node_cb_func callback)
 {
     if(solver->tree == NULL)
+    {
+        ik_log_message("Warning: Tried iterating the tree, but no tree was set");
         return;
+    }
 
-    iterate_tree_recursive(solver, solver->tree);
+    iterate_tree_recursive(solver->tree, callback);
 }
 
 /* ------------------------------------------------------------------------- */

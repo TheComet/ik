@@ -1,0 +1,33 @@
+{
+    obj:*
+    fun:initializeDb
+    fun:_ZL12initializeDbv
+    fun:_ZN13QFontDatabase8findFontERK8QFontDefi
+    fun:_ZN13QFontDatabase4loadEPK12QFontPrivatei
+    fun:_ZNK12QFontPrivate15engineForScriptEi
+    fun:_ZN11QScriptLine16setDefaultHeightEP11QTextEngine
+    fun:_ZN9QTextLine13layout_helperEi
+    fun:_ZN9QTextLine12setLineWidthEd
+    fun:_ZN26QTextDocumentLayoutPrivate11layoutBlockERK10QTextBlockiRK16QTextBlockFormatP17QTextLayoutStructiiPS4_
+    fun:_ZN26QTextDocumentLayoutPrivate10layoutFlowEN10QTextFrame8iteratorEP17QTextLayoutStructii6QFixed
+    fun:_ZN26QTextDocumentLayoutPrivate11layoutFrameEP10QTextFrameii6QFixedS2_S2_
+    fun:_ZN26QTextDocumentLayoutPrivate11layoutFrameEP10QTextFrameii6QFixed
+    fun:_ZN19QTextDocumentLayout8doLayoutEiii
+    fun:_ZNK26QTextDocumentLayoutPrivate24ensureLayoutedByPositionEi.part.128
+    fun:_ZNK26QTextDocumentLayoutPrivate10layoutStepEv
+    fun:_ZN19QTextDocumentLayout15documentChangedEiii
+    fun:_ZNK13QTextDocument14documentLayoutEv
+    fun:_xcb_conn_wait
+    fun:_xcb_out_send
+    fun:_xcb_out_flush_to
+    fun:xcb_flush
+    fun:_ZN10QXcbWindow4hideEv
+    fun:_ZN14QWidgetPrivate8hide_sysEv
+    fun:_ZN14QWidgetPrivate11hide_helperEv
+    fun:_ZN7QWidget10setVisibleEb
+    fun:_ZN14QWidgetPrivate12close_helperENS_9CloseModeE
+    fun:_ZN13QWidgetWindow5eventEP6QEvent
+	fun:_dl_open
+    fun:_dl_init
+}
+

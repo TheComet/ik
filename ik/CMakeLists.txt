@@ -1,3 +1,8 @@
+include (CheckIncludeFiles)
+include (CheckCSourceCompiles)
+
+check_include_files ("stdint.h" IK_HAVE_STDINT_H)
+
 # memory debugging
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ON)
@@ -14,8 +19,18 @@ else ()
     option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" OFF)
 endif ()
 
-include (CheckIncludeFiles)
-check_include_files ("stdint.h" HAVE_STDINT_H)
+
+# Enable restrict keyword in quaternion and vector operations if not in debug
+set (IK_RESTRICT "")
+if (NOT CMAKE_BUILD_TYPE STREQUAL Debug)
+    foreach (RESTRICT_KEYWORD restrict __restrict __restrict__)
+        check_c_source_compiles ("int test (void *${RESTRICT_KEYWORD} x); int main (void) {return 0;}" IK_HAVE_RESTRICT)
+        if (IK_HAVE_RESTRICT)
+            set (IK_RESTRICT ${RESTRICT_KEYWORD})
+            break ()
+        endif ()
+    endforeach ()
+endif ()
 
 set (IK_BUILD_TYPE "STATIC" CACHE STRING "Shared or static library")
 set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
