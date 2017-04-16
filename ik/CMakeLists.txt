@@ -32,7 +32,7 @@ if (NOT CMAKE_BUILD_TYPE STREQUAL Debug)
     endforeach ()
 endif ()
 
-set (IK_BUILD_TYPE "STATIC" CACHE STRING "Shared or static library")
+set (IK_LIB_TYPE "STATIC" CACHE STRING "Shared or static library")
 set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
 option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 
@@ -81,7 +81,7 @@ list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
 
 include_directories ("include")
 
-add_library (ik ${IK_BUILD_TYPE}
+add_library (ik ${IK_LIB_TYPE}
     ${IK_HEADERS}
     ${IK_SOURCES}
 )

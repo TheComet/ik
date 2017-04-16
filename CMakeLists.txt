@@ -20,6 +20,21 @@ project ("ik" C)
 set (CMAKE_MACOSX_RPATH OFF)
 
 ###############################################################################
+# output locations
+###############################################################################
+
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+if (WIN32)
+    set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+else ()
+    set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+endif ()
+
+set (IK_RPATHS
+    "../lib")
+
+###############################################################################
 # compiler definitions and flags
 ###############################################################################
 
@@ -54,6 +69,16 @@ message (STATUS "------------------------------------------------------------")
 add_subdirectory ("ik")
 
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
+option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 if (IK_TESTS)
     add_subdirectory ("tests")
+    set_target_properties (iktests
+        PROPERTIES
+        INSTALL_RPATH ${IK_RPATHS})
+endif ()
+if (IK_BENCHMARKS)
+    add_subdirectory ("benchmarks")
+    set_target_properties (ikbenchmarks
+        PROPERTIES
+        INSTALL_RPATH ${IK_RPATHS})
 endif ()
