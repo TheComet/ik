@@ -10,23 +10,23 @@
 #include <stdio.h>
 #include <math.h>
 
-struct position_direction_t
+typedef struct position_direction_t
 {
     vec3_t position;
     vec3_t direction;
-};
+} position_direction_t;
 
-struct transform_t
+typedef struct transform_t
 {
     vec3_t position;
     quat_t rotation;
-};
+} transform_t;
 
 /* ------------------------------------------------------------------------- */
 int
-solver_FABRIK_construct(struct ik_solver_t* solver)
+solver_FABRIK_construct(ik_solver_t* solver)
 {
-    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    fabrik_t* fabrik = (fabrik_t*)solver;
 
     /* set up derived functions */
     fabrik->destruct = solver_FABRIK_destruct;
@@ -41,19 +41,19 @@ solver_FABRIK_construct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-solver_FABRIK_destruct(struct ik_solver_t* solver)
+solver_FABRIK_destruct(ik_solver_t* solver)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-determine_target_data_from_effector(struct ik_chain_t* chain, vec3_t* target_position)
+determine_target_data_from_effector(ik_chain_t* chain, vec3_t* target_position)
 {
     /* Extract effector node and get its effector object */
-    struct ik_node_t* effector_node;
-    struct ik_effector_t* effector;
+    ik_node_t* effector_node;
+    ik_effector_t* effector;
     assert(ordered_vector_count(&chain->nodes) > 1);
-    effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+    effector_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
     assert(effector_node->effector != NULL);
     effector = effector_node->effector;
 
@@ -64,15 +64,15 @@ determine_target_data_from_effector(struct ik_chain_t* chain, vec3_t* target_pos
     vec3_add_vec3(target_position->f, effector_node->initial_position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
-    if(effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
+    if (effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ik_real distance_to_target;
         vec3_t base_to_effector;
         vec3_t base_to_target;
-        struct ik_node_t* base_node;
+        ik_node_t* base_node;
 
         /* Need distance from base node to target and base to effector node */
-        base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
+        base_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes,
                 ordered_vector_count(&chain->nodes) - 1);
         base_to_effector = effector_node->initial_position;
         base_to_target = effector->target_position;
@@ -92,12 +92,12 @@ determine_target_data_from_effector(struct ik_chain_t* chain, vec3_t* target_pos
 }
 
 /* ------------------------------------------------------------------------- */
-static struct position_direction_t
-solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
+static position_direction_t
+solve_chain_forwards_with_target_rotation(ik_chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
-    struct position_direction_t target;
+    position_direction_t target;
 
     vec3_set_zero(target.position.f);
 
@@ -105,8 +105,8 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
      * Target position is the average of all solved child chain base positions.
      */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
-        struct position_direction_t child_posdir = solve_chain_forwards_with_target_rotation(child);
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+        position_direction_t child_posdir = solve_chain_forwards_with_target_rotation(child);
         vec3_add_vec3(target.position.f, child_posdir.position.f);
         vec3_add_vec3(target.direction.f, child_posdir.direction.f);
         ++average_count;
@@ -118,13 +118,13 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
      * position. Otherwise, average the data we've been accumulating from the
      * child chains.
      */
-    if(average_count == 0)
+    if (average_count == 0)
     {
-        struct ik_node_t* effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
-        struct ik_effector_t* effector = effector_node->effector;
+        ik_node_t* effector_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        ik_effector_t* effector = effector_node->effector;
         determine_target_data_from_effector(chain, &target.position);
 
-        /* TODO This "global direction" could be made configurable if needed */
+        /* TODO This "global direction" could be made configurable if (needed */
         target.direction.v.x = 0.0;
         target.direction.v.y = 0.0;
         target.direction.v.z = 1.0;
@@ -141,10 +141,10 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
      * Iterate through each segment and apply the FABRIK algorithm.
      */
     node_count = ordered_vector_count(&chain->nodes);
-    for(node_idx = 0; node_idx < node_count - 1; ++node_idx)
+    for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* move node to target */
         child_node->position = target.position;
@@ -167,7 +167,7 @@ solve_chain_forwards_with_target_rotation(struct ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 vec3_t
-solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_constraint_cb_func apply_constraint)
+solve_chain_forwards_with_constraints(ik_chain_t* chain, ik_solver_apply_constraint_cb_func apply_constraint)
 {
     int node_count, node_idx;
     int average_count;
@@ -177,7 +177,7 @@ solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_
      * Target position is the average of all solved child chain base positions.
      */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
         vec3_t child_base_position = solve_chain_forwards_with_constraints(child, apply_constraint);
         vec3_add_vec3(target_position.f, child_base_position.f);
         ++average_count;
@@ -189,7 +189,7 @@ solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_
      * position. Otherwise, average the data we've been accumulating from the
      * child chains.
      */
-    if(average_count == 0)
+    if (average_count == 0)
         determine_target_data_from_effector(chain, &target_position);
     else
         vec3_div_scalar(target_position.f, average_count);
@@ -198,13 +198,12 @@ solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_
      * Iterate through each segment and apply the FABRIK algorithm.
      */
     node_count = ordered_vector_count(&chain->nodes);
-    for(node_idx = 0; node_idx < node_count - 1; ++node_idx)
+    for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
         vec3_t segment_original, segment_current;
-        quat_t inv_rotation;
 
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* move node to target */
         child_node->position = target_position;
@@ -215,21 +214,12 @@ solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_
         vec3_mul_scalar(target_position.f, -child_node->segment_length);  /* child points to parent */
         vec3_add_vec3(target_position.f, child_node->position.f);         /* attach to child -- this is the new target */
 
+        /* Calculate global rotation of parent node */
         segment_original = child_node->initial_position;
         segment_current  = child_node->position;
         vec3_sub_vec3(segment_original.f, parent_node->initial_position.f);
         vec3_sub_vec3(segment_current.f, target_position.f);
         vec3_angle(parent_node->rotation.f, segment_original.f, segment_current.f);
-        quat_mul_quat(parent_node->rotation.f, parent_node->initial_rotation.f);
-
-        apply_constraint(parent_node);
-
-        inv_rotation = parent_node->initial_rotation;
-        target_position = child_node->position;
-        quat_conj(inv_rotation.f);
-        quat_mul_quat(parent_node->rotation.f, inv_rotation.f);
-        quat_rotate_vec(segment_original.f, parent_node->rotation.f);
-        vec3_add_vec3(target_position.f, segment_original.f);
     }
 
     return target_position;
@@ -237,7 +227,7 @@ solve_chain_forwards_with_constraints(struct ik_chain_t* chain, ik_solver_apply_
 
 /* ------------------------------------------------------------------------- */
 vec3_t
-solve_chain_forwards(struct ik_chain_t* chain)
+solve_chain_forwards(ik_chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
@@ -247,7 +237,7 @@ solve_chain_forwards(struct ik_chain_t* chain)
      * Target position is the average of all solved child chain base positions.
      */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
         vec3_t child_base_position = solve_chain_forwards(child);
         vec3_add_vec3(target_position.f, child_base_position.f);
         ++average_count;
@@ -259,7 +249,7 @@ solve_chain_forwards(struct ik_chain_t* chain)
      * position. Otherwise, average the data we've been accumulating from the
      * child chains.
      */
-    if(average_count == 0)
+    if (average_count == 0)
         determine_target_data_from_effector(chain, &target_position);
     else
         vec3_div_scalar(target_position.f, average_count);
@@ -268,10 +258,10 @@ solve_chain_forwards(struct ik_chain_t* chain)
      * Iterate through each segment and apply the FABRIK algorithm.
      */
     node_count = ordered_vector_count(&chain->nodes);
-    for(node_idx = 0; node_idx < node_count - 1; ++node_idx)
+    for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* move node to target */
         child_node->position = target_position;
@@ -288,9 +278,9 @@ solve_chain_forwards(struct ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-solve_chain_backwards_with_constraints(struct ik_chain_t* chain,
+solve_chain_backwards_with_constraints(ik_chain_t* chain,
                                        vec3_t target_position,
-                                       struct transform_t accumulated,
+                                       transform_t accumulated,
                                        ik_solver_apply_constraint_cb_func apply_constraint)
 {
     int node_idx = ordered_vector_count(&chain->nodes) - 1;
@@ -298,9 +288,9 @@ solve_chain_backwards_with_constraints(struct ik_chain_t* chain,
     /*
      * The base node must be set to the target position before iterating.
      */
-    if(node_idx > 1)
+    if (node_idx > 1)
     {
-        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
+        ik_node_t* base_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
         base_node->position = target_position;
     }
 
@@ -308,14 +298,14 @@ solve_chain_backwards_with_constraints(struct ik_chain_t* chain,
      * Iterate through each segment the other way around and apply the FABRIK
      * algorithm.
      */
-    while(node_idx-- > 0)
+    while (node_idx-- > 0)
     {
         vec3_t segment_original, segment_current;
         quat_t inv_rotation;
-        struct transform_t accumulated_previous;
+        transform_t accumulated_previous;
 
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
 
         /* point segment to child node and set target position to its beginning */
@@ -367,23 +357,23 @@ solve_chain_backwards_with_constraints(struct ik_chain_t* chain,
         child_node->position = target_position;
     }
 
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
         solve_chain_backwards_with_constraints(child, target_position, accumulated, apply_constraint);
     ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
 void
-solve_chain_backwards(struct ik_chain_t* chain, vec3_t target_position)
+solve_chain_backwards(ik_chain_t* chain, vec3_t target_position)
 {
     int node_idx = ordered_vector_count(&chain->nodes) - 1;
 
     /*
      * The base node must be set to the target position before iterating.
      */
-    if(node_idx > 1)
+    if (node_idx > 1)
     {
-        struct ik_node_t* base_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
+        ik_node_t* base_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
         base_node->position = target_position;
     }
 
@@ -391,10 +381,10 @@ solve_chain_backwards(struct ik_chain_t* chain, vec3_t target_position)
      * Iterate through each segment the other way around and apply the FABRIK
      * algorithm.
      */
-    while(node_idx-- > 0)
+    while (node_idx-- > 0)
     {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* point segment to child node and set target position to its beginning */
         vec3_sub_vec3(target_position.f, child_node->position.f);         /* child points to parent */
@@ -406,30 +396,30 @@ solve_chain_backwards(struct ik_chain_t* chain, vec3_t target_position)
         child_node->position = target_position;
     }
 
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
         solve_chain_backwards(child, target_position);
     ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_global_rotations(struct ik_chain_t* chain);
+calculate_global_rotations(ik_chain_t* chain);
 
 static void
-calculate_global_rotations_of_children(struct ik_chain_t* chain)
+calculate_global_rotations_of_children(ik_chain_t* chain)
 {
     int average_count;
     quat_t average_rotation = {{0, 0, 0, 0}};
 
     /* Recurse into children chains */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
         quat_t rotation;
         calculate_global_rotations(child);
 
         /* Note: All chains that aren't the root chain *MUST* have at least two nodes */
         assert(ordered_vector_count(&child->nodes) >= 2);
-        rotation = (*(struct ik_node_t**)
+        rotation = (*(ik_node_t**)
                 ordered_vector_get_element(&child->nodes,
                     ordered_vector_count(&child->nodes) - 1))->rotation;
 
@@ -448,18 +438,18 @@ calculate_global_rotations_of_children(struct ik_chain_t* chain)
      * base node as our tip node. Average the accumulated quaternion and set
      * this node's correct solved rotation.
      */
-    if(average_count > 0 && ordered_vector_count(&chain->nodes) != 0)
+    if (average_count > 0 && ordered_vector_count(&chain->nodes) != 0)
     {
         quat_div_scalar(average_rotation.f, average_count);
         quat_normalise(average_rotation.f);
-        (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))
+        (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))
             ->rotation = average_rotation;
     }
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_delta_rotation_of_each_segment(struct ik_chain_t* chain)
+calculate_delta_rotation_of_each_segment(ik_chain_t* chain)
 {
     int node_idx;
 
@@ -468,10 +458,10 @@ calculate_delta_rotation_of_each_segment(struct ik_chain_t* chain)
      * angles will be written to node->rotation
      */
     node_idx = ordered_vector_count(&chain->nodes) - 1;
-    while(node_idx-- > 0)
+    while (node_idx-- > 0)
     {
-        struct ik_node_t* child_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
         vec3_t segment_original = child_node->initial_position;
@@ -485,7 +475,7 @@ calculate_delta_rotation_of_each_segment(struct ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_global_rotations(struct ik_chain_t* chain)
+calculate_global_rotations(ik_chain_t* chain)
 {
     int node_idx;
 
@@ -516,8 +506,8 @@ calculate_global_rotations(struct ik_chain_t* chain)
     node_idx = ordered_vector_count(&chain->nodes);
     if (node_idx > 1)
     {
-        struct ik_node_t* effector_node  = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
-        struct ik_node_t* parent_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 1);
+        ik_node_t* effector_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 1);
         effector_node->rotation.q = parent_node->rotation.q;
     }
 
@@ -525,34 +515,34 @@ calculate_global_rotations(struct ik_chain_t* chain)
      * Finally, apply initial global rotations to calculated delta rotations to
      * obtain the solved global rotations.
      */
-    ORDERED_VECTOR_FOR_EACH(&chain->nodes, struct ik_node_t*, pnode)
-        struct ik_node_t* node = *pnode;
+    ORDERED_VECTOR_FOR_EACH(&chain->nodes, ik_node_t*, pnode)
+        ik_node_t* node = *pnode;
         quat_mul_quat(node->rotation.f, node->initial_rotation.f);
     ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
 int
-solver_FABRIK_solve(struct ik_solver_t* solver)
+solver_FABRIK_solve(ik_solver_t* solver)
 {
     int result = 0;
-    struct fabrik_t* fabrik = (struct fabrik_t*)solver;
+    fabrik_t* fabrik = (fabrik_t*)solver;
     int iteration = solver->max_iterations;
     ik_real tolerance_squared = solver->tolerance * solver->tolerance;
 
-    while(iteration-- > 0)
+    while (iteration-- > 0)
     {
         vec3_t root_position;
-        struct transform_t initial_transform = {{{0, 0, 0}}, {{0, 0, 0, 1}}};
+        transform_t initial_transform = {{{0, 0, 0}}, {{0, 0, 0, 1}}};
 
         /* Actual algorithm here */
-        ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, struct ik_chain_t, chain)
+        ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree->children, ik_chain_t, chain)
 
             assert(ordered_vector_count(&chain->nodes) > 1);
-            root_position = (*(struct ik_node_t**)ordered_vector_get_element(&chain->nodes,
+            root_position = (*(ik_node_t**)ordered_vector_get_element(&chain->nodes,
                     ordered_vector_count(&chain->nodes) - 1))->initial_position;
 
-            if(solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
+            if (solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
@@ -563,11 +553,11 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
                 solve_chain_backwards(chain, root_position);
         ORDERED_VECTOR_END_EACH
 
-        /* Check if all effectors are within range */
-        ORDERED_VECTOR_FOR_EACH(&fabrik->effector_nodes_list, struct ik_node_t*, pnode)
+        /* Check if (all effectors are within range */
+        ORDERED_VECTOR_FOR_EACH(&fabrik->effector_nodes_list, ik_node_t*, pnode)
             vec3_t diff = (*pnode)->position;
             vec3_sub_vec3(diff.f, (*pnode)->effector->target_position.f);
-            if(vec3_length_squared(diff.f) > tolerance_squared)
+            if (vec3_length_squared(diff.f) > tolerance_squared)
             {
                 result = 1; /* converged */
                 break;
@@ -575,7 +565,7 @@ solver_FABRIK_solve(struct ik_solver_t* solver)
         ORDERED_VECTOR_END_EACH
     }
 
-    if(solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
+    if (solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
         calculate_global_rotations(fabrik->chain_tree);
 
     return result;

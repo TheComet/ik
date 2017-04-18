@@ -5,6 +5,11 @@ A lightweight implementation of the FABRIK solver.
 
 [See the wiki page for details on how to use it](https://github.com/TheComet93/ik/wiki)
 
+Building
+--------
+
+Use the ```v1.0``` branch. The master branch has some unstable features.
+
 Overview
 --------
 

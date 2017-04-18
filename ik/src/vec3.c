@@ -65,7 +65,7 @@ void
 vec3_normalise(ik_real* IK_RESTRICT v)
 {
     ik_real length = vec3_length(v);
-    if(length != 0.0)
+    if (length != 0.0)
         length = 1.0 / length;
     v[0] *= length;
     v[1] *= length;
@@ -100,7 +100,7 @@ vec3_angle(ik_real* IK_RESTRICT q, const ik_real* IK_RESTRICT v1, const ik_real*
 
     denominator = 1.0 / vec3_length(v1) / vec3_length(v2);
     cos_a = vec3_dot(v1, v2) * denominator;
-    if(cos_a >= -1.0 && cos_a <= 1.0)
+    if (cos_a >= -1.0 && cos_a <= 1.0)
     {
         /* calculate axis of rotation and write it to the quaternion's vector section */
         memcpy(q, v1, sizeof(ik_real) * 3);

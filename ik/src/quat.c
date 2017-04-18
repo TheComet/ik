@@ -52,7 +52,7 @@ void
 quat_normalise(ik_real* IK_RESTRICT q)
 {
     ik_real mag = quat_mag(q);
-    if(mag != 0.0)
+    if (mag != 0.0)
         mag = 1.0 / mag;
     q[0] *= mag;
     q[1] *= mag;
@@ -97,7 +97,7 @@ quat_mul_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
 void
 quat_div_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
 {
-    if(scalar == 0.0)
+    if (scalar == 0.0)
         quat_set_identity(q);
     else
     {
@@ -146,6 +146,6 @@ quat_normalise_sign(ik_real* IK_RESTRICT q1)
 {
     quat_t unit = {{0, 0, 0, 1}};
     ik_real dot = quat_dot(q1, unit.f);
-    if(dot < 0.0)
+    if (dot < 0.0)
         quat_invert_sign(q1);
 }

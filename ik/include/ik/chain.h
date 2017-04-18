@@ -11,42 +11,42 @@
 
 C_HEADER_BEGIN
 
-struct ik_solver_t;
-struct ik_node_t;
+typedef struct ik_solver_t ik_solver_t;
+typedef struct ik_node_t ik_node_t;
 
-struct ik_chain_t
+typedef struct ik_chain_t
 {
     /* list of node_t* references that belong to this chain */
-    struct ordered_vector_t nodes;
+    ordered_vector_t nodes;
     /* list of chain_t objects */
-    struct ordered_vector_t children;
-};
+    ordered_vector_t children;
+} ik_chain_t;
 
-struct ik_chain_t*
+ik_chain_t*
 chain_create(void);
 
 void
-chain_destroy(struct ik_chain_t* chain);
+chain_destroy(ik_chain_t* chain);
 
 /*!
  * @brief Initialises an allocated chain object.
  */
 void
-chain_construct(struct ik_chain_t* chain);
+chain_construct(ik_chain_t* chain);
 
 /*!
  * @brief Destroys and frees all members, but does not deallocate the chain
  * object itself.
  */
 void
-chain_destruct(struct ik_chain_t* chain);
+chain_destruct(ik_chain_t* chain);
 
 
 /*!
  * @brief Clears all children and nodes.
  */
 void
-chain_clear_free(struct ik_chain_t* chain);
+chain_clear_free(ik_chain_t* chain);
 
 /*!
  * @brief Breaks down the relevant nodes of the scene graph into a tree of
@@ -64,16 +64,16 @@ chain_clear_free(struct ik_chain_t* chain);
  * the chain tree.
  */
 int
-rebuild_chain_tree(struct ik_solver_t* solver);
+rebuild_chain_tree(ik_solver_t* solver);
 
 void
-calculate_segment_lengths(struct ik_chain_t* chain);
+calculate_segment_lengths(ik_chain_t* chain);
 
 /*!
  * @brief Counts all of the chains in the tree, excluding the root chain.
  */
 int
-count_chains_exclude_root(struct ik_chain_t* chain);
+count_chains_exclude_root(ik_chain_t* chain);
 
 #if IK_DOT_OUTPUT == ON
 /*!
@@ -88,7 +88,7 @@ count_chains_exclude_root(struct ik_chain_t* chain);
  * @param[in] file_name The name of the file to dump to.
  */
 void
-dump_to_dot(struct ik_node_t* root, struct ik_chain_t* chain, const char* file_name);
+dump_to_dot(ik_node_t* root, ik_chain_t* chain, const char* file_name);
 #endif /* IK_DOT_OUTPUT */
 
 C_HEADER_END

@@ -10,24 +10,24 @@
 #include <string.h>
 
 static int
-recursively_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list);
+recursively_get_all_effector_nodes(ik_node_t* node, ordered_vector_t* effector_nodes_list);
 
 /* ------------------------------------------------------------------------- */
-struct ik_solver_t*
+ik_solver_t*
 ik_solver_create(enum solver_algorithm_e algorithm)
 {
     uintptr_t solver_size = 0;
-    int (*solver_construct)(struct ik_solver_t*) = NULL;
-    struct ik_solver_t* solver = NULL;
+    int (*solver_construct)(ik_solver_t*) = NULL;
+    ik_solver_t* solver = NULL;
 
     /*
-     * Determine the correct size and construct function, depending on the
+     * Determine the correct size and confunction, depending on the
      * selected algorithm.
      */
     switch (algorithm)
     {
     case SOLVER_FABRIK:
-        solver_size = sizeof(struct fabrik_t);
+        solver_size = sizeof(fabrik_t);
         solver_construct = solver_FABRIK_construct;
         break;
 
@@ -47,7 +47,7 @@ ik_solver_create(enum solver_algorithm_e algorithm)
      * Allocate the solver, initialise to 0 and initialise the base fields
      * before calling the construct() callback for the specific solver.
      */
-    solver = (struct ik_solver_t*)MALLOC(solver_size);
+    solver = (ik_solver_t*)MALLOC(solver_size);
     if (solver == NULL)
     {
         ik_log_message("Failed to allocate solver: ran out of memory");
@@ -55,7 +55,7 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     }
     memset(solver, 0, solver_size);
 
-    ordered_vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
+    ordered_vector_construct(&solver->effector_nodes_list, sizeof(ik_node_t*));
 
     /* Use a chain to hold all of the disjoint chain trees */
     solver->chain_tree = chain_create();
@@ -66,7 +66,7 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     if (solver_construct(solver) < 0)
         goto construct_derived_solver_failed;
 
-    /* Derived destruct function must be set */
+    /* Derived defunction must be set */
     if (solver->destruct == NULL)
     {
         ik_log_message("Derived solvers MUST implement the destruct() callback");
@@ -83,11 +83,11 @@ ik_solver_create(enum solver_algorithm_e algorithm)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_destroy(struct ik_solver_t* solver)
+ik_solver_destroy(ik_solver_t* solver)
 {
     solver->destruct(solver);
 
-    if(solver->tree)
+    if (solver->tree)
         ik_node_destroy(solver->tree);
 
     chain_destroy(solver->chain_tree);
@@ -98,18 +98,18 @@ ik_solver_destroy(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
+ik_solver_set_tree(ik_solver_t* solver, ik_node_t* root)
 {
     ik_solver_destroy_tree(solver);
     solver->tree = root;
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_node_t*
-ik_solver_unlink_tree(struct ik_solver_t* solver)
+ik_node_t*
+ik_solver_unlink_tree(ik_solver_t* solver)
 {
-    struct ik_node_t* root = solver->tree;
-    if(root == NULL)
+    ik_node_t* root = solver->tree;
+    if (root == NULL)
         return NULL;
     solver->tree = NULL;
 
@@ -124,20 +124,20 @@ ik_solver_unlink_tree(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_destroy_tree(struct ik_solver_t* solver)
+ik_solver_destroy_tree(ik_solver_t* solver)
 {
-    struct ik_node_t* root;
-    if((root = ik_solver_unlink_tree(solver)) == NULL)
+    ik_node_t* root;
+    if ((root = ik_solver_unlink_tree(solver)) == NULL)
         return;
     ik_node_destroy(root);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_rebuild_data(struct ik_solver_t* solver)
+ik_solver_rebuild_data(ik_solver_t* solver)
 {
     /* If the solver has no tree, then there's nothing to do */
-    if(solver->tree == NULL)
+    if (solver->tree == NULL)
     {
         ik_log_message("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
         return -1;
@@ -167,34 +167,34 @@ ik_solver_rebuild_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_recalculate_segment_lengths(struct ik_solver_t* solver)
+ik_solver_recalculate_segment_lengths(ik_solver_t* solver)
 {
     calculate_segment_lengths(solver->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_solve(struct ik_solver_t* solver)
+ik_solver_solve(ik_solver_t* solver)
 {
     return solver->solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-iterate_tree_recursive(struct ik_node_t* node,
+iterate_tree_recursive(ik_node_t* node,
                        ik_solver_iterate_node_cb_func callback)
 {
     callback(node);
 
-    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
         iterate_tree_recursive(child, callback);
     BSTV_END_EACH
 }
 void
-ik_solver_iterate_tree(struct ik_solver_t* solver,
+ik_solver_iterate_tree(ik_solver_t* solver,
                        ik_solver_iterate_node_cb_func callback)
 {
-    if(solver->tree == NULL)
+    if (solver->tree == NULL)
     {
         ik_log_message("Warning: Tried iterating the tree, but no tree was set");
         return;
@@ -205,19 +205,19 @@ ik_solver_iterate_tree(struct ik_solver_t* solver,
 
 /* ------------------------------------------------------------------------- */
 static void
-reset_solved_data_recursive(struct ik_node_t* node)
+reset_solved_data_recursive(ik_node_t* node)
 {
     node->position = node->initial_position;
     node->rotation = node->initial_rotation;
 
-    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
+    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
         reset_solved_data_recursive(child);
     BSTV_END_EACH
 }
 void
-ik_solver_reset_solved_data(struct ik_solver_t* solver)
+ik_solver_reset_solved_data(ik_solver_t* solver)
 {
-    if(solver->tree == NULL)
+    if (solver->tree == NULL)
         return;
 
     reset_solved_data_recursive(solver->tree);
@@ -225,14 +225,14 @@ ik_solver_reset_solved_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static int
-recursively_get_all_effector_nodes(struct ik_node_t* node, struct ordered_vector_t* effector_nodes_list)
+recursively_get_all_effector_nodes(ik_node_t* node, ordered_vector_t* effector_nodes_list)
 {
-    if(node->effector != NULL)
-        if(ordered_vector_push(effector_nodes_list, &node) < 0)
+    if (node->effector != NULL)
+        if (ordered_vector_push(effector_nodes_list, &node) < 0)
             return -1;
 
-    BSTV_FOR_EACH(&node->children, struct ik_node_t, guid, child)
-        if(recursively_get_all_effector_nodes(child, effector_nodes_list) < 0)
+    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
+        if (recursively_get_all_effector_nodes(child, effector_nodes_list) < 0)
             return -1;
     BSTV_END_EACH
 

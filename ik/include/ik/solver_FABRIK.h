@@ -7,19 +7,19 @@
 
 C_HEADER_BEGIN
 
-struct fabrik_t
+typedef struct fabrik_t
 {
     SOLVER_DATA_HEAD
-};
+} fabrik_t;
 
 int
-solver_FABRIK_construct(struct ik_solver_t* solver);
+solver_FABRIK_construct(ik_solver_t* solver);
 
 void
-solver_FABRIK_destruct(struct ik_solver_t* solver);
+solver_FABRIK_destruct(ik_solver_t* solver);
 
 int
-solver_FABRIK_solve(struct ik_solver_t* solver);
+solver_FABRIK_solve(ik_solver_t* solver);
 
 C_HEADER_END
 

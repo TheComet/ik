@@ -5,10 +5,10 @@
 
 C_HEADER_BEGIN
 
-struct ik_chain_t;
+typedef struct ik_chain_t ik_chain_t;
 
 IK_PUBLIC_API void
-ik_calculate_rotation_weight_decays(struct ik_chain_t* root_chain);
+ik_calculate_rotation_weight_decays(ik_chain_t* root_chain);
 
 C_HEADER_END
 

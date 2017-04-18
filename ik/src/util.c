@@ -4,20 +4,20 @@
 #include "ik/util.h"
 #include <assert.h>
 
-struct effector_data_t
+typedef struct effector_data_t
 {
 
     ik_real rotation_weight;
     ik_real rotation_weight_decay;
-};
+} effector_data_t;
 
 /* ------------------------------------------------------------------------- */
-static struct effector_data_t
-calculate_rotation_weight_decays_recursive(struct ik_chain_t* chain)
+static effector_data_t
+calculate_rotation_weight_decays_recursive(ik_chain_t* chain)
 {
     int average_count;
     int node_idx, node_count;
-    struct effector_data_t effector_data;
+    effector_data_t effector_data;
 
     /*
      * Find the rotation weight of this chain's last node by averaging the
@@ -31,18 +31,18 @@ calculate_rotation_weight_decays_recursive(struct ik_chain_t* chain)
      * accumulated.
      */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, struct ik_chain_t, child)
-        struct effector_data_t child_eff_data =
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+        effector_data_t child_eff_data =
                 calculate_rotation_weight_decays_recursive(child);
         effector_data.rotation_weight += child_eff_data.rotation_weight;
         effector_data.rotation_weight_decay += child_eff_data.rotation_weight_decay;
         ++average_count;
     ORDERED_VECTOR_END_EACH
 
-    if(average_count == 0)
+    if (average_count == 0)
     {
-        struct ik_node_t* effector_node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
-        struct ik_effector_t* effector = effector_node->effector;
+        ik_node_t* effector_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        ik_effector_t* effector = effector_node->effector;
 
         effector_data.rotation_weight = effector->rotation_weight;
         effector_data.rotation_weight_decay = effector->rotation_decay;
@@ -65,7 +65,7 @@ calculate_rotation_weight_decays_recursive(struct ik_chain_t* chain)
     node_count = ordered_vector_count(&chain->nodes) - 1;
     for (node_idx = 0; node_idx < node_count; ++node_idx)
     {
-        struct ik_node_t* node = *(struct ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
+        ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx);
         node->rotation_weight = effector_data.rotation_weight;
         effector_data.rotation_weight *= effector_data.rotation_weight_decay;
     }
@@ -76,7 +76,7 @@ calculate_rotation_weight_decays_recursive(struct ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_calculate_rotation_weight_decays(struct ik_chain_t* root_chain)
+ik_calculate_rotation_weight_decays(ik_chain_t* root_chain)
 {
     /*
      * The root chain of the solver doesn't actually contain any nodes. It
@@ -93,11 +93,11 @@ ik_calculate_rotation_weight_decays(struct ik_chain_t* root_chain)
      * For these reasons we iterate the chains and set the first node in each
      * chain to the returned rotation weight.
      */
-    ORDERED_VECTOR_FOR_EACH(&root_chain->children, struct ik_chain_t, child)
-        struct effector_data_t effector_data = calculate_rotation_weight_decays_recursive(root_chain);
+    ORDERED_VECTOR_FOR_EACH(&root_chain->children, ik_chain_t, child)
+        effector_data_t effector_data = calculate_rotation_weight_decays_recursive(root_chain);
         int last_idx = ordered_vector_count(&child->nodes) - 1;
         assert(last_idx > 0);
-        struct ik_node_t* root_node = *(struct ik_node_t**)ordered_vector_get_element(&child->nodes, last_idx);
+        ik_node_t* root_node = *(ik_node_t**)ordered_vector_get_element(&child->nodes, last_idx);
         root_node->rotation_weight = effector_data.rotation_weight;
     ORDERED_VECTOR_END_EACH
 }
