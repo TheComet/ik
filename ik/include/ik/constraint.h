@@ -5,26 +5,39 @@
 
 C_HEADER_BEGIN
 
-typedef struct ik_node_t ik_node_t;
-typedef struct ik_constraint_t ik_constraint_t;
+typedef void (*ik_constraint_apply_func)(ik_node_t*);
 
-typedef struct ik_constraint_t
+typedef enum ik_constraint_type_e
 {
-    void* user_data;
-} ik_constraint_t;
+    IK_CONSTRAINT_STIFF,
+    IK_CONSTRAINT_HINGE,
+    IK_CONSTRAINT_CONE
+} ik_constraint_type_e;
+
+struct ik_constraint_t
+{
+    ik_constraint_apply_func apply;
+};
 
 /*!
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
  */
 IK_PUBLIC_API ik_constraint_t*
-ik_constraint_create(void);
+ik_constraint_create(ik_constraint_type_e constraint_type);
 
 /*!
- * @brief Constructs a previously allocated constraint object.
+ * @brief Sets the type of constraint to enforce. Can be changed at any time.
  */
 IK_PUBLIC_API void
-ik_constraint_construct(ik_constraint_t* constraint);
+ik_constraint_set(ik_constraint_t* constraint, ik_constraint_type_e constraint_type);
+
+/*!
+ * @brief Allows the user to specify a custom callback function for enforcing
+ * a constraint.
+ */
+IK_PUBLIC_API void
+ik_constraint_set_custom(ik_constraint_t* constraint, ik_constraint_apply_func callback);
 
 /*!
  * @brief Destroys and frees a constraint object. This should **NOT** be called

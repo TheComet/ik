@@ -94,10 +94,11 @@ ik_calculate_rotation_weight_decays(ik_chain_t* root_chain)
      * chain to the returned rotation weight.
      */
     ORDERED_VECTOR_FOR_EACH(&root_chain->children, ik_chain_t, child)
+        ik_node_t* root_node;
         effector_data_t effector_data = calculate_rotation_weight_decays_recursive(root_chain);
         int last_idx = ordered_vector_count(&child->nodes) - 1;
         assert(last_idx > 0);
-        ik_node_t* root_node = *(ik_node_t**)ordered_vector_get_element(&child->nodes, last_idx);
+        root_node = *(ik_node_t**)ordered_vector_get_element(&child->nodes, last_idx);
         root_node->rotation_weight = effector_data.rotation_weight;
     ORDERED_VECTOR_END_EACH
 }

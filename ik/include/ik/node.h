@@ -8,13 +8,10 @@
 
 C_HEADER_BEGIN
 
-typedef struct ik_effector_t ik_effector_t;
-typedef struct ik_constraint_t ik_constraint_t;
-
 /*!
  * @brief Represents one node in the tree to be solved.
  */
-typedef struct ik_node_t
+struct ik_node_t
 {
     /*!
      * @brief Allows the user of this library to store custom data per node
@@ -75,6 +72,8 @@ typedef struct ik_node_t
      * @brief Global identifier for this node. The identifier must be unique
      * within the tree, but separate trees may re-use the same IDs again. The
      * ID can later be used to retrieve nodes from the tree again.
+     * @note Don't change this if this node has a parent. If you need to change
+     * the guid then unlink the node, change it, and re-add it as a child.
      */
     uint32_t guid;
 
@@ -96,7 +95,7 @@ typedef struct ik_node_t
     ik_real segment_length;
     ik_node_t* parent;
     bstv_t children;    /* ik_node_t objects */
-} ik_node_t;
+};
 
 /*!
  * @brief Creates a new node and returns it. Each node requires a tree-unique

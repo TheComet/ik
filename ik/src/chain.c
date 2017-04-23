@@ -85,57 +85,6 @@ count_chains_exclude_root(ik_chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-#if IK_DOT_OUTPUT == ON
-static void
-dump_chain(ik_chain_t* chain, FILE* fp)
-{
-    int last_idx = ordered_vector_count(&chain->nodes) - 1;
-    if (last_idx > 0)
-    {
-        fprintf(fp, "    %d [shape=record];\n",
-            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))->guid);
-        fprintf(fp, "    %d [shape=record];\n",
-            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx))->guid);
-    }
-
-    while (last_idx-- > 0)
-    {
-        fprintf(fp, "    %d -- %d [color=\"1.0 0.5 1.0\"];\n",
-            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0))->guid,
-            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1))->guid);
-    }
-
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
-        dump_chain(child, fp);
-    ORDERED_VECTOR_END_EACH
-}
-static void
-dump_node(ik_node_t* node, FILE* fp)
-{
-    if (node->effector != NULL)
-        fprintf(fp, "    %d [color=\"0.6 0.5 1.0\"];\n", node->guid);
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
-        fprintf(fp, "    %d -- %d;\n", node->guid, guid);
-        dump_node(child, fp);
-    BSTV_END_EACH
-}
-void
-dump_to_dot(ik_node_t* node, ik_chain_t* chain, const char* file_name)
-{
-    FILE* fp = fopen(file_name, "w");
-    if (fp == NULL)
-        return;
-
-    fprintf(fp, "graph chain_tree {\n");
-    dump_node(node, fp);
-    dump_chain(chain, fp);
-    fprintf(fp, "}\n");
-
-    fclose(fp);
-}
-#endif
-
-/* ------------------------------------------------------------------------- */
 static int
 mark_involved_nodes(ik_solver_t* solver, bstv_t* involved_nodes)
 {
@@ -332,7 +281,7 @@ rebuild_chain_tree(ik_solver_t* solver)
     ik_log_message("There are %d effector(s) involving %d node(s). %d chain(s) were created",
                    ordered_vector_count(&solver->effector_nodes_list),
                    involved_nodes_count,
-                   count_chains_exclude_root(solver->chain_tree) - 1); /* don't count root chain which always exists */
+                   count_chains_exclude_root(solver->chain_tree));
 
     bstv_clear_free(&involved_nodes);
 
@@ -363,3 +312,171 @@ calculate_segment_lengths(ik_chain_t* chain)
         calculate_segment_lengths(child);
     ORDERED_VECTOR_END_EACH
 }
+
+/* ------------------------------------------------------------------------- */
+static void
+calculate_global_rotations_of_children(ik_chain_t* chain)
+{
+    int average_count;
+    quat_t average_rotation = {{0, 0, 0, 0}};
+
+    /* Recurse into children chains */
+    average_count = 0;
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+        quat_t rotation;
+        calculate_global_rotations(child);
+
+        /* Note: All chains that aren't the root chain *MUST* have at least two nodes */
+        assert(ordered_vector_count(&child->nodes) >= 2);
+        rotation = (*(ik_node_t**)
+                ordered_vector_get_element(&child->nodes,
+                    ordered_vector_count(&child->nodes) - 1))->rotation;
+
+        /*
+         * Averaging quaternions taken from here
+         * http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
+         */
+        quat_normalise_sign(rotation.f);
+        quat_add_quat(average_rotation.f, rotation.f);
+        ++average_count;
+    ORDERED_VECTOR_END_EACH
+
+    /*
+     * Assuming there was more than 1 child chain and assuming we aren't the
+     * root node, then the child chains we just iterated must share the same
+     * base node as our tip node. Average the accumulated quaternion and set
+     * this node's correct solved rotation.
+     */
+    if (average_count > 0 && ordered_vector_count(&chain->nodes) != 0)
+    {
+        quat_div_scalar(average_rotation.f, average_count);
+        quat_normalise(average_rotation.f);
+        (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))
+            ->rotation = average_rotation;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+calculate_delta_rotation_of_each_segment(ik_chain_t* chain)
+{
+    int node_idx;
+
+    /*
+     * Calculate all of the delta angles of the joints. The resulting delta (!)
+     * angles will be written to node->rotation
+     */
+    node_idx = ordered_vector_count(&chain->nodes) - 1;
+    while (node_idx-- > 0)
+    {
+        ik_node_t* child_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
+
+        /* calculate vectors for original and solved segments */
+        vec3_t segment_original = child_node->initial_position;
+        vec3_t segment_solved   = child_node->position;
+        vec3_sub_vec3(segment_original.f, parent_node->initial_position.f);
+        vec3_sub_vec3(segment_solved.f, parent_node->position.f);
+
+        vec3_angle(parent_node->rotation.f, segment_original.f, segment_solved.f);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+calculate_global_rotations(ik_chain_t* chain)
+{
+    int node_idx;
+
+    /*
+     * Calculates the "global" (world) angles of each joint and writes them to
+     * each node->solved_rotation slot.
+     *
+     * The angle between the original and solved segments are calculated using
+     * standard vector math (dot product). The axis of rotation is calculated
+     * with the cross product. From this data, a quaternion is constructed,
+     * describing this delta rotation. Finally, in order to make the rotations
+     * global instead of relative, the delta rotation is multiplied with
+     * node->rotation, which should be a quaternion describing the node's
+     * global rotation in the unsolved tree.
+     *
+     * The rotation of the base joint in the chain is returned so it can be
+     * averaged by parent chains.
+     */
+
+    calculate_global_rotations_of_children(chain);
+    calculate_delta_rotation_of_each_segment(chain);
+
+    /*
+     * At this point, all nodes have calculated their delta angles *except* for
+     * the end effector nodes, which remain untouched. It makes sense to copy
+     * the delta rotation of the parent node into the effector node by default.
+     */
+    node_idx = ordered_vector_count(&chain->nodes);
+    if (node_idx > 1)
+    {
+        ik_node_t* effector_node  = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0);
+        ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, 1);
+        effector_node->rotation.q = parent_node->rotation.q;
+    }
+
+    /*
+     * Finally, apply initial global rotations to calculated delta rotations to
+     * obtain the solved global rotations.
+     */
+    ORDERED_VECTOR_FOR_EACH(&chain->nodes, ik_node_t*, pnode)
+        ik_node_t* node = *pnode;
+        quat_mul_quat(node->rotation.f, node->initial_rotation.f);
+    ORDERED_VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+#if IK_DOT_OUTPUT == ON
+static void
+dump_chain(ik_chain_t* chain, FILE* fp)
+{
+    int last_idx = ordered_vector_count(&chain->nodes) - 1;
+    if (last_idx > 0)
+    {
+        fprintf(fp, "    %d [shape=record];\n",
+            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, 0))->guid);
+        fprintf(fp, "    %d [shape=record];\n",
+            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx))->guid);
+    }
+
+    while (last_idx-- > 0)
+    {
+        fprintf(fp, "    %d -- %d [color=\"1.0 0.5 1.0\"];\n",
+            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0))->guid,
+            (*(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1))->guid);
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+        dump_chain(child, fp);
+    ORDERED_VECTOR_END_EACH
+}
+static void
+dump_node(ik_node_t* node, FILE* fp)
+{
+    if (node->effector != NULL)
+        fprintf(fp, "    %d [color=\"0.6 0.5 1.0\"];\n", node->guid);
+    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
+        fprintf(fp, "    %d -- %d;\n", node->guid, guid);
+        dump_node(child, fp);
+    BSTV_END_EACH
+}
+void
+dump_to_dot(ik_node_t* node, ik_chain_t* chain, const char* file_name)
+{
+    FILE* fp = fopen(file_name, "w");
+    if (fp == NULL)
+        return;
+
+    fprintf(fp, "graph chain_tree {\n");
+    dump_node(node, fp);
+    dump_chain(chain, fp);
+    fprintf(fp, "}\n");
+
+    fclose(fp);
+}
+#endif

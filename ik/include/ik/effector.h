@@ -7,8 +7,6 @@
 
 C_HEADER_BEGIN
 
-typedef struct ik_node_t ik_node_t;
-
 typedef enum effector_flags_e
 {
     /*!
@@ -17,8 +15,8 @@ typedef enum effector_flags_e
      * appealing if the solved tree diverges a lot from the original tree
      * during weight transitions.
      */
-    EFFECTOR_WEIGHT_NLERP            = 0x01,
-} effector_flags_e;
+    EFFECTOR_WEIGHT_NLERP            = 0x01
+} effector_flgs_e;
 
 /*!
  * @brief Specifies how a chain of nodes should be solved. The effector can
@@ -27,7 +25,7 @@ typedef enum effector_flags_e
  * as how much influence the solver has on the tree (weight) and how many
  * child nodes are affected (chain_length).
  */
-typedef struct ik_effector_t
+struct ik_effector_t
 {
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -75,7 +73,7 @@ typedef struct ik_effector_t
      * more information.
      */
     uint8_t flags;
-} ik_effector_t;
+};
 
 /*!
  * @brief Creates a new effector object. It can be attached to any node in the

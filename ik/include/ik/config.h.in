@@ -26,6 +26,7 @@
      * --------------------------------------------------------------*/
 
 #   include "ik/export.h"
+#   include "ik/types.h"
 #   include <stddef.h>
 
 #   if HAVE_STDINT_H == ON

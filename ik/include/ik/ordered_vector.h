@@ -16,13 +16,13 @@
 C_HEADER_BEGIN
 
 #define DATA_POINTER_TYPE unsigned char
-typedef struct ordered_vector_t
+struct ordered_vector_t
 {
     uint32_t element_size;       /* how large one element is in bytes */
     uint32_t capacity;           /* how many elements actually fit into the allocated space */
     uint32_t count;              /* number of elements inserted */
     DATA_POINTER_TYPE* data;     /* pointer to the contiguous section of memory */
-} ordered_vector_t;
+};
 
 /*!
  * @brief Creates a new vector object. See @ref ordered_vector for details.

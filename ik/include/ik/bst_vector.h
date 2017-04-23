@@ -19,10 +19,10 @@ typedef struct bstv_hash_value_t
     void*    value;
 } bstv_hash_value_t;
 
-typedef struct bstv_t
+struct bstv_t
 {
     ordered_vector_t   vector;
-} bstv_t;
+};
 
 /*!
  * @brief Creates a new bstv object.

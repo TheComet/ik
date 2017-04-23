@@ -11,16 +11,13 @@
 
 C_HEADER_BEGIN
 
-typedef struct ik_solver_t ik_solver_t;
-typedef struct ik_node_t ik_node_t;
-
-typedef struct ik_chain_t
+struct ik_chain_t
 {
     /* list of node_t* references that belong to this chain */
     ordered_vector_t nodes;
     /* list of chain_t objects */
     ordered_vector_t children;
-} ik_chain_t;
+};
 
 ik_chain_t*
 chain_create(void);
@@ -74,6 +71,9 @@ calculate_segment_lengths(ik_chain_t* chain);
  */
 int
 count_chains_exclude_root(ik_chain_t* chain);
+
+void
+calculate_global_rotations(ik_chain_t* chain);
 
 #if IK_DOT_OUTPUT == ON
 /*!

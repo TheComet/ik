@@ -7,10 +7,10 @@
 
 C_HEADER_BEGIN
 
-typedef struct fabrik_t
+struct fabrik_t
 {
     SOLVER_DATA_HEAD
-} fabrik_t;
+};
 
 int
 solver_FABRIK_construct(ik_solver_t* solver);

@@ -42,6 +42,8 @@ ik_node_destruct_recursive(ik_node_t* node)
 
     if (node->effector)
         ik_effector_destroy(node->effector);
+    if (node->constraint)
+        ik_constraint_destroy(node->constraint);
 
     bstv_clear_free(&node->children);
 }
@@ -54,6 +56,8 @@ ik_node_destruct(ik_node_t* node)
 
     if (node->effector)
         ik_effector_destroy(node->effector);
+    if (node->constraint)
+        ik_constraint_destroy(node->constraint);
 
     ik_node_unlink(node);
     bstv_clear_free(&node->children);

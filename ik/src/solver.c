@@ -5,6 +5,8 @@
 #include "ik/node.h"
 #include "ik/solver.h"
 #include "ik/solver_FABRIK.h"
+#include "ik/solver_2bone.h"
+#include "ik/solver_1bone.h"
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
 #include <string.h>
@@ -29,6 +31,16 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     case SOLVER_FABRIK:
         solver_size = sizeof(fabrik_t);
         solver_construct = solver_FABRIK_construct;
+        break;
+
+    case SOLVER_TWO_BONE:
+        solver_size = sizeof(two_bone_t);
+        solver_construct = solver_2bone_construct;
+        break;
+
+    case SOLVER_ONE_BONE:
+        solver_size = sizeof(one_bone_t);
+        solver_construct = solver_1bone_construct;
         break;
 
     /*
