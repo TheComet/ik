@@ -66,10 +66,16 @@ vec3_normalise(ik_real* IK_RESTRICT v)
 {
     ik_real length = vec3_length(v);
     if (length != 0.0)
+    {
         length = 1.0 / length;
-    v[0] *= length;
-    v[1] *= length;
-    v[2] *= length;
+        v[0] *= length;
+        v[1] *= length;
+        v[2] *= length;
+    }
+    else
+    {
+        v[0] = 1;
+    }
 }
 
 /* ------------------------------------------------------------------------- */

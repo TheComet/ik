@@ -184,8 +184,7 @@ ik_solver_iterate_tree(ik_solver_t* solver,
 
 /*!
  * @brief Sets the solved positions and rotations equal to the original
- * positions and rotations for every node in the tree. The solver will call
- * this automatically if SOLVER_SKIP_RESET is **not** set.
+ * positions and rotations for every node in the tree.
  */
 IK_PUBLIC_API void
 ik_solver_reset_solved_data(ik_solver_t* solver);
