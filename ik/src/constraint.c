@@ -3,6 +3,7 @@
 #include "ik/memory.h"
 #include "ik/node.h"
 #include <string.h>
+#include <assert.h>
 
 static void
 apply_stiff(ik_node_t* node);
@@ -44,7 +45,10 @@ ik_constraint_set(ik_constraint_t* constraint, ik_constraint_type_e constraint_t
 
         case IK_CONSTRAINT_CONE:
             constraint->apply = apply_cone;
+            break;
     }
+    
+    constraint->type = constraint_type;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -69,7 +73,12 @@ ik_constraint_destroy(ik_constraint_t* constraint)
 static void
 apply_stiff(ik_node_t* node)
 {
-    quat_set_identity(node->rotation.f);
+    /*
+     * The stiff constraint should never actually be reached, because joints
+     * that have a stiff constraint will be excluded from the chain tree
+     * entirely. This function exists solely to debug the chain tree.
+     */
+    assert(1);
 }
 
 /* ------------------------------------------------------------------------- */

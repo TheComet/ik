@@ -16,6 +16,7 @@ typedef enum ik_constraint_type_e
 
 struct ik_constraint_t
 {
+    ik_constraint_type_e type;
     ik_constraint_apply_func apply;
 };
 
@@ -27,7 +28,12 @@ IK_PUBLIC_API ik_constraint_t*
 ik_constraint_create(ik_constraint_type_e constraint_type);
 
 /*!
- * @brief Sets the type of constraint to enforce. Can be changed at any time.
+ * @brief Sets the type of constraint to enforce.
+ * @note The tree must be rebuilt only if you change to or from the "stiff"
+ * constraint (IK_CONSTRAINT_STIFF). Switching to any other constraint does not
+ * require a rebuild. The reason for this is because the stiff constraint
+ * causes the node to be excluded entirely from the chain tree, and determining
+ * this requires a rebuild.
  */
 IK_PUBLIC_API void
 ik_constraint_set(ik_constraint_t* constraint, ik_constraint_type_e constraint_type);

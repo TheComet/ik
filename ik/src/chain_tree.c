@@ -1,5 +1,4 @@
 #include "ik/bst_vector.h"
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/memory.h"
@@ -17,10 +16,43 @@ enum node_marking_e
 };
 
 /* ------------------------------------------------------------------------- */
-ik_chain_t*
+void
+chain_tree_construct(chain_tree_t* chain_tree)
+{
+    ordered_vector_construct(&chain_tree->islands, sizeof(chain_island_t));
+}
+
+/* ------------------------------------------------------------------------- */
+void
+chain_tree_destruct(chain_tree_t* chain_tree)
+{
+    ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
+        chain_island_destruct(island);
+    ORDERED_VECTOR_END_EACH
+    ordered_vector_clear_free(&chain_tree->islands);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+chain_island_construct(chain_island_t* chain_tree)
+{
+    chain_construct(&chain_tree->root_chain);
+    ordered_vector_construct(&chain_tree->transform_dependent_nodes, sizeof(ik_node_t*));
+}
+
+/* ------------------------------------------------------------------------- */
+void
+chain_island_destruct(chain_island_t* chain_tree)
+{
+    ordered_vector_clear_free(&chain_tree->transform_dependent_nodes);
+    chain_destruct(&chain_tree->root_chain);
+}
+
+/* ------------------------------------------------------------------------- */
+chain_t*
 chain_create(void)
 {
-    ik_chain_t* chain = (ik_chain_t*)MALLOC(sizeof *chain);
+    chain_t* chain = (chain_t*)MALLOC(sizeof *chain);
     if (chain == NULL)
     {
         ik_log_message("Failed to allocate chain: out of memory");
@@ -32,7 +64,7 @@ chain_create(void)
 
 /* ------------------------------------------------------------------------- */
 void
-chain_destroy(ik_chain_t* chain)
+chain_destroy(chain_t* chain)
 {
     chain_destruct(chain);
     FREE(chain);
@@ -40,24 +72,24 @@ chain_destroy(ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-chain_construct(ik_chain_t* chain)
+chain_construct(chain_t* chain)
 {
     ordered_vector_construct(&chain->nodes, sizeof(ik_node_t*));
-    ordered_vector_construct(&chain->children, sizeof(ik_chain_t));
+    ordered_vector_construct(&chain->children, sizeof(chain_t));
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_clear_free(ik_chain_t* chain)
+chain_clear_free(chain_t* chain)
 {
     chain_destruct(chain); /* does the same thing as de*/
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_destruct(ik_chain_t* chain)
+chain_destruct(chain_t* chain)
 {
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child_chain)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child_chain)
         chain_destruct(child_chain);
     ORDERED_VECTOR_END_EACH
     ordered_vector_clear_free(&chain->children);
@@ -66,20 +98,20 @@ chain_destruct(ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 static int
-count_chains_recursive(ik_chain_t* chain)
+count_chains_recursive(chain_t* chain)
 {
     int counter = 1;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
         counter += count_chains_recursive(child);
     ORDERED_VECTOR_END_EACH
     return counter;
 }
 int
-count_chains_exclude_root(ik_chain_t* chain)
+count_chains_exclude_root(chain_tree_t* chain_tree)
 {
     int counter = 1;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
-        counter += count_chains_recursive(child);
+    ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
+        counter += count_chains_recursive(&island->root_chain);
     ORDERED_VECTOR_END_EACH
     return counter - 1; /* exclude root chain */
 }
@@ -111,6 +143,15 @@ mark_involved_nodes(ik_solver_t* solver, bstv_t* involved_nodes)
          * Mark nodes that are at the base of the chain differently, so the
          * chains can be split correctly later. Section markings will overwrite
          * break markings.
+         *
+         * Additionally, there is a special constraint (IK_CONSTRAINT_STIFF)
+         * that restricts all rotations of a node. If this constraint is
+         * imposed on a particular node, mark it differently as well so the
+         * surrounding nodes can be combined into a single bone properly later.
+         *
+         * NOTE: The node->constraint field specifies constraints for
+         * the *parent* node, not for the current node. However, we will be
+         * marking the *current* node, not the parent node.
          */
         for (; node != NULL; node = node->parent)
         {
@@ -144,14 +185,15 @@ mark_involved_nodes(ik_solver_t* solver, bstv_t* involved_nodes)
 
 /* ------------------------------------------------------------------------- */
 static int
-recursively_build_chain_tree(ik_chain_t* chain_current,
+recursively_build_chain_tree(chain_tree_t* chain_tree,
+                             chain_t* chain_current,
                              ik_node_t* node_base,
                              ik_node_t* node_current,
                              bstv_t* involved_nodes)
 {
     int marked_children_count;
     ik_node_t* child_node_base = node_base;
-    ik_chain_t* child_chain = chain_current;
+    chain_t* child_chain = chain_current;
 
     /* can remove the mark from the set to speed up future checks */
     enum node_marking_e marking =
@@ -160,19 +202,24 @@ recursively_build_chain_tree(ik_chain_t* chain_current,
     switch(marking)
     {
         /*
-         * If this node was marked as the base of a chain then split the chain at
-         * this point by moving the pointer to the base node down the tree to us.
+         * If this node was marked as the base of a chain then split the chain
+         * at this point by moving the pointer to the base node down the tree
+         * to the current node and set the current chain to NULL so a new
+         * island is created (this is necessary because all children of this
+         * node are necessarily part of an isolated tree).
          */
         case MARK_SPLIT:
             child_node_base = node_current;
+            chain_current = NULL;
             break;
         /*
          * If this node is not marked at all, cut off any previous chain but
-         * continue (fall through) as if (a section was marked. It's possible
+         * continue (fall through) as if a section was marked. It's possible
          * that there are isolated chains somewhere further down the tree.
          */
         case MARK_NONE:
             node_base = node_current;
+            /* falling through on purpose */
 
         case MARK_SECTION:
             /*
@@ -190,19 +237,41 @@ recursively_build_chain_tree(ik_chain_t* chain_current,
             BSTV_END_EACH
             if ((marked_children_count == 2 || node_current->effector != NULL) && node_current != node_base)
             {
-                /*
-                 * Emplace a chain object into the current chain's vector of children
-                 * and initialise it.
-                 */
                 ik_node_t* node;
-                child_chain = ordered_vector_push_emplace(&chain_current->children);
-                if (child_chain == NULL)
-                    return -1;
-                chain_construct(child_chain);
+
+                if (chain_current == NULL)
+                {
+                    /*
+                     * If this is the first chain in the island, create and
+                     * initialise it in the chain tree.
+                     */
+                    chain_island_t* island = ordered_vector_push_emplace(&chain_tree->islands);
+                    if (island == NULL)
+                    {
+                        ik_log_message("Failed to create chain island: Ran out of memory");
+                        return -1;
+                    }
+                    chain_island_construct(island);
+                    child_chain = &island->root_chain;
+                }
+                else
+                {
+                    /*
+                     * This is not the first chain of the island, so create a
+                     * new child chain in the current chain and initialise it.
+                     */
+                    child_chain = ordered_vector_push_emplace(&chain_current->children);
+                    if (child_chain == NULL)
+                    {
+                        ik_log_message("Failed to create child chain: Ran out of memory");
+                        return -1;
+                    }
+                    chain_construct(child_chain);
+                }
 
                 /*
-                 * Add points to all nodes that are part of this chain into the chain's
-                 * list, starting with the end node.
+                 * Add pointers to all nodes that are part of this chain into
+                 * the chain's list, starting with the end node.
                  */
                 for (node = node_current; node != node_base; node = node->parent)
                     ordered_vector_push(&child_chain->nodes, &node);
@@ -220,6 +289,7 @@ recursively_build_chain_tree(ik_chain_t* chain_current,
     /* Recurse into children of the current node. */
     BSTV_FOR_EACH(&node_current->children, ik_node_t, child_guid, child_node)
         if (recursively_build_chain_tree(
+                chain_tree,
                 child_chain,
                 child_node_base,
                 child_node,
@@ -241,6 +311,12 @@ rebuild_chain_tree(ik_solver_t* solver)
     static int file_name_counter = 0;
 #endif
 
+    /* Clear all existing chain trees */
+    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
+        chain_island_destruct(island);
+    ORDERED_VECTOR_END_EACH
+    ordered_vector_clear_free(&solver->chain_tree.islands);
+
     /*
      * Build a set of all nodes that are in a direct path with all of the
      * effectors.
@@ -250,27 +326,11 @@ rebuild_chain_tree(ik_solver_t* solver)
         goto mark_involved_nodes_failed;
     involved_nodes_count = bstv_count(&involved_nodes);
 
-    /*
-     * The user can choose to set the root node as a chain terminator (default)
-     * or choose to exclude the root node, in which case each immediate child
-     * of the tree is a chain terminator. In this case we need to build the
-     * chain tree for each child individually.
-     */
-    chain_clear_free(solver->chain_tree);
-    if (solver->flags & SOLVER_EXCLUDE_ROOT)
-    {
-        BSTV_FOR_EACH(&solver->tree->children, ik_node_t, guid, child)
-            recursively_build_chain_tree(solver->chain_tree, child, child, &involved_nodes);
-        BSTV_END_EACH
-    }
-    else
-    {
-        recursively_build_chain_tree(solver->chain_tree, solver->tree, solver->tree, &involved_nodes);
-    }
+    recursively_build_chain_tree(&solver->chain_tree, NULL, solver->tree, solver->tree, &involved_nodes);
 
     /* Pre-compute offsets for each node in the chain tree in relation to their
-     * parents */
-    calculate_segment_lengths(solver->chain_tree);
+     * parents *
+    calculate_segment_lengths(solver->chain_tree);*/
 
     /* DEBUG: Save chain tree to DOT */
 #if IK_DOT_OUTPUT == ON
@@ -281,7 +341,7 @@ rebuild_chain_tree(ik_solver_t* solver)
     ik_log_message("There are %d effector(s) involving %d node(s). %d chain(s) were created",
                    ordered_vector_count(&solver->effector_nodes_list),
                    involved_nodes_count,
-                   count_chains_exclude_root(solver->chain_tree));
+                   count_chains_exclude_root(&solver->chain_tree));
 
     bstv_clear_free(&involved_nodes);
 
@@ -293,8 +353,9 @@ rebuild_chain_tree(ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-calculate_segment_lengths(ik_chain_t* chain)
+calculate_segment_lengths(chain_tree_t* chain_tree)
 {
+    /* TODO Fix this
     int last_idx = ordered_vector_count(&chain->nodes) - 1;
     while (last_idx-- > 0)
     {
@@ -308,21 +369,21 @@ calculate_segment_lengths(ik_chain_t* chain)
         child_node->segment_length = vec3_length(diff.f);
     }
 
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
         calculate_segment_lengths(child);
-    ORDERED_VECTOR_END_EACH
+    ORDERED_VECTOR_END_EACH*/
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_global_rotations_of_children(ik_chain_t* chain)
+calculate_global_rotations_of_children(chain_t* chain)
 {
     int average_count;
     quat_t average_rotation = {{0, 0, 0, 0}};
 
     /* Recurse into children chains */
     average_count = 0;
-    ORDERED_VECTOR_FOR_EACH(&chain->children, ik_chain_t, child)
+    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
         quat_t rotation;
         calculate_global_rotations(child);
 
@@ -358,7 +419,7 @@ calculate_global_rotations_of_children(ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_delta_rotation_of_each_segment(ik_chain_t* chain)
+calculate_delta_rotation_of_each_segment(chain_t* chain)
 {
     int node_idx;
 
@@ -384,7 +445,7 @@ calculate_delta_rotation_of_each_segment(ik_chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-calculate_global_rotations(ik_chain_t* chain)
+calculate_global_rotations(chain_t* chain)
 {
     int node_idx;
 

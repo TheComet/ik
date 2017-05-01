@@ -1,4 +1,4 @@
-#include "ik/chain.h"
+#include "ik/chain_tree.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/memory.h"
@@ -7,6 +7,7 @@
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_2bone.h"
 #include "ik/solver_1bone.h"
+#include "ik/solver_MSS.h"
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
 #include <string.h>
@@ -42,6 +43,11 @@ ik_solver_create(enum solver_algorithm_e algorithm)
         solver_size = sizeof(one_bone_t);
         solver_construct = solver_1bone_construct;
         break;
+        
+    case SOLVER_MSS_LAPLACE:
+        solver_size = sizeof(mss_t);
+        solver_construct = solver_MSS_construct;
+        break;
 
     /*
     case SOLVER_JACOBIAN_INVERSE:
@@ -68,17 +74,13 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     memset(solver, 0, solver_size);
 
     ordered_vector_construct(&solver->effector_nodes_list, sizeof(ik_node_t*));
-
-    /* Use a chain to hold all of the disjoint chain trees */
-    solver->chain_tree = chain_create();
-    if (solver->chain_tree == NULL)
-        goto alloc_chain_tree_failed;
+    chain_tree_construct(&solver->chain_tree);
 
     /* Now call derived construction */
     if (solver_construct(solver) < 0)
         goto construct_derived_solver_failed;
 
-    /* Derived defunction must be set */
+    /* Derived destruct callback must be set */
     if (solver->destruct == NULL)
     {
         ik_log_message("Derived solvers MUST implement the destruct() callback");
@@ -88,8 +90,7 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     return solver;
 
     derived_didnt_implement_destruct :
-    construct_derived_solver_failed  : chain_destroy(solver->chain_tree);
-    alloc_chain_tree_failed          : FREE(solver);
+    construct_derived_solver_failed  : FREE(solver);
     alloc_solver_failed              : return NULL;
 }
 
@@ -102,7 +103,7 @@ ik_solver_destroy(ik_solver_t* solver)
     if (solver->tree)
         ik_node_destroy(solver->tree);
 
-    chain_destroy(solver->chain_tree);
+    chain_tree_destruct(&solver->chain_tree);
     ordered_vector_clear_free(&solver->effector_nodes_list);
 
     FREE(solver);
@@ -181,7 +182,8 @@ ik_solver_rebuild_data(ik_solver_t* solver)
 void
 ik_solver_recalculate_segment_lengths(ik_solver_t* solver)
 {
-    calculate_segment_lengths(solver->chain_tree);
+    /* TODO: Implement again, take into consideration merged bones */
+    /*calculate_segment_lengths(solver->chain_tree);*/
 }
 
 /* ------------------------------------------------------------------------- */

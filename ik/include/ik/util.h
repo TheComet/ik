@@ -6,7 +6,7 @@
 C_HEADER_BEGIN
 
 IK_PUBLIC_API void
-ik_calculate_rotation_weight_decays(ik_chain_t* root_chain);
+ik_calculate_rotation_weight_decays(chain_tree_t* chain_tree);
 
 C_HEADER_END
 

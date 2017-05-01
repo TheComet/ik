@@ -2,9 +2,10 @@
 #define IK_SOLVER_H
 
 #include "ik/config.h"
+#include "ik/chain_tree.h"
 #include "ik/ordered_vector.h"
-#include "ik/vec3.h"
 #include "ik/quat.h"
+#include "ik/vec3.h"
 
 C_HEADER_BEGIN
 
@@ -18,7 +19,8 @@ typedef enum solver_algorithm_e
 {
     SOLVER_FABRIK,
     SOLVER_TWO_BONE,
-    SOLVER_ONE_BONE
+    SOLVER_ONE_BONE,
+    SOLVER_MSS_LAPLACE
     /* TODO Not implemented
     SOLVER_JACOBIAN_INVERSE,
     SOLVER_JACOBIAN_TRANSPOSE */
@@ -59,9 +61,10 @@ typedef enum solver_flags_e
     ik_solver_rebuild_data_func         rebuild_data;                 \
     ik_solver_solve_func                solve;                        \
                                                                       \
-    ordered_vector_t             effector_nodes_list;                 \
-    ik_node_t*                   tree;                                \
-    ik_chain_t*                  chain_tree;
+    ordered_vector_t                    effector_nodes_list;          \
+    ik_node_t*                          tree;                         \
+    /* list of ik_chain_tree_t objects (allocated in-place) */        \
+    chain_tree_t                        chain_tree;
 
 struct ik_solver_t
 {
