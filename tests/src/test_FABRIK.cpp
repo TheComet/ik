@@ -4,7 +4,6 @@
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/solver_FABRIK.h"
-#include "ik/chain.h"
 
 #define NAME FABRIK
 
@@ -74,10 +73,10 @@ TEST_F(NAME, weird_tree)
     fabrik_t* fabrik = (fabrik_t*)solver;
 
     // There are two separate chain trees
-    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree.islands), Eq(2u));
 
     // First has length 2
-    ik_chain_t* chain1 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 0);
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
     ik_node_t* node = *(ik_node_t**)ordered_vector_get_element(&chain1->nodes, 0);
     EXPECT_THAT(node->guid, Eq(4u));
@@ -88,7 +87,7 @@ TEST_F(NAME, weird_tree)
     EXPECT_THAT(node, Eq(child3));
 
     // Second has length 4
-    ik_chain_t* chain2 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 1);
     ASSERT_THAT(ordered_vector_count(&chain2->nodes), Eq(4u));
     node = *(ik_node_t**)ordered_vector_get_element(&chain2->nodes, 0);
     EXPECT_THAT(node->guid, Eq(6u));
@@ -105,7 +104,7 @@ TEST_F(NAME, weird_tree)
 
     // First Sub-chain with length 2
     ASSERT_THAT(ordered_vector_count(&chain2->children), Eq(2u));
-    ik_chain_t* chain3 = (ik_chain_t*)ordered_vector_get_element(&chain2->children, 0);
+    chain_t* chain3 = (chain_t*)ordered_vector_get_element(&chain2->children, 0);
     ASSERT_THAT(ordered_vector_count(&chain3->nodes), Eq(2u));
     node = *(ik_node_t**)ordered_vector_get_element(&chain3->nodes, 0);
     EXPECT_THAT(node->guid, Eq(7u));
@@ -116,7 +115,7 @@ TEST_F(NAME, weird_tree)
     EXPECT_THAT(node, Eq(child6));
 
     // Second sub-chain with length 5
-    ik_chain_t* chain4 = (ik_chain_t*)ordered_vector_get_element(&chain2->children, 1);
+    chain_t* chain4 = (chain_t*)ordered_vector_get_element(&chain2->children, 1);
     ASSERT_THAT(ordered_vector_count(&chain4->nodes), Eq(5u));
     node = *(ik_node_t**)ordered_vector_get_element(&chain4->nodes, 0);
     EXPECT_THAT(node->guid, Eq(11u));
@@ -152,7 +151,7 @@ TEST_F(NAME, just_one_node)
 
     // We expect no chains to be created
     fabrik_t* fabrik = (fabrik_t*)solver;
-    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(0u));
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree.islands), Eq(0u));
 }
 
 TEST_F(NAME, two_arms_meet_at_same_node)
@@ -183,9 +182,9 @@ TEST_F(NAME, two_arms_meet_at_same_node)
     ik_solver_solve(solver);
 
     fabrik_t* fabrik = (fabrik_t*)solver;
-    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
-    ik_chain_t* chain1 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
-    ik_chain_t* chain2 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree.islands), Eq(2u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 0);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 1);
 
     // First arm
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(3u));
@@ -244,9 +243,9 @@ TEST_F(NAME, two_separate_arms)
     ik_solver_solve(solver);
 
     fabrik_t* fabrik = (fabrik_t*)solver;
-    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(2u));
-    ik_chain_t* chain1 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
-    ik_chain_t* chain2 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 1);
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree.islands), Eq(2u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 0);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 1);
 
     // First arm
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(2u));
@@ -300,10 +299,10 @@ TEST_F(NAME, effector_in_middle_of_chain)
 
     // We expect the chain to be broken into 2 parts, one as a child of the other
     fabrik_t* fabrik = (fabrik_t*)solver;
-    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree->children), Eq(1u));
-    ik_chain_t* chain1 = (ik_chain_t*)ordered_vector_get_element(&fabrik->chain_tree->children, 0);
+    ASSERT_THAT(ordered_vector_count(&fabrik->chain_tree.islands), Eq(1u));
+    chain_t* chain1 = (chain_t*)ordered_vector_get_element(&fabrik->chain_tree.islands, 0);
     ASSERT_THAT(ordered_vector_count(&chain1->children), Eq(1u));
-    ik_chain_t* chain2 = (ik_chain_t*)ordered_vector_get_element(&chain1->children, 0);
+    chain_t* chain2 = (chain_t*)ordered_vector_get_element(&chain1->children, 0);
 
     // Bottom section
     ASSERT_THAT(ordered_vector_count(&chain1->nodes), Eq(4u));
