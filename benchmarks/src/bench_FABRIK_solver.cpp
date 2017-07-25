@@ -2,7 +2,6 @@
 #include "ik/solver.h"
 #include "ik/node.h"
 #include "ik/effector.h"
-#include "ik/chain.h"
 
 using namespace benchmark;
 
