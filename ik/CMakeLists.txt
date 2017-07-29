@@ -1,8 +1,6 @@
 include (CheckIncludeFiles)
 include (CheckCSourceCompiles)
 
-check_include_files ("stdint.h" IK_HAVE_STDINT_H)
-
 # memory debugging
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ON)
@@ -19,22 +17,26 @@ else ()
     option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" OFF)
 endif ()
 
-
 # Enable restrict keyword in quaternion and vector operations if not in debug
-set (IK_RESTRICT "")
-if (NOT CMAKE_BUILD_TYPE STREQUAL Debug)
+if (NOT IK_RESTRICT)
+    set (IK_RESTRICT "")
     foreach (RESTRICT_KEYWORD restrict __restrict __restrict__)
-        check_c_source_compiles ("int test (void *${RESTRICT_KEYWORD} x); int main (void) {return 0;}" IK_HAVE_RESTRICT)
-        if (IK_HAVE_RESTRICT)
+        check_c_source_compiles ("int test (void *${RESTRICT_KEYWORD} x); int main (void) {return 0;}" IK_RESTRICT_${RESTRICT_KEYWORD})
+        if (IK_RESTRICT_${RESTRICT_KEYWORD})
             set (IK_RESTRICT ${RESTRICT_KEYWORD})
             break ()
         endif ()
     endforeach ()
+    set (IK_RESTRICT ${IK_RESTRICT} CACHE STRING "Restrict keyword for quat and vec operations")
 endif ()
 
-set (IK_LIB_TYPE "STATIC" CACHE STRING "Shared or static library")
+# Use stdint.h if possible, otherwise use pstdint.h
+check_include_files ("stdint.h" IK_HAVE_STDINT_H)
+
 set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
 option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
+
+set (IK_LIB_TYPE "STATIC" CACHE STRING "Shared or static library")
 
 configure_file ("include/ik/export.h.in"
                 "include/ik/export.h")

@@ -3,6 +3,7 @@
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/solver_1bone.h"
+#include <stddef.h>
 #include <assert.h>
 
 /* ------------------------------------------------------------------------- */
@@ -70,13 +71,6 @@ solver_1bone_solve(ik_solver_t* solver)
         vec3_mul_scalar(node_tip->position.f, node_tip->segment_length);
         vec3_add_vec3(node_tip->position.f, node_base->position.f);
     ORDERED_VECTOR_END_EACH
-
-    if (solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
-    {
-        ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-            calculate_global_rotations(&island->root_chain);
-        ORDERED_VECTOR_END_EACH
-    }
 
     return 0;
 }

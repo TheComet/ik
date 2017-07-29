@@ -59,9 +59,9 @@ determine_target_data_from_effector(chain_t* chain, vec3_t* target_position)
 
     /* lerp using effector weight to get actual target position */
     *target_position = effector->target_position;
-    vec3_sub_vec3(target_position->f, effector_node->initial_position.f);
+    vec3_sub_vec3(target_position->f, effector_node->original_position.f);
     vec3_mul_scalar(target_position->f, effector->weight);
-    vec3_add_vec3(target_position->f, effector_node->initial_position.f);
+    vec3_add_vec3(target_position->f, effector_node->original_position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
     if (effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
@@ -74,20 +74,20 @@ determine_target_data_from_effector(chain_t* chain, vec3_t* target_position)
         /* Need distance from base node to target and base to effector node */
         base_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes,
                 ordered_vector_count(&chain->nodes) - 1);
-        base_to_effector = effector_node->initial_position;
+        base_to_effector = effector_node->original_position;
         base_to_target = effector->target_position;
-        vec3_sub_vec3(base_to_effector.f, base_node->initial_position.f);
-        vec3_sub_vec3(base_to_target.f, base_node->initial_position.f);
+        vec3_sub_vec3(base_to_effector.f, base_node->original_position.f);
+        vec3_sub_vec3(base_to_target.f, base_node->original_position.f);
 
         /* The effective distance is a lerp between these two distances */
         distance_to_target = vec3_length(base_to_target.f) * effector->weight;
         distance_to_target += vec3_length(base_to_effector.f) * (1.0 - effector->weight);
 
         /* nlerp the target position by pinning it to the base node */
-        vec3_sub_vec3(target_position->f, base_node->initial_position.f);
+        vec3_sub_vec3(target_position->f, base_node->original_position.f);
         vec3_normalise(target_position->f);
         vec3_mul_scalar(target_position->f, distance_to_target);
-        vec3_add_vec3(target_position->f, base_node->initial_position.f);
+        vec3_add_vec3(target_position->f, base_node->original_position.f);
     }
 }
 
@@ -516,7 +516,7 @@ solver_FABRIK_solve(ik_solver_t* solver)
             assert(ordered_vector_count(&root_chain->nodes) > 1);
 
             root_position = (*(ik_node_t**)ordered_vector_get_element(&root_chain->nodes,
-                    ordered_vector_count(&root_chain->nodes) - 1))->initial_position;
+                    ordered_vector_count(&root_chain->nodes) - 1))->original_position;
 
             if (solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(root_chain);
@@ -529,7 +529,7 @@ solver_FABRIK_solve(ik_solver_t* solver)
                 solve_chain_backwards(root_chain, root_position);
         ORDERED_VECTOR_END_EACH
 
-        /* Check if (all effectors are within range */
+        /* Check if all effectors are within range */
         ORDERED_VECTOR_FOR_EACH(&fabrik->effector_nodes_list, ik_node_t*, pnode)
             vec3_t diff = (*pnode)->position;
             vec3_sub_vec3(diff.f, (*pnode)->effector->target_position.f);
@@ -544,13 +544,6 @@ solver_FABRIK_solve(ik_solver_t* solver)
     /* Restore initial rotations to global space again. See above as to why. */
     if (solver->flags & SOLVER_ENABLE_CONSTRAINTS)
         initial_rotation_to_global(solver->tree);
-
-    if (solver->flags & SOLVER_CALCULATE_FINAL_ROTATIONS)
-    {
-        ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree.islands, chain_island_t, island)
-            calculate_global_rotations(&island->root_chain);
-        ORDERED_VECTOR_END_EACH
-    }
 
     return result;
 }

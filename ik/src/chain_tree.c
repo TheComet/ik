@@ -306,7 +306,7 @@ rebuild_chain_tree(ik_solver_t* solver)
 {
     bstv_t involved_nodes;
     int involved_nodes_count;
-#if IK_DOT_OUTPUT == ON
+#ifdef IK_DOT_OUTPUT
     char buffer[20];
     static int file_name_counter = 0;
 #endif
@@ -329,11 +329,11 @@ rebuild_chain_tree(ik_solver_t* solver)
     recursively_build_chain_tree(&solver->chain_tree, NULL, solver->tree, solver->tree, &involved_nodes);
 
     /* Pre-compute offsets for each node in the chain tree in relation to their
-     * parents *
-    calculate_segment_lengths(solver->chain_tree);*/
+     * parents */
+    calculate_segment_lengths(&solver->chain_tree);
 
     /* DEBUG: Save chain tree to DOT */
-#if IK_DOT_OUTPUT == ON
+#ifdef IK_DOT_OUTPUT
     sprintf(buffer, "tree%d.dot", file_name_counter++);
     dump_to_dot(solver->tree, solver->chain_tree, buffer);
 #endif
@@ -352,26 +352,33 @@ rebuild_chain_tree(ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-void
-calculate_segment_lengths(chain_tree_t* chain_tree)
+static void
+calculate_segment_lengths_in_island(chain_t* island)
 {
-    /* TODO Fix this
-    int last_idx = ordered_vector_count(&chain->nodes) - 1;
+    int last_idx = ordered_vector_count(&island->nodes) - 1;
     while (last_idx-- > 0)
     {
         ik_node_t* child_node =
-            *(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 0);
+            *(ik_node_t**)ordered_vector_get_element(&island->nodes, last_idx + 0);
         ik_node_t* parent_node =
-            *(ik_node_t**)ordered_vector_get_element(&chain->nodes, last_idx + 1);
+            *(ik_node_t**)ordered_vector_get_element(&island->nodes, last_idx + 1);
 
-        vec3_t diff = child_node->initial_position;
-        vec3_sub_vec3(diff.f, parent_node->initial_position.f);
+        vec3_t diff = child_node->original_position;
+        vec3_sub_vec3(diff.f, parent_node->original_position.f);
         child_node->segment_length = vec3_length(diff.f);
     }
 
-    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
-        calculate_segment_lengths(child);
-    ORDERED_VECTOR_END_EACH*/
+    ORDERED_VECTOR_FOR_EACH(&island->children, chain_t, child)
+        calculate_segment_lengths_in_island(child);
+    ORDERED_VECTOR_END_EACH
+}
+void
+calculate_segment_lengths(chain_tree_t* chain_tree)
+{
+    /* TODO: Implement again, take into consideration merged bones */
+    ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
+        calculate_segment_lengths_in_island(&island->root_chain);
+    ORDERED_VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -434,9 +441,9 @@ calculate_delta_rotation_of_each_segment(chain_t* chain)
         ik_node_t* parent_node = *(ik_node_t**)ordered_vector_get_element(&chain->nodes, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
-        vec3_t segment_original = child_node->initial_position;
+        vec3_t segment_original = child_node->original_position;
         vec3_t segment_solved   = child_node->position;
-        vec3_sub_vec3(segment_original.f, parent_node->initial_position.f);
+        vec3_sub_vec3(segment_original.f, parent_node->original_position.f);
         vec3_sub_vec3(segment_solved.f, parent_node->position.f);
 
         vec3_angle(parent_node->rotation.f, segment_original.f, segment_solved.f);
@@ -492,7 +499,7 @@ calculate_global_rotations(chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-#if IK_DOT_OUTPUT == ON
+#ifdef IK_DOT_OUTPUT
 static void
 dump_chain(ik_chain_t* chain, FILE* fp)
 {

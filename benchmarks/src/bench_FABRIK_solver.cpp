@@ -14,12 +14,12 @@ enum Type
 
 static void build_tree_long_chains(ik_node_t* parent, int depth, int* guid)
 {
-    ik_node_t* child1 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 1; child1->initial_position.v.y = (depth*7) + 1;
-    ik_node_t* child2 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 2; child1->initial_position.v.y = (depth*7) + 2;
-    ik_node_t* child3 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 3; child1->initial_position.v.y = (depth*7) + 3;
-    ik_node_t* child4 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 4; child1->initial_position.v.y = (depth*7) + 4;
-    ik_node_t* child5 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 5; child1->initial_position.v.y = (depth*7) + 5;
-    ik_node_t* child6 = ik_node_create((*guid)++); child1->initial_position.v.x = (depth*7) + 6; child1->initial_position.v.y = (depth*7) + 6;
+    ik_node_t* child1 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 1; child1->original_position.v.y = (depth*7) + 1;
+    ik_node_t* child2 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 2; child1->original_position.v.y = (depth*7) + 2;
+    ik_node_t* child3 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 3; child1->original_position.v.y = (depth*7) + 3;
+    ik_node_t* child4 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 4; child1->original_position.v.y = (depth*7) + 4;
+    ik_node_t* child5 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 5; child1->original_position.v.y = (depth*7) + 5;
+    ik_node_t* child6 = ik_node_create((*guid)++); child1->original_position.v.x = (depth*7) + 6; child1->original_position.v.y = (depth*7) + 6;
     ik_node_add_child(parent, child1);
     ik_node_add_child(child1, child2);
     ik_node_add_child(child2, child3);
@@ -57,7 +57,7 @@ static ik_node_t* create_tree(Type type)
             for (int i = 0; i != 10; ++i)
             {
                 ik_node_t* child = ik_node_create(guid++);
-                child->initial_position.v.y = i + 1; // 1 unit higher every time
+                child->original_position.v.y = i + 1; // 1 unit higher every time
                 ik_node_add_child(parent, child);
                 parent = child;
             }
@@ -69,18 +69,18 @@ static ik_node_t* create_tree(Type type)
 
         case TWO_ARMS:
         {
-            ik_node_t* child1 = ik_node_create(guid++); child1->initial_position.v.y = 1;
-            ik_node_t* child2 = ik_node_create(guid++); child2->initial_position.v.y = 2;
-            ik_node_t* child3 = ik_node_create(guid++); child3->initial_position.v.y = 3;
+            ik_node_t* child1 = ik_node_create(guid++); child1->original_position.v.y = 1;
+            ik_node_t* child2 = ik_node_create(guid++); child2->original_position.v.y = 2;
+            ik_node_t* child3 = ik_node_create(guid++); child3->original_position.v.y = 3;
             ik_node_add_child(root, child1);
             ik_node_add_child(child1, child2);
             ik_node_add_child(child2, child3);
 
             ik_node_t* sub_base = child3;
 
-            child1 = ik_node_create(guid++); child1->initial_position.v.y = 4; child1->initial_position.v.x = -1;
-            child2 = ik_node_create(guid++); child2->initial_position.v.y = 5; child2->initial_position.v.x = -2;
-            child3 = ik_node_create(guid++); child2->initial_position.v.y = 6; child2->initial_position.v.x = -3;
+            child1 = ik_node_create(guid++); child1->original_position.v.y = 4; child1->original_position.v.x = -1;
+            child2 = ik_node_create(guid++); child2->original_position.v.y = 5; child2->original_position.v.x = -2;
+            child3 = ik_node_create(guid++); child2->original_position.v.y = 6; child2->original_position.v.x = -3;
             ik_node_add_child(sub_base, child1);
             ik_node_add_child(child1, child2);
             ik_node_add_child(child2, child3);
@@ -89,9 +89,9 @@ static ik_node_t* create_tree(Type type)
             eff->target_position.v.z = 2; // make it grab forwards
             ik_node_attach_effector(child3, eff);
 
-            child1 = ik_node_create(guid++); child1->initial_position.v.y = 4; child1->initial_position.v.x = 1;
-            child2 = ik_node_create(guid++); child2->initial_position.v.y = 5; child2->initial_position.v.x = 2;
-            child3 = ik_node_create(guid++); child2->initial_position.v.y = 6; child2->initial_position.v.x = 3;
+            child1 = ik_node_create(guid++); child1->original_position.v.y = 4; child1->original_position.v.x = 1;
+            child2 = ik_node_create(guid++); child2->original_position.v.y = 5; child2->original_position.v.x = 2;
+            child3 = ik_node_create(guid++); child2->original_position.v.y = 6; child2->original_position.v.x = 3;
             ik_node_add_child(sub_base, child1);
             ik_node_add_child(child1, child2);
             ik_node_add_child(child2, child3);
@@ -141,7 +141,7 @@ static void BM_FABRIK_reset_tree(State& state)
     ik_solver_t* solver = create_solver((Type)state.range(0));
 
     while (state.KeepRunning())
-        ik_solver_reset_solved_data(solver);
+        ik_solver_reset_to_original_pose(solver);
 
     ik_solver_destroy(solver);
 }
@@ -157,7 +157,7 @@ static void BM_FABRIK_solve(State& state)
 
     while (state.KeepRunning())
     {
-        ik_solver_reset_solved_data(solver);
+        ik_solver_reset_to_original_pose(solver);
         ik_solver_solve(solver);
     }
 
@@ -172,12 +172,12 @@ BENCHMARK(BM_FABRIK_solve)
 static void BM_FABRIK_solve_final_rotations(State& state)
 {
     ik_solver_t* solver = create_solver((Type)state.range(0));
-    solver->flags |= SOLVER_CALCULATE_FINAL_ROTATIONS;
 
     while (state.KeepRunning())
     {
-        ik_solver_reset_solved_data(solver);
+        ik_solver_reset_to_original_pose(solver);
         ik_solver_solve(solver);
+        ik_solver_calculate_joint_rotations(solver);
     }
 
     ik_solver_destroy(solver);
