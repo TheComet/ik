@@ -8,7 +8,17 @@ An implementation of the FABRIK solver. Specialized 2-bone and 1-bone solvers ar
 Building
 --------
 
-Use the ```v1.0``` branch. The master branch has some unstable features.
+You can build the project as follows:
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j8
+make install
+```
+
+On POSIX systems, you can enable malloc()/free() wrappers with ```-DIK_MEMORY_DEBUGGING=ON``` and you can further enable memory backtraces with ```-DIK_MEMORY_BACKTRACE=ON```.
+
+Unit tests and benchmarks are also included, those can be enabled with ```-DIK_TESTS=ON``` and ```-DIK_BENCHMARKS=ON```, respectively.
 
 Overview
 --------
