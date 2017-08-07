@@ -10,7 +10,7 @@
 C_HEADER_BEGIN
 
 typedef void (*ik_solver_destruct_func)(ik_solver_t*);
-typedef int (*ik_solver_rebuild_data_func)(ik_solver_t*);
+typedef int (*ik_solver_post_chain_build_func)(ik_solver_t*);
 typedef int (*ik_solver_solve_func)(ik_solver_t*);
 
 typedef void (*ik_solver_iterate_node_cb_func)(ik_node_t*);
@@ -29,15 +29,17 @@ typedef enum solver_algorithm_e
 typedef enum solver_flags_e
 {
     /*!
-     * @brief Causes the root node in the tree to be excluded from the list of
+     * @brief Causes the base node in the tree to be excluded from the list of
      * nodes to solve for. It won't be affected by the solver, but it may still
      * be passed through to the result callback function.
      */
-    SOLVER_EXCLUDE_ROOT                   = 0x01,
+    SOLVER_EXCLUDE_BASE                   = 0x01,
 
     SOLVER_ENABLE_CONSTRAINTS             = 0x02,
 
-    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x04
+    SOLVER_CALCULATE_TARGET_ROTATIONS     = 0x04,
+
+    SOLVER_CALCULATE_JOINT_ROTATIONS      = 0x08
 } solver_flags_e;
 
 /*!
@@ -50,7 +52,7 @@ typedef enum solver_flags_e
                                                                       \
     /* Derived structure callbacks */                                 \
     ik_solver_destruct_func             destruct;                     \
-    ik_solver_rebuild_data_func         rebuild_data;                 \
+    ik_solver_post_chain_build_func     post_chain_build;             \
     ik_solver_solve_func                solve;                        \
                                                                       \
     ordered_vector_t                    effector_nodes_list;          \
@@ -123,11 +125,11 @@ ik_solver_destroy(ik_solver_t* solver);
  * solver already has a tree, then said tree will be destroyed.
  */
 IK_PUBLIC_API void
-ik_solver_set_tree(ik_solver_t* solver, ik_node_t* root);
+ik_solver_set_tree(ik_solver_t* solver, ik_node_t* base);
 
 /*!
  * @brief The solver releases any references to a previously set tree and
- * returns the root node of said tree. Any proceeding calls that involve the
+ * returns the base node of said tree. Any proceeding calls that involve the
  * tree (e.g. solve or rebuild) will have no effect until a new tree is set.
  * @return If the solver has no tree then NULL is returned.
  */
@@ -147,15 +149,25 @@ ik_solver_destroy_tree(ik_solver_t* solver);
  * @note Needs to be called whenever the tree changes in any way. I.e. if you
  * remove nodes or add nodes, or if you remove effectors or add effectors,
  * you must call this again before calling the solver.
+ * @return Returns non-zero if any of the chain trees are invalid for any
+ * reason. If this happens, check the log for error messages.
+ * @warning If this functions fails, the internal structures are in an
+ * undefined state. You cannot solve the tree in this state.
  */
 IK_PUBLIC_API int
-ik_solver_rebuild_data(ik_solver_t* solver);
+ik_solver_rebuild_chain_trees(ik_solver_t* solver);
 
 /*!
- * @brief Unusual, but if you have a tree with translational motions such that
- * the distances between nodes changes (perhaps a slider?), you can call this
- * to re-calculate the segment lengths after assigning new positions to the
- * nodes.
+ * @brief Computes the distances between the nodes and stores them in
+ * node->segment_length. The positions used for this computation are those of
+ * the active pose (node->position). For this reason, make sure that you've
+ * correctly initialised the active pose before calling this function.
+ *
+ * The segment lengths are typically computed once during initialisation and
+ * then never again. Of course, there are exceptions, such as when your tree
+ * has translational motions. In this case, you will have to recalculate the
+ * segment lengths every time node positions change.
+ *
  * @note This function gets called by ik_solver_rebuild_data().
  */
 IK_PUBLIC_API void
@@ -165,6 +177,8 @@ ik_solver_recalculate_segment_lengths(ik_solver_t* solver);
  * @brief Solves the IK problem. The node solutions will be provided via a
  * callback function, which can be registered to the solver by assigning it to
  * solver->apply_result.
+ * @return The return value should be 1 if the result converged. 0 if any of
+ * the end effectors didn't converge. -1 if there was an error.
  */
 IK_PUBLIC_API int
 ik_solver_solve(ik_solver_t* solver);
@@ -179,6 +193,37 @@ ik_solver_calculate_joint_rotations(ik_solver_t* solver);
 IK_PUBLIC_API void
 ik_solver_iterate_tree(ik_solver_t* solver,
                        ik_solver_iterate_node_cb_func callback);
+
+/*!
+ * @brief Iterates just the nodes that are being affected by the solver,
+ * *EXCLUDING* the island base nodes.
+ *
+ * @note Requires a rebuild before this data is valid.
+ *
+ * The reason for excluding island base nodes is because their positions and
+ * rotations are typically set separately from the rest of the tree (see
+ * ik_solver_iterate_base_nodes).
+ */
+IK_PUBLIC_API void
+ik_solver_iterate_chain_tree(ik_solver_t* solver,
+                             ik_solver_iterate_node_cb_func callback);
+
+/*!
+ * @brief Iterates all nodes that mark the beginning of a subtree.
+ *
+ * In a lot of cases, the scene graph of a user library is only partially
+ * replicated for solving. Because of this, the base nodes of all of the chains
+ * in the tree won't be affected by a potential parent node if it is moved or
+ * rotated, since the ik library doesn't know about any parent nodes -- It
+ * believes the base nodes ARE the parent-most nodes in the tree.
+ *
+ * To overcome this, you can iterate all of these base nodes and copy the
+ * *global* (world) position/rotation into each base node position/rotation.
+ * This will correctly position/rotate the solver's chains.
+ */
+IK_PUBLIC_API void
+ik_solver_iterate_base_nodes(ik_solver_t* solver,
+                             ik_solver_iterate_node_cb_func callback);
 
 /*!
  * @brief Sets the solved positions and rotations equal to the original

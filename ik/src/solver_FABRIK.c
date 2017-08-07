@@ -437,45 +437,6 @@ solve_chain_backwards(chain_t* chain, vec3_t target_position)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-initial_to_global_recursive(ik_node_t* node, quat_t acc_rot)
-{
-    quat_t rotation = node->initial_rotation;
-    quat_mul_quat(node->initial_rotation.f, acc_rot.f);
-    quat_mul_quat(acc_rot.f, rotation.f);
-
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
-        initial_to_global_recursive(child, acc_rot);
-    BSTV_END_EACH
-}
-void
-initial_rotation_to_global(ik_node_t* node)
-{
-    quat_t acc_rot = {{0, 0, 0, 1}};
-    initial_to_global_recursive(node, acc_rot);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-initial_to_local_recursive(ik_node_t* node, quat_t acc_rot)
-{
-    quat_t inv_rotation = acc_rot;
-    quat_conj(inv_rotation.f);
-    quat_mul_quat(node->initial_rotation.f, inv_rotation.f);
-    quat_mul_quat(acc_rot.f, node->initial_rotation.f);
-
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
-        initial_to_local_recursive(child, acc_rot);
-    BSTV_END_EACH
-}
-void
-initial_rotation_to_local(ik_node_t* node)
-{
-    quat_t acc_rot = {{0, 0, 0, 1}};
-    initial_to_local_recursive(node, acc_rot);
-}
-
-/* ------------------------------------------------------------------------- */
 int
 solver_FABRIK_solve(ik_solver_t* solver)
 {
@@ -484,49 +445,31 @@ solver_FABRIK_solve(ik_solver_t* solver)
     int iteration = solver->max_iterations;
     ik_real tolerance_squared = solver->tolerance * solver->tolerance;
 
-    /*
-     * NOTE: Kind of a hack. Initial rotations are in local space during
-     * iteration.
-     *
-     * FABRIK works entirely in global space, so when constraints come into
-     * play, it is necessary to calculate joint angles and convert global
-     * positions into local positions. The constrained angles are then
-     * converted back again into global space.
-     *
-     * As you can imagine, this process is costly. We can actually cut down on
-     * a significant number of operations if the initial rotations are in local
-     * space. The algorithm doesn't need initial rotations, so this should have
-     * no side effects. We just need to make sure to convert the rotations back
-     * into global space after the algorithm has completed.
-     */
-    if (solver->flags & SOLVER_ENABLE_CONSTRAINTS)
-        initial_rotation_to_local(solver->tree);
-
     while (iteration-- > 0)
     {
-        vec3_t root_position;
+        vec3_t base_position;
 
         /* Actual algorithm here */
         ORDERED_VECTOR_FOR_EACH(&fabrik->chain_tree.islands, chain_island_t, island)
-            chain_t* root_chain = &island->root_chain;
+            chain_t* base_chain = &island->base_chain;
 
             /* The algorithm assumes chains have at least one bone. This should
              * be asserted while building the chain trees, but it can't hurt
              * to double check */
-            assert(ordered_vector_count(&root_chain->nodes) > 1);
+            assert(ordered_vector_count(&base_chain->nodes) > 1);
 
-            root_position = (*(ik_node_t**)ordered_vector_get_element(&root_chain->nodes,
-                    ordered_vector_count(&root_chain->nodes) - 1))->original_position;
+            base_position = (*(ik_node_t**)ordered_vector_get_element(&base_chain->nodes,
+                    ordered_vector_count(&base_chain->nodes) - 1))->position;
 
             if (solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
-                solve_chain_forwards_with_target_rotation(root_chain);
+                solve_chain_forwards_with_target_rotation(base_chain);
             else
-                solve_chain_forwards(root_chain);
+                solve_chain_forwards(base_chain);
 
             if (solver->flags & SOLVER_ENABLE_CONSTRAINTS)
-                solve_chain_backwards_with_constraints(root_chain, root_position, root_position);
+                solve_chain_backwards_with_constraints(base_chain, base_position, base_position);
             else
-                solve_chain_backwards(root_chain, root_position);
+                solve_chain_backwards(base_chain, base_position);
         ORDERED_VECTOR_END_EACH
 
         /* Check if all effectors are within range */
@@ -540,10 +483,6 @@ solver_FABRIK_solve(ik_solver_t* solver)
             }
         ORDERED_VECTOR_END_EACH
     }
-
-    /* Restore initial rotations to global space again. See above as to why. */
-    if (solver->flags & SOLVER_ENABLE_CONSTRAINTS)
-        initial_rotation_to_global(solver->tree);
 
     return result;
 }

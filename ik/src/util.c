@@ -16,7 +16,7 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
 {
     int average_count;
     int node_idx, node_count;
-    effector_data_t effector_data;
+	effector_data_t effector_data = {0, 0};
 
     /*
      * Find the rotation weight of this chain's last node by averaging the
@@ -59,7 +59,7 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
      * bit every time. Note that we exclude the last node, because it will
      * be handled by the parent chain. If there is no parent chain then the
      * non-recursive caller of this function will set the rotation weight of
-     * the root node.
+     * the base node.
      */
     node_count = ordered_vector_count(&chain->nodes) - 1;
     for (node_idx = 0; node_idx < node_count; ++node_idx)
@@ -88,11 +88,11 @@ ik_calculate_rotation_weight_decays(chain_tree_t* chain_tree)
      * each island to the returned rotation weight.
      */
     ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
-        ik_node_t* root_node;
-        effector_data_t effector_data = calculate_rotation_weight_decays_recursive(&island->root_chain);
-        int last_idx = ordered_vector_count(&island->root_chain.nodes) - 1;
+        ik_node_t* base_node;
+        effector_data_t effector_data = calculate_rotation_weight_decays_recursive(&island->base_chain);
+        int last_idx = ordered_vector_count(&island->base_chain.nodes) - 1;
         assert(last_idx > 0);
-        root_node = *(ik_node_t**)ordered_vector_get_element(&island->root_chain.nodes, last_idx);
-        root_node->rotation_weight = effector_data.rotation_weight;
+        base_node = *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, last_idx);
+        base_node->rotation_weight = effector_data.rotation_weight;
     ORDERED_VECTOR_END_EACH
 }

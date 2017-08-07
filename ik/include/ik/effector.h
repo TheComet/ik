@@ -11,7 +11,7 @@ typedef enum effector_flags_e
 {
     /*!
      * @brief Causes intermediary weight values to rotate the target around the
-     * chain's root instead of linearly interpolating the target. Can be more
+     * chain's base instead of linearly interpolating the target. Can be more
      * appealing if the solved tree diverges a lot from the original tree
      * during weight transitions.
      */
@@ -62,7 +62,7 @@ struct ik_effector_t
 
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of
-     * 0 means all of the parents, including the root node.
+     * 0 means all of the parents, including the base node.
      * @note Changing the chain length requires the solver tree to be rebuilt
      * with ik_solver_rebuild_tree().
      */

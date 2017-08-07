@@ -8,6 +8,13 @@
 
 C_HEADER_BEGIN
 
+typedef enum ik_node_transform_flags_e
+{
+    NODE_ACTIVE = 0x01,
+    NODE_ORIGINAL = 0x02,
+    NODE_ROTATIONS_ONLY = 0x04
+} ik_node_transform_flags_e;
+
 /*!
  * @brief Represents one node in the tree to be solved.
  */
@@ -41,30 +48,36 @@ struct ik_node_t
     void* user_data;
 
     /*!
-     * @brief The initial global position (in world space).
-     * @note Must be set by the user to get correct results. This value can
-     * be set and retrieved at any time.
+     * @brief Used to store the original local position. This can be used to
+     * reset the active tree (ik_solver_reset_to_original_pose()) to its
+     * "original" configuration, if so desired, but is otherwise not used by
+     * any other part of the library. You should set the original position once
+     * during construction.
      * @note The default value is (0, 0, 0).
      */
     vec3_t original_position;
 
     /*!
-     * @brief The initial global rotation (in world space).
-     * @note Must be set by the user to get correct results if the solver has
-     * angle computations enabled (SOLVER_CALCULATE_FINAL_ANGLES).
+     * @brief Used to store the original local rotation. This can be used to
+     * reset the active tree (ik_solver_reset_to_original_pose()) to its
+     * "original" configuration, if so desired, but is otherwise not used by
+     * any other part of the library. You should set the original rotation once
+     * during construction.
      * @note The default value is the identity quaternion.
      */
-    quat_t initial_rotation;
+    quat_t original_rotation;
 
     /*!
-     * @brief After the solver is executed, the solved global (world) position
-     * is stored here and can be retrieved.
+     * The initial local position that should be used by the solver can be
+     * written to this field. After the solver is executed, the solved local
+     * position is written back to this field and can be retrieved.
      */
     vec3_t position;
 
     /*!
-     * @brief After the solver is executed, the solved global (world) rotation
-     * is stored here and can be retrieved.
+     * The initial local rotation that should be used by the solver can be
+     * written to this field. After the solver is executed, the solved local
+     * rotation is written back to this field and can be retrieved.
      */
     quat_t rotation;
 
@@ -211,10 +224,10 @@ IK_PUBLIC_API void
 ik_node_dump_to_dot(ik_node_t* node, const char* file_name);
 
 IK_PUBLIC_API void
-ik_node_global_to_local(ik_node_t* node);
+ik_node_global_to_local(ik_node_t* node, uint8_t flags);
 
 IK_PUBLIC_API void
-ik_node_local_to_global(ik_node_t* node);
+ik_node_local_to_global(ik_node_t* node, uint8_t flags);
 
 C_HEADER_END
 

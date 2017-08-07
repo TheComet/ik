@@ -36,16 +36,14 @@ chain_tree_destruct(chain_tree_t* chain_tree)
 void
 chain_island_construct(chain_island_t* chain_tree)
 {
-    chain_construct(&chain_tree->root_chain);
-    ordered_vector_construct(&chain_tree->transform_dependent_nodes, sizeof(ik_node_t*));
+    chain_construct(&chain_tree->base_chain);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 chain_island_destruct(chain_island_t* chain_tree)
 {
-    ordered_vector_clear_free(&chain_tree->transform_dependent_nodes);
-    chain_destruct(&chain_tree->root_chain);
+    chain_destruct(&chain_tree->base_chain);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -107,13 +105,13 @@ count_chains_recursive(chain_t* chain)
     return counter;
 }
 int
-count_chains_exclude_root(chain_tree_t* chain_tree)
+count_chains(chain_tree_t* chain_tree)
 {
-    int counter = 1;
+    int counter = 0;
     ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
-        counter += count_chains_recursive(&island->root_chain);
+        counter += count_chains_recursive(&island->base_chain);
     ORDERED_VECTOR_END_EACH
-    return counter - 1; /* exclude root chain */
+    return counter;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -122,9 +120,9 @@ mark_involved_nodes(ik_solver_t* solver, bstv_t* involved_nodes)
 {
     /*
      * Traverse the chain of parents starting at each effector node and ending
-     * at the root node of the tree and mark every node on the way. Each
+     * at the sub-base node of the tree and mark every node on the way. Each
      * effector specifies a maximum chain length, which means it's possible
-     * that we won't hit the root node.
+     * that we won't hit the base node.
      */
     ordered_vector_t* effector_nodes_list = &solver->effector_nodes_list;
     ORDERED_VECTOR_FOR_EACH(effector_nodes_list, ik_node_t*, p_effector_node)
@@ -252,7 +250,7 @@ recursively_build_chain_tree(chain_tree_t* chain_tree,
                         return -1;
                     }
                     chain_island_construct(island);
-                    child_chain = &island->root_chain;
+                    child_chain = &island->base_chain;
                 }
                 else
                 {
@@ -341,7 +339,7 @@ rebuild_chain_tree(ik_solver_t* solver)
     ik_log_message("There are %d effector(s) involving %d node(s). %d chain(s) were created",
                    ordered_vector_count(&solver->effector_nodes_list),
                    involved_nodes_count,
-                   count_chains_exclude_root(&solver->chain_tree));
+                   count_chains(&solver->chain_tree));
 
     bstv_clear_free(&involved_nodes);
 
@@ -355,17 +353,21 @@ rebuild_chain_tree(ik_solver_t* solver)
 static void
 calculate_segment_lengths_in_island(chain_t* island)
 {
+    /*
+     * The nodes are in local space, so the segment length is just the length
+     * of the node->position vector.
+     *
+     * The segment length of a node refers to the distance to its parent rather
+     * than to the distance to its child. Thus, the base node of a chain does
+     * not need to be iterated.
+     */
     int last_idx = ordered_vector_count(&island->nodes) - 1;
     while (last_idx-- > 0)
     {
-        ik_node_t* child_node =
-            *(ik_node_t**)ordered_vector_get_element(&island->nodes, last_idx + 0);
-        ik_node_t* parent_node =
-            *(ik_node_t**)ordered_vector_get_element(&island->nodes, last_idx + 1);
+        ik_node_t* node =
+            *(ik_node_t**)ordered_vector_get_element(&island->nodes, last_idx);
 
-        vec3_t diff = child_node->original_position;
-        vec3_sub_vec3(diff.f, parent_node->original_position.f);
-        child_node->segment_length = vec3_length(diff.f);
+        node->segment_length = vec3_length(node->position.f);
     }
 
     ORDERED_VECTOR_FOR_EACH(&island->children, chain_t, child)
@@ -375,9 +377,9 @@ calculate_segment_lengths_in_island(chain_t* island)
 void
 calculate_segment_lengths(chain_tree_t* chain_tree)
 {
-    /* TODO: Implement again, take into consideration merged bones */
+    /* TODO: Implement again, take into consideration bone skipping */
     ORDERED_VECTOR_FOR_EACH(&chain_tree->islands, chain_island_t, island)
-        calculate_segment_lengths_in_island(&island->root_chain);
+        calculate_segment_lengths_in_island(&island->base_chain);
     ORDERED_VECTOR_END_EACH
 }
 
@@ -394,7 +396,7 @@ calculate_global_rotations_of_children(chain_t* chain)
         quat_t rotation;
         calculate_global_rotations(child);
 
-        /* Note: All chains that aren't the root chain *MUST* have at least two nodes */
+        /* Note: All chains *MUST* have at least two nodes */
         assert(ordered_vector_count(&child->nodes) >= 2);
         rotation = (*(ik_node_t**)
                 ordered_vector_get_element(&child->nodes,
@@ -411,9 +413,9 @@ calculate_global_rotations_of_children(chain_t* chain)
 
     /*
      * Assuming there was more than 1 child chain and assuming we aren't the
-     * root node, then the child chains we just iterated must share the same
-     * base node as our tip node. Average the accumulated quaternion and set
-     * this node's correct solved rotation.
+     * base node, then the child chains we just iterated must share the same
+     * sub-base node (which is our tip node). Average the accumulated
+     * quaternion and set this node's correct solved rotation.
      */
     if (average_count > 0 && ordered_vector_count(&chain->nodes) != 0)
     {
@@ -458,15 +460,15 @@ calculate_global_rotations(chain_t* chain)
 
     /*
      * Calculates the "global" (world) angles of each joint and writes them to
-     * each node->solved_rotation slot.
+     * each node->rotation slot.
      *
      * The angle between the original and solved segments are calculated using
      * standard vector math (dot product). The axis of rotation is calculated
      * with the cross product. From this data, a quaternion is constructed,
      * describing this delta rotation. Finally, in order to make the rotations
      * global instead of relative, the delta rotation is multiplied with
-     * node->rotation, which should be a quaternion describing the node's
-     * global rotation in the unsolved tree.
+     * node->original_rotation, which should be a quaternion describing the
+     * node's global rotation in the unsolved tree.
      *
      * The rotation of the base joint in the chain is returned so it can be
      * averaged by parent chains.
@@ -494,7 +496,7 @@ calculate_global_rotations(chain_t* chain)
      */
     ORDERED_VECTOR_FOR_EACH(&chain->nodes, ik_node_t*, pnode)
         ik_node_t* node = *pnode;
-        quat_mul_quat(node->rotation.f, node->initial_rotation.f);
+        quat_mul_quat(node->rotation.f, node->original_rotation.f);
     ORDERED_VECTOR_END_EACH
 }
 

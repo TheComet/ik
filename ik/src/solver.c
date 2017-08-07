@@ -11,6 +11,7 @@
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
 #include <string.h>
+#include <assert.h>
 
 static int
 recursively_get_all_effector_nodes(ik_node_t* node, ordered_vector_t* effector_nodes_list);
@@ -29,11 +30,6 @@ ik_solver_create(enum solver_algorithm_e algorithm)
      */
     switch (algorithm)
     {
-    case SOLVER_FABRIK:
-        solver_size = sizeof(fabrik_t);
-        solver_construct = solver_FABRIK_construct;
-        break;
-
     case SOLVER_TWO_BONE:
         solver_size = sizeof(two_bone_t);
         solver_construct = solver_2bone_construct;
@@ -43,7 +39,12 @@ ik_solver_create(enum solver_algorithm_e algorithm)
         solver_size = sizeof(one_bone_t);
         solver_construct = solver_1bone_construct;
         break;
-        
+
+    case SOLVER_FABRIK:
+        solver_size = sizeof(fabrik_t);
+        solver_construct = solver_FABRIK_construct;
+        break;
+
     case SOLVER_MSD:
         solver_size = sizeof(msd_t);
         solver_construct = solver_MSD_construct;
@@ -111,18 +112,18 @@ ik_solver_destroy(ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_set_tree(ik_solver_t* solver, ik_node_t* root)
+ik_solver_set_tree(ik_solver_t* solver, ik_node_t* base)
 {
     ik_solver_destroy_tree(solver);
-    solver->tree = root;
+    solver->tree = base;
 }
 
 /* ------------------------------------------------------------------------- */
 ik_node_t*
 ik_solver_unlink_tree(ik_solver_t* solver)
 {
-    ik_node_t* root = solver->tree;
-    if (root == NULL)
+    ik_node_t* base = solver->tree;
+    if (base == NULL)
         return NULL;
     solver->tree = NULL;
 
@@ -132,22 +133,22 @@ ik_solver_unlink_tree(ik_solver_t* solver)
      */
     ordered_vector_clear(&solver->effector_nodes_list);
 
-    return root;
+    return base;
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_destroy_tree(ik_solver_t* solver)
 {
-    ik_node_t* root;
-    if ((root = ik_solver_unlink_tree(solver)) == NULL)
+    ik_node_t* base;
+    if ((base = ik_solver_unlink_tree(solver)) == NULL)
         return;
-    ik_node_destroy(root);
+    ik_node_destroy(base);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_rebuild_data(ik_solver_t* solver)
+ik_solver_rebuild_chain_trees(ik_solver_t* solver)
 {
     /* If the solver has no tree, then there's nothing to do */
     if (solver->tree == NULL)
@@ -172,8 +173,8 @@ ik_solver_rebuild_data(ik_solver_t* solver)
     if (rebuild_chain_tree(solver) < 0)
         return -1;
 
-    if (solver->rebuild_data != NULL)
-        return solver->rebuild_data(solver);
+    if (solver->post_chain_build != NULL)
+        return solver->post_chain_build(solver);
 
     return 0;
 }
@@ -189,7 +190,23 @@ ik_solver_recalculate_segment_lengths(ik_solver_t* solver)
 int
 ik_solver_solve(ik_solver_t* solver)
 {
-    return solver->solve(solver);
+    int result;
+
+    /*
+     * All solvers work entirely, so we need to transform the tree first,
+     * solve, then transform it back to local space. The algorithm requires
+     * both the original and the active pose in local space.
+     */
+    ik_node_local_to_global(solver->tree, NODE_ORIGINAL | NODE_ACTIVE);
+
+    if ((result = solver->solve(solver)) < 0)
+        goto stop_and_return;
+
+    if (solver->flags & SOLVER_CALCULATE_JOINT_ROTATIONS)
+        ik_solver_calculate_joint_rotations(solver);
+
+    stop_and_return: ik_node_global_to_local(solver->tree, NODE_ORIGINAL | NODE_ACTIVE);
+    return result;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -197,7 +214,7 @@ void
 ik_solver_calculate_joint_rotations(ik_solver_t* solver)
 {
     ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        calculate_global_rotations(&island->root_chain);
+        calculate_global_rotations(&island->base_chain);
     ORDERED_VECTOR_END_EACH
 }
 
@@ -227,10 +244,55 @@ ik_solver_iterate_tree(ik_solver_t* solver,
 
 /* ------------------------------------------------------------------------- */
 static void
+iterate_chain_tree_recursive(chain_t* chain,
+                             ik_solver_iterate_node_cb_func callback)
+{
+    /*
+     * Iterate the chain tree breadth first. Note that we exclude the base node
+     * in each chain, because otherwise the same node would be passed to the
+     * callback multiple times. The base node is shared by the parent chain's
+     * effector as well as with other chains in the same depth.
+     */
+    int idx = ordered_vector_count(&chain->nodes) - 1;
+    assert(idx > 0); // chains must have at least 2 nodes in them
+    while (idx--)
+    {
+        callback(*(ik_node_t**)ordered_vector_get_element(&chain->nodes, idx));
+    }
+
+    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
+        iterate_chain_tree_recursive(child, callback);
+    ORDERED_VECTOR_END_EACH
+}
+void
+ik_solver_iterate_chain_tree(ik_solver_t* solver,
+                             ik_solver_iterate_node_cb_func callback)
+{
+    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
+        iterate_chain_tree_recursive(&island->base_chain, callback);
+    ORDERED_VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_iterate_base_nodes(ik_solver_t* solver,
+                             ik_solver_iterate_node_cb_func callback)
+{
+    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
+        int idx = ordered_vector_count(&island->base_chain.nodes) - 1;
+        assert(idx > 0); /* chains should have at least 2 nodes */
+        ik_node_t* base_node =
+            *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, idx);
+        callback(base_node);
+    ORDERED_VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+static void
 reset_active_pose_recursive(ik_node_t* node)
 {
     node->position = node->original_position;
-    node->rotation = node->initial_rotation;
+    node->rotation = node->original_rotation;
 
     BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
         reset_active_pose_recursive(child);

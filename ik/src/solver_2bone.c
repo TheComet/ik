@@ -14,7 +14,7 @@ solver_2bone_construct(ik_solver_t* solver)
 
     /* set up derived functions */
     two_bone->destruct = solver_2bone_destruct;
-    two_bone->rebuild_data = solver_2bone_rebuild;
+    two_bone->post_chain_build = solver_2bone_post_chain_build;
     two_bone->solve = solver_2bone_solve;
 
     return 0;
@@ -28,19 +28,19 @@ solver_2bone_destruct(ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
-solver_2bone_rebuild(ik_solver_t* solver)
+solver_2bone_post_chain_build(ik_solver_t* solver)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
      */
     ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        if (ordered_vector_count(&island->root_chain.nodes) != 3) /* 3 nodes = 2 bones */
+        if (ordered_vector_count(&island->base_chain.nodes) != 3) /* 3 nodes = 2 bones */
         {
             ik_log_message("ERROR: Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
-        if (ordered_vector_count(&island->root_chain.children) > 0)
+        if (ordered_vector_count(&island->base_chain.children) > 0)
         {
             ik_log_message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
@@ -54,6 +54,8 @@ solver_2bone_rebuild(ik_solver_t* solver)
 int
 solver_2bone_solve(ik_solver_t* solver)
 {
+    ik_node_local_to_global(solver->tree, NODE_ACTIVE);
+
     ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
         ik_node_t* node_tip;
         ik_node_t* node_mid;
@@ -61,10 +63,10 @@ solver_2bone_solve(ik_solver_t* solver)
         vec3_t to_target;
         ik_real a, b, c, aa, bb, cc;
 
-        assert(ordered_vector_count(&island->root_chain.nodes) > 2);
-        node_tip = *(ik_node_t**)ordered_vector_get_element(&island->root_chain.nodes, 0);
-        node_mid = *(ik_node_t**)ordered_vector_get_element(&island->root_chain.nodes, 1);
-        node_base = *(ik_node_t**)ordered_vector_get_element(&island->root_chain.nodes, 2);
+        assert(ordered_vector_count(&island->base_chain.nodes) > 2);
+        node_tip = *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, 0);
+        node_mid = *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, 1);
+        node_base = *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, 2);
 
         assert(node_tip->effector != NULL);
         to_target = node_tip->effector->target_position;
@@ -87,7 +89,7 @@ solver_2bone_solve(ik_solver_t* solver)
         aa = a*a;
         bb = b*b;
         cc = vec3_length_squared(to_target.f);
-        c = sqrt(cc);
+        c = (ik_real)sqrt(cc);
 
         /* check if in reach */
         if (c < a + b)
@@ -133,6 +135,8 @@ solver_2bone_solve(ik_solver_t* solver)
             vec3_add_vec3(node_tip->position.f, node_mid->position.f);
         }
     ORDERED_VECTOR_END_EACH
+
+    ik_node_global_to_local(solver->tree, NODE_ACTIVE);
 
     return 0;
 }
