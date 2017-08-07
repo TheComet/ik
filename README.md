@@ -68,16 +68,6 @@ Here is a minimal working example that probably satisfies your needs.
 ```cpp
 #include <ik/ik.h>
 
-static void results_callback(struct ik_node_t* ikNode)
-{
-    /* Extract our scene graph node again */
-    Node* node = (Node)ikNode->user_data;
-
-    /* Apply results back to our engine's tree */
-    node->SetWorldPosition(ikNode->position);
-    node->SetWorldRotation(ikNode->rotation);
-}
-
 int main()
 {
     /* Create a simple 3-bone structure */
@@ -104,7 +94,7 @@ int main()
     ik_solver_rebuild_chain_tree(solver);
     ik_solver_solve(solver);
 }
+```
 
 [See the wiki page for details on how to use it](https://github.com/TheComet93/ik/wiki)
 
-```
