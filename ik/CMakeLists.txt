@@ -17,6 +17,19 @@ endif ()
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
 option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ${IK_MEMORY_BACKTRACE_DEFAULT})
 
+# Need to set IK_PLATFORM for dllimport/dllexport
+if (WIN32)
+    set (IK_PLATFORM "WINDOWS")
+elseif (APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set (IK_PLATFORM "OSX")
+elseif (IOS)
+    set (IK_PLATFORM "IOS")
+elseif (UNIX)
+    set (IK_PLATFORM "LINUX")
+else ()
+    set (IK_PLATFORM "ANDROID")
+endif ()
+
 # Enable restrict keyword in quaternion and vector operations if not in debug
 # Only do this if IK_RESTRICT is not cached yet.
 get_cmake_property (CACHED_VARS VARIABLES)
