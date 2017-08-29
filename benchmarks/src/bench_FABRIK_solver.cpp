@@ -115,7 +115,7 @@ static ik_solver_t* create_solver(Type type)
     ik_solver_t* solver = ik_solver_create(SOLVER_FABRIK);
     ik_node_t* root = create_tree(type);
     ik_solver_set_tree(solver, root);
-	ik_solver_rebuild_chain_trees(solver);
+    ik_solver_rebuild_chain_trees(solver);
     return solver;
 }
 
@@ -126,7 +126,7 @@ static void BM_rebuild_tree(State& state)
     ik_solver_set_tree(solver, root);
 
     while (state.KeepRunning())
-		ik_solver_rebuild_chain_trees(solver);
+        ik_solver_rebuild_chain_trees(solver);
 
     ik_solver_destroy(solver);
 }

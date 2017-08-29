@@ -30,13 +30,13 @@ TEST(NAME, simple_chain_positions)
     vector_push(&effector_nodes_list, &child3);
 
     vector_t chains;
-    chains_construct(&chains);
+    vector_construct(&chains, sizeof(base_chain_t));
     chain_tree_rebuild(&chains, root, &effector_nodes_list);
     vector_clear_free(&effector_nodes_list);
 
     ASSERT_THAT(vector_count(&chains), Eq(1u)); /* there should be 1 chain... */
     chain_t* chain = (chain_t*)vector_get_element(&chains, 0);
-    ASSERT_THAT(vector_count(&chain->nodes), Eq(4u)); /* ...consisting of 4 nodes */
+    ASSERT_THAT(vector_count(&chain->data.chain.nodes), Eq(4u)); /* ...consisting of 4 nodes */
 
     ik_chain_local_to_global(chain, TRANSFORM_ACTIVE);
 
@@ -58,12 +58,15 @@ TEST(NAME, simple_chain_positions)
 
     ik_chain_global_to_local(chain, TRANSFORM_ACTIVE);
 
-    VECTOR_FOR_EACH(&chain->nodes, ik_node_t*, pnode)
-        EXPECT_THAT((*pnode)->position.v.x, FloatEq(1));
-        EXPECT_THAT((*pnode)->position.v.y, FloatEq(2));
-        EXPECT_THAT((*pnode)->position.v.z, FloatEq(3));
-    VECTOR_END_EACH
+    CHAIN_FOR_EACH_NODE(chain, node)
+        EXPECT_THAT(node->position.v.x, FloatEq(1));
+        EXPECT_THAT(node->position.v.y, FloatEq(2));
+        EXPECT_THAT(node->position.v.z, FloatEq(3));
+    CHAIN_END_EACH
 
-    chains_destruct(&chains);
+    VECTOR_FOR_EACH(&chains, base_chain_t, base_chain)
+        base_chain_destruct(base_chain);
+    VECTOR_END_EACH
+    vector_clear_free(&chains);
     ik_node_destroy(root);
 }

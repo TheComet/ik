@@ -461,14 +461,14 @@ solver_FABRIK_solve(ik_solver_t* solver)
             base_position = base_node->position;
 
             if (solver->flags & SOLVER_CALCULATE_TARGET_ROTATIONS)
-                solve_chain_forwards_with_target_rotation(base_chain);
+                solve_chain_forwards_with_target_rotation((chain_t*)base_chain);
             else
-                solve_chain_forwards(base_chain);
+                solve_chain_forwards((chain_t*)base_chain);
 
             if (solver->flags & SOLVER_ENABLE_CONSTRAINTS)
-                solve_chain_backwards_with_constraints(base_chain, base_position, base_position);
+                solve_chain_backwards_with_constraints((chain_t*)base_chain, base_position, base_position);
             else
-                solve_chain_backwards(base_chain, base_position);
+                solve_chain_backwards((chain_t*)base_chain, base_position);
         SOLVER_END_EACH
 
         /* Check if all effectors are within range */

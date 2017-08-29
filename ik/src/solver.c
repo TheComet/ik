@@ -219,7 +219,7 @@ void
 ik_solver_calculate_joint_rotations(ik_solver_t* solver)
 {
     SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
-        calculate_global_rotations(base_chain);
+        calculate_global_rotations((chain_t*)base_chain);
     SOLVER_END_EACH
 }
 
@@ -274,7 +274,7 @@ ik_solver_iterate_chain_tree(ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback)
 {
     SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
-        iterate_chain_tree_recursive(base_chain, callback);
+        iterate_chain_tree_recursive((chain_t*)base_chain, callback);
     SOLVER_END_EACH
 }
 

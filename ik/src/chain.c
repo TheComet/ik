@@ -76,7 +76,7 @@ chain_destruct(chain_t* chain)
 void
 chain_clear_free(chain_t* chain)
 {
-    chain_destruct(chain); /* does the same thing as de*/
+    chain_destruct(chain); /* does the same thing */
 }
 
 /* ------------------------------------------------------------------------- */
@@ -238,13 +238,14 @@ recursively_build_chain_tree(vector_t* base_chain_list,
                 if (chain_current == NULL) /* First chain in the tree? */
                 {
                     /* Insert and initialise a base chain in the list. */
-                    child_chain = (chain_t*)vector_push_emplace(base_chain_list);
-                    if (child_chain == NULL)
+                    base_chain_t* base_chain = vector_push_emplace(base_chain_list);
+                    if (base_chain == NULL)
                     {
                         ik_log_message("Failed to create base chain: Ran out of memory");
                         return -1;
                     }
-                    chain_construct(child_chain);
+                    base_chain_construct(base_chain);
+                    child_chain = (chain_t*)base_chain;
                 }
                 else /* This is not the first chain in the tree */
                 {
@@ -333,7 +334,7 @@ chain_tree_rebuild(vector_t* base_chain_list,
     /* DEBUG: Save chain tree to DOT */
 #ifdef IK_DOT_OUTPUT
     sprintf(buffer, "tree%d.dot", file_name_counter++);
-    dump_to_dot(base_node, chains, buffer);
+    dump_to_dot(base_node, base_chain_list, buffer);
 #endif
 
     ik_log_message("There are %d effector(s) involving %d node(s). %d chain(s) were created",
@@ -514,9 +515,9 @@ dump_chain(const chain_t* chain, FILE* fp)
             chain_get_node(chain, last_idx + 1)->guid);
     }
 
-    VECTOR_FOR_EACH(&chain->children, chain_t, child)
+    CHAIN_FOR_EACH_CHILD(chain, child)
         dump_chain(child, fp);
-    VECTOR_END_EACH
+    CHAIN_END_EACH
 }
 static void
 dump_node(const ik_node_t* node, FILE* fp)
