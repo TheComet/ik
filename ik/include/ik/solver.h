@@ -2,8 +2,8 @@
 #define IK_SOLVER_H
 
 #include "ik/config.h"
-#include "ik/chain_tree.h"
-#include "ik/ordered_vector.h"
+#include "ik/chain.h"
+#include "ik/vector.h"
 #include "ik/quat.h"
 #include "ik/vec3.h"
 
@@ -45,24 +45,21 @@ typedef enum solver_flags_e
 /*!
  * @brief This is a base for all solvers.
  */
-#define SOLVER_DATA_HEAD                                              \
-    int32_t                             max_iterations;               \
-    float                               tolerance;                    \
-    uint8_t                             flags;                        \
-                                                                      \
-    /* Derived structure callbacks */                                 \
-    ik_solver_destruct_func             destruct;                     \
-    ik_solver_post_chain_build_func     post_chain_build;             \
-    ik_solver_solve_func                solve;                        \
-                                                                      \
-    ordered_vector_t                    effector_nodes_list;          \
-    ik_node_t*                          tree;                         \
-    /* list of ik_chain_tree_t objects (allocated in-place) */        \
-    chain_tree_t                        chain_tree;
-
 struct ik_solver_t
 {
-    SOLVER_DATA_HEAD
+    int32_t                             max_iterations;
+    float                               tolerance;
+    uint8_t                             flags;
+
+    /* Derived structure callbacks */
+    ik_solver_destruct_func             destruct;
+    ik_solver_post_chain_build_func     post_chain_build;
+    ik_solver_solve_func                solve;
+
+    vector_t                            effector_nodes_list;
+    ik_node_t*                          tree;
+    /* list of ik_chain_tree_t objects (allocated in-place) */
+    vector_t                            base_chain_list;
 };
 
 /*!
@@ -231,6 +228,15 @@ ik_solver_iterate_base_nodes(ik_solver_t* solver,
  */
 IK_PUBLIC_API void
 ik_solver_reset_to_original_pose(ik_solver_t* solver);
+
+#define SOLVER_FOR_EACH_EFFECTOR_NODE(solver_var, effector_var) \
+    VECTOR_FOR_EACH(&(solver_var)->effector_nodes_list, ik_node_t*, solver_var##effector_var) \
+    ik_node_t* effector_var = *solver_var##effector_var; {
+
+#define SOLVER_FOR_EACH_BASE_CHAIN(solver_var, base_chain_var) \
+    VECTOR_FOR_EACH(&(solver_var)->base_chain_list, base_chain_t, base_chain_var) {
+
+#define SOLVER_END_EACH VECTOR_END_EACH }
 
 C_HEADER_END
 

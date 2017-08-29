@@ -1,5 +1,5 @@
 #!/bin/sh
-cd build/tests || echo "Error: Please run this script from the project's root directory as ./scripts/valgrind-tests-linux.sh"
+cd build/bin || echo "Error: Please run this script from the project's root directory as ./scripts/valgrind-tests-linux.sh"
 
 echo "Started valgrind..."
 valgrind --num-callers=50 \

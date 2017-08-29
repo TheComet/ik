@@ -21,7 +21,7 @@ void
 bstv_construct(bstv_t* bstv)
 {
     assert(bstv);
-    ordered_vector_construct(&bstv->vector, sizeof(bstv_hash_value_t));
+    vector_construct(&bstv->vector, sizeof(bstv_hash_value_t));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -95,9 +95,9 @@ bstv_insert(bstv_t* bstv, uint32_t hash, void* value)
     /* either push back or insert, depending on whether there is already data
      * in the bstv */
     if (!lower_bound)
-        emplaced_data = (bstv_hash_value_t*)ordered_vector_push_emplace(&bstv->vector);
+        emplaced_data = (bstv_hash_value_t*)vector_push_emplace(&bstv->vector);
     else
-        emplaced_data = ordered_vector_insert_emplace(&bstv->vector,
+        emplaced_data = vector_insert_emplace(&bstv->vector,
                           lower_bound - (bstv_hash_value_t*)bstv->vector.data);
 
     if (!emplaced_data)
@@ -151,10 +151,10 @@ bstv_find_element(const bstv_t* bstv, const void* value)
 {
     assert(bstv);
 
-    ORDERED_VECTOR_FOR_EACH(&bstv->vector, bstv_hash_value_t, kv)
+    VECTOR_FOR_EACH(&bstv->vector, bstv_hash_value_t, kv)
         if (kv->value == value)
             return kv->hash;
-    ORDERED_VECTOR_END_EACH
+    VECTOR_END_EACH
     return BST_VECTOR_INVALID_HASH;
 }
 
@@ -164,7 +164,7 @@ bstv_get_any_element(const bstv_t* bstv)
 {
     bstv_hash_value_t* kv;
     assert(bstv);
-    kv = (bstv_hash_value_t*)ordered_vector_back(&bstv->vector);
+    kv = (bstv_hash_value_t*)vector_back(&bstv->vector);
     if (kv)
         return kv->value;
     return NULL;
@@ -214,7 +214,7 @@ bstv_erase(bstv_t* bstv, uint32_t hash)
         return NULL;
 
     value = data->value;
-    ordered_vector_erase_element(&bstv->vector, (DATA_POINTER_TYPE*)data);
+    vector_erase_element(&bstv->vector, (DATA_POINTER_TYPE*)data);
     return value;
 }
 
@@ -232,7 +232,7 @@ bstv_erase_element(bstv_t* bstv, void* value)
         return NULL;
 
     data = bstv_find_lower_bound(bstv, hash);
-    ordered_vector_erase_element(&bstv->vector, (DATA_POINTER_TYPE*)data);
+    vector_erase_element(&bstv->vector, (DATA_POINTER_TYPE*)data);
 
     return value;
 }
@@ -242,12 +242,12 @@ void
 bstv_clear(bstv_t* bstv)
 {
     assert(bstv);
-    ordered_vector_clear(&bstv->vector);
+    vector_clear(&bstv->vector);
 }
 
 /* ------------------------------------------------------------------------- */
 void bstv_clear_free(bstv_t* bstv)
 {
     assert(bstv);
-    ordered_vector_clear_free(&bstv->vector);
+    vector_clear_free(&bstv->vector);
 }

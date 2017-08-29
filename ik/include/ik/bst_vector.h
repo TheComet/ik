@@ -9,7 +9,7 @@
 #define IK_BST_VECTOR_H
 
 #include "ik/config.h"
-#include "ik/ordered_vector.h"
+#include "ik/vector.h"
 
 C_HEADER_BEGIN
 
@@ -21,7 +21,7 @@ typedef struct bstv_hash_value_t
 
 struct bstv_t
 {
-    ordered_vector_t   vector;
+    vector_t   vector;
 };
 
 /*!
@@ -218,7 +218,7 @@ bstv_clear_free(bstv_t* bstv);
  * @param[in] bstv A pointer to the bstv object currently being iterated.
  */
 #define BSTV_ERASE_CURRENT_ITEM_IN_FOR_LOOP(bstv, var_v) do { \
-    ordered_vector_erase_element(&(bstv)->vector, ((bstv_hash_value_t*)(bstv)->vector.data) + i_##var_v); \
+    vector_erase_element(&(bstv)->vector, ((bstv_hash_value_t*)(bstv)->vector.data) + i_##var_v); \
     --i_##var_v; } while(0)
 
 C_HEADER_END

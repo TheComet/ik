@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "ik/ordered_vector.h"
+#include "ik/vector.h"
 #include "ik/memory.h"
 
 /* ----------------------------------------------------------------------------
@@ -21,44 +21,44 @@
  * @note No checks are performed to make sure the target size is large enough.
  */
 static int
-ordered_vector_expand(ordered_vector_t *vector,
+vector_expand(vector_t *vector,
                       uintptr_t insertion_index,
                       uint32_t target_size);
 
 /* ----------------------------------------------------------------------------
  * Exported functions
  * ------------------------------------------------------------------------- */
-ordered_vector_t*
-ordered_vector_create(const uint32_t element_size)
+vector_t*
+vector_create(const uint32_t element_size)
 {
-    ordered_vector_t* vector;
-    if (!(vector = (ordered_vector_t*)MALLOC(sizeof(ordered_vector_t))))
+    vector_t* vector;
+    if (!(vector = (vector_t*)MALLOC(sizeof(vector_t))))
         return NULL;
-    ordered_vector_construct(vector, element_size);
+    vector_construct(vector, element_size);
     return vector;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_construct(ordered_vector_t* vector, const uint32_t element_size)
+vector_construct(vector_t* vector, const uint32_t element_size)
 {
     assert(vector);
-    memset(vector, 0, sizeof(ordered_vector_t));
+    memset(vector, 0, sizeof(vector_t));
     vector->element_size = element_size;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_destroy(ordered_vector_t* vector)
+vector_destroy(vector_t* vector)
 {
     assert(vector);
-    ordered_vector_clear_free(vector);
+    vector_clear_free(vector);
     FREE(vector);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_clear(ordered_vector_t* vector)
+vector_clear(vector_t* vector)
 {
     assert(vector);
     /*
@@ -70,7 +70,7 @@ ordered_vector_clear(ordered_vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_clear_free(ordered_vector_t* vector)
+vector_clear_free(vector_t* vector)
 {
     assert(vector);
 
@@ -84,14 +84,14 @@ ordered_vector_clear_free(ordered_vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 int
-ordered_vector_resize(ordered_vector_t* vector, uint32_t size)
+vector_resize(vector_t* vector, uint32_t size)
 {
     int result = 0;
 
     assert(vector);
 
     if (vector->count < size)
-        result = ordered_vector_expand(vector, -1, size);
+        result = vector_expand(vector, -1, size);
     vector->count = size;
 
     return result;
@@ -99,14 +99,14 @@ ordered_vector_resize(ordered_vector_t* vector, uint32_t size)
 
 /* ------------------------------------------------------------------------- */
 void*
-ordered_vector_push_emplace(ordered_vector_t* vector)
+vector_push_emplace(vector_t* vector)
 {
     void* data;
 
     assert(vector);
 
     if (vector->count == vector->capacity)
-        if (ordered_vector_expand(vector, -1, 0) < 0)
+        if (vector_expand(vector, -1, 0) < 0)
             return NULL;
     data = vector->data + (vector->element_size * vector->count);
     ++(vector->count);
@@ -115,14 +115,14 @@ ordered_vector_push_emplace(ordered_vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 int
-ordered_vector_push(ordered_vector_t* vector, void* data)
+vector_push(vector_t* vector, void* data)
 {
     void* emplaced;
 
     assert(vector);
     assert(data);
 
-    emplaced = ordered_vector_push_emplace(vector);
+    emplaced = vector_push_emplace(vector);
     if (!emplaced)
         return -1;
     memcpy(emplaced, data, vector->element_size);
@@ -131,7 +131,7 @@ ordered_vector_push(ordered_vector_t* vector, void* data)
 
 /* ------------------------------------------------------------------------- */
 int
-ordered_vector_push_vector(ordered_vector_t* vector, ordered_vector_t* source_vector)
+vector_push_vector(vector_t* vector, vector_t* source_vector)
 {
     assert(vector);
     assert(source_vector);
@@ -142,7 +142,7 @@ ordered_vector_push_vector(ordered_vector_t* vector, ordered_vector_t* source_ve
 
     /* make sure there's enough space in the target vector */
     if (vector->count + source_vector->count > vector->capacity)
-        if (ordered_vector_expand(vector, -1, vector->count + source_vector->count) < 0)
+        if (vector_expand(vector, -1, vector->count + source_vector->count) < 0)
             return -1;
 
     /* copy data */
@@ -156,7 +156,7 @@ ordered_vector_push_vector(ordered_vector_t* vector, ordered_vector_t* source_ve
 
 /* ------------------------------------------------------------------------- */
 void*
-ordered_vector_pop(ordered_vector_t* vector)
+vector_pop(vector_t* vector)
 {
     assert(vector);
 
@@ -169,7 +169,7 @@ ordered_vector_pop(ordered_vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void*
-ordered_vector_back(const ordered_vector_t* vector)
+vector_back(const vector_t* vector)
 {
     assert(vector);
 
@@ -181,7 +181,7 @@ ordered_vector_back(const ordered_vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void*
-ordered_vector_insert_emplace(ordered_vector_t* vector, uint32_t index)
+vector_insert_emplace(vector_t* vector, uint32_t index)
 {
     uint32_t offset;
 
@@ -198,7 +198,7 @@ ordered_vector_insert_emplace(ordered_vector_t* vector, uint32_t index)
     /* re-allocate? */
     if (vector->count == vector->capacity)
     {
-        if (ordered_vector_expand(vector, index, 0) < 0)
+        if (vector_expand(vector, index, 0) < 0)
             return NULL;
     }
     else
@@ -218,14 +218,14 @@ ordered_vector_insert_emplace(ordered_vector_t* vector, uint32_t index)
 
 /* ------------------------------------------------------------------------- */
 int
-ordered_vector_insert(ordered_vector_t* vector, uint32_t index, void* data)
+vector_insert(vector_t* vector, uint32_t index, void* data)
 {
     void* emplaced;
 
     assert(vector);
     assert(data);
 
-    emplaced = ordered_vector_insert_emplace(vector, index);
+    emplaced = vector_insert_emplace(vector, index);
     if (!emplaced)
         return -1;
     memcpy(emplaced, data, vector->element_size);
@@ -234,7 +234,7 @@ ordered_vector_insert(ordered_vector_t* vector, uint32_t index, void* data)
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_erase_index(ordered_vector_t* vector, uint32_t index)
+vector_erase_index(vector_t* vector, uint32_t index)
 {
     assert(vector);
 
@@ -243,7 +243,7 @@ ordered_vector_erase_index(ordered_vector_t* vector, uint32_t index)
 
     if (index == vector->count - 1)
         /* last element doesn't require memory shifting, just pop it */
-        ordered_vector_pop(vector);
+        vector_pop(vector);
     else
     {
         /* shift memory right after the specified element down by one element */
@@ -258,7 +258,7 @@ ordered_vector_erase_index(ordered_vector_t* vector, uint32_t index)
 
 /* ------------------------------------------------------------------------- */
 void
-ordered_vector_erase_element(ordered_vector_t* vector, void* element)
+vector_erase_element(vector_t* vector, void* element)
 {
     uintptr_t last_element;
 
@@ -279,7 +279,7 @@ ordered_vector_erase_element(ordered_vector_t* vector, void* element)
 
 /* ------------------------------------------------------------------------- */
 void*
-ordered_vector_get_element(ordered_vector_t* vector, uint32_t index)
+vector_get_element(const vector_t* vector, uint32_t index)
 {
     assert(vector);
 
@@ -292,7 +292,7 @@ ordered_vector_get_element(ordered_vector_t* vector, uint32_t index)
  * Static functions
  * ------------------------------------------------------------------------- */
 static int
-ordered_vector_expand(ordered_vector_t *vector,
+vector_expand(vector_t *vector,
                       uintptr_t insertion_index,
                       uint32_t target_count)
 {

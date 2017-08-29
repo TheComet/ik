@@ -1,12 +1,6 @@
 #include "ik/config.h"
-#include "ik/solver.h"
 
 C_HEADER_BEGIN
-
-struct msd_t
-{
-    SOLVER_DATA_HEAD
-};
 
 int
 solver_MSD_construct(ik_solver_t* solver);

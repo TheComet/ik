@@ -1,4 +1,5 @@
-#include "ik/chain_tree.h"
+#include "ik/solver.h"
+#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
@@ -10,12 +11,10 @@
 int
 solver_1bone_construct(ik_solver_t* solver)
 {
-    one_bone_t* one_bone = (one_bone_t*)solver;
-
     /* set up derived functions */
-    one_bone->destruct = solver_1bone_destruct;
-    one_bone->post_chain_build = solver_1bone_post_chain_build;
-    one_bone->solve = solver_1bone_solve;
+    solver->destruct = solver_1bone_destruct;
+    solver->post_chain_build = solver_1bone_post_chain_build;
+    solver->solve = solver_1bone_solve;
 
     return 0;
 }
@@ -34,18 +33,18 @@ solver_1bone_post_chain_build(ik_solver_t* solver)
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
      */
-    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        if (ordered_vector_count(&island->base_chain.nodes) != 2) /* 2 nodes = 1 bone */
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
+        if (chain_length(base_chain) != 2) /* 2 nodes = 1 bone */
         {
             ik_log_message("ERROR: Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
-        if (ordered_vector_count(&island->base_chain.children) > 0)
+        if (chain_length(base_chain) > 0)
         {
             ik_log_message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
-    ORDERED_VECTOR_END_EACH
+    SOLVER_END_EACH
 
     return 0;
 }
@@ -54,16 +53,13 @@ solver_1bone_post_chain_build(ik_solver_t* solver)
 int
 solver_1bone_solve(ik_solver_t* solver)
 {
-    ik_node_local_to_global(solver->tree, NODE_ACTIVE);
-
-    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
         ik_node_t* node_tip;
         ik_node_t* node_base;
-        chain_t* base_chain = &island->base_chain;
 
-        assert(ordered_vector_count(&base_chain->nodes) > 1);
-        node_tip = *(ik_node_t**)ordered_vector_get_element(&base_chain->nodes, 0);
-        node_base = *(ik_node_t**)ordered_vector_get_element(&base_chain->nodes, 1);
+        assert(chain_length(base_chain) > 1);
+        node_tip  = chain_get_node(base_chain, 0);
+        node_base = chain_get_node(base_chain, 1);
 
         assert(node_tip->effector != NULL);
         node_tip->position = node_tip->effector->target_position;
@@ -72,9 +68,7 @@ solver_1bone_solve(ik_solver_t* solver)
         vec3_normalise(node_tip->position.f);
         vec3_mul_scalar(node_tip->position.f, node_tip->segment_length);
         vec3_add_vec3(node_tip->position.f, node_base->position.f);
-    ORDERED_VECTOR_END_EACH
-
-    ik_node_global_to_local(solver->tree, NODE_ACTIVE);
+    SOLVER_END_EACH
 
     return 0;
 }

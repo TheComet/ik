@@ -1,4 +1,4 @@
-#include "ik/chain_tree.h"
+#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/memory.h"
@@ -10,17 +10,17 @@
 #include "ik/solver_MSD.h"
 #include "ik/solver_jacobian_inverse.h"
 #include "ik/solver_jacobian_transpose.h"
+#include "ik/transform.h"
 #include <string.h>
 #include <assert.h>
 
 static int
-recursively_get_all_effector_nodes(ik_node_t* node, ordered_vector_t* effector_nodes_list);
+recursively_get_all_effector_nodes(ik_node_t* node, vector_t* effector_nodes_list);
 
 /* ------------------------------------------------------------------------- */
 ik_solver_t*
 ik_solver_create(enum solver_algorithm_e algorithm)
 {
-    uintptr_t solver_size = 0;
     int (*solver_construct)(ik_solver_t*) = NULL;
     ik_solver_t* solver = NULL;
 
@@ -31,22 +31,18 @@ ik_solver_create(enum solver_algorithm_e algorithm)
     switch (algorithm)
     {
     case SOLVER_TWO_BONE:
-        solver_size = sizeof(two_bone_t);
         solver_construct = solver_2bone_construct;
         break;
 
     case SOLVER_ONE_BONE:
-        solver_size = sizeof(one_bone_t);
         solver_construct = solver_1bone_construct;
         break;
 
     case SOLVER_FABRIK:
-        solver_size = sizeof(fabrik_t);
         solver_construct = solver_FABRIK_construct;
         break;
 
     case SOLVER_MSD:
-        solver_size = sizeof(msd_t);
         solver_construct = solver_MSD_construct;
         break;
 
@@ -66,16 +62,16 @@ ik_solver_create(enum solver_algorithm_e algorithm)
      * Allocate the solver, initialise to 0 and initialise the base fields
      * before calling the construct() callback for the specific solver.
      */
-    solver = (ik_solver_t*)MALLOC(solver_size);
+    solver = (ik_solver_t*)MALLOC(sizeof *solver);
     if (solver == NULL)
     {
         ik_log_message("Failed to allocate solver: ran out of memory");
         goto alloc_solver_failed;
     }
-    memset(solver, 0, solver_size);
+    memset(solver, 0, sizeof *solver);
 
-    ordered_vector_construct(&solver->effector_nodes_list, sizeof(ik_node_t*));
-    chain_tree_construct(&solver->chain_tree);
+    vector_construct(&solver->effector_nodes_list, sizeof(ik_node_t*));
+    vector_construct(&solver->base_chain_list, sizeof(base_chain_t));
 
     /* Now call derived construction */
     if (solver_construct(solver) < 0)
@@ -104,8 +100,12 @@ ik_solver_destroy(ik_solver_t* solver)
     if (solver->tree)
         ik_node_destroy(solver->tree);
 
-    chain_tree_destruct(&solver->chain_tree);
-    ordered_vector_clear_free(&solver->effector_nodes_list);
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
+        base_chain_destruct(base_chain);
+    SOLVER_END_EACH
+    vector_clear_free(&solver->base_chain_list);
+
+    vector_clear_free(&solver->effector_nodes_list);
 
     FREE(solver);
 }
@@ -131,7 +131,7 @@ ik_solver_unlink_tree(ik_solver_t* solver)
      * Effectors are owned by the nodes, but we need to release references to
      * them.
      */
-    ordered_vector_clear(&solver->effector_nodes_list);
+    vector_clear(&solver->effector_nodes_list);
 
     return base;
 }
@@ -162,15 +162,20 @@ ik_solver_rebuild_chain_trees(ik_solver_t* solver)
      * makes the process of building the chain list for FABRIK much easier.
      */
     ik_log_message("Rebuilding effector nodes list");
-    ordered_vector_clear(&solver->effector_nodes_list);
-    if (recursively_get_all_effector_nodes(solver->tree, &solver->effector_nodes_list) < 0)
+    vector_clear(&solver->effector_nodes_list);
+    if (recursively_get_all_effector_nodes(
+            solver->tree,
+            &solver->effector_nodes_list) < 0)
     {
         ik_log_message("Ran out of memory while building the effector nodes list");
         return -1;
     }
 
     /* now build the chain tree */
-    if (rebuild_chain_tree(solver) < 0)
+    if (chain_tree_rebuild(
+            &solver->base_chain_list,
+            solver->tree,
+            &solver->effector_nodes_list) < 0)
         return -1;
 
     if (solver->post_chain_build != NULL)
@@ -183,7 +188,7 @@ ik_solver_rebuild_chain_trees(ik_solver_t* solver)
 void
 ik_solver_recalculate_segment_lengths(ik_solver_t* solver)
 {
-    calculate_segment_lengths(&solver->chain_tree);
+    calculate_segment_lengths(&solver->base_chain_list);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -197,7 +202,7 @@ ik_solver_solve(ik_solver_t* solver)
      * solve, then transform it back to local space. The algorithm requires
      * both the original and the active pose in local space.
      */
-    ik_node_local_to_global(solver->tree, NODE_ORIGINAL | NODE_ACTIVE);
+    ik_chains_global_to_local(&solver->base_chain_list, TRANSFORM_ORIGINAL | TRANSFORM_ACTIVE);
 
     if ((result = solver->solve(solver)) < 0)
         goto stop_and_return;
@@ -205,7 +210,7 @@ ik_solver_solve(ik_solver_t* solver)
     if (solver->flags & SOLVER_CALCULATE_JOINT_ROTATIONS)
         ik_solver_calculate_joint_rotations(solver);
 
-    stop_and_return: ik_node_global_to_local(solver->tree, NODE_ORIGINAL | NODE_ACTIVE);
+    stop_and_return: ik_chains_local_to_global(&solver->base_chain_list, TRANSFORM_ORIGINAL | TRANSFORM_ACTIVE);
     return result;
 }
 
@@ -213,9 +218,9 @@ ik_solver_solve(ik_solver_t* solver)
 void
 ik_solver_calculate_joint_rotations(ik_solver_t* solver)
 {
-    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        calculate_global_rotations(&island->base_chain);
-    ORDERED_VECTOR_END_EACH
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
+        calculate_global_rotations(base_chain);
+    SOLVER_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -225,9 +230,9 @@ iterate_tree_recursive(ik_node_t* node,
 {
     callback(node);
 
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
+    NODE_FOR_EACH(node, guid, child)
         iterate_tree_recursive(child, callback);
-    BSTV_END_EACH
+    NODE_END_EACH
 }
 void
 ik_solver_iterate_tree(ik_solver_t* solver,
@@ -253,24 +258,24 @@ iterate_chain_tree_recursive(chain_t* chain,
      * callback multiple times. The base node is shared by the parent chain's
      * effector as well as with other chains in the same depth.
      */
-    int idx = ordered_vector_count(&chain->nodes) - 1;
-    assert(idx > 0); // chains must have at least 2 nodes in them
+    int idx = chain_length(chain) - 1;
+    assert(idx > 0); /* chains must have at least 2 nodes in them */
     while (idx--)
     {
-        callback(*(ik_node_t**)ordered_vector_get_element(&chain->nodes, idx));
+        callback(chain_get_node(chain, idx));
     }
 
-    ORDERED_VECTOR_FOR_EACH(&chain->children, chain_t, child)
+    CHAIN_FOR_EACH_CHILD(chain, child)
         iterate_chain_tree_recursive(child, callback);
-    ORDERED_VECTOR_END_EACH
+    CHAIN_END_EACH
 }
 void
 ik_solver_iterate_chain_tree(ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback)
 {
-    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        iterate_chain_tree_recursive(&island->base_chain, callback);
-    ORDERED_VECTOR_END_EACH
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
+        iterate_chain_tree_recursive(base_chain, callback);
+    SOLVER_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -278,13 +283,10 @@ void
 ik_solver_iterate_base_nodes(ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback)
 {
-    ORDERED_VECTOR_FOR_EACH(&solver->chain_tree.islands, chain_island_t, island)
-        int idx = ordered_vector_count(&island->base_chain.nodes) - 1;
-        assert(idx > 0); /* chains should have at least 2 nodes */
-        ik_node_t* base_node =
-            *(ik_node_t**)ordered_vector_get_element(&island->base_chain.nodes, idx);
-        callback(base_node);
-    ORDERED_VECTOR_END_EACH
+    SOLVER_FOR_EACH_BASE_CHAIN(solver, base_chain)
+        assert(chain_length(base_chain) >= 2); /* chains should have at least 2 nodes */
+        callback(chain_get_base_node(base_chain));
+    SOLVER_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -294,9 +296,9 @@ reset_active_pose_recursive(ik_node_t* node)
     node->position = node->original_position;
     node->rotation = node->original_rotation;
 
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
+    NODE_FOR_EACH(node, guid, child)
         reset_active_pose_recursive(child);
-    BSTV_END_EACH
+    NODE_END_EACH
 }
 void
 ik_solver_reset_to_original_pose(ik_solver_t* solver)
@@ -309,16 +311,16 @@ ik_solver_reset_to_original_pose(ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static int
-recursively_get_all_effector_nodes(ik_node_t* node, ordered_vector_t* effector_nodes_list)
+recursively_get_all_effector_nodes(ik_node_t* node, vector_t* effector_nodes_list)
 {
     if (node->effector != NULL)
-        if (ordered_vector_push(effector_nodes_list, &node) < 0)
+        if (vector_push(effector_nodes_list, &node) < 0)
             return -1;
 
-    BSTV_FOR_EACH(&node->children, ik_node_t, guid, child)
+    NODE_FOR_EACH(node, guid, child)
         if (recursively_get_all_effector_nodes(child, effector_nodes_list) < 0)
             return -1;
-    BSTV_END_EACH
+    NODE_END_EACH
 
     return 0;
 }

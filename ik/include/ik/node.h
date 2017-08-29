@@ -8,13 +8,6 @@
 
 C_HEADER_BEGIN
 
-typedef enum ik_node_transform_flags_e
-{
-    NODE_ACTIVE = 0x01,
-    NODE_ORIGINAL = 0x02,
-    NODE_ROTATIONS_ONLY = 0x04
-} ik_node_transform_flags_e;
-
 /*!
  * @brief Represents one node in the tree to be solved.
  */
@@ -107,7 +100,7 @@ struct ik_node_t
     /* Private data */
     ik_real segment_length;
     ik_node_t* parent;
-    bstv_t children;    /* ik_node_t objects */
+    bstv_t children;    /* ID -> ik_node_t objects */
 };
 
 /*!
@@ -223,11 +216,10 @@ ik_node_destroy_constraint(ik_node_t* node);
 IK_PUBLIC_API void
 ik_node_dump_to_dot(ik_node_t* node, const char* file_name);
 
-IK_PUBLIC_API void
-ik_node_global_to_local(ik_node_t* node, uint8_t flags);
+#define NODE_FOR_EACH(node, key, value) \
+    BSTV_FOR_EACH(&(node)->children, ik_node_t, key, value)
 
-IK_PUBLIC_API void
-ik_node_local_to_global(ik_node_t* node, uint8_t flags);
+#define NODE_END_EACH BSTV_END_EACH
 
 C_HEADER_END
 

@@ -2,15 +2,8 @@
 #define IK_SOLVER_2BONE_H
 
 #include "ik/config.h"
-#include "ik/ordered_vector.h"
-#include "ik/solver.h"
 
 C_HEADER_BEGIN
-
-struct two_bone_t
-{
-    SOLVER_DATA_HEAD
-};
 
 int
 solver_2bone_construct(ik_solver_t* solver);

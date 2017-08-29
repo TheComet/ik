@@ -2,15 +2,9 @@
 #define IK_SOLVER_1BONE_H
 
 #include "ik/config.h"
-#include "ik/ordered_vector.h"
-#include "ik/solver.h"
+#include "ik/vector.h"
 
 C_HEADER_BEGIN
-
-struct one_bone_t
-{
-    SOLVER_DATA_HEAD
-};
 
 int
 solver_1bone_construct(ik_solver_t* solver);

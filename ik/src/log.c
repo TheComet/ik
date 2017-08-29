@@ -1,14 +1,14 @@
 #include "ik/log.h"
 #include "ik/memory.h"
-#include "ik/ordered_vector.h"
+#include "ik/vector.h"
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 
 typedef struct log_t
 {
-    ordered_vector_t listeners; /* list of ik_log_cb_func */
-    ordered_vector_t message_buffer;
+    vector_t listeners; /* list of ik_log_cb_func */
+    vector_t message_buffer;
 } log_t;
 
 static log_t* g_log = NULL;
@@ -29,8 +29,8 @@ ik_log_init(enum ik_log_e options)
     if (g_log == NULL)
         return;
 
-    ordered_vector_construct(&g_log->listeners, sizeof(ik_log_cb_func));
-    ordered_vector_construct(&g_log->message_buffer, sizeof(char));
+    vector_construct(&g_log->listeners, sizeof(ik_log_cb_func));
+    vector_construct(&g_log->message_buffer, sizeof(char));
 
     if (options == IK_LOG_STDOUT)
         ik_log_register_listener(log_stdout_callback);
@@ -43,8 +43,8 @@ ik_log_deinit(void)
     if (g_log == NULL)
         return;
 
-    ordered_vector_clear_free(&g_log->message_buffer);
-    ordered_vector_clear_free(&g_log->listeners);
+    vector_clear_free(&g_log->message_buffer);
+    vector_clear_free(&g_log->listeners);
     FREE(g_log);
     g_log = NULL;
 }
@@ -54,7 +54,7 @@ void
 ik_log_register_listener(ik_log_cb_func callback)
 {
     if (g_log != NULL)
-        ordered_vector_push(&g_log->listeners, &callback);
+        vector_push(&g_log->listeners, &callback);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -64,13 +64,13 @@ ik_log_unregister_listener(ik_log_cb_func callback)
     if (g_log == NULL)
         return;
 
-    ORDERED_VECTOR_FOR_EACH(&g_log->listeners, ik_log_cb_func, registered_callback)
+    VECTOR_FOR_EACH(&g_log->listeners, ik_log_cb_func, registered_callback)
         if (callback == *registered_callback)
         {
-            ordered_vector_erase_element(&g_log->listeners, registered_callback);
+            vector_erase_element(&g_log->listeners, registered_callback);
             return;
         }
-    ORDERED_VECTOR_END_EACH
+    VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
@@ -87,13 +87,13 @@ ik_log_message(const char* fmt, ...)
     msg_len = vsnprintf(NULL, 0, fmt, va);
     va_end(va);
 
-    if (ordered_vector_resize(&g_log->message_buffer, (msg_len + 1) * sizeof(char)) < 0)
+    if (vector_resize(&g_log->message_buffer, (msg_len + 1) * sizeof(char)) < 0)
         return;
     va_start(va, fmt);
     vsprintf((char*)g_log->message_buffer.data, fmt, va);
     va_end(va);
 
-    ORDERED_VECTOR_FOR_EACH(&g_log->listeners, ik_log_cb_func, callback)
+    VECTOR_FOR_EACH(&g_log->listeners, ik_log_cb_func, callback)
         (*callback)((char*)g_log->message_buffer.data);
-    ORDERED_VECTOR_END_EACH
+    VECTOR_END_EACH
 }
