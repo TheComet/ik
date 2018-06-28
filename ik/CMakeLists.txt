@@ -30,21 +30,6 @@ else ()
     set (IK_PLATFORM "ANDROID")
 endif ()
 
-# Enable restrict keyword in quaternion and vector operations if not in debug
-# Only do this if IK_RESTRICT is not cached yet.
-get_cmake_property (CACHED_VARS VARIABLES)
-list (FIND CACHED_VARS "IK_RESTRICT" RESULT)
-if (${RESULT} MATCHES -1)
-    foreach (RESTRICT_KEYWORD restrict __restrict __restrict__)
-        check_c_source_compiles ("int test (void *${RESTRICT_KEYWORD} x); int main (void) {return 0;}" IK_RESTRICT_${RESTRICT_KEYWORD})
-        if (IK_RESTRICT_${RESTRICT_KEYWORD})
-            set (IK_RESTRICT ${RESTRICT_KEYWORD})
-            break ()
-        endif ()
-    endforeach ()
-    set (IK_RESTRICT ${IK_RESTRICT} CACHE STRING "Restrict Keyword (may be empty)")
-endif ()
-
 # Use stdint.h if possible, otherwise use pstdint.h
 check_include_files ("stdint.h" IK_HAVE_STDINT_H)
 
@@ -60,16 +45,35 @@ configure_file ("include/ik/config.h.in"
 
 include_directories ("${CMAKE_CURRENT_BINARY_DIR}/include")
 
+# Define special IK preprocess include files
+file (GLOB IK_VTABLE_FILES include/ik/vtables/*.v)
+
+# IK preprocessor script
+set (Python_ADDITIONAL_VERSIONS 3)
+find_package (PythonInterp REQUIRED)
+set (IK_VTABLE_H_FILES "")
+set (PYTHON_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/ik_gen_vtable.py)
+macro (add_vtable_file VTABLE_FILE)
+    get_filename_component (H_FILE_BASENAME ${VTABLE_FILE} NAME)
+    string (REPLACE ".v" ".h" H_FILE_BASENAME ${H_FILE_BASENAME})
+    set (H_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/ik/${H_FILE_BASENAME})
+    add_custom_command (
+        OUTPUT ${H_FILE}
+        DEPENDS ${VTABLE_FILE} ${PYTHON_SCRIPT}
+        COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_SCRIPT} ${VTABLE_FILE} ${H_FILE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Generating vtable ${H_FILE}" VERBATIM)
+    set (IK_VTABLE_H_FILES ${IK_VTABLE_H_FILES} ${H_FILE})
+endmacro ()
+foreach (VTABLE_FILE ${IK_VTABLE_FILES})
+    add_vtable_file (${VTABLE_FILE})
+endforeach ()
+
 ###############################################################################
 # compiler flags
 ###############################################################################
 
-if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
-    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter -fno-math-errno -ffast-math)
-elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-    add_definitions (-W -Wall -Wextra -Werror -pedantic -Wno-unused-parameter -fno-math-errno -ffast-math)
-elseif (${CMAKE_C_COMPILER_ID} STREQUAL "Intel")
-elseif (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
+if (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
     add_definitions (-D_CRT_SECURE_NO_WARNINGS)
     if (CMAKE_BUILD_TYPE MATCHES Debug)
         STRING(REGEX REPLACE "/MDd" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
@@ -85,7 +89,14 @@ endif ()
 ###############################################################################
 
 file (GLOB IK_HEADERS "include/ik/*.h")
-file (GLOB IK_SOURCES "src/*.c")
+file (GLOB IK_SOURCES 
+    "src/*.c"
+    "src/solver/*.c"
+    "src/solver/BASE/*.c"
+    "src/solver/ONE_BONE/*.c"
+    "src/solver/TWO_BONE/*.c"
+    "src/solver/FABRIK/*.c"
+    "src/solver/MSS/*.c")
 
 list (APPEND IK_HEADERS
     "include/ik/config.h.in"
@@ -96,15 +107,30 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif ()
 list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
 
-include_directories ("include")
+include_directories ("include" "${CMAKE_CURRENT_BINARY_DIR}/include")
 
 add_library (ik ${IK_LIB_TYPE}
     ${IK_HEADERS}
     ${IK_SOURCES}
+    ${IK_VTABLE_H_FILES}
 )
 
 # The library is being built
 add_definitions (-DIK_BUILDING)
+
+target_compile_options (ik
+    PUBLIC $<$<C_COMPILER_ID:MSVC>:
+        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /D_CRT_SECURE_NO_DEPRECATE
+    >
+    PUBLIC $<$<C_COMPILER_ID:GNU>:
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
+        -Wno-conversion -Wno-implicit-fallthrough -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+    >
+    PUBLIC $<$<C_COMPILER_ID:Clang>:
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
+        -Wno-implicit-fallthrough -Wno-conversion -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+    >
+)
 
 ###############################################################################
 # install targets
@@ -123,3 +149,4 @@ install (
     DESTINATION "include"
     FILES_MATCHING PATTERN "*.h"
 )
+

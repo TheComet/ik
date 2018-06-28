@@ -5,8 +5,10 @@
 
 C_HEADER_BEGIN
 
-IK_PUBLIC_API void
-ik_calculate_rotation_weight_decays(const vector_t* chains);
+/* XXX Add a function for only calculating it for a given effector? */
+
+IK_PRIVATE_API void
+ik_calculate_rotation_weight_decays(const struct vector_t* chains);
 
 C_HEADER_END
 

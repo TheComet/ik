@@ -15,22 +15,22 @@
 C_HEADER_BEGIN
 
 /*!
- * @brief Initialises the memory system.
+ * @brief Initializes the memory system.
  *
- * In release mode this does nothing. In debug mode it will initialise
+ * In release mode this does nothing. In debug mode it will initialize
  * memory reports and backtraces, if enabled.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_memory_init(void);
 
 /*!
- * @brief De-initialises the memory system.
+ * @brief De-initializes the memory system.
  *
  * In release mode this does nothing. In debug mode this will output the memory
  * report and print backtraces, if enabled.
  * @return Returns the number of memory leaks.
  */
-IK_PUBLIC_API uintptr_t
+IK_PRIVATE_API uintptr_t
 ik_memory_deinit(void);
 
 #ifdef IK_MEMORY_DEBUGGING
@@ -38,18 +38,18 @@ ik_memory_deinit(void);
  * @brief Does the same thing as a normal call to malloc(), but does some
  * additional work to monitor and track down memory leaks.
  */
-IK_PUBLIC_API void*
+IK_PRIVATE_API void*
 malloc_wrapper(intptr_t size);
 
 /*!
  * @brief Does the same thing as a normal call to fee(), but does some
  * additional work to monitor and track down memory leaks.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 free_wrapper(void* ptr);
 #endif /* IK_MEMORY_DEBUGGING */
 
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 mutated_string_and_hex_dump(void* data, intptr_t size_in_bytes);
 
 C_HEADER_END

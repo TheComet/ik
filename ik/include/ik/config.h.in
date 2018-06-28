@@ -10,7 +10,6 @@
      * --------------------------------------------------------------*/
 
     #define ik_real @IK_REAL@
-    #define IK_RESTRICT @IK_RESTRICT@
 
     #cmakedefine IK_HAVE_STDINT_H
     #cmakedefine IK_MEMORY_DEBUGGING
@@ -25,12 +24,17 @@
      * --------------------------------------------------------------*/
 
     #include "ik/export.h"
-    #include "ik/types.h"
+    #include "ik/retcodes.h"
 
     #ifdef IK_HAVE_STDINT_H
         #include <stdint.h>
     #else
         #include "ik/pstdint.h"
     #endif
+
+    /* Dummy defines that are used to mark things to the interface generator script */
+    #define IK_INTERFACE(i) struct ik_##i##_t
+    #define IK_OVERRIDE()
+    #define IK_IMPLEMENT()
 
 #endif /* IK_CONFIG_HPP */

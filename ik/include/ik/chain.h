@@ -13,75 +13,50 @@
 
 C_HEADER_BEGIN
 
-struct chain_data_t
-{
-    /*
-     * List of ik_node_t* references that belong to this chain.
-     * NOTE: The first node in this list is the effector (i.e. the *end* of the
-     * chain). The nodes are in reverse.
-     */
-    vector_t nodes;
-    /* list of chain_t objects */
-    vector_t children;
-};
-
-struct base_chain_data_t
-{
-    struct chain_data_t chain;
-    vector_t            connecting_nodes;
-};
+struct ik_node_t;
 
 struct chain_t
 {
-    union {
-        struct chain_data_t chain;
-    } data;
+    /*
+     * List of ik_node_t* references that belong to this chain.
+     * NOTE: The nodes are in "reverse", i.e. the first node in this list is
+     * the effector node.
+     */
+    struct vector_t nodes;
+    /* list of chain_t objects */
+    struct vector_t children;
 };
 
-struct base_chain_t
-{
-    union {
-        struct chain_data_t chain;
-        struct base_chain_data_t base_chain;
-    } data;
-};
-
-IK_PRIVATE_API void
-base_chain_construct(base_chain_t* base_chain);
-
-IK_PRIVATE_API void
-base_chain_destruct(base_chain_t* base_chain);
-
-IK_PRIVATE_API chain_t*
+IK_PRIVATE_API struct chain_t*
 chain_create(void);
 
 IK_PRIVATE_API void
-chain_destroy(chain_t* chain);
+chain_destroy(struct chain_t* chain);
 
 /*!
- * @brief Initialises an allocated chain object.
+ * @brief Initializes an allocated chain object.
  */
 IK_PRIVATE_API void
-chain_construct(chain_t* chain);
+chain_construct(struct chain_t* chain);
 
 /*!
  * @brief Destroys and frees all members, but does not deallocate the chain
  * object itself.
  */
 IK_PRIVATE_API void
-chain_destruct(chain_t* chain);
+chain_destruct(struct chain_t* chain);
 
 /*!
  * @brief Deletes all children and nodes.
  */
 IK_PRIVATE_API void
-chain_clear_free(chain_t* chain);
+chain_clear_free(struct chain_t* chain);
 
-IK_PRIVATE_API chain_t*
-chain_create_child(chain_t* chain);
+IK_PRIVATE_API struct chain_t*
+chain_create_child(struct chain_t* chain);
 
-IK_PRIVATE_API int
-chain_add_node(chain_t* chain, const ik_node_t* node);
+IK_PRIVATE_API ik_ret
+chain_add_node(struct chain_t* chain, const struct ik_node_t* node);
 
 /*!
  * @brief Breaks down the relevant nodes of the scene graph into a tree of
@@ -98,16 +73,16 @@ chain_add_node(chain_t* chain, const ik_node_t* node);
  * base, sub-base joints, and end effectors. These chains are inserted into
  * the chain tree.
  */
-IK_PRIVATE_API int
-chain_tree_rebuild(vector_t* base_chain_list,
-                   const ik_node_t* base_node,
-                   const vector_t* effector_nodes_list);
+IK_PRIVATE_API ik_ret
+chain_tree_rebuild(struct vector_t* chain_list,
+                   const struct ik_node_t* base_node,
+                   const struct vector_t* effector_nodes_list);
 
 /*!
  * Computes the distances between the nodes and stores them in
  * node->segment_length. The positions used for this computation are those of
  * the active pose (node->position). For this reason, make sure that you've
- * correctly initialised the active pose before calling this function.
+ * correctly initialized the active pose before calling this function.
  *
  * The segment lengths are typically computed once during initialisation and
  * then never again. Of course, there are exceptions, such as when your tree
@@ -115,36 +90,33 @@ chain_tree_rebuild(vector_t* base_chain_list,
  * segment lengths every time node positions change.
  */
 IK_PRIVATE_API void
-calculate_segment_lengths(const vector_t* chains);
+calculate_segment_lengths(const struct vector_t* chains);
 
 /*!
  * @brief Counts all of the chains in the tree.
  */
 IK_PRIVATE_API int
-count_chains(const vector_t* chains);
-
-IK_PRIVATE_API void
-calculate_global_rotations(const chain_t* chain);
+count_chains(const struct vector_t* chains);
 
 /*!
  * @brief Helper macro for retrieving the node by index.
  * @note Does no error checking at all (e.g. if the index is out of bounds).
  */
 #define chain_get_node(chain_var, idx) \
-    (*(ik_node_t**)vector_get_element(&(chain_var)->data.chain.nodes, idx))
+    (*(struct ik_node_t**)vector_get_element(&(chain_var)->nodes, idx))
 
 /*!
  * @brief Helper macro for retrieving the number of nodes in a chain.
  */
 #define chain_length(chain_var) \
-    vector_count(&(chain_var)->data.chain.nodes)
+    vector_count(&(chain_var)->nodes)
 
 /*!
  * @brief Helper macro for retrieving the base node in the chain.
  * @note Does no error checking at all.
  */
 #define chain_get_base_node(chain_var) \
-    (*(ik_node_t**)vector_get_element(&(chain_var)->data.chain.nodes, \
+    (*(struct ik_node_t**)vector_get_element(&(chain_var)->nodes, \
                                 chain_length(chain_var) - 1))
 
 /*!
@@ -155,11 +127,11 @@ calculate_global_rotations(const chain_t* chain);
     chain_get_node(chain_var, 0)
 
 #define CHAIN_FOR_EACH_CHILD(chain_var, var_name) \
-    VECTOR_FOR_EACH(&(chain_var)->data.chain.children, chain_t, var_name) {
+    VECTOR_FOR_EACH(&(chain_var)->children, struct chain_t, var_name) {
 
 #define CHAIN_FOR_EACH_NODE(chain_var, var_name) \
-    VECTOR_FOR_EACH(&(chain_var)->data.chain.nodes, ik_node_t*, chain_##var_name) \
-    ik_node_t* var_name = *(chain_##var_name); {
+    VECTOR_FOR_EACH(&(chain_var)->nodes, struct ik_node_t*, chain_##var_name) \
+    struct ik_node_t* var_name = *(chain_##var_name); {
 
 #define CHAIN_END_EACH VECTOR_END_EACH }
 
@@ -175,7 +147,7 @@ calculate_global_rotations(const chain_t* chain);
  * @param[in] file_name The name of the file to dump to.
  */
 IK_PRIVATE_API void
-dump_to_dot(const ik_node_t* node, const vector_t* chains, const char* file_name);
+dump_to_dot(const struct ik_node_t* node, const struct vector_t* chains, const char* file_name);
 #endif /* IK_DOT_OUTPUT */
 
 C_HEADER_END

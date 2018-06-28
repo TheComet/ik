@@ -20,19 +20,19 @@
  * Otherwise the vector will expand to the specified target size.
  * @note No checks are performed to make sure the target size is large enough.
  */
-static int
-vector_expand(vector_t *vector,
-                      uintptr_t insertion_index,
-                      uint32_t target_size);
+static ik_ret
+vector_expand(struct vector_t *vector,
+              vector_size_t insertion_index,
+              vector_size_t target_size);
 
 /* ----------------------------------------------------------------------------
  * Exported functions
  * ------------------------------------------------------------------------- */
-vector_t*
+struct vector_t*
 vector_create(const uint32_t element_size)
 {
-    vector_t* vector;
-    if (!(vector = (vector_t*)MALLOC(sizeof(vector_t))))
+    struct vector_t* vector;
+    if (!(vector = MALLOC(sizeof *vector)))
         return NULL;
     vector_construct(vector, element_size);
     return vector;
@@ -40,16 +40,16 @@ vector_create(const uint32_t element_size)
 
 /* ------------------------------------------------------------------------- */
 void
-vector_construct(vector_t* vector, const uint32_t element_size)
+vector_construct(struct vector_t* vector, const uint32_t element_size)
 {
     assert(vector);
-    memset(vector, 0, sizeof(vector_t));
+    memset(vector, 0, sizeof *vector);
     vector->element_size = element_size;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-vector_destroy(vector_t* vector)
+vector_destroy(struct vector_t* vector)
 {
     assert(vector);
     vector_clear_free(vector);
@@ -58,7 +58,7 @@ vector_destroy(vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void
-vector_clear(vector_t* vector)
+vector_clear(struct vector_t* vector)
 {
     assert(vector);
     /*
@@ -70,7 +70,7 @@ vector_clear(vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void
-vector_clear_free(vector_t* vector)
+vector_clear_free(struct vector_t* vector)
 {
     assert(vector);
 
@@ -83,30 +83,32 @@ vector_clear_free(vector_t* vector)
 }
 
 /* ------------------------------------------------------------------------- */
-int
-vector_resize(vector_t* vector, uint32_t size)
+ik_ret
+vector_resize(struct vector_t* vector, uint32_t size)
 {
-    int result = 0;
+    ik_ret result = IK_OK;
 
     assert(vector);
 
     if (vector->count < size)
-        result = vector_expand(vector, -1, size);
-    vector->count = size;
+    {
+        if ((result = vector_expand(vector, VECTOR_ERROR, size)) == IK_OK)
+            vector->count = size;
+    }
 
     return result;
 }
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_push_emplace(vector_t* vector)
+vector_push_emplace(struct vector_t* vector)
 {
     void* data;
 
     assert(vector);
 
     if (vector->count == vector->capacity)
-        if (vector_expand(vector, -1, 0) < 0)
+        if (vector_expand(vector, VECTOR_ERROR, 0) != IK_OK)
             return NULL;
     data = vector->data + (vector->element_size * vector->count);
     ++(vector->count);
@@ -114,8 +116,8 @@ vector_push_emplace(vector_t* vector)
 }
 
 /* ------------------------------------------------------------------------- */
-int
-vector_push(vector_t* vector, void* data)
+ik_ret
+vector_push(struct vector_t* vector, const void* data)
 {
     void* emplaced;
 
@@ -124,26 +126,28 @@ vector_push(vector_t* vector, void* data)
 
     emplaced = vector_push_emplace(vector);
     if (!emplaced)
-        return -1;
+        return IK_RAN_OUT_OF_MEMORY;
     memcpy(emplaced, data, vector->element_size);
-    return 0;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
-int
-vector_push_vector(vector_t* vector, vector_t* source_vector)
+ik_ret
+vector_push_vector(struct vector_t* vector, struct vector_t* source_vector)
 {
+    ik_ret result;
+
     assert(vector);
     assert(source_vector);
 
     /* make sure element sizes are equal */
     if (vector->element_size != source_vector->element_size)
-        return -1;
+        return IK_VECTOR_HAS_DIFFERENT_ELEMENT_SIZE;
 
     /* make sure there's enough space in the target vector */
     if (vector->count + source_vector->count > vector->capacity)
-        if (vector_expand(vector, -1, vector->count + source_vector->count) < 0)
-            return -1;
+        if ((result = vector_expand(vector, VECTOR_ERROR, vector->count + source_vector->count)) != IK_OK)
+            return result;
 
     /* copy data */
     memcpy(vector->data + (vector->count * vector->element_size),
@@ -151,12 +155,12 @@ vector_push_vector(vector_t* vector, vector_t* source_vector)
            source_vector->count * vector->element_size);
     vector->count += source_vector->count;
 
-    return 0;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_pop(vector_t* vector)
+vector_pop(struct vector_t* vector)
 {
     assert(vector);
 
@@ -169,7 +173,7 @@ vector_pop(vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_back(const vector_t* vector)
+vector_back(const struct vector_t* vector)
 {
     assert(vector);
 
@@ -181,7 +185,7 @@ vector_back(const vector_t* vector)
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_insert_emplace(vector_t* vector, uint32_t index)
+vector_insert_emplace(struct vector_t* vector, uint32_t index)
 {
     uint32_t offset;
 
@@ -217,8 +221,8 @@ vector_insert_emplace(vector_t* vector, uint32_t index)
 }
 
 /* ------------------------------------------------------------------------- */
-int
-vector_insert(vector_t* vector, uint32_t index, void* data)
+ik_ret
+vector_insert(struct vector_t* vector, uint32_t index, void* data)
 {
     void* emplaced;
 
@@ -227,14 +231,14 @@ vector_insert(vector_t* vector, uint32_t index, void* data)
 
     emplaced = vector_insert_emplace(vector, index);
     if (!emplaced)
-        return -1;
+        return IK_RAN_OUT_OF_MEMORY;
     memcpy(emplaced, data, vector->element_size);
-    return 0;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-vector_erase_index(vector_t* vector, uint32_t index)
+vector_erase_index(struct vector_t* vector, uint32_t index)
 {
     assert(vector);
 
@@ -258,7 +262,7 @@ vector_erase_index(vector_t* vector, uint32_t index)
 
 /* ------------------------------------------------------------------------- */
 void
-vector_erase_element(vector_t* vector, void* element)
+vector_erase_element(struct vector_t* vector, void* element)
 {
     uintptr_t last_element;
 
@@ -279,7 +283,7 @@ vector_erase_element(vector_t* vector, void* element)
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_get_element(const vector_t* vector, uint32_t index)
+vector_get_element(const struct vector_t* vector, uint32_t index)
 {
     assert(vector);
 
@@ -291,14 +295,14 @@ vector_get_element(const vector_t* vector, uint32_t index)
 /* ----------------------------------------------------------------------------
  * Static functions
  * ------------------------------------------------------------------------- */
-static int
-vector_expand(vector_t *vector,
-                      uintptr_t insertion_index,
-                      uint32_t target_count)
+static ik_ret
+vector_expand(struct vector_t *vector,
+              vector_size_t insertion_index,
+              vector_size_t target_count)
 {
-    uintptr_t new_count;
-    DATA_POINTER_TYPE* old_data;
-    DATA_POINTER_TYPE* new_data;
+    vector_size_t new_count;
+    uint8_t* old_data;
+    uint8_t* new_data;
 
     /* expand by factor 2, or adopt target count if (it is not 0 */
     if (target_count)
@@ -315,31 +319,31 @@ vector_expand(vector_t *vector,
         new_count = (new_count == 0 ? 2 : new_count);
         vector->data = MALLOC(new_count * vector->element_size);
         if (!vector->data)
-            return -1;
+            return IK_RAN_OUT_OF_MEMORY;
         vector->capacity = new_count;
-        return 0;
+        return IK_OK;
     }
 
     /* prepare for reallocating data */
     old_data = vector->data;
-    new_data = (DATA_POINTER_TYPE*)MALLOC(new_count * vector->element_size);
+    new_data = MALLOC(new_count * vector->element_size);
     if (!new_data)
-        return -1;
+        return IK_RAN_OUT_OF_MEMORY;
 
     /* if (no insertion index is required, copy all data to new memory */
-    if (insertion_index == (uintptr_t)-1 || insertion_index >= new_count)
+    if (insertion_index == VECTOR_ERROR || insertion_index >= new_count)
         memcpy(new_data, old_data, vector->count * vector->element_size);
 
     /* keep space for one element at the insertion index */
     else
     {
         /* copy old data up until right before insertion offset */
-        uint32_t offset = vector->element_size * insertion_index;
-        uint32_t total_size = vector->element_size * vector->count;
+        vector_size_t offset = vector->element_size * insertion_index;
+        vector_size_t total_size = vector->element_size * vector->count;
         memcpy(new_data, old_data, offset);
         /* copy the remaining amount of old data shifted one element ahead */
-        memcpy((void*)((intptr_t)new_data + offset + vector->element_size),
-               (void*)((intptr_t)old_data + offset),
+        memcpy((void*)((uintptr_t)new_data + offset + vector->element_size),
+               (void*)((uintptr_t)old_data + offset),
                total_size - offset);
     }
 
@@ -347,5 +351,5 @@ vector_expand(vector_t *vector,
     vector->capacity = new_count;
     FREE(old_data);
 
-    return 0;
+    return IK_OK;
 }

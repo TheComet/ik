@@ -1,5 +1,5 @@
 #include "ik/memory.h"
-#include "ik/bst_vector.h"
+#include "ik/bstv.h"
 #include "ik/backtrace.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,7 +12,7 @@
 static uintptr_t g_allocations = 0;
 static uintptr_t d_deg_allocations = 0;
 static uintptr_t g_ignore_bstv_malloc = 0;
-static bstv_t report;
+static struct bstv_t report;
 
 typedef struct report_info_t
 {

@@ -4,7 +4,7 @@
 
 /* ------------------------------------------------------------------------- */
 void
-quat_set_identity(ik_real* IK_RESTRICT q)
+quat_set_identity(ik_real q[4])
 {
     memset(q, 0, sizeof(ik_real) * 3);
     q[3] = 1;
@@ -12,7 +12,17 @@ quat_set_identity(ik_real* IK_RESTRICT q)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_add_quat(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
+quat_copy(ik_real q[4], const ik_real src[4])
+{
+    q[0] = src[0];
+    q[1] = src[1];
+    q[2] = src[2];
+    q[3] = src[3];
+}
+
+/* ------------------------------------------------------------------------- */
+void
+quat_add_quat(ik_real q1[4], const ik_real q2[4])
 {
     q1[0] += q2[0];
     q1[1] += q2[1];
@@ -22,14 +32,14 @@ quat_add_quat(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
 
 /* ------------------------------------------------------------------------- */
 ik_real
-quat_mag(const ik_real* IK_RESTRICT q)
+quat_mag(const ik_real q[4])
 {
     return sqrt(q[3]*q[3] + q[2]*q[2] + q[1]*q[1] + q[0]*q[0]);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-quat_conj(ik_real* IK_RESTRICT q)
+quat_conj(ik_real q[4])
 {
     q[0] = -q[0];
     q[1] = -q[1];
@@ -38,7 +48,7 @@ quat_conj(ik_real* IK_RESTRICT q)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_invert_sign(ik_real* IK_RESTRICT q)
+quat_invert_sign(ik_real q[4])
 {
     q[0] = -q[0];
     q[1] = -q[1];
@@ -49,7 +59,7 @@ quat_invert_sign(ik_real* IK_RESTRICT q)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_normalise(ik_real* IK_RESTRICT q)
+quat_normalise(ik_real q[4])
 {
     ik_real mag = quat_mag(q);
     if (mag != 0.0)
@@ -62,7 +72,7 @@ quat_normalise(ik_real* IK_RESTRICT q)
 
 /* ------------------------------------------------------------------------- */
 static void
-mul_quat_no_normalise(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
+mul_quat_no_normalise(ik_real q1[4], const ik_real q2[4])
 {
     ik_real v1[3];
     ik_real v2[3];
@@ -77,7 +87,7 @@ mul_quat_no_normalise(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
     vec3_add_vec3(q1, v2);
 }
 void
-quat_mul_quat(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
+quat_mul_quat(ik_real q1[4], const ik_real q2[4])
 {
     mul_quat_no_normalise(q1, q2);
     quat_normalise(q1);
@@ -85,7 +95,7 @@ quat_mul_quat(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_mul_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
+quat_mul_scalar(ik_real q[4], ik_real scalar)
 {
     q[0] *= scalar;
     q[1] *= scalar;
@@ -95,7 +105,7 @@ quat_mul_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_div_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
+quat_div_scalar(ik_real q[4], ik_real scalar)
 {
     if (scalar == 0.0)
         quat_set_identity(q);
@@ -111,7 +121,7 @@ quat_div_scalar(ik_real* IK_RESTRICT q, ik_real scalar)
 
 /* ------------------------------------------------------------------------- */
 ik_real
-quat_dot(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
+quat_dot(ik_real q1[4], const ik_real q2[4])
 {
     return q1[0] * q2[0] +
            q1[1] * q2[1] +
@@ -121,7 +131,7 @@ quat_dot(ik_real* IK_RESTRICT q1, const ik_real* IK_RESTRICT q2)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_rotate_vec(ik_real* IK_RESTRICT v, const ik_real* IK_RESTRICT q)
+quat_rotate_vec(ik_real v[3], const ik_real q[4])
 {
     /* P' = RPR' */
     quat_t result;
@@ -129,7 +139,7 @@ quat_rotate_vec(ik_real* IK_RESTRICT v, const ik_real* IK_RESTRICT q)
     quat_t point;
 
     memcpy(point.f, v, sizeof(ik_real) * 3);
-    point.q.w = 0.0;
+    point.w = 0.0;
 
     conj = *(quat_t*)q;
     quat_conj(conj.f);
@@ -142,7 +152,7 @@ quat_rotate_vec(ik_real* IK_RESTRICT v, const ik_real* IK_RESTRICT q)
 
 /* ------------------------------------------------------------------------- */
 void
-quat_normalise_sign(ik_real* IK_RESTRICT q1)
+quat_normalise_sign(ik_real q1[4])
 {
     quat_t unit = {{0, 0, 0, 1}};
     ik_real dot = quat_dot(q1, unit.f);

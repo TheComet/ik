@@ -13,7 +13,7 @@ C_HEADER_BEGIN
  * @return Returns an array of char* arrays.
  * @note The returned array must be freed manually with FREE(returned_array).
  */
-IK_PUBLIC_API char**
+IK_PRIVATE_API char**
 get_backtrace(int* size);
 
 C_HEADER_END

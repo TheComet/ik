@@ -5,28 +5,17 @@
 
 C_HEADER_BEGIN
 
-typedef void (*ik_log_cb_func)(const char*);
-
-typedef enum ik_log_e
+IK_INTERFACE(log_interface)
 {
-    IK_LOG_NONE,
-    IK_LOG_STDOUT
-} ik_log_e;
+    ik_ret
+    (*init)(void);
 
-IK_PUBLIC_API void
-ik_log_init(ik_log_e options);
+    void
+    (*deinit)(void);
 
-IK_PUBLIC_API void
-ik_log_deinit(void);
-
-IK_PUBLIC_API void
-ik_log_register_listener(ik_log_cb_func callback);
-
-IK_PUBLIC_API void
-ik_log_unregister_listener(ik_log_cb_func callback);
-
-IK_PUBLIC_API void
-ik_log_message(const char* fmt, ...);
+    void
+    (*message)(const char* fmt, ...);
+};
 
 C_HEADER_END
 

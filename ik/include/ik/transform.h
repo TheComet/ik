@@ -5,30 +5,26 @@
 
 C_HEADER_BEGIN
 
-typedef enum ik_transform_flags_e
+struct vector_t;
+struct ik_node_t;
+struct chain_t;
+
+enum ik_transform_flags_e
 {
-    TRANSFORM_ACTIVE = 0x01,
-    TRANSFORM_ORIGINAL = 0x02,
-    TRANSFORM_ROTATIONS_ONLY = 0x04
-} ik_node_transform_flags_e;
+    TR_G2L            = 0x00,
+    TR_L2G            = 0x01,
+    TR_ROTATIONS      = 0x02,
+    TR_TRANSLATIONS   = 0x04
+};
 
-IK_PUBLIC_API void
-ik_tree_global_to_local(ik_node_t* node, uint8_t flags);
+IK_PRIVATE_API void
+ik_transform_tree(struct ik_node_t* node, uint8_t flags);
 
-IK_PUBLIC_API void
-ik_tree_local_to_global(ik_node_t* node, uint8_t flags);
+IK_PRIVATE_API void
+ik_transform_chain_list(const struct vector_t* chain_list, uint8_t flags);
 
-IK_PUBLIC_API void
-ik_chains_local_to_global(const vector_t* chains, uint8_t flags);
-
-IK_PUBLIC_API void
-ik_chains_global_to_local(const vector_t* chains, uint8_t flags);
-
-IK_PUBLIC_API void
-ik_chain_local_to_global(chain_t* chain, uint8_t flags);
-
-IK_PUBLIC_API void
-ik_chain_global_to_local(chain_t* chain, uint8_t flags);
+IK_PRIVATE_API void
+ik_transform_chain(struct chain_t* chain, uint8_t flags);
 
 C_HEADER_END
 

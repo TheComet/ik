@@ -12,11 +12,9 @@ typedef struct effector_data_t
 
 /* ------------------------------------------------------------------------- */
 static effector_data_t
-calculate_rotation_weight_decays_recursive(chain_t* chain)
+calculate_rotation_weight_decays_recursive(struct chain_t* chain)
 {
-    int average_count;
     int node_idx, node_count;
-    effector_data_t effector_data;
 
     /*
      * Find the rotation weight of this chain's last node by averaging the
@@ -29,7 +27,8 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
      * If there are child chains then average the effector data we've
      * accumulated.
      */
-    average_count = 0;
+    int average_count = 0;
+    effector_data_t effector_data = { 0.0, 0.0 };
     CHAIN_FOR_EACH_CHILD(chain, child)
         effector_data_t child_eff_data =
                 calculate_rotation_weight_decays_recursive(child);
@@ -40,8 +39,8 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
 
     if (average_count == 0)
     {
-        ik_node_t* effector_node = chain_get_tip_node(chain);
-        ik_effector_t* effector = effector_node->effector;
+        struct ik_node_t* effector_node = chain_get_tip_node(chain);
+        struct ik_effector_t* effector = effector_node->effector;
 
         effector_data.rotation_weight = effector->rotation_weight;
         effector_data.rotation_weight_decay = effector->rotation_decay;
@@ -64,7 +63,7 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
     node_count = chain_length(chain) - 1;
     for (node_idx = 0; node_idx < node_count; ++node_idx)
     {
-        ik_node_t* node = chain_get_node(chain, node_idx);
+        struct ik_node_t* node = chain_get_node(chain, node_idx);
         node->rotation_weight = effector_data.rotation_weight;
         effector_data.rotation_weight *= effector_data.rotation_weight_decay;
     }
@@ -75,7 +74,7 @@ calculate_rotation_weight_decays_recursive(chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_calculate_rotation_weight_decays(const vector_t* chains)
+ik_calculate_rotation_weight_decays(const struct vector_t* chains)
 {
     /*
      * The recursive version of this function does not set the rotation weight
@@ -87,7 +86,7 @@ ik_calculate_rotation_weight_decays(const vector_t* chains)
      * For these reasons we iterate the chain islands and set the first node in
      * each island to the returned rotation weight.
      */
-    VECTOR_FOR_EACH(chains, chain_t, base_chain)
+    VECTOR_FOR_EACH(chains, struct chain_t, base_chain)
         effector_data_t effector_data = calculate_rotation_weight_decays_recursive(base_chain);
         assert(chain_length(base_chain) >= 2);
         chain_get_base_node(base_chain)->rotation_weight = effector_data.rotation_weight;

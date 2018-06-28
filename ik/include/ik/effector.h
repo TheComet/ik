@@ -7,7 +7,10 @@
 
 C_HEADER_BEGIN
 
-typedef enum effector_flags_e
+struct ik_node_t;
+struct ik_effector_interface_t;
+
+enum effector_flags_e
 {
     /*!
      * @brief Causes intermediary weight values to rotate the target around the
@@ -15,8 +18,10 @@ typedef enum effector_flags_e
      * appealing if the solved tree diverges a lot from the original tree
      * during weight transitions.
      */
-    EFFECTOR_WEIGHT_NLERP            = 0x01
-} effector_flgs_e;
+    EFFECTOR_WEIGHT_NLERP            = 0x01,
+
+    EFFECTOR_IGNORE_PARENT_ROTATION  = 0x02
+};
 
 /*!
  * @brief Specifies how a chain of nodes should be solved. The effector can
@@ -27,13 +32,16 @@ typedef enum effector_flags_e
  */
 struct ik_effector_t
 {
+    const struct ik_effector_interface_t* v;
+    struct ik_node_t* node;
+
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
      * a new target position to solve for. Specifies the global (world)
      * position where the node it is attached to should head for.
      * @note Default value is (0, 0, 0).
      */
-    vec3_t   target_position;
+    vec3_t target_position;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -41,7 +49,15 @@ struct ik_effector_t
      * rotation where the node it is attached to should head for.
      * @note Default value is the identity quaternion.
      */
-    quat_t   target_rotation;
+    quat_t target_rotation;
+
+    /*!
+     * Used internally to hold the actual target position/rotation, which will
+     * be different from target_position/target_rotation if the weight is not
+     * 1.0. This value is updated right after calling solve() and before the
+     * solving algorithm begins.
+     */
+    vec3_t _actual_target;
 
     /*!
      * @brief Specifies how much influence the solver has on the chain of
@@ -55,7 +71,7 @@ struct ik_effector_t
      * (weight=0.0) and be fully active when the foot is on the ground
      * (weight=1.0).
      */
-    ik_real  weight;
+    ik_real weight;
 
     ik_real rotation_weight;
     ik_real rotation_decay;
@@ -75,26 +91,44 @@ struct ik_effector_t
     uint8_t flags;
 };
 
-/*!
- * @brief Creates a new effector object. It can be attached to any node in the
- * tree using ik_node_attach_effector().
- */
-IK_PUBLIC_API ik_effector_t*
-ik_effector_create(void);
+IK_INTERFACE(effector_interface)
+{
+    /*!
+     * @brief Creates a new effector object. It can be attached to any node in the
+     * tree using ik_node_attach_effector().
+     */
+    struct ik_effector_t*
+    (*create)(void);
 
-/*!
- * @brief Constructs a previously allocated effector object.
- */
-IK_PUBLIC_API void
-ik_effector_construct(ik_effector_t* effector);
+    /*!
+     * @brief Destroys and frees an effector object. This should **NOT** be called
+     * on effectors that are attached to nodes. Use ik_node_destroy_effector()
+     * instead.
+     */
+    void
+    (*destroy)(struct ik_effector_t* effector);
 
-/*!
- * @brief Destroys and frees an effector object. This should **NOT** be called
- * on effectors that are attached to nodes. Use ik_node_destroy_effector()
- * instead.
- */
-IK_PUBLIC_API void
-ik_effector_destroy(ik_effector_t* effector);
+    /*!
+     * @brief Attaches an effector object to the node. The node gains ownership
+     * of the effector and is responsible for its deallocation. If the node
+     * already owns an effector, then it is first destroyed.
+     * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
+     * an effector attached. IK_OK if otherwise.
+     * @note You will need to rebuild the solver's tree before solving.
+     */
+    ik_ret
+    (*attach)(struct ik_effector_t* effector, struct ik_node_t* node);
+
+    /*!
+     * @brief Removes effector from the node it is attached to, if it exists.
+     * The field node->effector  is set to NULL.
+     * @note You regain ownership of the object and must destroy it manually when
+     * done with it. You may also attach it to another node.
+     * @note You will need to rebuild the solver's tree before solving.
+     */
+    void
+    (*detach)(struct ik_effector_t* effector);
+};
 
 C_HEADER_END
 
