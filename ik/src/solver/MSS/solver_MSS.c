@@ -15,7 +15,7 @@ ik_solver_MSS_type_size(void)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_MSS_construct(struct ik_solver_t* solver)
 {
     return IK_OK;
@@ -28,7 +28,7 @@ ik_solver_MSS_destruct(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_MSS_rebuild_data(struct ik_solver_t* solver)
 {
     return IK_OK;
@@ -36,7 +36,7 @@ ik_solver_MSS_rebuild_data(struct ik_solver_t* solver)
 
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_MSS_solve(struct ik_solver_t* solver)
 {
     return IK_OK;

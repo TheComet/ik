@@ -2,6 +2,7 @@
 #include "ik/constraint_base.h"
 #include "ik/effector_base.h"
 #include "ik/log_static.h"
+#include "ik/memory.h"
 #include "ik/node_base.h"
 #include "ik/solver_static.h"
 #include "ik/solver_base.h"
@@ -9,7 +10,7 @@
 #include "ik/solver_TWO_BONE.h"
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_MSS.h"
-#include "ik/memory.h"
+#include "ik/tests_static.h"
 #include <stddef.h>
 #include <stdio.h>
 
@@ -35,7 +36,7 @@ ik_implement_callbacks(const struct ik_callback_interface_t* callbacks)
 }
 
 /* ------------------------------------------------------------------------- */
-static ik_ret
+static ikret_t
 ik_init(void)
 {
     ik_memory_init();
@@ -43,11 +44,11 @@ ik_init(void)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
+static uintptr_t
 ik_deinit(void)
 {
     ik_implement_callbacks(NULL);
-    ik_memory_deinit();
+    return ik_memory_deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -57,6 +58,7 @@ struct ik_interface_t ik = {
     ik_implement_callbacks,
     { IK_LOG_STATIC_IMPL },
     { IK_SOLVER_STATIC_IMPL },
+    { IK_TESTS_STATIC_IMPL },
     {
         &dummy_callbacks,
         { IK_CONSTRAINT_BASE_IMPL},

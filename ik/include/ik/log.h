@@ -3,11 +3,11 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 IK_INTERFACE(log_interface)
 {
-    ik_ret
+    ikret_t
     (*init)(void);
 
     void
@@ -17,6 +17,6 @@ IK_INTERFACE(log_interface)
     (*message)(const char* fmt, ...);
 };
 
-C_HEADER_END
+C_END
 
 #endif /* IK_LOG_H */

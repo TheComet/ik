@@ -19,14 +19,14 @@ IK_IMPLEMENT(effector_TWO_BONE, effector_base)
 IK_IMPLEMENT(constraint_TWO_BONE, constraint_base)
 
 /*
- * Need to combine multiple ik_ret return values from the various before/after
+ * Need to combine multiple ikret_t return values from the various before/after
  * functions.
  */
-ik_ret ik_solver_TWO_BONE_harness_rebuild_data_return_value(ik_ret a, ik_ret b) {
+ikret_t ik_solver_TWO_BONE_harness_rebuild_data_return_value(ikret_t a, ikret_t b) {
     if (a != IK_OK) return a;
     return b;
 }
-ik_ret ik_solver_TWO_BONE_harness_solve_return_value(ik_ret a, ik_ret b) {
+ikret_t ik_solver_TWO_BONE_harness_solve_return_value(ikret_t a, ikret_t b) {
     if (a != IK_OK) return a;
     return b;
 }

@@ -2,13 +2,14 @@
 #define IK_LIB_H
 
 #include "ik/config.h"
-#include "ik/solver.h"
+#include "ik/constraint.h"
+#include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
-#include "ik/effector.h"
-#include "ik/constraint.h"
+#include "ik/solver.h"
+#include "ik/tests.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct ik_callback_interface_t
 {
@@ -46,17 +47,18 @@ struct ik_internal_interface_t
 
 struct ik_interface_t
 {
-    ik_ret
+    ikret_t
     (*init)(void);
 
-    void
+    uintptr_t
     (*deinit)(void);
 
     void
     (*implement_callbacks)(const struct ik_callback_interface_t* callbacks);
 
-    const struct ik_log_interface_t log;
+    const struct ik_log_interface_t    log;
     const struct ik_solver_interface_t solver;
+    const struct ik_tests_interface_t  tests;
 
     /* "Private" interface, should not be used by clients of the library. */
     struct ik_internal_interface_t internal;
@@ -64,6 +66,6 @@ struct ik_interface_t
 
 IK_PUBLIC_API extern struct ik_interface_t ik;
 
-C_HEADER_END
+C_END
 
 #endif /* IK_LIB_H */

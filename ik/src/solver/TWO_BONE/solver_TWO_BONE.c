@@ -58,7 +58,7 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
         struct ik_node_t* node_mid;
         struct ik_node_t* node_base;
         vec3_t to_target;
-        ik_real a, b, c, aa, bb, cc;
+        ikreal_t a, b, c, aa, bb, cc;
 
         assert(chain_length(chain) > 2);
         node_tip  = chain_get_node(chain, 0);
@@ -93,9 +93,9 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
         {
             /* Cosine law to get base angle (alpha) */
             quat_t alpha_rotation;
-            ik_real alpha = acos((bb + cc - aa) / (2.0 * node_mid->dist_to_parent * sqrt(cc)));
-            ik_real cos_a = cos(alpha * 0.5);
-            ik_real sin_a = sin(alpha * 0.5);
+            ikreal_t alpha = acos((bb + cc - aa) / (2.0 * node_mid->dist_to_parent * sqrt(cc)));
+            ikreal_t cos_a = cos(alpha * 0.5);
+            ikreal_t sin_a = sin(alpha * 0.5);
 
             /* Cross product of both segment vectors defines axis of rotation */
             alpha_rotation.v = node_tip->position;

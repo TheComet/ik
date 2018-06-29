@@ -1,22 +1,25 @@
 #ifndef IK_RETCODES_H
 #define IK_RETCODES_H
 
-#include "ik/export.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-C_HEADER_BEGIN
-
-typedef enum ik_ret
+typedef enum ikret_t
 {
     IK_RESULT_CONVERGED = 1,
     IK_OK = 0,
     IK_RAN_OUT_OF_MEMORY = -1,
     IK_ALREADY_HAS_ATTACHMENT = -2,
-    IK_ALREADY_INITIALIZED  = -3,
+    IK_ALREADY_INITIALIZED = -3,
     IK_HASH_NOT_FOUND = -4,
     IK_VECTOR_HAS_DIFFERENT_ELEMENT_SIZE = -5,
-    IK_SOLVER_HAS_NO_TREE = -6
-} ik_ret;
+    IK_SOLVER_HAS_NO_TREE = -6,
+    IK_UNIT_TESTS_FAILED = -7
+} ikret_t;
 
-C_HEADER_END
+#ifdef __cplusplus
+}
+#endif
 
 #endif

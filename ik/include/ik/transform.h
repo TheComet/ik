@@ -3,7 +3,7 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct vector_t;
 struct ik_node_t;
@@ -26,6 +26,6 @@ ik_transform_chain_list(const struct vector_t* chain_list, uint8_t flags);
 IK_PRIVATE_API void
 ik_transform_chain(struct chain_t* chain, uint8_t flags);
 
-C_HEADER_END
+C_END
 
 #endif /* IK_TRANSFORM_H */

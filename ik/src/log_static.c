@@ -14,7 +14,7 @@ typedef struct log_t
 static log_t* g_log = NULL;
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_log_static_init(void)
 {
     if (g_log != NULL)

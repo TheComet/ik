@@ -19,7 +19,7 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-local_to_global_rotation_recursive(struct chain_t* chain, ik_real acc_rot[4])
+local_to_global_rotation_recursive(struct chain_t* chain, ikreal_t acc_rot[4])
 {
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -33,13 +33,13 @@ local_to_global_rotation_recursive(struct chain_t* chain, ik_real acc_rot[4])
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_child[4]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
         quat_copy(acc_rot_child, acc_rot);
         local_to_global_rotation_recursive(child, acc_rot_child);
     CHAIN_END_EACH
 }
 static void
-global_to_local_rotation_recursive(struct chain_t* chain, ik_real acc_rot[4])
+global_to_local_rotation_recursive(struct chain_t* chain, ikreal_t acc_rot[4])
 {
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -55,7 +55,7 @@ global_to_local_rotation_recursive(struct chain_t* chain, ik_real acc_rot[4])
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_child[4]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
         quat_copy(acc_rot_child, acc_rot);
         global_to_local_rotation_recursive(child, acc_rot_child);
     CHAIN_END_EACH
@@ -63,13 +63,13 @@ global_to_local_rotation_recursive(struct chain_t* chain, ik_real acc_rot[4])
 
 /* ------------------------------------------------------------------------- */
 static void
-local_to_global_translation_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
+local_to_global_translation_recursive(struct chain_t* chain, ikreal_t acc_rot_pos[7])
 {
     vec3_t position;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -87,18 +87,18 @@ local_to_global_translation_recursive(struct chain_t* chain, ik_real acc_rot_pos
 
     /* Recurse into child chains */
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         local_to_global_translation_recursive(child, acc_rot_pos_child);
     CHAIN_END_EACH
 }
 static void
-global_to_local_translation_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
+global_to_local_translation_recursive(struct chain_t* chain, ikreal_t acc_rot_pos[7])
 {
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -118,7 +118,7 @@ global_to_local_translation_recursive(struct chain_t* chain, ik_real acc_rot_pos
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         global_to_local_translation_recursive(child, acc_rot_pos_child);
@@ -127,14 +127,14 @@ global_to_local_translation_recursive(struct chain_t* chain, ik_real acc_rot_pos
 
 /* ------------------------------------------------------------------------- */
 static void
-local_to_global_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
+local_to_global_recursive(struct chain_t* chain, ikreal_t acc_rot_pos[7])
 {
     vec3_t position;
     quat_t rotation;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -154,18 +154,18 @@ local_to_global_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
 
     /* Recurse into child chains */
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         local_to_global_recursive(child, acc_rot_pos_child);
     CHAIN_END_EACH
 }
 static void
-global_to_local_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
+global_to_local_recursive(struct chain_t* chain, ikreal_t acc_rot_pos[7])
 {
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     int idx = chain_length(chain) - 1;
     assert(idx > 0);
@@ -185,7 +185,7 @@ global_to_local_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         global_to_local_recursive(child, acc_rot_pos_child);
@@ -193,7 +193,7 @@ global_to_local_recursive(struct chain_t* chain, ik_real acc_rot_pos[7])
 }
 
 /* ------------------------------------------------------------------------- */
-typedef void (*transform_func)(struct chain_t*, ik_real*);
+typedef void (*transform_func)(struct chain_t*, ikreal_t*);
 
 static transform_func transform_table[8] = {
     global_to_local_recursive,
@@ -219,10 +219,10 @@ ik_transform_chain_list(const struct vector_t* chain_list, uint8_t flags)
 void
 ik_transform_chain(struct chain_t* chain, uint8_t flags)
 {
-    ik_real base_transform[7];
+    ikreal_t base_transform[7];
 
     assert(chain_length(chain) >= 2);
-    memcpy(base_transform, chain_get_base_node(chain)->transform, sizeof(ik_real) * 7);
+    memcpy(base_transform, chain_get_base_node(chain)->transform, sizeof(ikreal_t) * 7);
 
     (*transform_table[flags])(chain, base_transform);
 }

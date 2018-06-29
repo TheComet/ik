@@ -1,57 +1,180 @@
 include (CheckIncludeFiles)
 include (CheckCSourceCompiles)
+include (CMakeDependentOption)
 
-# memory debugging
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
 	set (IK_MEMORY_DEBUGGING_DEFAULT ON)
 else ()
 	set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
 endif ()
-if (IK_MEMORY_DEBUGGING AND NOT WIN32 AND NOT CYGWIN)
-	if (WIN32 OR CYGWIN)
-		set (IK_MEMORY_BACKTRACE_DEFAULT OFF)
-	else ()
-		set (IK_MEMORY_BACKTRACE_DEFAULT ON)
-	endif ()
-endif ()
+
+option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
+option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
+set (IK_LIB_TYPE "STATIC" CACHE STRING "SHARED or STATIC library")
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
-option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ${IK_MEMORY_BACKTRACE_DEFAULT})
+cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
+option (IK_PIC "Position independent code when building as a static library" ON)
+set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
+option (IK_PROFILING "Compiles with -pg on linux" OFF)
+option (IK_PYTHON_BINDINGS "Compiles the library so it can also be loaded as a python module" OFF)
+option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 
-# Need to set IK_PLATFORM for dllimport/dllexport
-if (WIN32)
-    set (IK_PLATFORM "WINDOWS")
-elseif (APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set (IK_PLATFORM "OSX")
-elseif (IOS)
-    set (IK_PLATFORM "IOS")
-elseif (UNIX)
-    set (IK_PLATFORM "LINUX")
+string (REPLACE " " "_" IK_PRECISION_CAPS_AND_NO_SPACES ${IK_PRECISION})
+string (TOUPPER ${IK_PRECISION_CAPS_AND_NO_SPACES} IK_PRECISION_CAPS_AND_NO_SPACES)
+
+if (IK_BENCHMARKS OR IK_TESTS)
+    set (CXX_LANGUAGE "CXX")
+endif ()
+project ("ik"
+    VERSION 0.1
+    LANGUAGES C ${CXX_LANGUAGE})
+
+# Determine visibility macros if the library is a shared library.
+if (IK_LIB_TYPE MATCHES "SHARED")
+    check_c_source_compiles ("__declspec(dllexport) void foo(void); int main(void) { return 0; }" DLLEXPORT_VISIBILITY)
+    check_c_source_compiles ("__declspec(dllimport) void foo(void); int main(void) { return 0; }" DLLIMPORT_VISIBILITY)
+    check_c_source_compiles ("__attribute__((visibility(\"default\"))) void foo(void); int main(void) { return 0; }" DEFAULT_VISIBILITY)
+    check_c_source_compiles ("__attribute__((visibility(\"hidden\"))) void foo(void); int main(void) { return 0; }"  HIDDEN_VISIBILITY)
+    if (DLLEXPORT_VISIBILITY AND DLLIMPORT_VISIBILITY)
+        set (IK_HELPER_API_EXPORT "__declspec(dllexport")
+        set (IK_HELPER_API_IMPORT "__declspec(dllimport")
+        set (IK_HELPER_API_LOCAL "")
+    elseif (DEFAULT_VISIBILITY AND HIDDEN_VISIBILITY)
+        set (IK_HELPER_API_EXPORT "__attribute__((visibility(\"default\")))")
+        set (IK_HELPER_API_IMPORT "__attribute__((visibility(\"default\")))")
+        set (IK_HELPER_API_LOCAL  "__attribute__((visibility(\"hidden\")))")
+    else ()
+        message (FATAL_ERROR "Don't know how to define visibility macros for this compiler")
+    endif ()
 else ()
-    set (IK_PLATFORM "ANDROID")
+    set (IK_HELPER_API_EXPORT "")
+    set (IK_HELPER_API_IMPORT "")
+    set (IK_HELPER_API_LOCAL  "")
 endif ()
 
-# Use stdint.h if possible, otherwise use pstdint.h
+# Check if we need to use pstdint.h or if stdint.h is available
 check_include_files ("stdint.h" IK_HAVE_STDINT_H)
 
-set (IK_REAL "float" CACHE STRING "Type to use for real numbers")
-option (IK_DOT_OUTPUT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
+# Check if we can warn about unused function results
+check_c_source_compiles ("int __attribute__((warn_unused_result)) f(int z) { return z*z + z*2 + z/3 + 23; } int main(void) { return f(4); }" HAVE_WARN_UNUSED)
+check_c_source_compiles ("int _Check_return_ f(int z) { return z*z + z*2 + z/3 + 23; } int main(void) { return f(4); }" HAVE_CHECK_RETURN)
+if (HAVE_WARN_UNUSED)
+    set (IK_WARN_UNUSED "__attribute__((warn_unused_result))")
+elseif (HAVE_CHECK_RETURN)
+    set (IK_WARN_UNUSED "_Check_return_")
+endif ()
 
-set (IK_LIB_TYPE "STATIC" CACHE STRING "Shared or static library")
+set (IK_HOST_COMPUTER ${CMAKE_HOST_SYSTEM})
+set (IK_COMPILER ${CMAKE_C_COMPILER_ID})
+find_program (UNAME_PROGRAM uname)
+if (UNAME_PROGRAM)
+    execute_process (
+        COMMAND ${UNAME_PROGRAM} -o -r -m -p -i
+        OUTPUT_VARIABLE IK_HOST_COMPUTER)
+    string (REPLACE "\n" "" IK_HOST_COMPUTER ${IK_HOST_COMPUTER})
+else ()
+    set (IK_HOST_COMPUTER ${CMAKE_HOST_SYSTEM_NAME})
+endif ()
 
-configure_file ("include/ik/export.h.in"
-                "include/ik/export.h")
+# Required for build info
+find_package (Git)
+if (GIT_FOUND)
+    execute_process (COMMAND ${GIT_EXECUTABLE} describe --tags RESULT_VARIABLE RESULT OUTPUT_VARIABLE COMMIT_TAG)
+    if (RESULT)
+        set (COMMIT_TAG "(unknown tag)")
+    else ()
+        string (REPLACE "\n" "" COMMIT_TAG ${COMMIT_TAG})
+    endif ()
+    execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD RESULT_VARIABLE RESULT OUTPUT_VARIABLE COMMIT_HASH)
+    if (RESULT)
+        set (COMMIT_HASH "(commit hash unknown)")
+    else ()
+        string (REPLACE "\n" "" COMMIT_HASH ${COMMIT_HASH})
+    endif ()
+    set (IK_COMMIT_INFO "${COMMIT_TAG} (${COMMIT_HASH})")
+else ()
+    set (IK_COMMIT_INFO "unknown (git not found!)")
+    message (WARNING "Git not found. Build will not contain git revision info.")
+endif ()
+
 configure_file ("include/ik/config.h.in"
                 "include/ik/config.h")
 
-include_directories ("${CMAKE_CURRENT_BINARY_DIR}/include")
+set (IK_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+configure_file ("src/build_info.c.in" "src/build_info.c")
 
-# Define special IK preprocess include files
-file (GLOB IK_VTABLE_FILES include/ik/vtables/*.v)
+###############################################################################
+# Main library
+###############################################################################
+
+set (IK_HEADERS
+    "include/ik/backtrace.h"
+    "include/ik/bstv.h"
+    "include/ik/build_info.h"
+    "include/ik/chain.h"
+    "include/ik/config.h.in"
+    "include/ik/constraint.h"
+    "include/ik/effector.h"
+    "include/ik/ik.h"
+    "include/ik/log.h"
+    "include/ik/memory.h"
+    "include/ik/node.h"
+    "include/ik/pstdint.h"
+    "include/ik/quat.h"
+    "include/ik/retcodes.h"
+    "include/ik/solver.h"
+    "include/ik/tests.h"
+    "include/ik/transform.h"
+    "include/ik/util.h"
+    "include/ik/vec3.h"
+    "include/ik/vector.h")
+set (IK_SOURCES 
+    "src/bstv.c"
+    "src/build_info.c.in"
+    "src/chain.c"
+    "src/ik.c"
+    "src/log_static.c"
+    "src/memory.c"
+    "src/quat.c"
+    "src/retcodes.c"
+    "src/transform_chains.c"
+    "src/transform_tree.c"
+    "src/util.c"
+    "src/vec3.c"
+    "src/vector.c"
+    "src/solver/solver_static.c"
+    "src/solver/base/constraint_base.c"
+    "src/solver/base/effector_base.c"
+    "src/solver/base/node_base.c"
+    "src/solver/base/solver_base.c"
+    "src/solver/FABRIK/node_FABRIK.c"
+    "src/solver/FABRIK/solver_FABRIK.c"
+    "src/solver/MSS/solver_MSS.c"
+    "src/solver/ONE_BONE/solver_ONE_BONE.c"
+    "src/solver/TWO_BONE/solver_TWO_BONE.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/build_info.c"
+    $<$<PLATFORM_ID:Linux>:
+        "src/platform/linux/backtrace_linux.c"
+    >)
+set (IK_VTABLES
+    "include/ik/vtables/constraint_base.v"
+    "include/ik/vtables/effector_base.v"
+    "include/ik/vtables/log_static.v"
+    "include/ik/vtables/node_base.v"
+    "include/ik/vtables/solver_base.v"
+    "include/ik/vtables/solver_FABRIK.v"
+    "include/ik/vtables/solver_MSS.v"
+    "include/ik/vtables/solver_ONE_BONE.v"
+    "include/ik/vtables/solver_static.v"
+    "include/ik/vtables/solver_TWO_BONE.v"
+    "include/ik/vtables/tests_static.v")
 
 # IK preprocessor script
 set (Python_ADDITIONAL_VERSIONS 3)
 find_package (PythonInterp REQUIRED)
-set (IK_VTABLE_H_FILES "")
+set (IK_VTABLES_H "")
 set (PYTHON_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/ik_gen_vtable.py)
 macro (add_vtable_file VTABLE_FILE)
     get_filename_component (H_FILE_BASENAME ${VTABLE_FILE} NAME)
@@ -63,74 +186,204 @@ macro (add_vtable_file VTABLE_FILE)
         COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_SCRIPT} ${VTABLE_FILE} ${H_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating vtable ${H_FILE}" VERBATIM)
-    set (IK_VTABLE_H_FILES ${IK_VTABLE_H_FILES} ${H_FILE})
+    set (IK_VTABLES_H ${IK_VTABLES_H} ${H_FILE})
 endmacro ()
-foreach (VTABLE_FILE ${IK_VTABLE_FILES})
+foreach (VTABLE_FILE ${IK_VTABLES})
     add_vtable_file (${VTABLE_FILE})
 endforeach ()
 
-###############################################################################
-# compiler flags
-###############################################################################
-
-if (${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
-    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
-    if (CMAKE_BUILD_TYPE MATCHES Debug)
-        STRING(REGEX REPLACE "/MDd" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-        add_definitions (-MTd)
-    elseif (CMAKE_BUILD_TYPE MATCHES Release)
-        STRING(REGEX REPLACE "/MD" "" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-        add_definitions (-MT)
-    endif ()
-endif ()
-
-###############################################################################
-# source files and library definition
-###############################################################################
-
-file (GLOB IK_HEADERS "include/ik/*.h")
-file (GLOB IK_SOURCES 
-    "src/*.c"
-    "src/solver/*.c"
-    "src/solver/BASE/*.c"
-    "src/solver/ONE_BONE/*.c"
-    "src/solver/TWO_BONE/*.c"
-    "src/solver/FABRIK/*.c"
-    "src/solver/MSS/*.c")
-
-list (APPEND IK_HEADERS
-    "include/ik/config.h.in"
-    "include/ik/export.h.in")
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    file (GLOB IK_PLATFORM_SOURCES "src/platform/linux/*.c")
-endif ()
-list (APPEND IK_SOURCES ${IK_PLATFORM_SOURCES})
-
-include_directories ("include" "${CMAKE_CURRENT_BINARY_DIR}/include")
-
-add_library (ik ${IK_LIB_TYPE}
+add_library (ik_obj OBJECT
     ${IK_HEADERS}
     ${IK_SOURCES}
-    ${IK_VTABLE_H_FILES}
-)
-
-# The library is being built
-add_definitions (-DIK_BUILDING)
-
-target_compile_options (ik
-    PUBLIC $<$<C_COMPILER_ID:MSVC>:
-        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /D_CRT_SECURE_NO_DEPRECATE
+    ${IK_VTABLES}
+    ${IK_VTABLES_H})
+set_target_properties (ik_obj
+    PROPERTIES
+        C_STANDARD 90
+        POSITION_INDEPENDENT_CODE ${IK_PIC})
+target_include_directories (ik_obj
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_BINARY_DIR}/include)
+target_compile_definitions (ik_obj
+    PRIVATE IK_BUILDING
+    PRIVATE $<$<CONFIG:Debug>:DEBUG>)
+target_compile_options (ik_obj
+    PRIVATE $<$<C_COMPILER_ID:MSVC>:
+        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /D_CRT_SECURE_NO_DEPRECATE
     >
-    PUBLIC $<$<C_COMPILER_ID:GNU>:
+    PRIVATE $<$<C_COMPILER_ID:GNU>:
         -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
         -Wno-conversion -Wno-implicit-fallthrough -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
     >
-    PUBLIC $<$<C_COMPILER_ID:Clang>:
+    PRIVATE $<$<C_COMPILER_ID:Clang>:
         -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
         -Wno-implicit-fallthrough -Wno-conversion -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
     >
 )
+
+# Update build info every time the project is compiled
+add_custom_target (ik_generate_build_info ALL
+    COMMAND ${CMAKE_COMMAND} -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake")
+add_dependencies (ik_obj ik_generate_build_info)
+
+###############################################################################
+# Python bindings
+###############################################################################
+
+if (IK_PYTHON_BINDINGS)
+    find_package (PythonLibs 3 REQUIRED)
+    # Headers are required for Visual Studio to list them in the project
+    file (GLOB IK_PYTHON_HEADERS "include/python/*.h")
+    add_library (ik_python_obj OBJECT
+        "src/python/ik_module.c"
+        ${IK_PYTHON_HEADERS})
+    set_target_properties (ik_python_obj
+        PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
+    target_include_directories (ik_python_obj
+        PRIVATE
+            ${CMAKE_CURRENT_BINARY_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/python
+            ${PYTHON_INCLUDE_DIRS})
+    target_compile_options (ik_python_obj
+        PUBLIC $<$<C_COMPILER_ID:MSVC>:
+            /EHa /MTd /W4 /WX /wd4115 /D_CRT_SECURE_NO_DEPRECATE
+        >
+        PUBLIC $<$<C_COMPILER_ID:GNU>:
+            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
+        >
+        PUBLIC $<$<C_COMPILER_ID:Clang>:
+            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
+        >
+    )
+    target_compile_definitions (ik_python_obj
+        PRIVATE IK_BUILDING  # The library is being built
+        PRIVATE $<$<CONFIG:Debug>:
+            DEBUG
+        >
+    )
+    target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
+endif ()
+
+###############################################################################
+# Unit tests
+###############################################################################
+
+if (IK_TESTS)
+    add_library (ik_tests_obj OBJECT
+        "googletest/src/gtest-all.cc"
+        "googlemock/src/gmock-all.cc"
+        "tests/environment_library_init.cpp"
+        "tests/tests_static.cpp"
+        "tests/test_bstv.cpp"
+        "tests/test_effector.cpp"
+        "tests/test_FABRIK.cpp"
+        "tests/test_node.cpp"
+        "tests/test_quat.cpp"
+        "tests/test_transform_chain.cpp"
+        "tests/test_transform_tree.cpp"
+        "tests/test_vector.cpp"
+        "tests/test_vec3.cpp"
+        $<$<BOOL:${IK_PYTHON_BINDINGS}>:
+            ${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp>)
+    if (IK_PYTHON_BINDINGS)
+        set (PYTHON_TEST_SOURCE_FILES
+            "")
+        set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
+            -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
+        add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp"
+            COMMAND ${GENERATE_PYTHON_TESTS_CMD}
+            DEPENDS
+                "cmake/generate_python_unit_tests.cmake"
+                "tests/python/test_python_bindings.cpp.in"
+                ${PYTHON_TEST_SOURCE_FILES})
+        add_custom_target (ik_generate_unit_tests ALL
+            DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp")
+        add_dependencies (ik_tests_obj ik_generate_unit_tests)
+    endif ()
+    target_include_directories (ik_tests_obj
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/googlemock
+            ${CMAKE_CURRENT_SOURCE_DIR}/googlemock/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/googletest
+            ${CMAKE_CURRENT_SOURCE_DIR}/googletest/include
+            $<$<BOOL:${IK_PYTHON_BINDINGS}>:${PYTHON_INCLUDE_DIRS}>)
+else ()
+    add_library (ik_tests_obj OBJECT "tests/tests_static_stub.c")
+endif ()
+
+set_target_properties (ik_tests_obj
+    PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
+target_compile_options (ik_tests_obj
+    PRIVATE $<$<C_COMPILER_ID:MSVC>:
+        /MTd /D_CRT_SECURE_NO_DEPRECATE
+    >
+    PRIVATE $<$<C_COMPILER_ID:GNU>:
+        -Wno-unused-result
+    >
+    PRIVATE $<$<C_COMPILER_ID:Clang>:
+        -Wno-unused-result
+    >
+)
+target_compile_definitions (ik_tests_obj
+    PRIVATE IK_BUILDING  # The library is being built
+    PRIVATE $<$<CONFIG:Debug>:
+        DEBUG
+    >
+)
+
+###############################################################################
+# The actual library
+###############################################################################
+
+add_library (ik ${IK_LIB_TYPE}
+    $<TARGET_OBJECTS:ik_obj>
+    $<$<BOOL:${IK_TESTS}>:$<TARGET_OBJECTS:ik_tests_obj>>
+    $<$<BOOL:${IK_PYTHON_BINDINGS}>:$<TARGET_OBJECTS:ik_python_obj>>)
+    
+target_include_directories (ik
+    INTERFACE 
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+
+set_target_properties (ik PROPERTIES
+    PREFIX ""
+    DEBUG_POSTFIX ""
+    SOVERSION ${PROJECT_VERSION})
+
+if (IK_TESTS)
+    add_executable (ik_tests "tests/run_tests.c")
+    target_link_libraries (ik_tests PUBLIC ik)
+    set_target_properties (ik_tests PROPERTIES
+        INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+    install (TARGETS ik_tests
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif ()
+
+###############################################################################
+# Dependency settings
+###############################################################################
+
+message (STATUS "------------------------------------------------------------")
+message (STATUS "IK settings")
+message (STATUS " + Configuration: ${CMAKE_BUILD_TYPE}")
+MESSAGE (STATUS " + Benchmarks: ${IK_BENCHMARKS}")
+MESSAGE (STATUS " + DOT Export: ${IK_DOT_EXPORT}")
+message (STATUS " + Library type: ${IK_LIB_TYPE}")
+message (STATUS " + Memory debugging: ${IK_MEMORY_DEBUGGING}")
+message (STATUS " + Memory backtraces: ${IK_MEMORY_BACKTRACE}")
+message (STATUS " + PIC (Position independent code): ${IK_PIC}")
+message (STATUS " + Precision: ${IK_PRECISION}")
+message (STATUS " + Python bindings: ${IK_PYTHON_BINDINGS}")
+message (STATUS " + Profiling: ${IK_PROFILING}")
+message (STATUS " + Unit Tests: ${IK_TESTS}")
+message (STATUS "------------------------------------------------------------")
 
 ###############################################################################
 # install targets
@@ -138,15 +391,12 @@ target_compile_options (ik
 
 install (
     TARGETS ik
-    LIBRARY DESTINATION "lib"
-    RUNTIME DESTINATION "bin"
-    ARCHIVE DESTINATION "lib"
-)
-install (
-    DIRECTORY
-        "include/"
-        "${CMAKE_CURRENT_BINARY_DIR}/include/"
-    DESTINATION "include"
-    FILES_MATCHING PATTERN "*.h"
-)
-
+    EXPORT IKConfig
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install (DIRECTORY "include/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install (EXPORT IKConfig DESTINATION "share/ik/cmake")
+export (TARGETS ik FILE IKConfig.cmake)

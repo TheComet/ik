@@ -20,7 +20,7 @@
  * Otherwise the vector will expand to the specified target size.
  * @note No checks are performed to make sure the target size is large enough.
  */
-static ik_ret
+static ikret_t
 vector_expand(struct vector_t *vector,
               vector_size_t insertion_index,
               vector_size_t target_size);
@@ -83,10 +83,10 @@ vector_clear_free(struct vector_t* vector)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 vector_resize(struct vector_t* vector, uint32_t size)
 {
-    ik_ret result = IK_OK;
+    ikret_t result = IK_OK;
 
     assert(vector);
 
@@ -116,7 +116,7 @@ vector_push_emplace(struct vector_t* vector)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 vector_push(struct vector_t* vector, const void* data)
 {
     void* emplaced;
@@ -132,10 +132,10 @@ vector_push(struct vector_t* vector, const void* data)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 vector_push_vector(struct vector_t* vector, struct vector_t* source_vector)
 {
-    ik_ret result;
+    ikret_t result;
 
     assert(vector);
     assert(source_vector);
@@ -221,7 +221,7 @@ vector_insert_emplace(struct vector_t* vector, uint32_t index)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 vector_insert(struct vector_t* vector, uint32_t index, void* data)
 {
     void* emplaced;
@@ -295,7 +295,7 @@ vector_get_element(const struct vector_t* vector, uint32_t index)
 /* ----------------------------------------------------------------------------
  * Static functions
  * ------------------------------------------------------------------------- */
-static ik_ret
+static ikret_t
 vector_expand(struct vector_t *vector,
               vector_size_t insertion_index,
               vector_size_t target_count)

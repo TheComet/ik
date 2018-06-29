@@ -12,7 +12,7 @@
 #   define FREE   free
 #endif
 
-C_HEADER_BEGIN
+C_BEGIN
 
 /*!
  * @brief Initializes the memory system.
@@ -52,6 +52,6 @@ free_wrapper(void* ptr);
 IK_PRIVATE_API void
 mutated_string_and_hex_dump(void* data, intptr_t size_in_bytes);
 
-C_HEADER_END
+C_END
 
 #endif /* MEMORY_H */

@@ -8,14 +8,14 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-local_to_global_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
+local_to_global_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
     vec3_t position;
     quat_t rotation;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     quat_rotate_vec(node->position.f, acc_rot);
     position = node->position;
@@ -27,20 +27,20 @@ local_to_global_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
     quat_mul_quat(acc_rot, rotation.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         local_to_global_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
 static void
-global_to_local_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
+global_to_local_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
     quat_t inv_rot_acc;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     quat_copy(inv_rot_acc.f, acc_rot);
     quat_conj(inv_rot_acc.f);
@@ -52,27 +52,27 @@ global_to_local_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
     quat_rotate_vec(node->position.f, inv_rot_acc.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         global_to_local_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
 static void
-local_to_global_rotation_recursive(struct ik_node_t* node, ik_real acc_rot[4])
+local_to_global_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 {
     quat_t rotation = node->rotation;
     quat_mul_quat(node->rotation.f, acc_rot);
     quat_mul_quat(acc_rot, rotation.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_child[4]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
         quat_copy(acc_rot_child, acc_rot);
         local_to_global_rotation_recursive(child, acc_rot_child);
     NODE_END_EACH
 }
 static void
-global_to_local_rotation_recursive(struct ik_node_t* node, ik_real acc_rot[4])
+global_to_local_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 {
     quat_t inv_rot_acc;
     quat_copy(inv_rot_acc.f, acc_rot);
@@ -81,19 +81,19 @@ global_to_local_rotation_recursive(struct ik_node_t* node, ik_real acc_rot[4])
     quat_mul_quat(acc_rot, node->rotation.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_child[4]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
         quat_copy(acc_rot_child, acc_rot);
         global_to_local_rotation_recursive(child, acc_rot_child);
     NODE_END_EACH
 }
 static void
-local_to_global_translation_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
+local_to_global_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
     vec3_t position;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     quat_rotate_vec(node->position.f, acc_rot);
     position = node->position;
@@ -103,20 +103,20 @@ local_to_global_translation_recursive(struct ik_node_t* node, ik_real acc_rot_po
     quat_mul_quat(acc_rot, node->rotation.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         local_to_global_translation_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
 static void
-global_to_local_translation_recursive(struct ik_node_t* node, ik_real acc_rot_pos[7])
+global_to_local_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
     quat_t inv_rot_acc;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
-    ik_real* acc_rot = &acc_rot_pos[0];
-    ik_real* acc_pos = &acc_rot_pos[4];
+    ikreal_t* acc_rot = &acc_rot_pos[0];
+    ikreal_t* acc_pos = &acc_rot_pos[4];
 
     quat_copy(inv_rot_acc.f, acc_rot);
     quat_conj(inv_rot_acc.f);
@@ -128,7 +128,7 @@ global_to_local_translation_recursive(struct ik_node_t* node, ik_real acc_rot_po
     quat_rotate_vec(node->position.f, inv_rot_acc.f);
 
     NODE_FOR_EACH(node, guid, child)
-        ik_real acc_rot_pos_child[7]; /* Have to copy due to tree structure */
+        ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
         quat_copy(&acc_rot_pos_child[0], acc_rot);
         vec3_copy(&acc_rot_pos_child[4], acc_pos);
         global_to_local_translation_recursive(child, acc_rot_pos_child);
@@ -136,7 +136,7 @@ global_to_local_translation_recursive(struct ik_node_t* node, ik_real acc_rot_po
 }
 
 /* ------------------------------------------------------------------------- */
-typedef void (*transform_func)(struct ik_node_t*, ik_real*);
+typedef void (*transform_func)(struct ik_node_t*, ikreal_t*);
 
 static transform_func transform_table[8] = {
     global_to_local_recursive,
@@ -153,8 +153,8 @@ static transform_func transform_table[8] = {
 void
 ik_transform_tree(struct ik_node_t* node, uint8_t flags)
 {
-    ik_real base_transform[7];
-    memcpy(base_transform, node->transform, sizeof(ik_real) * 7);
+    ikreal_t base_transform[7];
+    memcpy(base_transform, node->transform, sizeof(ikreal_t) * 7);
 
     (*transform_table[flags])(node, base_transform);
 }

@@ -3,50 +3,50 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 typedef union vec3_t
 {
     struct {
-        ik_real x;
-        ik_real y;
-        ik_real z;
+        ikreal_t x;
+        ikreal_t y;
+        ikreal_t z;
     };
-    ik_real f[3];
+    ikreal_t f[3];
 } vec3_t;
 
 IK_PRIVATE_API void
-vec3_copy(ik_real v[3], const ik_real src[3]);
+vec3_copy(ikreal_t v[3], const ikreal_t src[3]);
 
 IK_PRIVATE_API void
-vec3_set_zero(ik_real v[3]);
+vec3_set_zero(ikreal_t v[3]);
 
 IK_PRIVATE_API void
-vec3_add_vec3(ik_real v1[3], const ik_real v2[3]);
+vec3_add_vec3(ikreal_t v1[3], const ikreal_t v2[3]);
 
 IK_PRIVATE_API void
-vec3_sub_vec3(ik_real v1[3], const ik_real v2[3]);
+vec3_sub_vec3(ikreal_t v1[3], const ikreal_t v2[3]);
 
 IK_PRIVATE_API void
-vec3_mul_scalar(ik_real v1[3], ik_real scalar);
+vec3_mul_scalar(ikreal_t v1[3], ikreal_t scalar);
 
 IK_PRIVATE_API void
-vec3_div_scalar(ik_real v[3], ik_real scalar);
+vec3_div_scalar(ikreal_t v[3], ikreal_t scalar);
 
-IK_PRIVATE_API ik_real
-vec3_length_squared(const ik_real v[3]);
+IK_PRIVATE_API ikreal_t
+vec3_length_squared(const ikreal_t v[3]);
 
-IK_PRIVATE_API ik_real
-vec3_length(const ik_real v[3]);
-
-IK_PRIVATE_API void
-vec3_normalize(ik_real v[3]);
-
-IK_PRIVATE_API ik_real
-vec3_dot(const ik_real v1[3], const ik_real v2[3]);
+IK_PRIVATE_API ikreal_t
+vec3_length(const ikreal_t v[3]);
 
 IK_PRIVATE_API void
-vec3_cross(ik_real v1[3], const ik_real v2[3]);
+vec3_normalize(ikreal_t v[3]);
+
+IK_PRIVATE_API ikreal_t
+vec3_dot(const ikreal_t v1[3], const ikreal_t v2[3]);
+
+IK_PRIVATE_API void
+vec3_cross(ikreal_t v1[3], const ikreal_t v2[3]);
 
 /*!
  * @brief Calculates the angle between two vectors. If the angle is 0 or 180,
@@ -57,7 +57,7 @@ vec3_cross(ik_real v1[3], const ik_real v2[3]);
  * @param[in] v2 The second vector.
  */
 IK_PRIVATE_API void
-vec3_angle(ik_real q[4], const ik_real v1[3], const ik_real v2[3]);
+vec3_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
 
 /*!
  * @brief Calculates the angle between two normalized vectors. If the angle is
@@ -68,8 +68,8 @@ vec3_angle(ik_real q[4], const ik_real v1[3], const ik_real v2[3]);
  * @param[in] v2 The second vector (must be normalized).
  */
 IK_PRIVATE_API void
-vec3_angle_normalized(ik_real q[4], const ik_real v1[3], const ik_real v2[3]);
+vec3_angle_normalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
 
-C_HEADER_END
+C_END
 
 #endif /* VEC3_H */

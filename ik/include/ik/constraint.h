@@ -3,7 +3,7 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct ik_node_t;
 struct ik_constraint_interface_t;
@@ -89,7 +89,7 @@ IK_INTERFACE(constraint_interface)
      * a constraint attached. IK_OK if otherwise.
      * @note You will need to rebuild the solver's tree before solving.
      */
-    ik_ret
+    ikret_t
     (*attach)(struct ik_constraint_t* constraint, struct ik_node_t* node);
 
     /*!
@@ -103,6 +103,6 @@ IK_INTERFACE(constraint_interface)
     (*detach)(struct ik_constraint_t* constraint);
 };
 
-C_HEADER_END
+C_END
 
 #endif /* IK_CONSTRAINT_H */

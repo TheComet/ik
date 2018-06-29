@@ -11,7 +11,7 @@
 #include "ik/config.h"
 #include "ik/vector.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct ik_node_t;
 
@@ -55,7 +55,7 @@ chain_clear_free(struct chain_t* chain);
 IK_PRIVATE_API struct chain_t*
 chain_create_child(struct chain_t* chain);
 
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 chain_add_node(struct chain_t* chain, const struct ik_node_t* node);
 
 /*!
@@ -73,7 +73,7 @@ chain_add_node(struct chain_t* chain, const struct ik_node_t* node);
  * base, sub-base joints, and end effectors. These chains are inserted into
  * the chain tree.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 chain_tree_rebuild(struct vector_t* chain_list,
                    const struct ik_node_t* base_node,
                    const struct vector_t* effector_nodes_list);
@@ -150,6 +150,6 @@ IK_PRIVATE_API void
 dump_to_dot(const struct ik_node_t* node, const struct vector_t* chains, const char* file_name);
 #endif /* IK_DOT_OUTPUT */
 
-C_HEADER_END
+C_END
 
 #endif /* IK_CHAIN_H */

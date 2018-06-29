@@ -54,7 +54,7 @@ ik_solver_static_destroy(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_static_construct(struct ik_solver_t* solver)
 {
     return solver->v->construct(solver);
@@ -68,7 +68,7 @@ ik_solver_static_destruct(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_static_rebuild_data(struct ik_solver_t* solver)
 {
     return solver->v->rebuild_data(solver);
@@ -82,7 +82,7 @@ ik_solver_static_recalculate_segment_lengths(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_static_solve(struct ik_solver_t* solver)
 {
     return solver->v->solve(solver);

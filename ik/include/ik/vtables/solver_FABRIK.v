@@ -21,10 +21,10 @@ IK_IMPLEMENT(effector_FABRIK, effector_base)
 IK_IMPLEMENT(constraint_FABRIK, constraint_base)
 
 /*
- * Need to combine multiple ik_ret return values from the various before/after
+ * Need to combine multiple ikret_t return values from the various before/after
  * functions.
  */
-static inline ik_ret ik_solver_FABRIK_harness_solve_return_value(ik_ret a, ik_ret b) {
+static inline ikret_t ik_solver_FABRIK_harness_solve_return_value(ikret_t a, ikret_t b) {
     if (a != IK_OK) return a;
     return b;
 }

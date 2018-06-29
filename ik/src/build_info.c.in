@@ -1,0 +1,81 @@
+#include "ik/build_info.h"
+#include "ik/build_info_dynamic.h"
+
+#define IK_VERSION "${IK_VERSION}." "${IK_BUILD_NUMBER}"
+#define IK_CMAKE_CONFIG \
+    "-DIK_64BIT_INDEX_BUFFERS=${IK_64BIT_INDEX_BUFFERS} \\\n" \
+    "-DIK_BUILD_TYPE=${IK_BUILD_TYPE} \\\n" \
+    "-DIK_MEMORY_BACKTRACE=${IK_MEMORY_BACKTRACE} \\\n" \
+    "-DIK_MEMORY_DEBUGGING=${IK_MEMORY_DEBUGGING} \\\n" \
+    "-DIK_PIC=${IK_PIC} \\\n" \
+    "-DIK_PRECISION=${IK_PRECISION} \\\n" \
+    "-DIK_PROFILING=${IK_PROFILING} \\\n" \
+    "-DIK_PYTHON=${IK_PYTHON} \\\n" \
+    "-DIK_TESTS=${IK_TESTS}"
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_version(void)
+{
+    return IK_VERSION;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_build_number(void)
+{
+    return IK_BUILD_NUMBER;
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_build_host(void)
+{
+    return "${IK_HOST_COMPUTER}";
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_build_time(void)
+{
+    return IK_BUILD_TIME;
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_commit_info(void)
+{
+    return "${IK_COMMIT_INFO}";
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_compiler_info(void)
+{
+    return "${IK_COMPILER}";
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_cmake_configuration(void)
+{
+    return IK_CMAKE_CONFIG;
+}
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_build_info(void)
+{
+    return
+    "This is wavesim " IK_VERSION " (major,minor,patch,build number)\n"
+    "Host: ${IK_HOST_COMPUTER}\n"
+    "Time compiled: " IK_BUILD_TIME "\n"
+    "Commit: ${IK_COMMIT_INFO}\n"
+    "Compiler: ${IK_COMPILER}\n"
+    "CMake configuration:\n"
+    IK_CMAKE_CONFIG "\n"
+    "Other interesting variables:\n"
+    "RESTRICT=${RESTRICT}\n"
+    "IK_HAVE_STDINT_H=${IK_HAVE_STDINT_H}"
+    ;
+}

@@ -6,8 +6,8 @@
 
 typedef struct effector_data_t
 {
-    ik_real rotation_weight;
-    ik_real rotation_weight_decay;
+    ikreal_t rotation_weight;
+    ikreal_t rotation_weight_decay;
 } effector_data_t;
 
 /* ------------------------------------------------------------------------- */
@@ -47,7 +47,7 @@ calculate_rotation_weight_decays_recursive(struct chain_t* chain)
     }
     else
     {
-        ik_real div = 1.0 / average_count;
+        ikreal_t div = 1.0 / average_count;
         effector_data.rotation_weight *= div;
         effector_data.rotation_weight_decay *= div;
     }

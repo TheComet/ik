@@ -6,7 +6,7 @@
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct ik_effector_t;
 struct ik_constraint_t;
@@ -24,12 +24,12 @@ struct ik_node_interface_t;
         {                                                                     \
             /*                                                                \
              * WARNING: HAS to be in this order -- there's some hacking going on \
-             * in transform.c which relies on the order of ik_real's in transform[7]. \
+             * in transform.c which relies on the order of ikreal_t's in transform[7]. \
              */                                                               \
             quat_t rotation;                                                  \
             vec3_t position;                                                  \
         };                                                                    \
-        ik_real transform[7];                                                 \
+        ikreal_t transform[7];                                                 \
     };                                                                        \
                                                                               \
     union                                                                     \
@@ -39,7 +39,7 @@ struct ik_node_interface_t;
             quat_t initial_rotation;                                          \
             vec3_t initial_position;                                          \
         };                                                                    \
-        ik_real initial_transform[7];                                         \
+        ikreal_t initial_transform[7];                                         \
     };                                                                        \
                                                                               \
     /*!                                                                       \
@@ -80,9 +80,9 @@ struct ik_node_interface_t;
     struct ik_effector_t* effector;                                           \
     struct ik_constraint_t* constraint;                                       \
                                                                               \
-    ik_real stiffness;                                                        \
-    ik_real rotation_weight;                                                  \
-    ik_real dist_to_parent;
+    ikreal_t stiffness;                                                        \
+    ikreal_t rotation_weight;                                                  \
+    ikreal_t dist_to_parent;
 
 
 /*!
@@ -105,7 +105,7 @@ IK_INTERFACE(node_interface)
     /*!
      * @brief Constructs an already allocated node.
      */
-    ik_ret
+    ikret_t
     (*construct)(struct ik_node_t* node, uint32_t guid);
 
     /*!
@@ -128,7 +128,7 @@ IK_INTERFACE(node_interface)
      * ownership of the child node and is responsible for deallocating it.
      * @note You will need to rebuild the solver's tree before solving.
      */
-    ik_ret
+    ikret_t
     (*add_child)(struct ik_node_t* node, struct ik_node_t* child);
 
     /*!
@@ -165,6 +165,6 @@ IK_INTERFACE(node_interface)
 
 #define NODE_END_EACH BSTV_END_EACH
 
-C_HEADER_END
+C_END
 
 #endif /* IK_NODE_H */

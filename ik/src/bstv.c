@@ -75,7 +75,7 @@ bstv_find_lower_bound(const struct bstv_t* bstv, uint32_t hash)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
 {
     bstv_hash_value_t* emplaced_data;

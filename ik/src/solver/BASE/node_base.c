@@ -18,7 +18,7 @@ ik_node_base_create(uint32_t guid)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
@@ -81,10 +81,10 @@ ik_node_base_destroy(struct ik_node_t* node)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
 {
-    ik_ret result;
+    ikret_t result;
     if ((result = bstv_insert(&node->children, child->guid, child)) != IK_OK)
         return result;
     child->parent = node;

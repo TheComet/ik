@@ -13,7 +13,7 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 /* #define IK_VECTOR_64BIT */
 
@@ -88,7 +88,7 @@ vector_clear_free(struct vector_t* vector);
  * @param[in] size The new size of the vector.
  * @return Returns IK_RAN_OUT_OF_MEMORY on failure, IK_OK on success.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 vector_resize(struct vector_t* vector, uint32_t size);
 
 /*!
@@ -110,7 +110,7 @@ vector_resize(struct vector_t* vector, uint32_t size);
  * @return Returns IK_OK if the data was successfully pushed, IK_RAN_OUT_OF_MEMORY
  * if otherwise.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 vector_push(struct vector_t* vector, const void* data);
 
 /*!
@@ -131,7 +131,7 @@ vector_push_emplace(struct vector_t* vector);
  * @brief Copies the contents of another vector and pushes it into the vector.
  * @return Returns IK_OK if successful, IK_RAN_OUT_OF_MEMORY if otherwise.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 vector_push_vector(struct vector_t* vector, struct vector_t* source_vector);
 
 /*!
@@ -189,7 +189,7 @@ vector_insert_emplace(struct vector_t* vector, uint32_t index);
  * sizeof(data) is equal to what was specified when the vector was first
  * created. If this is not the case then it could cause undefined behaviour.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 vector_insert(struct vector_t* vector, uint32_t index, void* data);
 
 /*!
@@ -300,6 +300,6 @@ vector_get_element(const struct vector_t*, uint32_t index);
     element = (element_type*)(((uint8_t*)element) - (vector)->element_size); \
     internal_##var_end_of_vector = (vector)->data + (vector)->count * (vector)->element_size;
 
-C_HEADER_END
+C_END
 
 #endif /* VECTOR_H */

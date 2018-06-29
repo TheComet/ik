@@ -19,7 +19,7 @@ struct position_direction_t
             vec3_t position;
             vec3_t direction;
         };
-        ik_real f[6];
+        ikreal_t f[6];
     };
 };
 
@@ -520,7 +520,7 @@ calculate_joint_rotations(const struct chain_t* chain)
 
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_FABRIK_construct(struct ik_solver_t* solver)
 {
     /* typical default values */
@@ -558,12 +558,12 @@ store_original_transform(const struct vector_t* chain_list)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 {
-    ik_ret result = IK_OK;
+    ikret_t result = IK_OK;
     int iteration = solver->max_iterations;
-    ik_real tolerance_squared = solver->tolerance * solver->tolerance;
+    ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /*
      * FABRIK requires the original positions and rotations in local space to

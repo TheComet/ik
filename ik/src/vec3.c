@@ -5,7 +5,7 @@
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_set_zero(ik_real v[3])
+vec3_set_zero(ikreal_t v[3])
 {
     v[0] = 0.0;
     v[1] = 0.0;
@@ -14,7 +14,7 @@ vec3_set_zero(ik_real v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_copy(ik_real v[3], const ik_real src[3])
+vec3_copy(ikreal_t v[3], const ikreal_t src[3])
 {
     v[0] = src[0];
     v[1] = src[1];
@@ -23,7 +23,7 @@ vec3_copy(ik_real v[3], const ik_real src[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_add_vec3(ik_real v1[3], const ik_real v2[3])
+vec3_add_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 {
     v1[0] += v2[0];
     v1[1] += v2[1];
@@ -32,7 +32,7 @@ vec3_add_vec3(ik_real v1[3], const ik_real v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_sub_vec3(ik_real v1[3], const ik_real v2[3])
+vec3_sub_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 {
     v1[0] -= v2[0];
     v1[1] -= v2[1];
@@ -41,7 +41,7 @@ vec3_sub_vec3(ik_real v1[3], const ik_real v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_mul_scalar(ik_real v[3], ik_real scalar)
+vec3_mul_scalar(ikreal_t v[3], ikreal_t scalar)
 {
     v[0] *= scalar;
     v[1] *= scalar;
@@ -50,7 +50,7 @@ vec3_mul_scalar(ik_real v[3], ik_real scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_div_scalar(ik_real v[3], ik_real scalar)
+vec3_div_scalar(ikreal_t v[3], ikreal_t scalar)
 {
     v[0] /= scalar;
     v[1] /= scalar;
@@ -58,24 +58,24 @@ vec3_div_scalar(ik_real v[3], ik_real scalar)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_real
-vec3_length_squared(const ik_real v[3])
+ikreal_t
+vec3_length_squared(const ikreal_t v[3])
 {
     return vec3_dot(v, v);
 }
 
 /* ------------------------------------------------------------------------- */
-ik_real
-vec3_length(const ik_real v[3])
+ikreal_t
+vec3_length(const ikreal_t v[3])
 {
     return sqrt(vec3_length_squared(v));
 }
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_normalize(ik_real v[3])
+vec3_normalize(ikreal_t v[3])
 {
-    ik_real length = vec3_length(v);
+    ikreal_t length = vec3_length(v);
     if (length != 0.0)
     {
         length = 1.0 / length;
@@ -90,8 +90,8 @@ vec3_normalize(ik_real v[3])
 }
 
 /* ------------------------------------------------------------------------- */
-ik_real
-vec3_dot(const ik_real v1[3], const ik_real v2[3])
+ikreal_t
+vec3_dot(const ikreal_t v1[3], const ikreal_t v2[3])
 {
     return v1[0] * v2[0] +
            v1[1] * v2[1] +
@@ -100,10 +100,10 @@ vec3_dot(const ik_real v1[3], const ik_real v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_cross(ik_real v1[3], const ik_real v2[3])
+vec3_cross(ikreal_t v1[3], const ikreal_t v2[3])
 {
-    ik_real v1x = v1[1] * v2[2] - v2[1] * v1[2];
-    ik_real v1z = v1[0] * v2[1] - v2[0] * v1[1];
+    ikreal_t v1x = v1[1] * v2[2] - v2[1] * v1[2];
+    ikreal_t v1z = v1[0] * v2[1] - v2[0] * v1[1];
     v1[1]       = v1[2] * v2[0] - v2[2] * v1[0];
     v1[0] = v1x;
     v1[2] = v1z;
@@ -111,16 +111,16 @@ vec3_cross(ik_real v1[3], const ik_real v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_angle(ik_real q[4], const ik_real v1[3], const ik_real v2[3])
+vec3_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 {
-    ik_real cos_a, sin_a, angle, denominator;
+    ikreal_t cos_a, sin_a, angle, denominator;
 
     denominator = 1.0 / vec3_length(v1) / vec3_length(v2);
     cos_a = vec3_dot(v1, v2) * denominator;
     if (cos_a >= -1.0 && cos_a <= 1.0)
     {
         /* calculate axis of rotation and write it to the quaternion's vector section */
-        memcpy(q, v1, sizeof(ik_real) * 3);
+        memcpy(q, v1, sizeof(ikreal_t) * 3);
         vec3_cross(q, v2);
         vec3_normalize(q);
 
@@ -140,9 +140,9 @@ vec3_angle(ik_real q[4], const ik_real v1[3], const ik_real v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_angle_normalized(ik_real q[4], const ik_real v1[3], const ik_real v2[3])
+vec3_angle_normalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 {
-    ik_real cos_a, sin_a, angle;
+    ikreal_t cos_a, sin_a, angle;
 
     cos_a = vec3_dot(v1, v2);
     if (cos_a >= -1.0 && cos_a <= 1.0)

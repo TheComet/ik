@@ -68,7 +68,7 @@ chain_create_child(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 chain_add_node(struct chain_t* chain, const struct ik_node_t* node)
 {
     return vector_push(&chain->nodes, &node);
@@ -95,7 +95,7 @@ count_chains(const struct vector_t* chains)
 }
 
 /* ------------------------------------------------------------------------- */
-static ik_ret
+static ikret_t
 mark_involved_nodes(struct bstv_t* involved_nodes,
                     const struct vector_t* effector_nodes_list)
 {
@@ -162,7 +162,7 @@ mark_involved_nodes(struct bstv_t* involved_nodes,
 }
 
 /* ------------------------------------------------------------------------- */
-static ik_ret
+static ikret_t
 recursively_build_chain_tree(struct vector_t* chain_list,
                              struct chain_t* chain_current,
                              const struct ik_node_t* node_base,
@@ -270,7 +270,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
 
     /* Recurse into children of the current node. */
     NODE_FOR_EACH(node_current, child_guid, child_node)
-        ik_ret result;
+        ikret_t result;
         if ((result = recursively_build_chain_tree(
                 chain_list,
                 child_chain,
@@ -284,12 +284,12 @@ recursively_build_chain_tree(struct vector_t* chain_list,
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 chain_tree_rebuild(struct vector_t* chain_list,
                    const struct ik_node_t* base_node,
                    const struct vector_t* effector_nodes_list)
 {
-    ik_ret result;
+    ikret_t result;
     struct bstv_t involved_nodes;
     int involved_nodes_count;
 #ifdef IK_DOT_OUTPUT

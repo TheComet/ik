@@ -23,7 +23,7 @@
     X(FABRIK) \
     X(MSS)
 
-C_HEADER_BEGIN
+C_BEGIN
 
 enum ik_algorithm_e
 {
@@ -131,7 +131,7 @@ IK_INTERFACE(solver_interface)
     void
     (*destroy)(struct ik_solver_t* solver);
 
-    ik_ret
+    ikret_t
     (*construct)(struct ik_solver_t* solver);
 
     void
@@ -148,7 +148,7 @@ IK_INTERFACE(solver_interface)
      * @warning If this functions fails, the internal structures are in an
      * undefined state. You cannot solve the tree in this state.
      */
-    ik_ret
+    ikret_t
     (*rebuild_data)(struct ik_solver_t* solver);
 
     /*!
@@ -174,7 +174,7 @@ IK_INTERFACE(solver_interface)
      * @return The return value should be 1 if the result converged. 0 if any of
      * the end effectors didn't converge. -1 if there was an error.
      */
-    ik_ret
+    ikret_t
     (*solve)(struct ik_solver_t* solver);
 
     /*!
@@ -251,6 +251,6 @@ IK_INTERFACE(solver_interface)
 
 #define SOLVER_END_EACH VECTOR_END_EACH }
 
-C_HEADER_END
+C_END
 
 #endif /* IK_SOLVER_H */

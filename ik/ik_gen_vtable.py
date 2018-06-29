@@ -94,10 +94,10 @@ class IKHarness(object):
         func_calls = [x.get_func_name() + "(" + ", ".join(paramlist) + ")" for x in self.methods]
         body = "static inline {} {}({})".format(rettype, self.get_func_name(), ", ".join(arglist)) + "\n{\n"
         if self.is_constructor:
-            if rettype != "ik_ret":
-                print("Constructor must return ik_ret, not " + rettype)
+            if rettype != "ikret_t":
+                print("Constructor must return ikret_t, not " + rettype)
                 sys.exit(-1)
-            body += "    ik_ret result;\n"
+            body += "    ikret_t result;\n"
             goto_tags = [x.impl_name + "_failed" for x in self.methods]
             for constructor_call, goto_tag in zip(func_calls, goto_tags):
                 body += "    if ((result = " + constructor_call + ") != IK_OK) goto " + goto_tag + ";\n"
@@ -431,7 +431,7 @@ def generate_header(file_name, lines, out_file):
             "\n"
             "#include \"ik/config.h\"\n"
             "\n"
-            "C_HEADER_BEGIN\n"
+            "C_BEGIN\n"
             "\n"
         )
 
@@ -449,7 +449,7 @@ def generate_header(file_name, lines, out_file):
             f.write(impl.get_harness_bodies() + "\n\n")
 
         f.write(
-            "C_HEADER_END\n"
+            "C_END\n"
             "\n"
             "#endif /* " + guard_str + " */\n"
         )

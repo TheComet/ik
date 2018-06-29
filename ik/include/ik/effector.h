@@ -5,7 +5,7 @@
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 struct ik_node_t;
 struct ik_effector_interface_t;
@@ -71,10 +71,10 @@ struct ik_effector_t
      * (weight=0.0) and be fully active when the foot is on the ground
      * (weight=1.0).
      */
-    ik_real weight;
+    ikreal_t weight;
 
-    ik_real rotation_weight;
-    ik_real rotation_decay;
+    ikreal_t rotation_weight;
+    ikreal_t rotation_decay;
 
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of
@@ -116,7 +116,7 @@ IK_INTERFACE(effector_interface)
      * an effector attached. IK_OK if otherwise.
      * @note You will need to rebuild the solver's tree before solving.
      */
-    ik_ret
+    ikret_t
     (*attach)(struct ik_effector_t* effector, struct ik_node_t* node);
 
     /*!
@@ -130,6 +130,6 @@ IK_INTERFACE(effector_interface)
     (*detach)(struct ik_effector_t* effector);
 };
 
-C_HEADER_END
+C_END
 
 #endif /* EFFECTOR_H */

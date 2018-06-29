@@ -11,7 +11,7 @@
 #include "ik/config.h"
 #include "ik/vector.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 typedef struct bstv_hash_value_t
 {
@@ -68,7 +68,7 @@ bstv_destroy(struct bstv_t* bstv);
  * @return Returns 0 if insertion was successful. Returns 1 if the key already
  * existed (in which case nothing is inserted). Returns -1 on failure.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value);
 
 /*!
@@ -135,7 +135,7 @@ bstv_get_any_element(const struct bstv_t* bstv);
  * @return IK_OK if the hash was found, IK_HASH_NOT_FOUND if the hash was not
  * found.
  */
-IK_PRIVATE_API ik_ret
+IK_PRIVATE_API ikret_t
 bstv_hash_exists(struct bstv_t* bstv, uint32_t hash);
 
 /*!
@@ -222,6 +222,6 @@ bstv_clear_free(struct bstv_t* bstv);
     vector_erase_element(&(bstv)->vector, ((bstv_hash_value_t*)(bstv)->vector.data) + i_##var_v); \
     --i_##var_v; } while(0)
 
-C_HEADER_END
+C_END
 
 #endif /* IK_BST_VECTOR_H */

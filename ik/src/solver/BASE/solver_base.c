@@ -33,7 +33,7 @@ ik_solver_base_destroy(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ik_ret
+ikret_t
 ik_solver_base_construct(struct ik_solver_t* solver)
 {
     solver->tolerance = 1e-2;
@@ -97,7 +97,7 @@ ik_solver_base_set_tree(struct ik_solver_t* solver, struct ik_node_t* base)
 int
 ik_solver_base_rebuild_data(struct ik_solver_t* solver)
 {
-    ik_ret result;
+    ikret_t result;
 
     /* If the solver has no tree, then there's nothing to do */
     if (solver->tree == NULL)
@@ -156,7 +156,7 @@ calculate_effector_target(const struct chain_t* chain)
     /* Fancy algorithm using nlerp, makes transitions look more natural */
     if (effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
-        ik_real distance_to_target;
+        ikreal_t distance_to_target;
         vec3_t base_to_effector;
         vec3_t base_to_target;
         struct ik_node_t* base_node;

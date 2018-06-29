@@ -5,7 +5,7 @@
 
 #include "ik/config.h"
 
-C_HEADER_BEGIN
+C_BEGIN
 
 /*!
  * @brief Generates a backtrace.
@@ -16,6 +16,6 @@ C_HEADER_BEGIN
 IK_PRIVATE_API char**
 get_backtrace(int* size);
 
-C_HEADER_END
+C_END
 
 #endif /* LIGHTSHIP_UTIL_BACKTRACE_H */
