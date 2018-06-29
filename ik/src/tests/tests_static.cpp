@@ -6,7 +6,10 @@ ikret_t
 ik_tests_static_run(void)
 {
     int argc = 1;
-    char* argv[1] = {""};
+    char arg[] = "";
+    char* argv[1];
+    argv[0] = arg;
+
     // Since Google Mock depends on Google Test, InitGoogleMock() is
     // also responsible for initializing Google Test.  Therefore there's
     // no need for calling testing::InitGoogleTest() separately.

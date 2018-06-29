@@ -5,9 +5,9 @@ include (CMakeDependentOption)
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
-	set (IK_MEMORY_DEBUGGING_DEFAULT ON)
+    set (IK_MEMORY_DEBUGGING_DEFAULT ON)
 else ()
-	set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
+    set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
 endif ()
 
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
@@ -18,7 +18,7 @@ cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every mall
 option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
-option (IK_PYTHON_BINDINGS "Compiles the library so it can also be loaded as a python module" OFF)
+option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 
 string (REPLACE " " "_" IK_PRECISION_CAPS_AND_NO_SPACES ${IK_PRECISION})
@@ -30,6 +30,10 @@ endif ()
 project ("ik"
     VERSION 0.2.0
     LANGUAGES C ${CXX_LANGUAGE})
+
+# Must use GNUInstallDirs to install libraries into correct locations on all
+# platforms.
+include (GNUInstallDirs)
 
 # Determine visibility macros if the library is a shared library.
 if (IK_LIB_TYPE MATCHES "SHARED")
@@ -99,6 +103,12 @@ else ()
     message (WARNING "Git not found. Build will not contain git revision info.")
 endif ()
 
+# Need pthread for unit tests
+if (IK_TESTS)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+endif ()
+
 configure_file ("include/ik/config.h.in"
                 "include/ik/config.h")
 
@@ -108,6 +118,18 @@ configure_file ("src/build_info.c.in" "src/build_info.c")
 ###############################################################################
 # Main library
 ###############################################################################
+
+# Update build info every time the project is compiled
+add_custom_command (OUTPUT always_rebuild COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake COMMENT "")
+add_custom_command (
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/include/ik/build_info_for_every_compile.h"
+    COMMAND ${CMAKE_COMMAND}
+            -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake" always_rebuild
+    COMMENT "Updating build information"
+    VERBATIM)
 
 set (IK_HEADERS
     "include/ik/backtrace.h"
@@ -129,8 +151,9 @@ set (IK_HEADERS
     "include/ik/transform.h"
     "include/ik/util.h"
     "include/ik/vec3.h"
-    "include/ik/vector.h")
-set (IK_SOURCES 
+    "include/ik/vector.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/ik/build_info_for_every_compile.h")
+set (IK_SOURCES
     "src/bstv.c"
     "src/build_info.c.in"
     "src/chain.c"
@@ -223,22 +246,21 @@ target_compile_options (ik_obj
     >
 )
 
-# Update build info every time the project is compiled
-add_custom_target (ik_generate_build_info ALL
-    COMMAND ${CMAKE_COMMAND} -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake")
-add_dependencies (ik_obj ik_generate_build_info)
-
 ###############################################################################
 # Python bindings
 ###############################################################################
 
-if (IK_PYTHON_BINDINGS)
+if (IK_PYTHON)
     find_package (PythonLibs 3 REQUIRED)
     # Headers are required for Visual Studio to list them in the project
     set (IK_PYTHON_HEADERS
+        "include/ik/python/init.h"
+        "include/ik/python/ik_module_info.h"
         "include/ik/python/ik_module_log.h")
     add_library (ik_python_obj OBJECT
+        "src/python/init.c"
         "src/python/ik_module.c"
+        "src/python/ik_module_info.c"
         "src/python/ik_module_log.c"
         ${IK_PYTHON_HEADERS})
     set_target_properties (ik_python_obj
@@ -273,6 +295,22 @@ endif ()
 ###############################################################################
 
 if (IK_TESTS)
+    if (IK_PYTHON)
+        set (PYTHON_TEST_SOURCE_FILES
+            "")
+        set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
+            -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
+        add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/tests/python/test_python_bindings.cpp"
+            COMMAND ${GENERATE_PYTHON_TESTS_CMD}
+            DEPENDS
+                "cmake/generate_python_unit_tests.cmake"
+                "src/tests/python/test_python_bindings.cpp.in"
+                ${PYTHON_TEST_SOURCE_FILES})
+        add_custom_target (ik_generate_unit_tests ALL
+            DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/src/tests/python/test_python_bindings.cpp")
+    endif ()
     add_library (ik_tests_obj OBJECT
         "googletest/src/gtest-all.cc"
         "googlemock/src/gmock-all.cc"
@@ -287,23 +325,9 @@ if (IK_TESTS)
         "src/tests/test_transform_tree.cpp"
         "src/tests/test_vector.cpp"
         "src/tests/test_vec3.cpp"
-        $<$<BOOL:${IK_PYTHON_BINDINGS}>:
-            ${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp>)
-    if (IK_PYTHON_BINDINGS)
-        set (PYTHON_TEST_SOURCE_FILES
-            "")
-        set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
-            -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-            -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
-        add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp"
-            COMMAND ${GENERATE_PYTHON_TESTS_CMD}
-            DEPENDS
-                "cmake/generate_python_unit_tests.cmake"
-                "tests/python/test_python_bindings.cpp.in"
-                ${PYTHON_TEST_SOURCE_FILES})
-        add_custom_target (ik_generate_unit_tests ALL
-            DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp")
+        $<$<BOOL:${IK_PYTHON}>:
+            ${CMAKE_CURRENT_BINARY_DIR}/src/tests/python/test_python_bindings.cpp>)
+    if (IK_PYTHON)
         add_dependencies (ik_tests_obj ik_generate_unit_tests)
     endif ()
     target_include_directories (ik_tests_obj
@@ -314,7 +338,7 @@ if (IK_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/googlemock/include
             ${CMAKE_CURRENT_SOURCE_DIR}/googletest
             ${CMAKE_CURRENT_SOURCE_DIR}/googletest/include
-            $<$<BOOL:${IK_PYTHON_BINDINGS}>:${PYTHON_INCLUDE_DIRS}>)
+            $<$<BOOL:${IK_PYTHON}>:${PYTHON_INCLUDE_DIRS}>)
 else ()
     add_library (ik_tests_obj OBJECT "src/tests/tests_static_stub.c")
     target_include_directories (ik_tests_obj
@@ -350,10 +374,10 @@ target_compile_definitions (ik_tests_obj
 add_library (ik ${IK_LIB_TYPE}
     $<TARGET_OBJECTS:ik_obj>
     $<TARGET_OBJECTS:ik_tests_obj>
-    $<$<BOOL:${IK_PYTHON_BINDINGS}>:$<TARGET_OBJECTS:ik_python_obj>>)
-    
+    $<$<BOOL:${IK_PYTHON}>:$<TARGET_OBJECTS:ik_python_obj>>)
+
 target_include_directories (ik
-    INTERFACE 
+    INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>)
@@ -362,9 +386,13 @@ set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
     SOVERSION ${PROJECT_VERSION})
-    
-if (IK_PYTHON_BINDINGS)
+
+if (IK_PYTHON)
     target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
+endif ()
+
+if (IK_TESTS)
+    target_link_libraries (ik PRIVATE Threads::Threads)
 endif ()
 
 if (IK_TESTS)
@@ -390,7 +418,7 @@ message (STATUS " + Memory debugging: ${IK_MEMORY_DEBUGGING}")
 message (STATUS " + Memory backtraces: ${IK_MEMORY_BACKTRACE}")
 message (STATUS " + PIC (Position independent code): ${IK_PIC}")
 message (STATUS " + Precision: ${IK_PRECISION}")
-message (STATUS " + Python bindings: ${IK_PYTHON_BINDINGS}")
+message (STATUS " + Python bindings: ${IK_PYTHON}")
 message (STATUS " + Profiling: ${IK_PROFILING}")
 message (STATUS " + Unit Tests: ${IK_TESTS}")
 message (STATUS "------------------------------------------------------------")

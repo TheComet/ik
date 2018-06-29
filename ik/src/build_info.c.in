@@ -1,8 +1,10 @@
 #include "ik/build_info_static.h"
 #include "ik/build_info_for_every_compile.h"
 
-#define VERSION_STR(build_number) "0.1.." #build_number
-#define IK_VERSION VERSION_STR(IK_BUILD_NUMBER)
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
+#define IK_VERSION "${IK_VERSION}." EXPAND_AND_QUOTE(IK_BUILD_NUMBER)
 #define IK_CMAKE_CONFIG \
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \\\n" \
     "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \\\n" \
@@ -15,7 +17,7 @@
     "-DIK_PIC=${IK_PIC} \\\n" \
     "-DIK_PRECISION=${IK_PRECISION} \\\n" \
     "-DIK_PROFILING=${IK_PROFILING} \\\n" \
-    "-DIK_PYTHON_BINDINGS=${IK_PYTHON_BINDINGS} \\\n" \
+    "-DIK_PYTHON=${IK_PYTHON} \\\n" \
     "-DIK_TESTS=${IK_TESTS}"
 
 /* ------------------------------------------------------------------------- */

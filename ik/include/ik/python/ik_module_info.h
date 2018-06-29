@@ -1,4 +1,4 @@
 #include "Python.h"
 
 PyObject*
-ik_module_log_create(void);
+ik_module_info_create(void);

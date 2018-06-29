@@ -6,8 +6,4 @@ endif()
 
 project ("Inverse Kinematics" LANGUAGES)
 
-# Must use GNUInstallDirs to install libraries into correct locations on all
-# platforms.
-include(GNUInstallDirs)
-
 add_subdirectory ("ik")

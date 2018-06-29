@@ -19,13 +19,13 @@
 #   define IK_PRECISION_${IK_PRECISION_CAPS_AND_NO_SPACES}
     #cmakedefine IK_PIC
     #cmakedefine IK_PROFILING
-    #cmakedefine IK_PYTHON_BINDINGS
+    #cmakedefine IK_PYTHON
     #cmakedefine IK_TESTS
-    
+
     /* ---------------------------------------------------------------------
      * Helpers
      * --------------------------------------------------------------------- */
-     
+
     /* Helpful for making sure functions are being used */
 #   define IK_WARN_UNUSED ${IK_WARN_UNUSED}
 
