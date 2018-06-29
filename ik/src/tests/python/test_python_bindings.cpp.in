@@ -4,7 +4,7 @@
 #define NAME python_bindings
 
 PyMODINIT_FUNC
-PyInit_wavesim(void);
+PyInit_ik(void);
 
 using namespace ::testing;
 
@@ -13,10 +13,10 @@ class NAME : public Test
 public:
     virtual void SetUp()
     {
-        PyImport_AppendInittab("wavesim", PyInit_wavesim);
+        PyImport_AppendInittab("ik", PyInit_ik);
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
-        PyRun_SimpleString("import sys\nsys.argv = ['./wavesim_tests']");
+        PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");
         // Don't allow python to call exit()
         PyRun_SimpleString("import sys\ndef stub(x):\n    pass\nsys.exit = stub");
     }

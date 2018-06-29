@@ -28,7 +28,7 @@ if (IK_BENCHMARKS OR IK_TESTS)
     set (CXX_LANGUAGE "CXX")
 endif ()
 project ("ik"
-    VERSION 0.1
+    VERSION 0.2.0
     LANGUAGES C ${CXX_LANGUAGE})
 
 # Determine visibility macros if the library is a shared library.
@@ -38,8 +38,8 @@ if (IK_LIB_TYPE MATCHES "SHARED")
     check_c_source_compiles ("__attribute__((visibility(\"default\"))) void foo(void); int main(void) { return 0; }" DEFAULT_VISIBILITY)
     check_c_source_compiles ("__attribute__((visibility(\"hidden\"))) void foo(void); int main(void) { return 0; }"  HIDDEN_VISIBILITY)
     if (DLLEXPORT_VISIBILITY AND DLLIMPORT_VISIBILITY)
-        set (IK_HELPER_API_EXPORT "__declspec(dllexport")
-        set (IK_HELPER_API_IMPORT "__declspec(dllimport")
+        set (IK_HELPER_API_EXPORT "__declspec(dllexport)")
+        set (IK_HELPER_API_IMPORT "__declspec(dllimport)")
         set (IK_HELPER_API_LOCAL "")
     elseif (DEFAULT_VISIBILITY AND HIDDEN_VISIBILITY)
         set (IK_HELPER_API_EXPORT "__attribute__((visibility(\"default\")))")
@@ -159,6 +159,7 @@ set (IK_SOURCES
         "src/platform/linux/backtrace_linux.c"
     >)
 set (IK_VTABLES
+    "include/ik/vtables/build_info_static.v"
     "include/ik/vtables/constraint_base.v"
     "include/ik/vtables/effector_base.v"
     "include/ik/vtables/log_static.v"
@@ -199,7 +200,7 @@ add_library (ik_obj OBJECT
     ${IK_VTABLES_H})
 set_target_properties (ik_obj
     PROPERTIES
-        C_STANDARD 90
+        C_STANDARD 11
         POSITION_INDEPENDENT_CODE ${IK_PIC})
 target_include_directories (ik_obj
     PRIVATE
@@ -234,9 +235,11 @@ add_dependencies (ik_obj ik_generate_build_info)
 if (IK_PYTHON_BINDINGS)
     find_package (PythonLibs 3 REQUIRED)
     # Headers are required for Visual Studio to list them in the project
-    file (GLOB IK_PYTHON_HEADERS "include/python/*.h")
+    set (IK_PYTHON_HEADERS
+        "include/ik/python/ik_module_log.h")
     add_library (ik_python_obj OBJECT
         "src/python/ik_module.c"
+        "src/python/ik_module_log.c"
         ${IK_PYTHON_HEADERS})
     set_target_properties (ik_python_obj
         PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
@@ -248,7 +251,7 @@ if (IK_PYTHON_BINDINGS)
             ${PYTHON_INCLUDE_DIRS})
     target_compile_options (ik_python_obj
         PUBLIC $<$<C_COMPILER_ID:MSVC>:
-            /EHa /MTd /W4 /WX /wd4115 /D_CRT_SECURE_NO_DEPRECATE
+            /EHa /MTd /W4 /WX /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
@@ -263,7 +266,6 @@ if (IK_PYTHON_BINDINGS)
             DEBUG
         >
     )
-    target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
 endif ()
 
 ###############################################################################
@@ -274,17 +276,17 @@ if (IK_TESTS)
     add_library (ik_tests_obj OBJECT
         "googletest/src/gtest-all.cc"
         "googlemock/src/gmock-all.cc"
-        "tests/environment_library_init.cpp"
-        "tests/tests_static.cpp"
-        "tests/test_bstv.cpp"
-        "tests/test_effector.cpp"
-        "tests/test_FABRIK.cpp"
-        "tests/test_node.cpp"
-        "tests/test_quat.cpp"
-        "tests/test_transform_chain.cpp"
-        "tests/test_transform_tree.cpp"
-        "tests/test_vector.cpp"
-        "tests/test_vec3.cpp"
+        "src/tests/environment_library_init.cpp"
+        "src/tests/tests_static.cpp"
+        "src/tests/test_bstv.cpp"
+        "src/tests/test_effector.cpp"
+        "src/tests/test_FABRIK.cpp"
+        "src/tests/test_node.cpp"
+        "src/tests/test_quat.cpp"
+        "src/tests/test_transform_chain.cpp"
+        "src/tests/test_transform_tree.cpp"
+        "src/tests/test_vector.cpp"
+        "src/tests/test_vec3.cpp"
         $<$<BOOL:${IK_PYTHON_BINDINGS}>:
             ${CMAKE_CURRENT_BINARY_DIR}/tests/python/test_python_bindings.cpp>)
     if (IK_PYTHON_BINDINGS)
@@ -314,7 +316,11 @@ if (IK_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/googletest/include
             $<$<BOOL:${IK_PYTHON_BINDINGS}>:${PYTHON_INCLUDE_DIRS}>)
 else ()
-    add_library (ik_tests_obj OBJECT "tests/tests_static_stub.c")
+    add_library (ik_tests_obj OBJECT "src/tests/tests_static_stub.c")
+    target_include_directories (ik_tests_obj
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/include)
 endif ()
 
 set_target_properties (ik_tests_obj
@@ -343,7 +349,7 @@ target_compile_definitions (ik_tests_obj
 
 add_library (ik ${IK_LIB_TYPE}
     $<TARGET_OBJECTS:ik_obj>
-    $<$<BOOL:${IK_TESTS}>:$<TARGET_OBJECTS:ik_tests_obj>>
+    $<TARGET_OBJECTS:ik_tests_obj>
     $<$<BOOL:${IK_PYTHON_BINDINGS}>:$<TARGET_OBJECTS:ik_python_obj>>)
     
 target_include_directories (ik
@@ -356,9 +362,13 @@ set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
     SOVERSION ${PROJECT_VERSION})
+    
+if (IK_PYTHON_BINDINGS)
+    target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
+endif ()
 
 if (IK_TESTS)
-    add_executable (ik_tests "tests/run_tests.c")
+    add_executable (ik_tests "src/tests/run_tests.c")
     target_link_libraries (ik_tests PUBLIC ik)
     set_target_properties (ik_tests PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})

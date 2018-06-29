@@ -2,6 +2,7 @@
 #define IK_LIB_H
 
 #include "ik/config.h"
+#include "ik/build_info.h"
 #include "ik/constraint.h"
 #include "ik/effector.h"
 #include "ik/log.h"
@@ -56,9 +57,10 @@ struct ik_interface_t
     void
     (*implement_callbacks)(const struct ik_callback_interface_t* callbacks);
 
-    const struct ik_log_interface_t    log;
-    const struct ik_solver_interface_t solver;
-    const struct ik_tests_interface_t  tests;
+    const struct ik_build_info_interface_t info;
+    const struct ik_log_interface_t        log;
+    const struct ik_solver_interface_t     solver;
+    const struct ik_tests_interface_t      tests;
 
     /* "Private" interface, should not be used by clients of the library. */
     struct ik_internal_interface_t internal;

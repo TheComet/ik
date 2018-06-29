@@ -1,4 +1,5 @@
 #include "ik/ik.h"
+#include "ik/build_info_static.h"
 #include "ik/constraint_base.h"
 #include "ik/effector_base.h"
 #include "ik/log_static.h"
@@ -56,6 +57,7 @@ struct ik_interface_t ik = {
     ik_init,
     ik_deinit,
     ik_implement_callbacks,
+    { IK_BUILD_INFO_STATIC_IMPL },
     { IK_LOG_STATIC_IMPL },
     { IK_SOLVER_STATIC_IMPL },
     { IK_TESTS_STATIC_IMPL },

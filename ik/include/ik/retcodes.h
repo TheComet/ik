@@ -15,7 +15,8 @@ typedef enum ikret_t
     IK_HASH_NOT_FOUND = -4,
     IK_VECTOR_HAS_DIFFERENT_ELEMENT_SIZE = -5,
     IK_SOLVER_HAS_NO_TREE = -6,
-    IK_UNIT_TESTS_FAILED = -7
+    IK_UNIT_TESTS_FAILED = -7,
+    IK_BUILT_WITHOUT_TESTS = -8
 } ikret_t;
 
 #ifdef __cplusplus

@@ -5,29 +5,32 @@
 
 C_BEGIN
 
-IK_PUBLIC_API const char*
-ik_version(void);
+IK_INTERFACE(build_info_interface)
+{
+    const char*
+    (*version)(void);
 
-IK_PUBLIC_API int
-ik_build_number(void);
+    int
+    (*build_number)(void);
 
-IK_PUBLIC_API const char*
-ik_build_host(void);
+    const char*
+    (*host)(void);
 
-IK_PUBLIC_API const char*
-ik_build_time(void);
+    const char*
+    (*date)(void);
 
-IK_PUBLIC_API const char*
-ik_commit_info(void);
+    const char*
+    (*commit)(void);
 
-IK_PUBLIC_API const char*
-ik_compiler_info(void);
+    const char*
+    (*compiler)(void);
 
-IK_PUBLIC_API const char*
-ik_cmake_configuration(void);
+    const char*
+    (*cmake)(void);
 
-IK_PUBLIC_API const char*
-ik_build_info(void);
+    const char*
+    (*all)(void);
+};
 
 C_END
 
