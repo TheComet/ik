@@ -132,7 +132,7 @@ def find_impl_or_interface(name):
 
 
 def iterate_source_files(directory, extensions):
-    for root, directories, files in walk(directory):
+    for root, directories, files in walk(directory, followlinks=True):
         for file in files:
             if any(file.endswith(x) for x in extensions):
                 yield join(root, file)

@@ -1,5 +1,5 @@
 #include "gmock/gmock.h"
-#include "ik/bst_vector.h"
+#include "ik/bstv.h"
 
 #define NAME bst_vector
 
@@ -10,7 +10,7 @@ TEST(NAME, init_sets_correct_values)
     struct bstv_t bstv;
     bstv.vector.count = 4;
     bstv.vector.capacity = 56;
-    bstv.vector.data = (DATA_POINTER_TYPE*)4783;
+    bstv.vector.data = (uint8_t*)4783;
     bstv.vector.element_size = 283;
 
     bstv_construct(&bstv);

@@ -9,7 +9,7 @@ TEST(NAME, init)
 
     vec.capacity = 45;
     vec.count = 384;
-    vec.data = (DATA_POINTER_TYPE*)4859;
+    vec.data = (uint8_t*)4859;
     vec.element_size = 183;
     vector_construct(&vec, sizeof(int));
 

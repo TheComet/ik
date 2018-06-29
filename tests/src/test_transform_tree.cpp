@@ -5,16 +5,16 @@
 #define NAME transform_tree
 
 using namespace ::testing;
-
+/*
 TEST(NAME, simple_chain_positions)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
+    ik_node_t* root = solver->node->create(0);
+    ik_node_t* child1 = solver->node->create(1);
+    ik_node_t* child2 = solver->node->create(2);
+    ik_node_t* child3 = solver->node->create(3);
+    solver->node->add_child(root, child1);
+    solver->node->add_child(child1, child2);
+    solver->node->add_child(child2, child3);
 
     child1->position = (vec3_t){1, 1, 1};
     child2->position = (vec3_t){1, 1, 1};
@@ -43,13 +43,13 @@ TEST(NAME, simple_chain_positions)
 
 TEST(NAME, simple_chain_original_positions)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
+    ik_node_t* root = solver->node->create(0);
+    ik_node_t* child1 = solver->node->create(1);
+    ik_node_t* child2 = solver->node->create(2);
+    ik_node_t* child3 = solver->node->create(3);
+    solver->node->add_child(root, child1);
+    solver->node->add_child(child1, child2);
+    solver->node->add_child(child2, child3);
 
     child1->original_position = (vec3_t){1, 1, 1};
     child2->original_position = (vec3_t){1, 1, 1};
@@ -75,3 +75,4 @@ TEST(NAME, simple_chain_original_positions)
 
     ik_node_destroy(root);
 }
+*/
