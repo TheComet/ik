@@ -9,10 +9,12 @@ function (set_python_tests)
             "    EXPECT_THAT(PyRun_SimpleString(\""
             ${TEST_SRC}
             "    \"), Eq(0))\;\n}\n")
-        file (APPEND "${IK_BINARY_DIR}/src/tests/python/test_python_bindings.cpp" ${TEST_SRC})
+        file (APPEND "${IK_BINARY_DIR}/src/test_python_bindings.cpp" ${TEST_SRC})
     endforeach ()
 endfunction ()
 
-execute_process (COMMAND ${CMAKE_COMMAND} -E copy "${IK_SOURCE_DIR}/src/tests/python/test_python_bindings.cpp.in" "${IK_BINARY_DIR}/src/tests/python/test_python_bindings.cpp")
+execute_process (COMMAND ${CMAKE_COMMAND} -E copy
+    "${IK_SOURCE_DIR}/templates/test_python_bindings.cpp.in"
+    "${IK_BINARY_DIR}/src/test_python_bindings.cpp")
 
 set_python_tests (${PYTHON_TEST_SOURCE_FILES})

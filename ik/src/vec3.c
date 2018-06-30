@@ -150,17 +150,17 @@ vec3_cross(ikreal_t v1[3], const ikreal_t v2[3])
 static void
 mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
 {
-    ikreal_t v1[3];
-    ikreal_t v2[3];
-    memcpy(v1, q1, sizeof(ikreal_t) * 3);
-    memcpy(v2, q2, sizeof(ikreal_t) * 3);
+    vec3_t v1;
+    vec3_t v2;
+    vec3_set(v1.f, q1);
+    vec3_set(v2.f, q2);
 
-    vec3_mul_scalar(v1, q2[3]);
-    vec3_mul_scalar(v2, q1[3]);
+    vec3_mul_scalar(v1.f, q2[3]);
+    vec3_mul_scalar(v2.f, q1[3]);
     q1[3] = q1[3]*q2[3] - vec3_dot(q1, q2);
     vec3_cross(q1, q2);
-    vec3_add_vec3(q1, v1);
-    vec3_add_vec3(q1, v2);
+    vec3_add_vec3(q1, v1.f);
+    vec3_add_vec3(q1, v2.f);
 }
 void
 vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
@@ -173,10 +173,10 @@ vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
     memcpy(point.f, v, sizeof(ikreal_t) * 3);
     point.w = 0.0;
 
-    conj = *(quat_t*)q;
+    quat_set(conj.f, q);
     quat_conj(conj.f);
 
-    result = *(quat_t*)q;
+    quat_set(result.f, q);
     mul_quat_no_normalize(result.f, point.f);
     mul_quat_no_normalize(result.f, conj.f);
     memcpy(v, result.f, sizeof(ikreal_t) * 3);

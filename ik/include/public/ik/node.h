@@ -29,7 +29,7 @@ struct ik_node_interface_t;
             quat_t rotation;                                                  \
             vec3_t position;                                                  \
         };                                                                    \
-        ikreal_t transform[7];                                                 \
+        ikreal_t transform[7];                                                \
     };                                                                        \
                                                                               \
     union                                                                     \
@@ -39,7 +39,7 @@ struct ik_node_interface_t;
             quat_t initial_rotation;                                          \
             vec3_t initial_position;                                          \
         };                                                                    \
-        ikreal_t initial_transform[7];                                         \
+        ikreal_t initial_transform[7];                                        \
     };                                                                        \
                                                                               \
     /*!                                                                       \
@@ -80,10 +80,9 @@ struct ik_node_interface_t;
     struct ik_effector_t* effector;                                           \
     struct ik_constraint_t* constraint;                                       \
                                                                               \
-    ikreal_t stiffness;                                                        \
-    ikreal_t rotation_weight;                                                  \
+    ikreal_t stiffness;                                                       \
+    ikreal_t rotation_weight;                                                 \
     ikreal_t dist_to_parent;
-
 
 /*!
  * @brief Base structure used to build the tree structure to be solved.
@@ -122,6 +121,14 @@ IK_INTERFACE(node_interface)
      */
     void
     (*destroy)(struct ik_node_t* node);
+
+    /*!
+     * @brief Creates a new node, attaches it as a child to the specified node,
+     * and returns it. Each node requires a tree-unique ID, which can be used
+     * later to search for nodes in the tree.
+     */
+    struct ik_node_t*
+    (*create_child)(struct ik_node_t* node, uint32_t child_guid);
 
     /*!
      * @brief Attaches a node as a child to another node. The parent node gains

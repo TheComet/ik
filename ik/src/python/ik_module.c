@@ -3,7 +3,9 @@
 #include "ik/python/init.h"
 #include "ik/python/ik_module_info.h"
 #include "ik/python/ik_module_log.h"
+#include "ik/python/ik_module_node.h"
 #include "ik/python/ik_module_quat.h"
+#include "ik/python/ik_module_solver.h"
 #include "ik/python/ik_module_vec3.h"
 
 /* ------------------------------------------------------------------------- */
@@ -31,8 +33,10 @@ static PyModuleDef ik_module = {
 static int
 init_builtin_types(void)
 {
-    if (init_ik_QuatType() != 0) return -1;
-    if (init_ik_Vec3Type() != 0) return -1;
+    if (init_ik_NodeType() != 0)   return -1;
+    if (init_ik_QuatType() != 0)   return -1;
+    if (init_ik_SolverType() != 0) return -1;
+    if (init_ik_Vec3Type() != 0)   return -1;
     return 0;
 }
 
@@ -40,8 +44,10 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    if (PyModule_AddObject(m, "Quat", (PyObject*)&ik_QuatType) < 0) return -1;
-    if (PyModule_AddObject(m, "Vec3", (PyObject*)&ik_Vec3Type) < 0) return -1;
+    if (PyModule_AddObject(m, "Node",   (PyObject*)&ik_NodeType) < 0)   return -1;
+    if (PyModule_AddObject(m, "Quat",   (PyObject*)&ik_QuatType) < 0)   return -1;
+    if (PyModule_AddObject(m, "Solver", (PyObject*)&ik_SolverType) < 0) return -1;
+    if (PyModule_AddObject(m, "Vec3",   (PyObject*)&ik_Vec3Type) < 0)   return -1;
     return 0;
 }
 

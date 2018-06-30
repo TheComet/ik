@@ -74,17 +74,17 @@ quat_normalize(ikreal_t q[4])
 static void
 mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
 {
-    ikreal_t v1[3];
-    ikreal_t v2[3];
-    memcpy(v1, q1, sizeof(ikreal_t) * 3);
-    memcpy(v2, q2, sizeof(ikreal_t) * 3);
+    vec3_t v1;
+    vec3_t v2;
+    vec3_set(v1.f, q1);
+    vec3_set(v2.f, q2);
 
-    vec3_mul_scalar(v1, q2[3]);
-    vec3_mul_scalar(v2, q1[3]);
+    vec3_mul_scalar(v1.f, q2[3]);
+    vec3_mul_scalar(v2.f, q1[3]);
     q1[3] = q1[3]*q2[3] - vec3_dot(q1, q2);
     vec3_cross(q1, q2);
-    vec3_add_vec3(q1, v1);
-    vec3_add_vec3(q1, v2);
+    vec3_add_vec3(q1, v1.f);
+    vec3_add_vec3(q1, v2.f);
 }
 void
 quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])

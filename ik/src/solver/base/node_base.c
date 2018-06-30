@@ -92,6 +92,22 @@ ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
 }
 
 /* ------------------------------------------------------------------------- */
+struct ik_node_t*
+ik_node_base_create_child(struct ik_node_t* node, uint32_t guid)
+{
+    struct ik_node_t* child = node->v->create(guid);
+    if (child == NULL)
+        goto create_child_failed;
+    if (node->v->add_child(node, child) != IK_OK)
+        goto add_child_failed;
+
+    return child;
+
+    add_child_failed    : child->v->destroy(child);
+    create_child_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_node_base_unlink(struct ik_node_t* node)
 {

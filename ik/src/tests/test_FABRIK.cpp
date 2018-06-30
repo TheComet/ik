@@ -1,6 +1,5 @@
 #include "gmock/gmock.h"
 #include "ik/ik.h"
-#include "ik/chain.h"
 
 #define NAME FABRIK
 

@@ -17,6 +17,8 @@ enum ik_transform_flags_e
     TR_TRANSLATIONS   = 0x04
 };
 
+/* XXX: Should be part of the public API */
+
 IK_PRIVATE_API void
 ik_transform_tree(struct ik_node_t* node, uint8_t flags);
 

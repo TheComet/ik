@@ -46,9 +46,9 @@ struct ik_node_t;
     uint8_t                                  flags;                           \
                                                                               \
     /* API functions */                                                       \
-    const struct ik_node_interface_t*        node;                            \
-    const struct ik_effector_interface_t*    effector;                        \
     const struct ik_constraint_interface_t*  constraint;                      \
+    const struct ik_effector_interface_t*    effector;                        \
+    const struct ik_node_interface_t*        node;                            \
                                                                               \
     struct ik_node_t*                        tree;                            \
                                                                               \
