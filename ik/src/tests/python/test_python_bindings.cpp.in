@@ -17,8 +17,13 @@ public:
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
         PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");
-        // Don't allow python to call exit()
-        PyRun_SimpleString("import sys\ndef stub(x):\n    pass\nsys.exit = stub");
+        // sys.exit() would cause the program to exit. Raise an exception instead so PyRun_SimpleString() returns non-zero if exit was called
+        PyRun_SimpleString(
+            "import sys\n"
+            "def stub(x):\n"
+            "    if x:\n"
+            "        raise RuntimeError(\"sys.exit({})\".format(x))\n"
+            "sys.exit = stub");
     }
 
     virtual void TearDown()

@@ -115,7 +115,7 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
             node_mid->position = to_target;
             vec3_normalize(node_mid->position.f);
             vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            quat_rotate_vec(node_mid->position.f, alpha_rotation.f);
+            vec3_rotate(node_mid->position.f, alpha_rotation.f);
             vec3_add_vec3(node_mid->position.f, node_base->position.f);
 
             node_tip->position = node_tip->effector->target_position;

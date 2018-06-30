@@ -256,12 +256,16 @@ if (IK_PYTHON)
     set (IK_PYTHON_HEADERS
         "include/ik/python/init.h"
         "include/ik/python/ik_module_info.h"
-        "include/ik/python/ik_module_log.h")
+        "include/ik/python/ik_module_log.h"
+        "include/ik/python/ik_module_quat.h"
+        "include/ik/python/ik_module_vec3.h")
     add_library (ik_python_obj OBJECT
         "src/python/init.c"
         "src/python/ik_module.c"
         "src/python/ik_module_info.c"
         "src/python/ik_module_log.c"
+        "src/python/ik_module_quat.c"
+        "src/python/ik_module_vec3.c"
         ${IK_PYTHON_HEADERS})
     set_target_properties (ik_python_obj
         PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
@@ -297,10 +301,11 @@ endif ()
 if (IK_TESTS)
     if (IK_PYTHON)
         set (PYTHON_TEST_SOURCE_FILES
-            "")
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/python/test_Vec3.py")
         set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -DPYTHON_TEST_SOURCE_FILES=${PYTHON_TEST_SOURCE_FILES}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
         add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/tests/python/test_python_bindings.cpp"
             COMMAND ${GENERATE_PYTHON_TESTS_CMD}

@@ -12,7 +12,7 @@ quat_set_identity(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-quat_copy(ikreal_t q[4], const ikreal_t src[4])
+quat_set(ikreal_t q[4], const ikreal_t src[4])
 {
     q[0] = src[0];
     q[1] = src[1];
@@ -59,7 +59,7 @@ quat_invert_sign(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-quat_normalise(ikreal_t q[4])
+quat_normalize(ikreal_t q[4])
 {
     ikreal_t mag = quat_mag(q);
     if (mag != 0.0)
@@ -72,7 +72,7 @@ quat_normalise(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 static void
-mul_quat_no_normalise(ikreal_t q1[4], const ikreal_t q2[4])
+mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
 {
     ikreal_t v1[3];
     ikreal_t v2[3];
@@ -89,8 +89,8 @@ mul_quat_no_normalise(ikreal_t q1[4], const ikreal_t q2[4])
 void
 quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
 {
-    mul_quat_no_normalise(q1, q2);
-    quat_normalise(q1);
+    mul_quat_no_normalize(q1, q2);
+    quat_normalize(q1);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -121,7 +121,7 @@ quat_div_scalar(ikreal_t q[4], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 ikreal_t
-quat_dot(ikreal_t q1[4], const ikreal_t q2[4])
+quat_dot(const ikreal_t q1[4], const ikreal_t q2[4])
 {
     return q1[0] * q2[0] +
            q1[1] * q2[1] +
@@ -131,31 +131,68 @@ quat_dot(ikreal_t q1[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-quat_rotate_vec(ikreal_t v[3], const ikreal_t q[4])
-{
-    /* P' = RPR' */
-    quat_t result;
-    quat_t conj;
-    quat_t point;
-
-    memcpy(point.f, v, sizeof(ikreal_t) * 3);
-    point.w = 0.0;
-
-    conj = *(quat_t*)q;
-    quat_conj(conj.f);
-
-    result = *(quat_t*)q;
-    mul_quat_no_normalise(result.f, point.f);
-    mul_quat_no_normalise(result.f, conj.f);
-    memcpy(v, result.f, sizeof(ikreal_t) * 3);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-quat_normalise_sign(ikreal_t q1[4])
+quat_normalize_sign(ikreal_t q1[4])
 {
     quat_t unit = {{0, 0, 0, 1}};
     ikreal_t dot = quat_dot(q1, unit.f);
     if (dot < 0.0)
         quat_invert_sign(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+quat_angle_unnormalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+{
+    ikreal_t cos_a, sin_a, angle, denominator;
+
+    denominator = 1.0 / vec3_length(v1) / vec3_length(v2);
+    cos_a = vec3_dot(v1, v2) * denominator;
+    if (cos_a >= -1.0 && cos_a <= 1.0)
+    {
+        /* calculate axis of rotation and write it to the quaternion's vector section */
+        memcpy(q, v1, sizeof(ikreal_t) * 3);
+        vec3_cross(q, v2);
+        vec3_normalize(q);
+
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(cos_a);
+        cos_a = cos(angle * 0.5);
+        sin_a = sin(angle * 0.5);
+        vec3_mul_scalar(q, sin_a);
+        q[3] = cos_a; /* w component */
+    }
+    else
+    {
+        /* Important! otherwise garbage happens when applying initial rotations */
+        quat_set_identity(q);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+quat_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+{
+    ikreal_t cos_a, sin_a, angle;
+
+    cos_a = vec3_dot(v1, v2);
+    if (cos_a >= -1.0 && cos_a <= 1.0)
+    {
+        /* calculate axis of rotation and write it to the quaternion's vector section */
+        vec3_set(q, v1);
+        vec3_cross(q, v2);
+        /* would usually normalizehere, but cross product of two normalized
+         * vectors is already normalized*/
+
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(cos_a);
+        cos_a = cos(angle * 0.5);
+        sin_a = sin(angle * 0.5);
+        vec3_mul_scalar(q, sin_a);
+        q[3] = cos_a; /* w component */
+    }
+    else
+    {
+        /* Important! otherwise garbage happens when applying initial rotations */
+        quat_set_identity(q);
+    }
 }

@@ -15,6 +15,4 @@ endfunction ()
 
 execute_process (COMMAND ${CMAKE_COMMAND} -E copy "${IK_SOURCE_DIR}/src/tests/python/test_python_bindings.cpp.in" "${IK_BINARY_DIR}/src/tests/python/test_python_bindings.cpp")
 
-file (GLOB PYTHON_TEST_SOURCE_FILES "${IK_SOURCE_DIR}/tests/python/*.py")
-
 set_python_tests (${PYTHON_TEST_SOURCE_FILES})

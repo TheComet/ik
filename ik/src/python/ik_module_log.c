@@ -19,9 +19,9 @@ log_message(PyObject* self, PyObject* args)
         goto ascii_conversion_failed;
 
     ik.log.message("%s", PyBytes_AS_STRING(ascii));
+
     Py_DECREF(ascii);
     Py_DECREF(uni);
-
     Py_RETURN_NONE;
 
     ascii_conversion_failed : Py_DECREF(uni);

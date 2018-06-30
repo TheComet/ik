@@ -30,7 +30,7 @@ quat_set_identity(ikreal_t q[4]);
  * @brief Copies elements from another quaternion.
  */
 IK_PRIVATE_API void
-quat_copy(ikreal_t q[4], const ikreal_t src[4]);
+quat_set(ikreal_t q[4], const ikreal_t src[4]);
 
 /*!
  * @brief Adds the elements from one quaternion to another. Required for
@@ -61,7 +61,7 @@ quat_invert_sign(ikreal_t q[4]);
  * @brief Normalises the quaternion.
  */
 IK_PRIVATE_API void
-quat_normalise(ikreal_t q[4]);
+quat_normalize(ikreal_t q[4]);
 
 /*!
  * @brief Multiplies two quaternions together.
@@ -86,20 +86,36 @@ quat_div_scalar(ikreal_t q[4], ikreal_t scalar);
  * @brief Calculates the scalar product of two quaternions.
  */
 IK_PRIVATE_API ikreal_t
-quat_dot(ikreal_t q1[4], const ikreal_t q2[4]);
-
-/*!
- * @brief Rotations a vector by the specified quaternion.
- */
-IK_PRIVATE_API void
-quat_rotate_vec(ikreal_t v[3], const ikreal_t q[4]);
+quat_dot(const ikreal_t q1[4], const ikreal_t q2[4]);
 
 /*!
  * @brief Returns 0 if the two quaternions are "close", i.e. if -q has a
  * similar rotation as q.
  */
 IK_PRIVATE_API void
-quat_normalise_sign(ikreal_t q1[4]);
+quat_normalize_sign(ikreal_t q1[4]);
+
+/*!
+ * @brief Calculates the angle between two vectors. If the angle is 0 or 180,
+ * the delta rotation is set to identity.
+ * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
+ * The result is written to this. Any previous data is overwritten.
+ * @param[in] v1 The first vector.
+ * @param[in] v2 The second vector.
+ */
+IK_PRIVATE_API void
+quat_angle_unnormalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
+
+/*!
+ * @brief Calculates the angle between two normalizedvectors. If the angle is
+ * 0 or 180, the delta rotation is set to identity.
+ * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
+ * The result is written to this. Any previous data is overwritten.
+ * @param[in] v1 The first vector (must be nomralized).
+ * @param[in] v2 The second vector (must be normalized).
+ */
+IK_PRIVATE_API void
+quat_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
 
 C_END
 

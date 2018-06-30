@@ -17,7 +17,7 @@ local_to_global_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
     ikreal_t* acc_rot = &acc_rot_pos[0];
     ikreal_t* acc_pos = &acc_rot_pos[4];
 
-    quat_rotate_vec(node->position.f, acc_rot);
+    vec3_rotate(node->position.f, acc_rot);
     position = node->position;
     vec3_add_vec3(node->position.f, acc_pos);
     vec3_add_vec3(acc_pos, position.f);
@@ -28,8 +28,8 @@ local_to_global_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
-        quat_copy(&acc_rot_pos_child[0], acc_rot);
-        vec3_copy(&acc_rot_pos_child[4], acc_pos);
+        quat_set(&acc_rot_pos_child[0], acc_rot);
+        vec3_set(&acc_rot_pos_child[4], acc_pos);
         local_to_global_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
@@ -42,19 +42,19 @@ global_to_local_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
     ikreal_t* acc_rot = &acc_rot_pos[0];
     ikreal_t* acc_pos = &acc_rot_pos[4];
 
-    quat_copy(inv_rot_acc.f, acc_rot);
+    quat_set(inv_rot_acc.f, acc_rot);
     quat_conj(inv_rot_acc.f);
     quat_mul_quat(node->rotation.f, inv_rot_acc.f);
     quat_mul_quat(acc_rot, node->rotation.f);
 
     vec3_sub_vec3(node->position.f, acc_pos);
     vec3_add_vec3(acc_pos, node->position.f);
-    quat_rotate_vec(node->position.f, inv_rot_acc.f);
+    vec3_rotate(node->position.f, inv_rot_acc.f);
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
-        quat_copy(&acc_rot_pos_child[0], acc_rot);
-        vec3_copy(&acc_rot_pos_child[4], acc_pos);
+        quat_set(&acc_rot_pos_child[0], acc_rot);
+        vec3_set(&acc_rot_pos_child[4], acc_pos);
         global_to_local_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
@@ -67,7 +67,7 @@ local_to_global_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
-        quat_copy(acc_rot_child, acc_rot);
+        quat_set(acc_rot_child, acc_rot);
         local_to_global_rotation_recursive(child, acc_rot_child);
     NODE_END_EACH
 }
@@ -75,14 +75,14 @@ static void
 global_to_local_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 {
     quat_t inv_rot_acc;
-    quat_copy(inv_rot_acc.f, acc_rot);
+    quat_set(inv_rot_acc.f, acc_rot);
     quat_conj(inv_rot_acc.f);
     quat_mul_quat(node->rotation.f, inv_rot_acc.f);
     quat_mul_quat(acc_rot, node->rotation.f);
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_child[4]; /* Have to copy due to tree structure */
-        quat_copy(acc_rot_child, acc_rot);
+        quat_set(acc_rot_child, acc_rot);
         global_to_local_rotation_recursive(child, acc_rot_child);
     NODE_END_EACH
 }
@@ -95,7 +95,7 @@ local_to_global_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_p
     ikreal_t* acc_rot = &acc_rot_pos[0];
     ikreal_t* acc_pos = &acc_rot_pos[4];
 
-    quat_rotate_vec(node->position.f, acc_rot);
+    vec3_rotate(node->position.f, acc_rot);
     position = node->position;
     vec3_add_vec3(node->position.f, acc_pos);
     vec3_add_vec3(acc_pos, position.f);
@@ -104,8 +104,8 @@ local_to_global_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_p
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
-        quat_copy(&acc_rot_pos_child[0], acc_rot);
-        vec3_copy(&acc_rot_pos_child[4], acc_pos);
+        quat_set(&acc_rot_pos_child[0], acc_rot);
+        vec3_set(&acc_rot_pos_child[4], acc_pos);
         local_to_global_translation_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }
@@ -118,19 +118,19 @@ global_to_local_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_p
     ikreal_t* acc_rot = &acc_rot_pos[0];
     ikreal_t* acc_pos = &acc_rot_pos[4];
 
-    quat_copy(inv_rot_acc.f, acc_rot);
+    quat_set(inv_rot_acc.f, acc_rot);
     quat_conj(inv_rot_acc.f);
 
     quat_mul_quat(acc_rot, node->rotation.f);
 
     vec3_sub_vec3(node->position.f, acc_pos);
     vec3_add_vec3(acc_pos, node->position.f);
-    quat_rotate_vec(node->position.f, inv_rot_acc.f);
+    vec3_rotate(node->position.f, inv_rot_acc.f);
 
     NODE_FOR_EACH(node, guid, child)
         ikreal_t acc_rot_pos_child[7]; /* Have to copy due to tree structure */
-        quat_copy(&acc_rot_pos_child[0], acc_rot);
-        vec3_copy(&acc_rot_pos_child[4], acc_pos);
+        quat_set(&acc_rot_pos_child[0], acc_rot);
+        vec3_set(&acc_rot_pos_child[4], acc_pos);
         global_to_local_translation_recursive(child, acc_rot_pos_child);
     NODE_END_EACH
 }

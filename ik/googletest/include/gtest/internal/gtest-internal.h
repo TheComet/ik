@@ -303,7 +303,7 @@ class FloatingPoint {
 
   // Constructs a FloatingPoint from a raw floating-point number.
   //
-  // On an Intel CPU, passing a non-normalized NAN (Not a Number)
+  // On an Intel CPU, passing a non-normalizedNAN (Not a Number)
   // around may change its bits, although the new value is guaranteed
   // to be also a NAN.  Therefore, don't expect this constructor to
   // preserve the bits in x when x is a NAN.

@@ -14,11 +14,20 @@ vec3_set_zero(ikreal_t v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-vec3_copy(ikreal_t v[3], const ikreal_t src[3])
+vec3_set (ikreal_t v[3], const ikreal_t src[3])
 {
     v[0] = src[0];
     v[1] = src[1];
     v[2] = src[2];
+}
+
+/* ------------------------------------------------------------------------- */
+void
+vec3_add_scalar(ikreal_t v[3], ikreal_t scalar)
+{
+    v[0] += scalar;
+    v[1] += scalar;
+    v[2] += scalar;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -28,6 +37,15 @@ vec3_add_vec3(ikreal_t v1[3], const ikreal_t v2[3])
     v1[0] += v2[0];
     v1[1] += v2[1];
     v1[2] += v2[2];
+}
+
+/* ------------------------------------------------------------------------- */
+void
+vec3_sub_scalar(ikreal_t v[3], ikreal_t scalar)
+{
+    v[0] -= scalar;
+    v[1] -= scalar;
+    v[2] -= scalar;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -50,11 +68,30 @@ vec3_mul_scalar(ikreal_t v[3], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
+vec3_mul_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+{
+    v1[0] *= v2[0];
+    v1[1] *= v2[1];
+    v1[2] *= v2[2];
+}
+
+/* ------------------------------------------------------------------------- */
+void
 vec3_div_scalar(ikreal_t v[3], ikreal_t scalar)
 {
-    v[0] /= scalar;
-    v[1] /= scalar;
-    v[2] /= scalar;
+    ikreal_t det = 1.0 / scalar;
+    v[0] *= det;
+    v[1] *= det;
+    v[2] *= det;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+vec3_div_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+{
+    v1[0] /= v2[0];
+    v1[1] /= v2[1];
+    v1[2] /= v2[2];
 }
 
 /* ------------------------------------------------------------------------- */
@@ -110,59 +147,37 @@ vec3_cross(ikreal_t v1[3], const ikreal_t v2[3])
 }
 
 /* ------------------------------------------------------------------------- */
-void
-vec3_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+static void
+mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
 {
-    ikreal_t cos_a, sin_a, angle, denominator;
+    ikreal_t v1[3];
+    ikreal_t v2[3];
+    memcpy(v1, q1, sizeof(ikreal_t) * 3);
+    memcpy(v2, q2, sizeof(ikreal_t) * 3);
 
-    denominator = 1.0 / vec3_length(v1) / vec3_length(v2);
-    cos_a = vec3_dot(v1, v2) * denominator;
-    if (cos_a >= -1.0 && cos_a <= 1.0)
-    {
-        /* calculate axis of rotation and write it to the quaternion's vector section */
-        memcpy(q, v1, sizeof(ikreal_t) * 3);
-        vec3_cross(q, v2);
-        vec3_normalize(q);
-
-        /* quaternion's vector needs to be weighted with sin_a */
-        angle = acos(cos_a);
-        cos_a = cos(angle * 0.5);
-        sin_a = sin(angle * 0.5);
-        vec3_mul_scalar(q, sin_a);
-        q[3] = cos_a; /* w component */
-    }
-    else
-    {
-        /* Important! otherwise garbage happens when applying initial rotations */
-        quat_set_identity(q);
-    }
+    vec3_mul_scalar(v1, q2[3]);
+    vec3_mul_scalar(v2, q1[3]);
+    q1[3] = q1[3]*q2[3] - vec3_dot(q1, q2);
+    vec3_cross(q1, q2);
+    vec3_add_vec3(q1, v1);
+    vec3_add_vec3(q1, v2);
 }
-
-/* ------------------------------------------------------------------------- */
 void
-vec3_angle_normalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
 {
-    ikreal_t cos_a, sin_a, angle;
+    /* P' = RPR' */
+    quat_t result;
+    quat_t conj;
+    quat_t point;
 
-    cos_a = vec3_dot(v1, v2);
-    if (cos_a >= -1.0 && cos_a <= 1.0)
-    {
-        /* calculate axis of rotation and write it to the quaternion's vector section */
-        vec3_copy(q, v1);
-        vec3_cross(q, v2);
-        /* would usually normalize here, but cross product of two normalized
-         * vectors is already normalized */
+    memcpy(point.f, v, sizeof(ikreal_t) * 3);
+    point.w = 0.0;
 
-        /* quaternion's vector needs to be weighted with sin_a */
-        angle = acos(cos_a);
-        cos_a = cos(angle * 0.5);
-        sin_a = sin(angle * 0.5);
-        vec3_mul_scalar(q, sin_a);
-        q[3] = cos_a; /* w component */
-    }
-    else
-    {
-        /* Important! otherwise garbage happens when applying initial rotations */
-        quat_set_identity(q);
-    }
+    conj = *(quat_t*)q;
+    quat_conj(conj.f);
+
+    result = *(quat_t*)q;
+    mul_quat_no_normalize(result.f, point.f);
+    mul_quat_no_normalize(result.f, conj.f);
+    memcpy(v, result.f, sizeof(ikreal_t) * 3);
 }

@@ -70,7 +70,7 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain)
         target.direction.x = 0.0;
         target.direction.y = 0.0;
         target.direction.z = 1.0;
-        quat_rotate_vec(target.direction.f, effector->target_rotation.f);
+        vec3_rotate(target.direction.f, effector->target_rotation.f);
     }
     else
     {
@@ -92,7 +92,7 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain)
 
         /* lerp between direction vector and segment vector */
         vec3_sub_vec3(target.position.f, parent_node->position.f);        /* segment vector */
-        vec3_normalize(target.position.f);                                /* normalize so we have segment direction vector */
+        vec3_normalize(target.position.f);                                /* normalizeso we have segment direction vector */
         vec3_sub_vec3(target.position.f, target.direction.f);             /* for lerp, subtract target direction... */
         vec3_mul_scalar(target.position.f, parent_node->rotation_weight); /* ...mul with weight... */
         vec3_add_vec3(target.position.f, parent_node->position.f);        /* ...and attach this lerp'd direction to the parent node */
@@ -160,7 +160,7 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
          * Need the initial (unsolved) segment so we can calculate joint
          * rotation for constraints.
          */
-        vec3_copy(initial_segment.f, child_node->initial_position.f);
+        vec3_set(initial_segment.f, child_node->initial_position.f);
         vec3_sub_vec3(initial_segment.f, parent_node->initial_position.f);
         vec3_normalize(initial_segment.f);
 
@@ -428,7 +428,7 @@ recurse_into_children(const struct chain_t* chain)
          * Averaging quaternions taken from here
          * http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
          */
-        quat_normalise_sign(rotation.f);
+        quat_normalize_sign(rotation.f);
         quat_add_quat(average_rotation.f, rotation.f);
         ++average_count;
     CHAIN_END_EACH
@@ -442,7 +442,7 @@ recurse_into_children(const struct chain_t* chain)
     if (average_count > 0 && chain_length(chain) != 0)
     {
         quat_div_scalar(average_rotation.f, average_count);
-        quat_normalise(average_rotation.f);
+        quat_normalize(average_rotation.f);
         chain_get_tip_node(chain)->rotation = average_rotation;
     }
 }
@@ -471,7 +471,7 @@ calculate_delta_rotation_of_each_segment(const struct chain_t* chain)
         vec3_sub_vec3(original_segment.f, parent_node->position.f);
         vec3_sub_vec3(solved_segment.f, parent_node->position.f);
 
-        vec3_angle(parent_node->rotation.f, child_node->initial_position.f, child_node->position.f);
+        quat_angle_unnormalized(parent_node->rotation.f, child_node->initial_position.f, child_node->position.f);
     }
 }
 
