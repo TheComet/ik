@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
-const uint32_t BST_VECTOR_INVALID_HASH = (uint32_t)-1;
+#define BST_VECTOR_INVALID_HASH ((uint32_t)-1)
 
 /* ------------------------------------------------------------------------- */
 struct bstv_t*

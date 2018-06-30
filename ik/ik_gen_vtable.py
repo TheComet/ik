@@ -193,7 +193,7 @@ def parse_implementation(f, impl):
             return line
 
         # only keywords we care about
-        if not any(x in line for x in ("IK_OVERRIDE", "IK_BEFORE", "IK_AFTER", "IK_FINAL", "IK_FINAL_BEFORE", "IK_FINAL_AFTER", "IK_CONSTRUCTOR", "IK_DESTRUTOR")):
+        if not any(x in line for x in ("IK_OVERRIDE", "IK_BEFORE", "IK_AFTER", "IK_FINAL", "IK_FINAL_BEFORE", "IK_FINAL_AFTER", "IK_CONSTRUCTOR", "IK_DESTRUCTOR")):
             continue
 
         try:
@@ -205,7 +205,7 @@ def parse_implementation(f, impl):
             pass
 
         try:
-            befores = re.match(r"(IK_BEFORE|IK_DESTRUCTOR)\((.*)\)", line.strip()).group(1)
+            befores = re.match(r"(IK_BEFORE|IK_DESTRUCTOR)\((.*)\)", line.strip()).group(2)
             for before in (x.strip() for x in befores.split(",") if x.strip()):
                 impl.befores.append(IKMethod(impl.derived_name, None, before, None))  # None's are patched later
             continue
