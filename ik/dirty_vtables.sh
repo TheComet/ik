@@ -1,3 +1,3 @@
 #!/bin/sh
 
-for f in include/ik/vtables/*.v; do touch $f; done
+for f in include/vtables/*.v; do touch $f; done

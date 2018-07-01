@@ -15,6 +15,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+static int g_init_counter = 0;
+
 /* ------------------------------------------------------------------------- */
 static void
 log_stdout_callback(const char* msg)
@@ -40,6 +42,9 @@ ik_implement_callbacks(const struct ik_callback_interface_t* callbacks)
 static ikret_t
 ik_init(void)
 {
+    if (g_init_counter++ != 0)
+        return IK_OK;
+
     ik_memory_init();
     return IK_OK;
 }
@@ -48,6 +53,9 @@ ik_init(void)
 static uintptr_t
 ik_deinit(void)
 {
+    if (--g_init_counter != 0)
+        return 0;
+
     ik_implement_callbacks(NULL);
     return ik_memory_deinit();
 }

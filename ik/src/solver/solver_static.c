@@ -14,13 +14,14 @@ ik_solver_static_type_size(void)
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_static_create(enum ik_algorithm_e algorithm)
+ik_solver_static_create(const char* algorithm_name)
 {
     struct ik_solver_t* solver = NULL;
-    switch (algorithm)
-    {
+
+    if (0) {}
 #define X(algorithm)                                                          \
-        case IK_##algorithm:                                                  \
+        else if (strcmp(algorithm_name, #algorithm) == 0)                     \
+        {                                                                     \
             solver = MALLOC(ik.internal.solver_##algorithm.type_size());      \
             if (solver == NULL) {                                             \
                 ik.log.message("Failed to allocate solver: ran out of memory"); \
@@ -31,9 +32,13 @@ ik_solver_static_create(enum ik_algorithm_e algorithm)
             solver->node       = &(ik.internal.node_##algorithm);             \
             solver->effector   = &(ik.internal.effector_##algorithm);         \
             solver->constraint = &(ik.internal.constraint_##algorithm);       \
-            break;
+        }
         IK_ALGORITHMS
 #undef X
+    else
+    {
+        ik.log.message("Unknown solver \"%s\"", algorithm_name);
+        goto alloc_solver_failed;
     }
 
     if (solver->v->construct(solver) != IK_OK)
@@ -57,7 +62,8 @@ ik_solver_static_destroy(struct ik_solver_t* solver)
 ikret_t
 ik_solver_static_construct(struct ik_solver_t* solver)
 {
-    return solver->v->construct(solver);
+    assert("Calling construct() on static interface makes no sense.");
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -76,9 +82,9 @@ ik_solver_static_rebuild_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_static_recalculate_segment_lengths(struct ik_solver_t* solver)
+ik_solver_static_calculate_segment_lengths(struct ik_solver_t* solver)
 {
-    solver->v->recalculate_segment_lengths(solver);
+    solver->v->calculate_segment_lengths(solver);
 }
 
 /* ------------------------------------------------------------------------- */

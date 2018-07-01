@@ -1,6 +1,5 @@
 #include "Python.h"
 
-#include "ik/python/init.h"
 #include "ik/python/ik_module_log.h"
 #include "ik/ik.h"
 
@@ -33,7 +32,7 @@ static void
 module_free(void* x)
 {
     (void)x;
-    deinit_iklib_refcounted();
+    ik.log.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -61,7 +60,7 @@ ik_module_log_create(void)
 {
     PyObject* m;
 
-    if (init_iklib_refcounted() != IK_OK)
+    if (ik.log.init() != IK_OK)
         goto ik_log_init_failed;
 
     m = PyModule_Create(&ik_module_log);
@@ -70,6 +69,6 @@ ik_module_log_create(void)
 
     return m;
 
-    module_alloc_failed : deinit_iklib_refcounted();
+    module_alloc_failed : ik.log.deinit();
     ik_log_init_failed  : return NULL;
 }

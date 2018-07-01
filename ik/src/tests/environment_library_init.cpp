@@ -11,7 +11,7 @@ public:
     virtual void SetUp()
     {
         testing::FLAGS_gtest_death_test_style = "threadsafe";
-        ik.init();
+        ASSERT_THAT(ik.init(), Eq(IK_OK));
     }
 
     virtual void TearDown()

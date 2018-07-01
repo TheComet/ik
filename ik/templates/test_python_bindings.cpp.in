@@ -8,12 +8,9 @@ PyInit_ik(void);
 
 using namespace ::testing;
 
-class NAME : public Test
+static void init_python()
 {
-public:
-    virtual void SetUp()
-    {
-        PyImport_AppendInittab("ik", PyInit_ik);
+    PyImport_AppendInittab("ik", PyInit_ik);
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
         PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");
@@ -24,10 +21,33 @@ public:
             "    if x:\n"
             "        raise RuntimeError(\"sys.exit({})\".format(x))\n"
             "sys.exit = stub");
+}
+
+static void deinit_python()
+{
+    EXPECT_THAT(Py_FinalizeEx(), Eq(0));
+}
+
+class NAME : public Test
+{
+public:
+    virtual void SetUp()
+    {
+        init_python();
     }
 
     virtual void TearDown()
     {
-        EXPECT_THAT(Py_FinalizeEx(), Eq(0));
+        deinit_python();
     }
 };
+
+TEST_F(NAME, module_import_many_times)
+{
+    for (int i = 0; i != 100; ++i)
+    {
+        PyRun_SimpleString("import ik\nimport unittest\n");
+        deinit_python();
+        init_python();
+    }
+}

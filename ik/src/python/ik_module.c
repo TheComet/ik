@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "ik/ik.h"
-#include "ik/python/init.h"
 #include "ik/python/ik_module_info.h"
 #include "ik/python/ik_module_log.h"
 #include "ik/python/ik_module_node.h"
@@ -13,7 +12,7 @@ static void
 module_free(void* x)
 {
     (void)x;
-    deinit_iklib_refcounted();
+    ik.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -44,10 +43,10 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    if (PyModule_AddObject(m, "Node",   (PyObject*)&ik_NodeType) < 0)   return -1;
-    if (PyModule_AddObject(m, "Quat",   (PyObject*)&ik_QuatType) < 0)   return -1;
-    if (PyModule_AddObject(m, "Solver", (PyObject*)&ik_SolverType) < 0) return -1;
-    if (PyModule_AddObject(m, "Vec3",   (PyObject*)&ik_Vec3Type) < 0)   return -1;
+    Py_INCREF(&ik_NodeType);   if (PyModule_AddObject(m, "Node",   (PyObject*)&ik_NodeType) < 0)   return -1;
+    Py_INCREF(&ik_QuatType);   if (PyModule_AddObject(m, "Quat",   (PyObject*)&ik_QuatType) < 0)   return -1;
+    Py_INCREF(&ik_SolverType); if (PyModule_AddObject(m, "Solver", (PyObject*)&ik_SolverType) < 0) return -1;
+    Py_INCREF(&ik_Vec3Type);   if (PyModule_AddObject(m, "Vec3",   (PyObject*)&ik_Vec3Type) < 0)   return -1;
     return 0;
 }
 
@@ -84,7 +83,7 @@ PyInit_ik(void)
 {
     PyObject* m;
 
-    if (init_iklib_refcounted() != 0)
+    if (ik.init() != IK_OK)
         goto ik_init_failed;
 
     m = PyModule_Create(&ik_module);
@@ -98,6 +97,6 @@ PyInit_ik(void)
     return m;
 
     init_module_failed            : Py_DECREF(m);
-    module_alloc_failed           : deinit_iklib_refcounted();
+    module_alloc_failed           : ik.deinit();
     ik_init_failed                : return NULL;
 }

@@ -198,7 +198,6 @@ set (IK_VTABLES
     "include/vtables/solver_TWO_BONE.v"
     "include/vtables/tests_static.v")
 set (IK_PYTHON_HEADERS
-    "include/python/ik/python/init.h"
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
     "include/python/ik/python/ik_module_node.h"
@@ -206,7 +205,6 @@ set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_solver.h"
     "include/python/ik/python/ik_module_vec3.h")
 set (IK_PYTHON_SOURCES
-    "src/python/init.c"
     "src/python/ik_module.c"
     "src/python/ik_module_info.c"
     "src/python/ik_module_log.c"
@@ -329,12 +327,9 @@ endif ()
 
 if (IK_TESTS)
     if (IK_PYTHON)
-        set (PYTHON_TEST_SOURCE_FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/python/test_Vec3.py")
         set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -DPYTHON_TEST_SOURCE_FILES=${PYTHON_TEST_SOURCE_FILES}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
         add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"
             COMMAND ${GENERATE_PYTHON_TESTS_CMD}

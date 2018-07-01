@@ -1,10 +1,11 @@
 #include "Python.h"
-#include "ik/node.h"
+
+struct ik_node_t;
 
 typedef struct ik_Node
 {
     PyObject_HEAD
-    struct ik_node_t node;
+    struct ik_node_t* node;
 } ik_Node;
 
 extern PyTypeObject ik_NodeType;

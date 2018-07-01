@@ -19,7 +19,7 @@ ik_solver_base_type_size(void)
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_base_create(enum ik_algorithm_e algorithm)
+ik_solver_base_create(const char* algorithm_name)
 {
     assert("Don't use this function! Use ik.solver.create()");
     return NULL;
@@ -134,7 +134,7 @@ ik_solver_base_rebuild_data(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_recalculate_segment_lengths(struct ik_solver_t* solver)
+ik_solver_base_calculate_segment_lengths(struct ik_solver_t* solver)
 {
     calculate_segment_lengths(&solver->chain_list);
 }

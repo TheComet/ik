@@ -1,5 +1,43 @@
 #include "ik/python/ik_module_solver.h"
+#include "ik/python/ik_module_node.h"
+#include "ik/ik.h"
 #include "structmember.h"
+
+/* ------------------------------------------------------------------------- */
+static void
+Solver_dealloc(ik_Solver* self)
+{
+    if (self->solver)
+        ik.solver.destroy(self->solver);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+{
+    (void)kwds;
+    ik_Solver* self;
+    const char* solverName;
+
+    if (!PyArg_ParseTuple(args, "s", &solverName))
+        return NULL;
+
+    self = (ik_Solver*)type->tp_alloc(type, 0);
+    if (self == NULL)
+        goto alloc_self_failed;
+
+    self->solver = ik.solver.create(solverName);
+    if (self->solver == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");
+        goto create_solver_failed;
+    }
+
+    return (PyObject*)self;
+
+    create_solver_failed : Py_DECREF(self);
+    alloc_self_failed    : return NULL;
+}
 
 /* ------------------------------------------------------------------------- */
 static int
@@ -9,363 +47,233 @@ Solver_init(ik_Solver* self, PyObject* args, PyObject* kwds)
     return 0;
 }
 
-#if 0
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_getmax_iterations(ik_Solver* self, void* closure)
+{
+    (void)closure;
+    return PyLong_FromLong(self->solver->max_iterations);
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Solver_setmax_iterations(ik_Solver* self, PyObject* value, void* closure)
+{
+    (void)closure;
+    int max_iterations;
+
+    if (!PyLong_Check(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Maximum iterations needs to be of type int()");
+        return -1;
+    }
+    max_iterations = PyLong_AsLong(value);
+    if (max_iterations <= 0)
+    {
+        PyErr_SetString(PyExc_TypeError, "Maximum iterations needs to be a positive integer");
+        return -1;
+    }
+    self->solver->max_iterations = max_iterations;
+    return 0;
+}
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Solver_set_identity(ik_Solver* self, PyObject* arg)
+Solver_gettolerance(ik_Solver* self, void* closure)
 {
-    (void)arg;
-    solver_set_identity(self->solver.f);
+    (void)closure;
+    return PyFloat_FromDouble(self->solver->tolerance);
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Solver_settolerance(ik_Solver* self, PyObject* value, void* closure)
+{
+    (void)closure;
+    ikreal_t tolerance;
+
+    if (!PyFloat_Check(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Tolerance needs to be of type float()");
+        return -1;
+    }
+    tolerance = PyFloat_AsDouble(value);
+    if (tolerance < 0.0)
+    {
+        PyErr_SetString(PyExc_TypeError, "Tolerance needs to be a positive value (or zero)");
+        return -1;
+    }
+    self->solver->tolerance = tolerance;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_getenable_constraints(ik_Solver* self, void* closure)
+{
+    (void)closure;
+    if (self->solver->flags & IK_ENABLE_CONSTRAINTS)
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Solver_setenable_constraints(ik_Solver* self, PyObject* value, void* closure)
+{
+    (void)closure;
+    if (!PyBool_Check(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a bool");
+        return -1;
+    }
+    self->solver->flags &= ~IK_ENABLE_CONSTRAINTS;
+    if (PyObject_IsTrue(value))
+        self->solver->flags |= IK_ENABLE_CONSTRAINTS;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_getenable_target_rotations(ik_Solver* self, void* closure)
+{
+    (void)closure;
+    if (self->solver->flags & IK_ENABLE_TARGET_ROTATIONS)
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Solver_setenable_target_rotations(ik_Solver* self, PyObject* value, void* closure)
+{
+    (void)closure;
+    if (!PyBool_Check(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a bool");
+        return -1;
+    }
+    self->solver->flags &= ~IK_ENABLE_TARGET_ROTATIONS;
+    if (PyObject_IsTrue(value))
+        self->solver->flags |= IK_ENABLE_TARGET_ROTATIONS;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_getenable_joint_rotations(ik_Solver* self, void* closure)
+{
+    (void)closure;
+    if (self->solver->flags & IK_ENABLE_JOINT_ROTATIONS)
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Solver_setenable_joint_rotations(ik_Solver* self, PyObject* value, void* closure)
+{
+    (void)closure;
+    if (!PyBool_Check(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a bool");
+        return -1;
+    }
+    self->solver->flags &= ~IK_ENABLE_JOINT_ROTATIONS;
+    if (PyObject_IsTrue(value))
+        self->solver->flags |= IK_ENABLE_JOINT_ROTATIONS;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_gettree(ik_Solver* self, void* closure)
+{
+    (void)closure;
+    if (self->tree)
+        return (PyObject*)self->tree;
     Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_set(ik_Solver* self, PyObject* arg)
+static int
+Solver_settree(ik_Solver* self, PyObject* value, void* closure)
 {
-    if (PyObject_TypeCheck(arg, &ik_SolverType))
-    {
-        solver_set(self->solver.f, ((ik_Solver*)arg)->solver.f);
-        Py_RETURN_NONE;
-    }
-    else if (PyArg_ParseTuple(arg, FMT FMT FMT FMT, &self->solver.w, &self->solver.x, &self->solver.y, &self->solver.z))
-    {
-        Py_RETURN_NONE;
-    }
+    (void)closure;
 
-    return NULL;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_add(ik_Solver* self, PyObject* arg)
-{
-    if (PyObject_TypeCheck(arg, &ik_SolverType))
-        solver_add_solver(self->solver.f, ((ik_Solver*)arg)->solver.f);
-    else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
+    if (value == Py_None)
     {
-        solver_t other;
-        other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
-        other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
-        other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
-        other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 3));
-        if (PyErr_Occurred())
-            return NULL;
-        solver_add_solver(self->solver.f, other.f);
+        ik.solver.unlink_tree(self->solver);
+        Py_DECREF(self->tree);
+        self->tree = NULL;
+    }
+    else if (PyObject_TypeCheck(value, &ik_NodeType))
+    {
+        PyObject* tmp = (PyObject*)self->tree;
+        Py_INCREF(value);
+        self->tree = (ik_Node*)value;
+        Py_XDECREF(tmp);
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Expected either another Solver type, a scalar, or a tuple of 3 floats");
-        return NULL;
+        PyErr_SetString(PyExc_TypeError, "Expected a node of type ik.Node(), or None if you want to delete the tree");
+        return -1;
     }
 
-    Py_RETURN_NONE;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_mag(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    return PyFloat_FromDouble(solver_mag(self->solver.f));
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_conj(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    solver_conj(self->solver.f);
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_invert_sign(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    solver_invert_sign(self->solver.f);
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_normalize(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    solver_normalize(self->solver.f);
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_mul(ik_Solver* self, PyObject* arg)
-{
-    if (PyObject_TypeCheck(arg, &ik_SolverType))
-        solver_mul_solver(self->solver.f, ((ik_Solver*)arg)->solver.f);
-    else if (PyFloat_Check(arg))
-        solver_mul_scalar(self->solver.f, PyFloat_AS_DOUBLE(arg));
-    else if (PyLong_Check(arg))
-        solver_mul_scalar(self->solver.f, PyLong_AS_LONG(arg));
-    else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
-    {
-        solver_t other;
-        other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
-        other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
-        other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
-        other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 3));
-        if (PyErr_Occurred())
-            return NULL;
-        solver_mul_solver(self->solver.f, other.f);
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either another Solver type, a scalar, or a tuple of 3 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_div(ik_Solver* self, PyObject* arg)
-{
-    if (PyFloat_Check(arg))
-        solver_div_scalar(self->solver.f, PyFloat_AS_DOUBLE(arg));
-    else if (PyLong_Check(arg))
-        solver_div_scalar(self->solver.f, PyLong_AS_LONG(arg));
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either another Solver type, a scalar, or a tuple of 3 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_dot(ik_Solver* self, PyObject* arg)
-{
-    if (PyObject_TypeCheck(arg, &ik_SolverType))
-        solver_dot(self->solver.f, ((ik_Solver*)arg)->solver.f);
-    else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
-    {
-        solver_t other;
-        other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
-        other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
-        other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
-        other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 3));
-        if (PyErr_Occurred())
-            return NULL;
-        solver_dot(self->solver.f, other.f);
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either another Solver type, a scalar, or a tuple of 3 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_normalize_sign(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    solver_normalize_sign(self->solver.f);
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_angle_unnormalized(ik_Solver* self, PyObject* args)
-{
-    PyObject *vec1, *vec2;
-
-    if (PyTuple_GET_SIZE(args) != 2)
-    {
-        PyErr_SetString(PyExc_TypeError, "Wrong number of arguments, expected two vectors.");
-        return NULL;
-    }
-
-    vec1 = PyTuple_GET_ITEM(args, 0);
-    vec2 = PyTuple_GET_ITEM(args, 1);
-
-    if (PyObject_TypeCheck(vec1, &ik_Vec3Type))
-    {
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            solver_angle_unnormalized(self->solver.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            vec3_t other;
-            other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            solver_angle_unnormalized(self->solver.f, ((ik_Vec3*)vec1)->vec.f, other.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
-    {
-        vec3_t other1;
-        other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
-        other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
-        other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
-        if (PyErr_Occurred())
-            return NULL;
-
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            solver_angle_unnormalized(self->solver.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            vec3_t other2;
-            other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            solver_angle_unnormalized(self->solver.f, other1.f, other2.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_angle(ik_Solver* self, PyObject* args)
-{
-    PyObject *vec1, *vec2;
-
-    if (PyTuple_GET_SIZE(args) != 2)
-    {
-        PyErr_SetString(PyExc_TypeError, "Wrong number of arguments, expected two vectors.");
-        return NULL;
-    }
-
-    vec1 = PyTuple_GET_ITEM(args, 0);
-    vec2 = PyTuple_GET_ITEM(args, 1);
-
-    if (PyObject_TypeCheck(vec1, &ik_Vec3Type))
-    {
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            solver_angle(self->solver.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            vec3_t other;
-            other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            solver_angle(self->solver.f, ((ik_Vec3*)vec1)->vec.f, other.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
-    {
-        vec3_t other1;
-        other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
-        other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
-        other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
-        if (PyErr_Occurred())
-            return NULL;
-
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            solver_angle(self->solver.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            vec3_t other2;
-            other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            solver_angle(self->solver.f, other1.f, other2.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either a ik.Solver type or a tuple with 4 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Solver_repr(ik_Solver* self)
-{
-    PyObject *fmt, *args, *str, *w, *x, *y, *z;
-    if ((args = PyTuple_New(4)) == NULL) goto tuple_failed;
-    if ((w = PyFloat_FromDouble(self->solver.w)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 0, w);
-    if ((x = PyFloat_FromDouble(self->solver.x)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 1, x);
-    if ((y = PyFloat_FromDouble(self->solver.y)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 2, y);
-    if ((z = PyFloat_FromDouble(self->solver.z)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 3, z);
-    if ((fmt = PyUnicode_FromString("ik.Solver(%f, %f, %f, %f)")) == NULL) goto fmt_failed;
-    if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
-
-    Py_DECREF(fmt);
-    Py_DECREF(args);
-    return str;
-
-    str_failed    : Py_DECREF(fmt);
-    fmt_failed    :
-    insert_failed : Py_DECREF(args);
-    tuple_failed  : return NULL;
-}
-
-#endif
-
-/* ------------------------------------------------------------------------- */
-static PyMethodDef Solver_methods[] = {
+static PyGetSetDef Solver_getsetters[] = {
+    {"max_iterations",          (getter)Solver_getmax_iterations,          (setter)Solver_setmax_iterations, "Maximum solver iterations"},
+    {"tolerance",               (getter)Solver_gettolerance,               (setter)Solver_settolerance, "Solver tolerance"},
+    {"enable_constraints",      (getter)Solver_getenable_constraints,      (setter)Solver_setenable_constraints, "Enable or disable constraint support"},
+    {"enable_target_rotations", (getter)Solver_getenable_target_rotations, (setter)Solver_setenable_target_rotations, "Enable or disable target rotation support"},
+    {"enable_joint_rotations",  (getter)Solver_getenable_joint_rotations,  (setter)Solver_setenable_joint_rotations, "Enable or disable joint rotation support"},
+    {"tree",                    (getter)Solver_gettree,                    (setter)Solver_settree, "The solver's tree"},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-static PyMemberDef Solver_members[] = {
+static PyObject*
+Solver_rebuild_data(ik_Solver* self, PyObject* arg)
+{
+    (void)arg;
+    if (ik.solver.rebuild_data(self->solver) != IK_OK)
+        Py_RETURN_FALSE;
+    Py_RETURN_TRUE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
+{
+    (void)arg;
+    ik.solver.calculate_segment_lengths(self->solver);
+    Py_RETURN_NONE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Solver_solve(ik_Solver* self, PyObject* arg)
+{
+    (void)arg;
+    ikret_t ret = ik.solver.solve(self->solver);
+    if (ret < 0)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "solve() returned an error code");
+        return NULL;
+    }
+    if (ret == 0)
+        Py_RETURN_FALSE;
+    Py_RETURN_TRUE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyMethodDef Solver_methods[] = {
+    {"rebuild_data",              (PyCFunction)Solver_rebuild_data,              METH_NOARGS, "Rebuilds internal structures in the solver"},
+    {"calculate_segment_lengths", (PyCFunction)Solver_calculate_segment_lengths, METH_NOARGS, "Updates calculated segment lenghts"},
+    {"solve",                     (PyCFunction)Solver_solve,                     METH_NOARGS, "Executes the solver"},
     {NULL}
 };
 
@@ -394,7 +302,7 @@ PyTypeObject ik_SolverType = {
     "ik.Solver",                                   /* tp_name */
     sizeof(ik_Solver),                             /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    0,                                             /* tp_dealloc */
+    (destructor)Solver_dealloc,                    /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */
@@ -418,8 +326,8 @@ PyTypeObject ik_SolverType = {
     0,                                             /* tp_iter */
     0,                                             /* tp_iternext */
     Solver_methods,                                /* tp_methods */
-    Solver_members,                                /* tp_members */
-    0,                                             /* tp_getset */
+    0,                                             /* tp_members */
+    Solver_getsetters,                             /* tp_getset */
     0,                                             /* tp_base */
     0,                                             /* tp_dict */
     0,                                             /* tp_descr_get */
@@ -427,14 +335,13 @@ PyTypeObject ik_SolverType = {
     0,                                             /* tp_dictoffset */
     (initproc)Solver_init,                         /* tp_init */
     0,                                             /* tp_alloc */
-    0                                              /* tp_new */
+    Solver_new                                     /* tp_new */
 };
 
 /* ------------------------------------------------------------------------- */
 int
 init_ik_SolverType(void)
 {
-    ik_SolverType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&ik_SolverType) < 0)
         return -1;
     return 0;

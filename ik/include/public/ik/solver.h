@@ -42,7 +42,7 @@ struct ik_node_t;
     const struct ik_solver_interface_t*      v;                               \
                                                                               \
     int32_t                                  max_iterations;                  \
-    float                                    tolerance;                       \
+    ikreal_t                                 tolerance;                       \
     uint8_t                                  flags;                           \
                                                                               \
     /* API functions */                                                       \
@@ -122,7 +122,7 @@ IK_INTERFACE(solver_interface)
      * supported.
      */
     struct ik_solver_t*
-    (*create)(enum ik_algorithm_e algorithm);
+    (*create)(const char* algorithm_name);
 
     /*!
      * @brief Destroys the solver and all nodes/effectors that are part of the
@@ -165,7 +165,7 @@ IK_INTERFACE(solver_interface)
      * @note This function gets called by (*rebuild_data)().
      */
     void
-    (*recalculate_segment_lengths)(struct ik_solver_t* solver);
+    (*calculate_segment_lengths)(struct ik_solver_t* solver);
 
     /*!
      * @brief Solves the IK problem. The node solutions will be provided via a

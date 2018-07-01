@@ -12,33 +12,42 @@ typedef struct log_t
 } log_t;
 
 static log_t* g_log = NULL;
+static int g_init_counter = 0;
 
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_log_static_init(void)
 {
-    if (g_log != NULL)
-        return IK_ALREADY_INITIALIZED;
+    if (g_init_counter++ != 0)
+        return IK_OK;
+
+    /* The log depends on the ik library being initialized */
+    if (ik.init() != IK_OK)
+        goto ik_init_failed;
 
     g_log = (log_t*)MALLOC(sizeof *g_log);
     if (g_log == NULL)
-        return IK_RAN_OUT_OF_MEMORY;
+        goto alloc_log_failed;
 
     vector_construct(&g_log->message_buffer, sizeof(char));
 
     return IK_OK;
+
+    alloc_log_failed : ik.deinit();
+    ik_init_failed   : return IK_RAN_OUT_OF_MEMORY;
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_log_static_deinit(void)
 {
-    if (g_log == NULL)
+    if (--g_init_counter != 0)
         return;
 
     vector_clear_free(&g_log->message_buffer);
     FREE(g_log);
     g_log = NULL;
+    ik.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
