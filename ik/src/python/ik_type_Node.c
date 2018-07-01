@@ -1,4 +1,4 @@
-#include "ik/python/ik_module_node.h"
+#include "ik/python/ik_type_Node.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */

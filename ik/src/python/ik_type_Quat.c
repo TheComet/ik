@@ -1,5 +1,5 @@
-#include "ik/python/ik_module_quat.h"
-#include "ik/python/ik_module_vec3.h"
+#include "ik/python/ik_type_Quat.h"
+#include "ik/python/ik_type_Vec3.h"
 #include "ik/quat.h"
 #include "structmember.h"
 

@@ -1,5 +1,5 @@
-#include "ik/python/ik_module_vec3.h"
-#include "ik/python/ik_module_quat.h"
+#include "ik/python/ik_type_Vec3.h"
+#include "ik/python/ik_type_Quat.h"
 #include "ik/vec3.h"
 #include "structmember.h"
 
@@ -14,13 +14,21 @@
 #endif
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+Vec3_set(ik_Vec3* self, PyObject* arg);
 static int
 Vec3_init(ik_Vec3* self, PyObject* args, PyObject* kwds)
 {
     (void)kwds;
+    PyObject* position = NULL;
+
     vec3_set_zero(self->vec.f);
-    if (!PyArg_ParseTuple(args, "|" FMT FMT FMT, &self->vec.x, &self->vec.y, &self->vec.z))
+    if (!PyArg_ParseTuple(args, "|O", &position))
         return -1;
+
+    if (position && Vec3_set(self, position) == NULL)
+        return -1;
+
     return 0;
 }
 
@@ -30,7 +38,7 @@ Vec3_set(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
     {
-        vec3_set(self->vec.f, ((ik_Vec3*) arg )->vec.f);
+        vec3_set(self->vec.f, ((ik_Vec3*)arg)->vec.f);
         Py_RETURN_NONE;
     }
     else if (PyArg_ParseTuple(arg, FMT FMT FMT, &self->vec.x, &self->vec.y, &self->vec.z))

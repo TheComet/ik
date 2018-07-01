@@ -10,21 +10,26 @@ struct ik_constraint_interface_t;
 
 typedef int (*ik_constraint_apply_func)(struct ik_node_t*);
 
-typedef enum ik_constraint_type_e
+#define IK_CONSTRAINTS \
+    X(NONE) \
+    X(STIFF) \
+    X(HINGE) \
+    X(CONE) \
+    X(CUSTOM)
+
+enum ik_constraint_type_e
 {
-    IK_CONSTRAINT_NONE,
-    IK_CONSTRAINT_STIFF,
-    IK_CONSTRAINT_HINGE,
-    IK_CONSTRAINT_CONE,
-    IK_CONSTRAINT_CUSTOM
-} ik_constraint_type_e;
+#define X(type) IK_##type,
+    IK_CONSTRAINTS
+#undef X
+};
 
 struct ik_constraint_t
 {
     const struct ik_constraint_interface_t* v;
     struct ik_node_t* node;
     ik_constraint_apply_func apply;
-    ik_constraint_type_e type;
+    enum ik_constraint_type_e type;
 };
 
 IK_INTERFACE(constraint_interface)
@@ -34,7 +39,7 @@ IK_INTERFACE(constraint_interface)
      * tree using ik_node_attach_constraint().
      */
     struct ik_constraint_t*
-    (*create)(ik_constraint_type_e constraint_type);
+    (*create)(enum ik_constraint_type_e constraint_type);
 
     /*!
      * @brief Sets the type of constraint to enforce.
@@ -44,8 +49,8 @@ IK_INTERFACE(constraint_interface)
      * causes the node to be excluded entirely from the chain tree, and determining
      * this requires a rebuild.
      */
-    void
-    (*set)(struct ik_constraint_t* constraint, ik_constraint_type_e constraint_type);
+    ikret_t
+    (*set_type)(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type);
 
     /*!
      * @brief Allows the user to specify a custom callback function for enforcing

@@ -2,10 +2,12 @@
 #include "ik/ik.h"
 #include "ik/python/ik_module_info.h"
 #include "ik/python/ik_module_log.h"
-#include "ik/python/ik_module_node.h"
-#include "ik/python/ik_module_quat.h"
-#include "ik/python/ik_module_solver.h"
-#include "ik/python/ik_module_vec3.h"
+#include "ik/python/ik_type_Constraint.h"
+#include "ik/python/ik_type_Effector.h"
+#include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_Quat.h"
+#include "ik/python/ik_type_Solver.h"
+#include "ik/python/ik_type_Vec3.h"
 
 /* ------------------------------------------------------------------------- */
 static void
@@ -32,10 +34,12 @@ static PyModuleDef ik_module = {
 static int
 init_builtin_types(void)
 {
-    if (init_ik_NodeType() != 0)   return -1;
-    if (init_ik_QuatType() != 0)   return -1;
-    if (init_ik_SolverType() != 0) return -1;
-    if (init_ik_Vec3Type() != 0)   return -1;
+    if (init_ik_ConstraintType() != 0) return -1;
+    if (init_ik_EffectorType() != 0)   return -1;
+    if (init_ik_NodeType() != 0)       return -1;
+    if (init_ik_QuatType() != 0)       return -1;
+    if (init_ik_SolverType() != 0)     return -1;
+    if (init_ik_Vec3Type() != 0)       return -1;
     return 0;
 }
 
@@ -43,10 +47,12 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    Py_INCREF(&ik_NodeType);   if (PyModule_AddObject(m, "Node",   (PyObject*)&ik_NodeType) < 0)   return -1;
-    Py_INCREF(&ik_QuatType);   if (PyModule_AddObject(m, "Quat",   (PyObject*)&ik_QuatType) < 0)   return -1;
-    Py_INCREF(&ik_SolverType); if (PyModule_AddObject(m, "Solver", (PyObject*)&ik_SolverType) < 0) return -1;
-    Py_INCREF(&ik_Vec3Type);   if (PyModule_AddObject(m, "Vec3",   (PyObject*)&ik_Vec3Type) < 0)   return -1;
+    Py_INCREF(&ik_ConstraintType); if (PyModule_AddObject(m, "Constraint", (PyObject*)&ik_ConstraintType) < 0) return -1;
+    Py_INCREF(&ik_EffectorType);   if (PyModule_AddObject(m, "Effector",   (PyObject*)&ik_EffectorType) < 0)   return -1;
+    Py_INCREF(&ik_NodeType);       if (PyModule_AddObject(m, "Node",       (PyObject*)&ik_NodeType) < 0)       return -1;
+    Py_INCREF(&ik_QuatType);       if (PyModule_AddObject(m, "Quat",       (PyObject*)&ik_QuatType) < 0)       return -1;
+    Py_INCREF(&ik_SolverType);     if (PyModule_AddObject(m, "Solver",     (PyObject*)&ik_SolverType) < 0)     return -1;
+    Py_INCREF(&ik_Vec3Type);       if (PyModule_AddObject(m, "Vec3",       (PyObject*)&ik_Vec3Type) < 0)       return -1;
     return 0;
 }
 

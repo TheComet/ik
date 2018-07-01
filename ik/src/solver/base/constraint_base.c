@@ -47,32 +47,34 @@ apply_cone(struct ik_node_t* node)
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
-void
-ik_constraint_base_set(struct ik_constraint_t* constraint, ik_constraint_type_e constraint_type)
+ikret_t
+ik_constraint_base_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type)
 {
     switch (constraint_type)
     {
-        case IK_CONSTRAINT_NONE:
+        case IK_NONE:
             constraint->apply = apply_none;
             break;
 
-        case IK_CONSTRAINT_STIFF:
+        case IK_STIFF:
             constraint->apply = apply_stiff;
             break;
 
-        case IK_CONSTRAINT_HINGE:
+        case IK_HINGE:
             constraint->apply = apply_hinge;
             break;
 
-        case IK_CONSTRAINT_CONE:
+        case IK_CONE:
             constraint->apply = apply_cone;
             break;
 
-        case IK_CONSTRAINT_CUSTOM:
+        case IK_CUSTOM:
             ik.log.message("Error: use constraint.set_custom() for type IK_CONSTRAINT_CUSTOM. Constraint will have no effect.");
+            return IK_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
     }
 
     constraint->type = constraint_type;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -108,7 +110,7 @@ ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* 
     }
 
     /* constraint may be attached to another node */
-    ik_constraint_base_detach(constraint);
+    constraint->v->detach(constraint);
 
     constraint->node = node;
     node->constraint = constraint;
@@ -118,7 +120,7 @@ ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* 
 
 /* ------------------------------------------------------------------------- */
 struct ik_constraint_t*
-ik_constraint_base_create(ik_constraint_type_e constraint_type)
+ik_constraint_base_create(enum ik_constraint_type_e constraint_type)
 {
     struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
     if (constraint == NULL)
@@ -128,8 +130,8 @@ ik_constraint_base_create(ik_constraint_type_e constraint_type)
     }
 
     memset(constraint, 0, sizeof *constraint);
-    ik_constraint_base_set(constraint, constraint_type);
     constraint->v = &ik.internal.constraint_base;
+    constraint->v->set_type(constraint, constraint_type);
 
     return constraint;
 }
@@ -138,6 +140,6 @@ ik_constraint_base_create(ik_constraint_type_e constraint_type)
 void
 ik_constraint_base_destroy(struct ik_constraint_t* constraint)
 {
-    ik_constraint_base_detach(constraint);
+    constraint->v->detach(constraint);
     FREE(constraint);
 }

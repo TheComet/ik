@@ -200,18 +200,22 @@ set (IK_VTABLES
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
-    "include/python/ik/python/ik_module_node.h"
-    "include/python/ik/python/ik_module_quat.h"
-    "include/python/ik/python/ik_module_solver.h"
-    "include/python/ik/python/ik_module_vec3.h")
+    "include/python/ik/python/ik_type_Constraint.h"
+    "include/python/ik/python/ik_type_Node.h"
+    "include/python/ik/python/ik_type_Node.h"
+    "include/python/ik/python/ik_type_Quat.h"
+    "include/python/ik/python/ik_type_Solver.h"
+    "include/python/ik/python/ik_type_Vec3.h")
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
     "src/python/ik_module_info.c"
     "src/python/ik_module_log.c"
-    "src/python/ik_module_node.c"
-    "src/python/ik_module_quat.c"
-    "src/python/ik_module_solver.c"
-    "src/python/ik_module_vec3.c")
+    "src/python/ik_type_Constraint.c"
+    "src/python/ik_type_Effector.c"
+    "src/python/ik_type_Node.c"
+    "src/python/ik_type_Quat.c"
+    "src/python/ik_type_Solver.c"
+    "src/python/ik_type_Vec3.c")
 set (IK_TESTS_SOURCES
     "thirdparty/googletest/src/gtest-all.cc"
     "thirdparty/googlemock/src/gmock-all.cc"
