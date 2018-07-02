@@ -36,7 +36,9 @@ ik_solver_base_destroy(struct ik_solver_t* solver)
 ikret_t
 ik_solver_base_construct(struct ik_solver_t* solver)
 {
+    solver->max_iterations = 20;
     solver->tolerance = 1e-2;
+    solver->flags = IK_ENABLE_JOINT_ROTATIONS;
     vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
     vector_construct(&solver->chain_list, sizeof(struct chain_t));
     return IK_OK;
@@ -95,14 +97,14 @@ ik_solver_base_set_tree(struct ik_solver_t* solver, struct ik_node_t* base)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_base_rebuild_data(struct ik_solver_t* solver)
+ik_solver_base_rebuild(struct ik_solver_t* solver)
 {
     ikret_t result;
 
     /* If the solver has no tree, then there's nothing to do */
     if (solver->tree == NULL)
     {
-        ik.log.message("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
+        IK.log.message("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
         return IK_SOLVER_HAS_NO_TREE;
     }
 
@@ -110,13 +112,13 @@ ik_solver_base_rebuild_data(struct ik_solver_t* solver)
      * Traverse the entire tree and generate a list of the effectors. This
      * makes the process of building the chain list for FABRIK much easier.
      */
-    ik.log.message("Rebuilding effector nodes list");
+    IK.log.message("Rebuilding effector nodes list");
     vector_clear(&solver->effector_nodes_list);
     if ((result = recursively_get_all_effector_nodes(
             solver->tree,
             &solver->effector_nodes_list)) != IK_OK)
     {
-        ik.log.message("Ran out of memory while building the effector nodes list");
+        IK.log.message("Ran out of memory while building the effector nodes list");
         return result;
     }
 
@@ -127,16 +129,16 @@ ik_solver_base_rebuild_data(struct ik_solver_t* solver)
             &solver->effector_nodes_list)) != IK_OK)
         return result;
 
-    calculate_segment_lengths(&solver->chain_list);
+    update_distances(&solver->chain_list);
 
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_calculate_segment_lengths(struct ik_solver_t* solver)
+ik_solver_base_update_distances(struct ik_solver_t* solver)
 {
-    calculate_segment_lengths(&solver->chain_list);
+    update_distances(&solver->chain_list);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -226,7 +228,7 @@ ik_solver_base_iterate_nodes(struct ik_solver_t* solver,
 {
     if (solver->tree == NULL)
     {
-        ik.log.message("Warning: Tried iterating the tree, but no tree was set");
+        IK.log.message("Warning: Tried iterating the tree, but no tree was set");
         return;
     }
 

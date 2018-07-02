@@ -23,7 +23,7 @@ ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
     bstv_construct(&node->children);
-    node->v = &ik.internal.node_base;
+    node->v = &IK.internal.node_base;
     node->guid = guid;
     quat_set_identity(node->rotation.f);
     vec3_set_zero(node->rotation.f);
@@ -74,8 +74,8 @@ destroy_recursive(struct ik_node_t* node)
 void
 ik_node_base_destroy(struct ik_node_t* node)
 {
-    if (ik.internal.callbacks->on_node_destroy != NULL)
-        ik.internal.callbacks->on_node_destroy(node);
+    if (IK.internal.callbacks->on_node_destroy != NULL)
+        IK.internal.callbacks->on_node_destroy(node);
     node->v->destruct(node);
     FREE(node);
 }
@@ -152,7 +152,6 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
     new_node->position = node->position;
     new_node->initial_rotation = node->initial_rotation;
     new_node->initial_position = node->initial_position;
-    new_node->stiffness = node->stiffness;
     new_node->rotation_weight = node->rotation_weight;
     new_node->dist_to_parent = node->dist_to_parent;
     new_node->user_data = node->user_data;
@@ -212,7 +211,7 @@ ik_node_base_dump_to_dot(struct ik_node_t* node, const char* file_name)
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)
     {
-        ik.log.message("Failed to open file %s", file_name);
+        IK.log.message("Failed to open file %s", file_name);
         return;
     }
 

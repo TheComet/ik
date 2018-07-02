@@ -19,7 +19,7 @@ ik_effector_base_create(void)
     effector->weight = 1.0;
     effector->rotation_weight = 1.0;
     effector->rotation_decay = 0.25;
-    effector->v = &ik.internal.effector_base;
+    effector->v = &IK.internal.effector_base;
 
     return effector;
 }
@@ -38,7 +38,7 @@ ik_effector_base_attach(struct ik_effector_t* effector, struct ik_node_t* node)
 {
     if (node->effector != NULL)
     {
-        ik.log.message(
+        IK.log.message(
             "Warning! You are trying to attach an effector to a node that "
             "already has an effector attached to it. The new effector will not "
             "be attached!"

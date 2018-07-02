@@ -59,14 +59,14 @@ struct ik_interface_t
 
     const struct ik_build_info_interface_t info;
     const struct ik_log_interface_t        log;
-    const struct ik_solver_interface_t     solver;
     const struct ik_tests_interface_t      tests;
+    const struct ik_solver_interface_t     solver;
 
     /* "Private" interface, should not be used by clients of the library. */
     struct ik_internal_interface_t internal;
 };
 
-IK_PUBLIC_API extern struct ik_interface_t ik;
+IK_PUBLIC_API extern struct ik_interface_t IK;
 
 C_END
 

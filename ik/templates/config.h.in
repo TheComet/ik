@@ -9,6 +9,7 @@
      * Build settings
      * --------------------------------------------------------------------- */
 
+#   define IK ${IK_API_NAME}
     #cmakedefine IK_BENCHMARKS
     #cmakedefine IK_DOT_EXPORT
     #cmakedefine IK_HAVE_STDINT_H

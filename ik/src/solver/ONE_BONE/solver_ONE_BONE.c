@@ -26,7 +26,7 @@ ik_solver_ONE_BONE_destruct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_ONE_BONE_rebuild_data(struct ik_solver_t* solver)
+ik_solver_ONE_BONE_rebuild(struct ik_solver_t* solver)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
@@ -35,12 +35,12 @@ ik_solver_ONE_BONE_rebuild_data(struct ik_solver_t* solver)
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         if (chain_length(chain) != 2) /* 2 nodes = 1 bone */
         {
-            ik.log.message("ERROR: Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
+            IK.log.message("ERROR: Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            ik.log.message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            IK.log.message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
     SOLVER_END_EACH

@@ -10,6 +10,7 @@ else ()
     set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
 endif ()
 
+set (IK_API_NAME "ik" CACHE STRING "The symbol name exported for consumers of the library. Also controls the module name for the python bindings")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 set (IK_LIB_TYPE "STATIC" CACHE STRING "SHARED or STATIC library")
@@ -19,6 +20,7 @@ option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
+set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 
 string (REPLACE " " "_" IK_PRECISION_CAPS_AND_NO_SPACES ${IK_PRECISION})
@@ -163,12 +165,12 @@ set (IK_SOURCES
     "src/memory.c"
     "src/quat.c"
     "src/retcodes.c"
+    "src/solver_static.c"
     "src/transform_chains.c"
     "src/transform_tree.c"
     "src/util.c"
     "src/vec3.c"
     "src/vector.c"
-    "src/solver/solver_static.c"
     "src/solver/base/constraint_base.c"
     "src/solver/base/effector_base.c"
     "src/solver/base/node_base.c"
@@ -277,15 +279,17 @@ target_compile_definitions (ik_obj
     PRIVATE $<$<CONFIG:Debug>:DEBUG>)
 target_compile_options (ik_obj
     PRIVATE $<$<C_COMPILER_ID:MSVC>:
-        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /D_CRT_SECURE_NO_DEPRECATE
+        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
-        -Wno-conversion -Wno-implicit-fallthrough -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough 
+        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter
-        -Wno-implicit-fallthrough -Wno-conversion -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough 
+        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
 )
 
@@ -312,9 +316,11 @@ if (IK_PYTHON)
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
     )
     target_compile_definitions (ik_python_obj
@@ -367,9 +373,11 @@ if (IK_TESTS)
         >
         PRIVATE $<$<C_COMPILER_ID:GNU>:
             -Wno-unused-result
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PRIVATE $<$<C_COMPILER_ID:Clang>:
             -Wno-unused-result
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
     )
     target_compile_definitions (ik_tests_obj

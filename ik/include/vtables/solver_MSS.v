@@ -25,7 +25,7 @@ IK_IMPLEMENT(constraint_MSS, constraint_base)
  * Need to combine multiple ikret_t return values from the various before/after
  * functions.
  */
-static inline ikret_t ik_solver_MSS_harness_rebuild_data_return_value(ikret_t a, ikret_t b) {
+static inline ikret_t ik_solver_MSS_harness_rebuild_return_value(ikret_t a, ikret_t b) {
     if (a != IK_OK) return a;
     return b;
 }

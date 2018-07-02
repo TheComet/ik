@@ -3,19 +3,20 @@ Inverse Kinematics Library
 
 An implementation of the FABRIK solver. Specialized 2-bone and 1-bone solvers are also included.
 
-[See the wiki page for details on how to use it](https://github.com/TheComet93/ik/wiki)
+[See the wiki page for details on how to use it](https://github.com/TheComet/ik/wiki)
 
 Building
 --------
 
-You can build the project as follows:
+You can build the project as follows using the default settings:
 ```sh
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake ../
 make -j8
 make install
 ```
 
+For a detailed list of all of the build options, [see the wiki page](https://github.com/TheComet/ik/wiki)
 On POSIX systems, you can enable malloc()/free() wrappers with ```-DIK_MEMORY_DEBUGGING=ON``` and you can further enable memory backtraces with ```-DIK_MEMORY_BACKTRACE=ON```.
 
 Unit tests and benchmarks are also included, those can be enabled with ```-DIK_TESTS=ON``` and ```-DIK_BENCHMARKS=ON```, respectively.
@@ -40,10 +41,10 @@ IK.
 
 Supported features are
   + Solving arbitrary trees (including disjoint trees) with any number of end effectors.
-  + Calculation of final rotations.
+  + Matching target rotations as well as target positions.
+  + Calculation of joint rotations, useful for skinned characters.
   + Specifying chain length for each effector.
   + Conversion between local and global space.
-  + Target rotations with weighted decay.
   + Weighted end effectors to facilitate transitioning between the solved and initial transforms.
   + Nlerp of weighted end effectors to make transitioning look more natural.
   + Logging.
@@ -70,31 +71,36 @@ Here is a minimal working example that probably satisfies your needs.
 
 int main()
 {
+    /* Create a solver using the FABRIK algorithm */
+    struct ik_solver_t* solver = ik.solver.create(IK_FABRIK);
+
     /* Create a simple 3-bone structure */
-    struct ik_node_t* root = ik_node_create(0);
-    struct ik_node_t* child1 = ik_node_create(1);
-    struct ik_node_t* child2 = ik_node_create(2);
-    struct ik_node_t* child3 = ik_node_create(3);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
+    struct ik_node_t* root = solver->node->create(0);
+    struct ik_node_t* child1 = solver->node->create_child(1, root);
+    struct ik_node_t* child2 = solver->node->create_child(2, child1);
+    struct ik_node_t* child3 = solver->node->create_child(3, child2);
+
+    /* Set node positions in local space so they form a straight line in the Y direction*/
+    child1->position = ik.vec3(0, 10, 0);
+    child2->position = ik.vec3(0, 10, 0);
+    child3->position = ik.vec3(0, 10, 0);
 
     /* Attach an effector at the end */
-    struct ik_effector_t* eff = ik_effector_create();
-    ik_node_attach_effector(child3, eff);
+    struct ik_effector_t* eff = solver->effector->create();
+    solver->node->attach_effector(child3, eff);
 
-    /* Create a solver using the FABRIK algorithm */
-    struct ik_solver_t* solver = ik_solver_create(SOLVER_FABRIK);
+    /* set the target position of the effector to be somewhere within range */
+    eff->target_position = ik.vec3(2, -3, 5);
 
     /* We want to calculate rotations as well as positions */
-    solver->flags |= SOLVER_CALCULATE_FINAL_ROTATIONS;
+    solver->flags |= IK_ENABLE_TARGET_ROTATIONS;
 
-    /* Assign our tree to the solver and rebuild the data */
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild_chain_tree(solver);
-    ik_solver_solve(solver);
+    /* Assign our tree to the solver, rebuild data and calculate solution */
+    ik.solver.set_tree(solver, root);
+    ik.solver.rebuild_data(solver);
+    ik.solver.solve(solver);
 }
 ```
 
-[See the wiki page for details on how to use it](https://github.com/TheComet93/ik/wiki)
+[See the wiki page for details on how to use it](https://github.com/TheComet/ik/wiki)
 

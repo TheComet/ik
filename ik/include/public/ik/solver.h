@@ -149,11 +149,11 @@ IK_INTERFACE(solver_interface)
      * undefined state. You cannot solve the tree in this state.
      */
     ikret_t
-    (*rebuild_data)(struct ik_solver_t* solver);
+    (*rebuild)(struct ik_solver_t* solver);
 
     /*!
      * @brief Computes the distances between the nodes and stores them in
-     * node->segment_length. The positions used for this computation are those of
+     * node->dist_to_parent. The positions used for this computation are those of
      * the active pose (node->position). For this reason, make sure that you've
      * correctly initialized the active pose before calling this function.
      *
@@ -165,7 +165,7 @@ IK_INTERFACE(solver_interface)
      * @note This function gets called by (*rebuild_data)().
      */
     void
-    (*calculate_segment_lengths)(struct ik_solver_t* solver);
+    (*update_distances)(struct ik_solver_t* solver);
 
     /*!
      * @brief Solves the IK problem. The node solutions will be provided via a
@@ -207,7 +207,7 @@ IK_INTERFACE(solver_interface)
      * each node to the specified callback function.
      */
     void
-    (*iterate_nodes)(struct ik_solver_t* solver,
+    (*iterate_all_nodes)(struct ik_solver_t* solver,
                      ik_solver_iterate_node_cb_func callback);
 
     /*!

@@ -22,22 +22,22 @@ ik_solver_static_create(const char* algorithm_name)
 #define X(algorithm)                                                          \
         else if (strcmp(algorithm_name, #algorithm) == 0)                     \
         {                                                                     \
-            solver = MALLOC(ik.internal.solver_##algorithm.type_size());      \
+            solver = MALLOC(IK.internal.solver_##algorithm.type_size()); \
             if (solver == NULL) {                                             \
-                ik.log.message("Failed to allocate solver: ran out of memory"); \
+                IK.log.message("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(solver, 0, ik.internal.solver_##algorithm.type_size());    \
-            solver->v          = &(ik.internal.solver_##algorithm);           \
-            solver->node       = &(ik.internal.node_##algorithm);             \
-            solver->effector   = &(ik.internal.effector_##algorithm);         \
-            solver->constraint = &(ik.internal.constraint_##algorithm);       \
+            memset(solver, 0, IK.internal.solver_##algorithm.type_size()); \
+            solver->v          = &(IK.internal.solver_##algorithm);  \
+            solver->node       = &(IK.internal.node_##algorithm);    \
+            solver->effector   = &(IK.internal.effector_##algorithm); \
+            solver->constraint = &(IK.internal.constraint_##algorithm); \
         }
         IK_ALGORITHMS
 #undef X
     else
     {
-        ik.log.message("Unknown solver \"%s\"", algorithm_name);
+        IK.log.message("Unknown solver \"%s\"", algorithm_name);
         goto alloc_solver_failed;
     }
 
@@ -75,16 +75,16 @@ ik_solver_static_destruct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_static_rebuild_data(struct ik_solver_t* solver)
+ik_solver_static_rebuild(struct ik_solver_t* solver)
 {
-    return solver->v->rebuild_data(solver);
+    return solver->v->rebuild(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_static_calculate_segment_lengths(struct ik_solver_t* solver)
+ik_solver_static_update_distances(struct ik_solver_t* solver)
 {
-    solver->v->calculate_segment_lengths(solver);
+    solver->v->update_distances(solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -119,7 +119,7 @@ ik_solver_static_destroy_tree(struct ik_solver_t* solver)
 void
 ik_solver_static_iterate_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
-    solver->v->iterate_nodes(solver, callback);
+    solver->v->iterate_all_nodes(solver, callback);
 }
 
 /* ------------------------------------------------------------------------- */

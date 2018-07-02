@@ -80,7 +80,6 @@ struct ik_node_interface_t;
     struct ik_effector_t* effector;                                           \
     struct ik_constraint_t* constraint;                                       \
                                                                               \
-    ikreal_t stiffness;                                                       \
     ikreal_t rotation_weight;                                                 \
     ikreal_t dist_to_parent;
 

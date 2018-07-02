@@ -11,12 +11,12 @@ public:
     virtual void SetUp()
     {
         testing::FLAGS_gtest_death_test_style = "threadsafe";
-        ASSERT_THAT(ik.init(), Eq(IK_OK));
+        ASSERT_THAT(IK.init(), Eq(IK_OK));
     }
 
     virtual void TearDown()
     {
-        EXPECT_THAT(ik.deinit(), Eq(0u)) << "Number of memory leaks";
+        EXPECT_THAT(IK.deinit(), Eq(0u)) << "Number of memory leaks";
     }
 };
 

@@ -90,7 +90,7 @@ chain_tree_rebuild(struct vector_t* chain_list,
  * segment lengths every time node positions change.
  */
 IK_PRIVATE_API void
-calculate_segment_lengths(const struct vector_t* chains);
+update_distances(const struct vector_t* chains);
 
 /*!
  * @brief Counts all of the chains in the tree.

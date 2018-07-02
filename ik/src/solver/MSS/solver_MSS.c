@@ -29,7 +29,7 @@ ik_solver_MSS_destruct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_MSS_rebuild_data(struct ik_solver_t* solver)
+ik_solver_MSS_rebuild(struct ik_solver_t* solver)
 {
     return IK_OK;
 }
