@@ -2,7 +2,9 @@
 #include "ik/solver_base.h"
 #include "ik/chain.h"
 #include "ik/memory.h"
+#include "ik/quat_static.h"
 #include "ik/transform.h"
+#include "ik/vec3_static.h"
 #include <string.h>
 #include <assert.h>
 
@@ -19,7 +21,7 @@ ik_solver_base_type_size(void)
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_base_create(const char* algorithm_name)
+ik_solver_base_create(enum ik_algorithm_e algorithm)
 {
     assert("Don't use this function! Use ik.solver.create()");
     return NULL;
@@ -151,34 +153,34 @@ calculate_effector_target(const struct chain_t* chain)
 
     /* lerp using effector weight to get actual target position */
     effector->_actual_target = effector->target_position;
-    vec3_sub_vec3(effector->_actual_target.f, node->position.f);
-    vec3_mul_scalar(effector->_actual_target.f, effector->weight);
-    vec3_add_vec3(effector->_actual_target.f, node->position.f);
+    ik_vec3_static_sub_vec3(effector->_actual_target.f, node->position.f);
+    ik_vec3_static_mul_scalar(effector->_actual_target.f, effector->weight);
+    ik_vec3_static_add_vec3(effector->_actual_target.f, node->position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
     if (effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
-        vec3_t base_to_effector;
-        vec3_t base_to_target;
+        ik_vec3_t base_to_effector;
+        ik_vec3_t base_to_target;
         struct ik_node_t* base_node;
 
         /* Need distance from base node to target and base to effector node */
         base_node = chain_get_base_node(chain);
         base_to_effector = node->position;
         base_to_target = effector->target_position;
-        vec3_sub_vec3(base_to_effector.f, base_node->position.f);
-        vec3_sub_vec3(base_to_target.f, base_node->position.f);
+        ik_vec3_static_sub_vec3(base_to_effector.f, base_node->position.f);
+        ik_vec3_static_sub_vec3(base_to_target.f, base_node->position.f);
 
         /* The effective distance is a lerp between these two distances */
-        distance_to_target = vec3_length(base_to_target.f) * effector->weight;
-        distance_to_target += vec3_length(base_to_effector.f) * (1.0 - effector->weight);
+        distance_to_target = ik_vec3_static_length(base_to_target.f) * effector->weight;
+        distance_to_target += ik_vec3_static_length(base_to_effector.f) * (1.0 - effector->weight);
 
         /* nlerp the target position by pinning it to the base node */
-        vec3_sub_vec3(effector->_actual_target.f, base_node->position.f);
-        vec3_normalize(effector->_actual_target.f);
-        vec3_mul_scalar(effector->_actual_target.f, distance_to_target);
-        vec3_add_vec3(effector->_actual_target.f, base_node->position.f);
+        ik_vec3_static_sub_vec3(effector->_actual_target.f, base_node->position.f);
+        ik_vec3_static_normalize(effector->_actual_target.f);
+        ik_vec3_static_mul_scalar(effector->_actual_target.f, distance_to_target);
+        ik_vec3_static_add_vec3(effector->_actual_target.f, base_node->position.f);
     }
 }
 static void
@@ -223,8 +225,8 @@ iterate_tree_recursive(struct ik_node_t* node,
     NODE_END_EACH
 }
 void
-ik_solver_base_iterate_nodes(struct ik_solver_t* solver,
-                        ik_solver_iterate_node_cb_func callback)
+ik_solver_base_iterate_all_nodes(struct ik_solver_t* solver,
+                                 ik_solver_iterate_node_cb_func callback)
 {
     if (solver->tree == NULL)
     {

@@ -26,7 +26,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    self->solver = ik.solver.create(solverName);
+    /*self->solver = ik.solver.create(solverName);*/
     if (self->solver == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");
@@ -239,7 +239,7 @@ static PyObject*
 Solver_rebuild_data(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    if (ik.solver.rebuild_data(self->solver) != IK_OK)
+    if (IK.solver.rebuild(self->solver) != IK_OK)
         Py_RETURN_FALSE;
     Py_RETURN_TRUE;
 }
@@ -249,7 +249,7 @@ static PyObject*
 Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ik.solver.calculate_segment_lengths(self->solver);
+    IK.solver.update_distances(self->solver);
     Py_RETURN_NONE;
 }
 
@@ -258,7 +258,7 @@ static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ikret_t ret = ik.solver.solve(self->solver);
+    ikret_t ret = IK.solver.solve(self->solver);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "solve() returned an error code");

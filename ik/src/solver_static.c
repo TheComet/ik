@@ -14,14 +14,14 @@ ik_solver_static_type_size(void)
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_static_create(const char* algorithm_name)
+ik_solver_static_create(enum ik_algorithm_e algorithm)
 {
     struct ik_solver_t* solver = NULL;
 
-    if (0) {}
+    switch (algorithm)
+    {
 #define X(algorithm)                                                          \
-        else if (strcmp(algorithm_name, #algorithm) == 0)                     \
-        {                                                                     \
+        case IK_##algorithm : {                                                                     \
             solver = MALLOC(IK.internal.solver_##algorithm.type_size()); \
             if (solver == NULL) {                                             \
                 IK.log.message("Failed to allocate solver: ran out of memory"); \
@@ -32,13 +32,13 @@ ik_solver_static_create(const char* algorithm_name)
             solver->node       = &(IK.internal.node_##algorithm);    \
             solver->effector   = &(IK.internal.effector_##algorithm); \
             solver->constraint = &(IK.internal.constraint_##algorithm); \
-        }
+        } break;
         IK_ALGORITHMS
 #undef X
-    else
-    {
-        IK.log.message("Unknown solver \"%s\"", algorithm_name);
-        goto alloc_solver_failed;
+        default : {
+            IK.log.message("Unknown solver algorithm with enum value %d", algorithm);
+            goto alloc_solver_failed;
+        } break;
     }
 
     if (solver->v->construct(solver) != IK_OK)
@@ -117,7 +117,7 @@ ik_solver_static_destroy_tree(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_static_iterate_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
+ik_solver_static_iterate_all_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
     solver->v->iterate_all_nodes(solver, callback);
 }

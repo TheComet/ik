@@ -122,7 +122,7 @@ IK_INTERFACE(solver_interface)
      * supported.
      */
     struct ik_solver_t*
-    (*create)(const char* algorithm_name);
+    (*create)(enum ik_algorithm_e algorithm);
 
     /*!
      * @brief Destroys the solver and all nodes/effectors that are part of the

@@ -59,8 +59,10 @@ struct ik_interface_t
 
     const struct ik_build_info_interface_t info;
     const struct ik_log_interface_t        log;
-    const struct ik_tests_interface_t      tests;
+    const struct ik_quat_interface_t       quat;
     const struct ik_solver_interface_t     solver;
+    const struct ik_tests_interface_t      tests;
+    const struct ik_vec3_interface_t       vec3;
 
     /* "Private" interface, should not be used by clients of the library. */
     struct ik_internal_interface_t internal;

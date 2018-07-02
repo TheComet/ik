@@ -2,6 +2,7 @@
 #include "ik/ik.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
+#include "ik/vec3_static.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -350,7 +351,7 @@ calculate_segment_lengths_in_island(struct chain_t* chain)
     {
         struct ik_node_t* node = chain_get_node(chain, last_idx);
 
-        node->dist_to_parent = vec3_length(node->position.f);
+        node->dist_to_parent = ik_vec3_static_length(node->position.f);
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)

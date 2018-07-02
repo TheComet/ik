@@ -1,8 +1,8 @@
 #include "ik/effector_base.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/vec3.h"
-#include "ik/quat.h"
+#include "ik/vec3_static.h"
+#include "ik/quat_static.h"
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
@@ -14,8 +14,8 @@ ik_effector_base_create(void)
         return NULL;
 
     memset(effector, 0, sizeof *effector);
-    vec3_set_zero(effector->target_position.f);
-    quat_set_identity(effector->target_rotation.f);
+    ik_vec3_static_set_zero(effector->target_position.f);
+    ik_quat_static_set_identity(effector->target_rotation.f);
     effector->weight = 1.0;
     effector->rotation_weight = 1.0;
     effector->rotation_decay = 0.25;

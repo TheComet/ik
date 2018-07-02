@@ -163,13 +163,13 @@ set (IK_SOURCES
     "src/ik.c"
     "src/log_static.c"
     "src/memory.c"
-    "src/quat.c"
+    "src/quat_static.c"
     "src/retcodes.c"
     "src/solver_static.c"
     "src/transform_chains.c"
     "src/transform_tree.c"
     "src/util.c"
-    "src/vec3.c"
+    "src/vec3_static.c"
     "src/vector.c"
     "src/solver/base/constraint_base.c"
     "src/solver/base/effector_base.c"
@@ -192,13 +192,15 @@ set (IK_VTABLES
     "include/vtables/effector_base.v"
     "include/vtables/log_static.v"
     "include/vtables/node_base.v"
+    "include/vtables/quat_static.v"
     "include/vtables/solver_base.v"
     "include/vtables/solver_FABRIK.v"
     "include/vtables/solver_MSS.v"
     "include/vtables/solver_ONE_BONE.v"
     "include/vtables/solver_static.v"
     "include/vtables/solver_TWO_BONE.v"
-    "include/vtables/tests_static.v")
+    "include/vtables/tests_static.v"
+    "include/vtables/vec3_static.v")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
@@ -233,6 +235,9 @@ set (IK_TESTS_SOURCES
     "src/tests/test_vector.cpp"
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
+set (IK_BENCHMARK_SOURCES
+    "src/benchmarks/bench_FABRIK_solver.cpp"
+    "src/benchmarks/bench_solve.cpp")
 
 # IK preprocessor script
 set (Python_ADDITIONAL_VERSIONS 3)
@@ -282,12 +287,12 @@ target_compile_options (ik_obj
         /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough 
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough
         -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough 
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough
         -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
@@ -389,11 +394,53 @@ if (IK_TESTS)
 endif ()
 
 ###############################################################################
+# Benchmarks
+###############################################################################
+
+if (IK_BENCHMARKS)
+    add_subdirectory ("thirdparty/benchmark")
+    set_target_properties (benchmark
+    PROPERTIES
+        POSITION_INDEPENDENT_CODE ${IK_PIC})
+    add_library (ik_benchmarks_obj OBJECT
+        ${IK_BENCHMARK_SOURCES})
+    target_include_directories (ik_benchmarks_obj
+        PRIVATE
+            ${CMAKE_CURRENT_BINARY_DIR}/include/public
+            ${CMAKE_CURRENT_BINARY_DIR}/include/private
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/public
+            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/benchmark/include
+            $<$<BOOL:${IK_PYTHON}>:${PYTHON_INCLUDE_DIRS}>)
+    set_target_properties (ik_benchmarks_obj
+        PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
+    target_compile_options (ik_benchmarks_obj
+        PRIVATE $<$<C_COMPILER_ID:MSVC>:
+            /MTd /D_CRT_SECURE_NO_DEPRECATE
+        >
+        PRIVATE $<$<C_COMPILER_ID:GNU>:
+            -Wno-unused-result
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+        >
+        PRIVATE $<$<C_COMPILER_ID:Clang>:
+            -Wno-unused-result
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+        >
+    )
+    target_compile_definitions (ik_benchmarks_obj
+        PRIVATE IK_BUILDING  # The library is being built
+        PRIVATE $<$<CONFIG:Debug>:
+            DEBUG
+        >
+    )
+endif ()
+
+###############################################################################
 # The actual library
 ###############################################################################
 
 add_library (ik ${IK_LIB_TYPE}
     $<TARGET_OBJECTS:ik_obj>
+    $<$<BOOL:${IK_BENCHMARKS}>:$<TARGET_OBJECTS:ik_benchmarks_obj>>
     $<$<BOOL:${IK_TESTS}>:$<TARGET_OBJECTS:ik_tests_obj>>
     $<$<BOOL:${IK_PYTHON}>:$<TARGET_OBJECTS:ik_python_obj>>)
 
@@ -414,14 +461,23 @@ endif ()
 
 if (IK_TESTS)
     target_link_libraries (ik PRIVATE Threads::Threads)
-endif ()
-
-if (IK_TESTS)
     add_executable (ik_tests "src/tests/run_tests.c")
     target_link_libraries (ik_tests PUBLIC ik)
     set_target_properties (ik_tests PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     install (TARGETS ik_tests
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif ()
+
+if (IK_BENCHMARKS)
+    add_executable (ik_benchmarks "src/benchmarks/run_benchmarks.cpp")
+    target_link_libraries (ik_benchmarks PUBLIC ik)
+    target_link_libraries (ik PRIVATE benchmark)
+    target_include_directories (ik_benchmarks
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/benchmark/include)
+    set_target_properties (ik_benchmarks PROPERTIES
+        INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+    install (TARGETS ik_benchmarks
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
 

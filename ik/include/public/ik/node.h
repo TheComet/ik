@@ -26,8 +26,8 @@ struct ik_node_interface_t;
              * WARNING: HAS to be in this order -- there's some hacking going on \
              * in transform.c which relies on the order of ikreal_t's in transform[7]. \
              */                                                               \
-            quat_t rotation;                                                  \
-            vec3_t position;                                                  \
+            ik_quat_t rotation;                                               \
+            ik_vec3_t position;                                               \
         };                                                                    \
         ikreal_t transform[7];                                                \
     };                                                                        \
@@ -36,8 +36,8 @@ struct ik_node_interface_t;
     {                                                                         \
         struct                                                                \
         {                                                                     \
-            quat_t initial_rotation;                                          \
-            vec3_t initial_position;                                          \
+            ik_quat_t initial_rotation;                                       \
+            ik_vec3_t initial_position;                                       \
         };                                                                    \
         ikreal_t initial_transform[7];                                        \
     };                                                                        \

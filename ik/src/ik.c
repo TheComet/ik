@@ -5,6 +5,7 @@
 #include "ik/log_static.h"
 #include "ik/memory.h"
 #include "ik/node_base.h"
+#include "ik/quat_static.h"
 #include "ik/solver_static.h"
 #include "ik/solver_base.h"
 #include "ik/solver_ONE_BONE.h"
@@ -12,6 +13,7 @@
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_MSS.h"
 #include "ik/tests_static.h"
+#include "ik/vec3_static.h"
 #include <stddef.h>
 #include <stdio.h>
 
@@ -67,8 +69,10 @@ struct ik_interface_t IK = {
     ik_implement_callbacks,
     { IK_BUILD_INFO_STATIC_IMPL },
     { IK_LOG_STATIC_IMPL },
-    { IK_TESTS_STATIC_IMPL },
+    { IK_QUAT_STATIC_IMPL },
     { IK_SOLVER_STATIC_IMPL },
+    { IK_TESTS_STATIC_IMPL },
+    { IK_VEC3_STATIC_IMPL },
     {
         &dummy_callbacks,
         { IK_CONSTRAINT_BASE_IMPL},

@@ -75,7 +75,7 @@ const char*
 ik_build_info_static_all(void)
 {
     return
-    "This is wavesim " IK_VERSION " (major,minor,patch,build number)\n"
+    "This is IK " IK_VERSION " (major,minor,patch,build number)\n"
     "Host: ${IK_HOST_COMPUTER}\n"
     "Time compiled: " IK_BUILD_TIME "\n"
     "Commit: ${IK_COMMIT_INFO}\n"

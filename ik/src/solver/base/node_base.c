@@ -1,6 +1,8 @@
 #include "ik/node_base.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
+#include "ik/quat_static.h"
+#include "ik/vec3_static.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -25,8 +27,8 @@ ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
     bstv_construct(&node->children);
     node->v = &IK.internal.node_base;
     node->guid = guid;
-    quat_set_identity(node->rotation.f);
-    vec3_set_zero(node->rotation.f);
+    ik_quat_static_set_identity(node->rotation.f);
+    ik_vec3_static_set_zero(node->rotation.f);
 
     return IK_OK;
 }
