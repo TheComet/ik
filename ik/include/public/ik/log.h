@@ -5,6 +5,15 @@
 
 C_BEGIN
 
+enum ik_log_severity_e
+{
+    IK_DEBUG    = 'd',
+    IK_INFO     = 'i',
+    IK_WARNING  = 'w',
+    IK_ERROR    = 'e',
+    IK_FATAL    = 'f'
+};
+
 IK_INTERFACE(log_interface)
 {
     ikret_t
@@ -12,6 +21,9 @@ IK_INTERFACE(log_interface)
 
     void
     (*deinit)(void);
+
+    void
+    (*set_severity)(enum ik_log_severity_e severity);
 
     void
     (*message)(const char* fmt, ...);
