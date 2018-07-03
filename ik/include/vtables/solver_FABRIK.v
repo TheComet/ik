@@ -1,9 +1,5 @@
 #include "ik/solver_base.h"
 
-IK_IMPLEMENT(node_FABRIK, node_base)
-{
-}
-
 IK_IMPLEMENT(solver_FABRIK, solver_base)
 {
     IK_OVERRIDE(type_size)

@@ -192,6 +192,7 @@ set (IK_VTABLES
     "include/vtables/effector_base.v"
     "include/vtables/log_static.v"
     "include/vtables/node_base.v"
+    "include/vtables/node_FABRIK.v"
     "include/vtables/quat_static.v"
     "include/vtables/solver_base.v"
     "include/vtables/solver_FABRIK.v"

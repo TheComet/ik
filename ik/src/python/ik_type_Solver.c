@@ -1,6 +1,6 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Node.h"
-#include "ik/IK.h"
+#include "ik/ik.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
@@ -26,7 +26,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    /*self->solver = IK.solver.create(solverName);*/
+    /*self->solver = IKAPI.solver.create(solverName);*/
     if (self->solver == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");

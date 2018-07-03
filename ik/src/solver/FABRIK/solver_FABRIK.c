@@ -3,6 +3,7 @@
 #include "ik/chain.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
+#include "ik/node_FABRIK.h"
 #include "ik/quat_static.h"
 #include "ik/transform.h"
 #include "ik/vec3_static.h"
@@ -136,7 +137,7 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
      */
     if (average_count == 0)
     {
-        struct ik_node_t* effector_node = chain_get_node(chain, 0);
+        struct ik_node_FABRIK_t* effector_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, 0);
         struct ik_effector_t* effector = effector_node->effector;
         target_position = effector->_actual_target;
     }
@@ -152,8 +153,8 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
         ik_vec3_t initial_segment;
-        struct ik_node_t* child_node  = chain_get_node(chain, node_idx + 0);
-        struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
+        struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
 
         /*
          * Need the initial (unsolved) segment so we can calculate joint
@@ -462,8 +463,8 @@ calculate_delta_rotation_of_each_segment(const struct chain_t* chain)
     node_idx = chain_length(chain) - 1;
     while (node_idx-- > 0)
     {
-        struct ik_node_t* child_node   = chain_get_node(chain, node_idx + 0);
-        struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node_FABRIK_t* child_node   = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
+        struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
 
         ik_vec3_t original_segment  = child_node->initial_position;
         ik_vec3_t solved_segment = child_node->position;
@@ -512,7 +513,8 @@ calculate_joint_rotations(const struct chain_t* chain)
      * Finally, apply initial global rotations to calculated delta rotations to
      * obtain the solved global rotations.
      */
-    CHAIN_FOR_EACH_NODE(chain, node)
+    CHAIN_FOR_EACH_NODE(chain, node_base)
+        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
         ik_quat_static_mul_quat(node->rotation.f, node->initial_rotation.f);
     CHAIN_END_EACH
 }
@@ -537,22 +539,23 @@ ik_solver_FABRIK_destruct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-store_original_transform_for_chain(struct chain_t* chain)
+store_initial_transform_for_chain(struct chain_t* chain)
 {
-    CHAIN_FOR_EACH_NODE(chain, node)
+    CHAIN_FOR_EACH_NODE(chain, node_base)
+        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
         node->initial_position = node->position;
         node->initial_rotation = node->rotation;
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)
-        store_original_transform_for_chain(child);
+        store_initial_transform_for_chain(child);
     CHAIN_END_EACH
 }
 static void
-store_original_transform(const struct vector_t* chain_list)
+store_initial_transform(const struct vector_t* chain_list)
 {
     VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        store_original_transform_for_chain(chain);
+        store_initial_transform_for_chain(chain);
     VECTOR_END_EACH
 }
 
@@ -565,11 +568,13 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /*
-     * FABRIK requires the original positions and rotations in local space to
-     * calcualte joint rotations after solving.
+     * Joint rotations are calculated by comparing positional differences
+     * before and after solving the tree. These occur in local space, so we
+     * need to store the current state of the tree before continuing with the
+     * algorithm.
      */
     if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
-        store_original_transform(&solver->chain_list);
+        store_initial_transform(&solver->chain_list);
 
     /* Tree is in local space -- FABRIK needs only global node positions */
     ik_transform_chain_list(&solver->chain_list, TR_L2G | TR_TRANSLATIONS);
@@ -581,9 +586,11 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
             struct  ik_node_t* base_node;
             int idx;
 
-            /* The algorithm assumes chains have at least one bone. This should
+            /*
+             * The algorithm assumes chains have at least one bone. This should
              * be asserted while building the chain trees, but it can't hurt
-             * to double check */
+             * to double check
+             */
             idx = chain_length(chain) - 1;
             assert(idx > 0);
 

@@ -106,7 +106,13 @@ class IKHarness(object):
                 if constructor_call is None:
                     body += "    " + goto_tag + " : return result;\n"
                 else:
-                    body += "    " + goto_tag + " : " + constructor_call.replace("construct", "destruct") + ";\n"
+                    # Constructor can have more than one argument, destructor only ever
+                    # takes one argument. Assume the first argument is the object being
+                    # passed to the constructor
+                    match = re.match("(.*)\((.*)\)", constructor_call)
+                    dtor_func = match.group(1).replace("construct", "destruct")
+                    destructor_call = dtor_func + "(" + match.group(2).split(",", 1)[0] + ")"
+                    body += "    " + goto_tag + " : " + destructor_call + ";\n"
             body += "}"
         else:
             if rettype != "void":

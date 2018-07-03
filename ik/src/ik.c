@@ -5,6 +5,7 @@
 #include "ik/log_static.h"
 #include "ik/memory.h"
 #include "ik/node_base.h"
+#include "ik/node_FABRIK.h"
 #include "ik/quat_static.h"
 #include "ik/solver_static.h"
 #include "ik/solver_base.h"

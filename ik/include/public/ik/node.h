@@ -32,16 +32,6 @@ struct ik_node_interface_t;
         ikreal_t transform[7];                                                \
     };                                                                        \
                                                                               \
-    union                                                                     \
-    {                                                                         \
-        struct                                                                \
-        {                                                                     \
-            ik_quat_t initial_rotation;                                       \
-            ik_vec3_t initial_position;                                       \
-        };                                                                    \
-        ikreal_t initial_transform[7];                                        \
-    };                                                                        \
-                                                                              \
     /*!                                                                       \
      * @brief Allows the user of this library to store custom data per node   \
      * @note Can be set and retrieved directly without issue.                 \

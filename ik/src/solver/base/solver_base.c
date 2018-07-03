@@ -158,7 +158,7 @@ calculate_effector_target(const struct chain_t* chain)
     ik_vec3_static_add_vec3(effector->_actual_target.f, node->position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
-    if (effector->flags & EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
+    if (effector->flags & IK_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
         ik_vec3_t base_to_effector;

@@ -13,8 +13,11 @@ ik_node_base_create(uint32_t guid)
 {
     struct ik_node_t* node = MALLOC(sizeof *node);
     if (node == NULL)
+    {
+        ik.log.message("fFailed to allocate node: Ran out of memory");
         return NULL;
-    ik_node_base_construct(node, guid);
+    }
+    ik.internal.node_base.construct(node, guid);
 
     return node;
 }
@@ -152,8 +155,6 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
     new_node->v = node->v;
     new_node->rotation = node->rotation;
     new_node->position = node->position;
-    new_node->initial_rotation = node->initial_rotation;
-    new_node->initial_position = node->initial_position;
     new_node->rotation_weight = node->rotation_weight;
     new_node->dist_to_parent = node->dist_to_parent;
     new_node->user_data = node->user_data;
