@@ -22,21 +22,21 @@ ik_solver_static_create(enum ik_algorithm_e algorithm)
     {
 #define X(algorithm)                                                          \
         case IK_##algorithm : {                                                                     \
-            solver = MALLOC(IK.internal.solver_##algorithm.type_size()); \
+            solver = MALLOC(IKAPI.internal.solver_##algorithm.type_size()); \
             if (solver == NULL) {                                             \
-                IK.log.message("Failed to allocate solver: ran out of memory"); \
+                IKAPI.log.message("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(solver, 0, IK.internal.solver_##algorithm.type_size()); \
-            solver->v          = &(IK.internal.solver_##algorithm);  \
-            solver->node       = &(IK.internal.node_##algorithm);    \
-            solver->effector   = &(IK.internal.effector_##algorithm); \
-            solver->constraint = &(IK.internal.constraint_##algorithm); \
+            memset(solver, 0, IKAPI.internal.solver_##algorithm.type_size()); \
+            solver->v          = &(IKAPI.internal.solver_##algorithm);  \
+            solver->node       = &(IKAPI.internal.node_##algorithm);    \
+            solver->effector   = &(IKAPI.internal.effector_##algorithm); \
+            solver->constraint = &(IKAPI.internal.constraint_##algorithm); \
         } break;
         IK_ALGORITHMS
 #undef X
         default : {
-            IK.log.message("Unknown solver algorithm with enum value %d", algorithm);
+            IKAPI.log.message("Unknown solver algorithm with enum value %d", algorithm);
             goto alloc_solver_failed;
         } break;
     }

@@ -37,12 +37,12 @@ ik_solver_TWO_BONE_data(struct ik_solver_t* solver)
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         if (chain_length(chain) != 3) /* 3 nodes = 2 bones */
         {
-            IK.log.message("ERROR: Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
+            IKAPI.log.message("ERROR: Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            IK.log.message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            IKAPI.log.message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
     SOLVER_END_EACH

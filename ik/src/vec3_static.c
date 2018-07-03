@@ -7,7 +7,11 @@
 ik_vec3_t
 ik_vec3_static_vec3(ikreal_t x, ikreal_t y, ikreal_t z)
 {
-    return (ik_vec3_t){.x = x, .y = y, .z = z};
+    ik_vec3_t ret;
+    ret.x = x;
+    ret.y = y;
+    ret.z = z;
+    return ret;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -35,9 +35,9 @@ static void
 ik_implement_callbacks(const struct ik_callback_interface_t* callbacks)
 {
     if (callbacks)
-        IK.internal.callbacks = callbacks;
+        IKAPI.internal.callbacks = callbacks;
     else
-        IK.internal.callbacks = &dummy_callbacks;
+        IKAPI.internal.callbacks = &dummy_callbacks;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -63,7 +63,7 @@ ik_deinit(void)
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_interface_t IK = {
+struct ik_interface_t IKAPI = {
     ik_init,
     ik_deinit,
     ik_implement_callbacks,

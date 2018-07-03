@@ -1,6 +1,6 @@
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
-#include "ik/ik.h"
+#include "ik/IK.h"
 #include "structmember.h"
 
 #if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
@@ -22,7 +22,7 @@ Vec3_init(ik_Vec3* self, PyObject* args, PyObject* kwds)
     (void)kwds;
     PyObject* position = NULL;
 
-    ik.vec3.set_zero(self->vec.f);
+    IKAPI.vec3.set_zero(self->vec.f);
     if (!PyArg_ParseTuple(args, "|O", &position))
         return -1;
 
@@ -38,7 +38,7 @@ Vec3_set(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
     {
-        ik.vec3.set(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.set(self->vec.f, ((ik_Vec3*)arg)->vec.f);
         Py_RETURN_NONE;
     }
     else if (PyArg_ParseTuple(arg, FMT FMT FMT, &self->vec.x, &self->vec.y, &self->vec.z))
@@ -54,7 +54,7 @@ static PyObject*
 Vec3_set_zero(ik_Vec3* self, PyObject* args)
 {
     (void)args;
-    ik.vec3.set_zero(self->vec.f);
+    IKAPI.vec3.set_zero(self->vec.f);
     Py_RETURN_NONE;
 }
 
@@ -63,11 +63,11 @@ static PyObject*
 Vec3_add(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        ik.vec3.add_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.add_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PyFloat_Check(arg))
-        ik.vec3.add_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
+        IKAPI.vec3.add_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
     else if (PyLong_Check(arg))
-        ik.vec3.add_scalar(self->vec.f, PyLong_AS_LONG(arg));
+        IKAPI.vec3.add_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -76,7 +76,7 @@ Vec3_add(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.add_vec3(self->vec.f, other.f);
+        IKAPI.vec3.add_vec3(self->vec.f, other.f);
     }
     else
     {
@@ -92,11 +92,11 @@ static PyObject*
 Vec3_sub(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        ik.vec3.sub_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.sub_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PyFloat_Check(arg))
-        ik.vec3.sub_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
+        IKAPI.vec3.sub_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
     else if (PyLong_Check(arg))
-        ik.vec3.sub_scalar(self->vec.f, PyLong_AS_LONG(arg));
+        IKAPI.vec3.sub_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -105,7 +105,7 @@ Vec3_sub(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.sub_vec3(self->vec.f, other.f);
+        IKAPI.vec3.sub_vec3(self->vec.f, other.f);
     }
     else
     {
@@ -121,11 +121,11 @@ static PyObject*
 Vec3_mul(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        ik.vec3.mul_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.mul_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PyFloat_Check(arg))
-        ik.vec3.mul_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
+        IKAPI.vec3.mul_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
     else if (PyLong_Check(arg))
-        ik.vec3.mul_scalar(self->vec.f, PyLong_AS_LONG(arg));
+        IKAPI.vec3.mul_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -134,7 +134,7 @@ Vec3_mul(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.mul_vec3(self->vec.f, other.f);
+        IKAPI.vec3.mul_vec3(self->vec.f, other.f);
     }
     else
     {
@@ -150,11 +150,11 @@ static PyObject*
 Vec3_div(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        ik.vec3.div_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.div_vec3(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PyFloat_Check(arg))
-        ik.vec3.div_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
+        IKAPI.vec3.div_scalar(self->vec.f, PyFloat_AS_DOUBLE(arg));
     else if (PyLong_Check(arg))
-        ik.vec3.div_scalar(self->vec.f, PyLong_AS_LONG(arg));
+        IKAPI.vec3.div_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -163,7 +163,7 @@ Vec3_div(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.div_vec3(self->vec.f, other.f);
+        IKAPI.vec3.div_vec3(self->vec.f, other.f);
     }
     else
     {
@@ -179,7 +179,7 @@ static PyObject*
 Vec3_length_squared(ik_Vec3* self, PyObject* args)
 {
     (void)args;
-    return PyFloat_FromDouble(ik.vec3.length_squared(self->vec.f));
+    return PyFloat_FromDouble(IKAPI.vec3.length_squared(self->vec.f));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -187,7 +187,7 @@ static PyObject*
 Vec3_length(ik_Vec3* self, PyObject* args)
 {
     (void)args;
-    return PyFloat_FromDouble(ik.vec3.length(self->vec.f));
+    return PyFloat_FromDouble(IKAPI.vec3.length(self->vec.f));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -195,7 +195,7 @@ static PyObject*
 Vec3_normalize(ik_Vec3* self, PyObject* args)
 {
     (void)args;
-    ik.vec3.normalize(self->vec.f);
+    IKAPI.vec3.normalize(self->vec.f);
     Py_RETURN_NONE;
 }
 
@@ -204,7 +204,7 @@ static PyObject*
 Vec3_dot(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        return PyFloat_FromDouble(ik.vec3.dot(self->vec.f, ((ik_Vec3*)arg)->vec.f));
+        return PyFloat_FromDouble(IKAPI.vec3.dot(self->vec.f, ((ik_Vec3*)arg)->vec.f));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -213,15 +213,11 @@ Vec3_dot(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        return PyFloat_FromDouble(ik.vec3.dot(self->vec.f, other.f));
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either another Vec3 type or a tuple of 3 floats");
-        return NULL;
+        return PyFloat_FromDouble(IKAPI.vec3.dot(self->vec.f, other.f));
     }
 
-    Py_RETURN_NONE;
+    PyErr_SetString(PyExc_TypeError, "Expected either another Vec3 type or a tuple of 3 floats");
+    return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -229,7 +225,7 @@ static PyObject*
 Vec3_cross(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
-        ik.vec3.cross(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.cross(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
         ik_vec3_t other;
@@ -238,7 +234,7 @@ Vec3_cross(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.cross(self->vec.f, other.f);
+        IKAPI.vec3.cross(self->vec.f, other.f);
     }
     else
     {
@@ -254,7 +250,7 @@ static PyObject*
 Vec3_rotate(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_QuatType))
-        ik.vec3.rotate(self->vec.f, ((ik_Quat*)arg)->quat.f);
+        IKAPI.vec3.rotate(self->vec.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
     {
         ik_quat_t other;
@@ -264,11 +260,11 @@ Vec3_rotate(ik_Vec3* self, PyObject* arg)
         other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 3));
         if (PyErr_Occurred())
             return NULL;
-        ik.vec3.rotate(self->vec.f, other.f);
+        IKAPI.vec3.rotate(self->vec.f, other.f);
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Expected either a ik.Quat type or a tuple of 4 floats");
+        PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple of 4 floats");
         return NULL;
     }
 
@@ -287,7 +283,7 @@ Vec3_repr(ik_Vec3* self)
     PyTuple_SET_ITEM(args, 1, y);
     if ((z = PyFloat_FromDouble(self->vec.z)) == NULL) goto insert_failed;
     PyTuple_SET_ITEM(args, 2, z);
-    if ((fmt = PyUnicode_FromString("ik.Vec3(%f, %f, %f)")) == NULL) goto fmt_failed;
+    if ((fmt = PyUnicode_FromString("IK.Vec3(%f, %f, %f)")) == NULL) goto fmt_failed;
     if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
 
     Py_DECREF(fmt);
@@ -328,7 +324,7 @@ static PyMemberDef Vec3_members[] = {
 /* ------------------------------------------------------------------------- */
 PyTypeObject ik_Vec3Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ik.Vec3",                                     /* tp_name */
+    "IK.Vec3",                                     /* tp_name */
     sizeof(ik_Vec3),                               /* tp_basicsize */
     0,                                             /* tp_itemsize */
     0,                                             /* tp_dealloc */

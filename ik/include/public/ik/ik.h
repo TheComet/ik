@@ -68,7 +68,7 @@ struct ik_interface_t
     struct ik_internal_interface_t internal;
 };
 
-IK_PUBLIC_API extern struct ik_interface_t IK;
+IK_PUBLIC_API extern struct ik_interface_t IKAPI;
 
 C_END
 

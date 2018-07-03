@@ -25,7 +25,7 @@ ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
     bstv_construct(&node->children);
-    node->v = &IK.internal.node_base;
+    node->v = &IKAPI.internal.node_base;
     node->guid = guid;
     ik_quat_static_set_identity(node->rotation.f);
     ik_vec3_static_set_zero(node->rotation.f);
@@ -76,8 +76,8 @@ destroy_recursive(struct ik_node_t* node)
 void
 ik_node_base_destroy(struct ik_node_t* node)
 {
-    if (IK.internal.callbacks->on_node_destroy != NULL)
-        IK.internal.callbacks->on_node_destroy(node);
+    if (IKAPI.internal.callbacks->on_node_destroy != NULL)
+        IKAPI.internal.callbacks->on_node_destroy(node);
     node->v->destruct(node);
     FREE(node);
 }
@@ -213,7 +213,7 @@ ik_node_base_dump_to_dot(struct ik_node_t* node, const char* file_name)
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)
     {
-        IK.log.message("Failed to open file %s", file_name);
+        IKAPI.log.message("Failed to open file %s", file_name);
         return;
     }
 

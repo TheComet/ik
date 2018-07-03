@@ -9,18 +9,21 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
 
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
 /* ------------------------------------------------------------------------- */
 static void
 module_free(void* x)
 {
     (void)x;
-    ik.deinit();
+    IKAPI.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
 static PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
-    "ik",                    /* Module name */
+    EXPAND_AND_QUOTE(IKAPI), /* Module name */
     NULL,                    /* docstring, may be NULL */
     -1,                      /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables */
     NULL,                    /* module methods */
@@ -84,12 +87,13 @@ add_submodules_to_module(PyObject* m)
 }
 
 /* ------------------------------------------------------------------------- */
-PyMODINIT_FUNC
-PyInit_ik(void)
+#define PASTER(x, y) x ## y
+#define EVALUATOR(x, y) PASTER(x, y)
+PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void)
 {
     PyObject* m;
 
-    if (ik.init() != IK_OK)
+    if (IKAPI.init() != IK_OK)
         goto ik_init_failed;
 
     m = PyModule_Create(&ik_module);
@@ -103,6 +107,6 @@ PyInit_ik(void)
     return m;
 
     init_module_failed            : Py_DECREF(m);
-    module_alloc_failed           : ik.deinit();
+    module_alloc_failed           : IKAPI.deinit();
     ik_init_failed                : return NULL;
 }

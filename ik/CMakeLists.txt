@@ -428,6 +428,7 @@ if (IK_BENCHMARKS)
     )
     target_compile_definitions (ik_benchmarks_obj
         PRIVATE IK_BUILDING  # The library is being built
+        PRIVATE MS_NO_COREDLL # Stops pyconfig.h from trying to autolink python libraries; cmake handles which libraries get linked
         PRIVATE $<$<CONFIG:Debug>:
             DEBUG
         >
@@ -453,6 +454,7 @@ target_include_directories (ik
 set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
+    OUTPUT_NAME ${IK_API_NAME}
     SOVERSION ${PROJECT_VERSION})
 
 if (IK_PYTHON)

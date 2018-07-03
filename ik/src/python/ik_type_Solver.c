@@ -1,6 +1,6 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Node.h"
-#include "ik/ik.h"
+#include "ik/IK.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
@@ -8,7 +8,7 @@ static void
 Solver_dealloc(ik_Solver* self)
 {
     if (self->solver)
-        ik.solver.destroy(self->solver);
+        IKAPI.solver.destroy(self->solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -26,7 +26,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    /*self->solver = ik.solver.create(solverName);*/
+    /*self->solver = IK.solver.create(solverName);*/
     if (self->solver == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");
@@ -203,7 +203,7 @@ Solver_settree(ik_Solver* self, PyObject* value, void* closure)
 
     if (value == Py_None)
     {
-        ik.solver.unlink_tree(self->solver);
+        IKAPI.solver.unlink_tree(self->solver);
         Py_DECREF(self->tree);
         self->tree = NULL;
     }
@@ -216,7 +216,7 @@ Solver_settree(ik_Solver* self, PyObject* value, void* closure)
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Expected a node of type ik.Node(), or None if you want to delete the tree");
+        PyErr_SetString(PyExc_TypeError, "Expected a node of type IK.Node(), or None if you want to delete the tree");
         return -1;
     }
 
@@ -239,7 +239,7 @@ static PyObject*
 Solver_rebuild_data(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    if (IK.solver.rebuild(self->solver) != IK_OK)
+    if (IKAPI.solver.rebuild(self->solver) != IK_OK)
         Py_RETURN_FALSE;
     Py_RETURN_TRUE;
 }
@@ -249,7 +249,7 @@ static PyObject*
 Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    IK.solver.update_distances(self->solver);
+    IKAPI.solver.update_distances(self->solver);
     Py_RETURN_NONE;
 }
 
@@ -258,7 +258,7 @@ static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ikret_t ret = IK.solver.solve(self->solver);
+    ikret_t ret = IKAPI.solver.solve(self->solver);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "solve() returned an error code");
@@ -284,7 +284,7 @@ Solver_repr(ik_Solver* self)
     (void)self;
     PyObject *fmt, *args, *str;
     if ((args = PyTuple_New(0)) == NULL) goto tuple_failed;
-    if ((fmt = PyUnicode_FromString("ik.Solver()")) == NULL) goto fmt_failed;
+    if ((fmt = PyUnicode_FromString("IK.Solver()")) == NULL) goto fmt_failed;
     if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
 
     Py_DECREF(fmt);
@@ -299,7 +299,7 @@ Solver_repr(ik_Solver* self)
 /* ------------------------------------------------------------------------- */
 PyTypeObject ik_SolverType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ik.Solver",                                   /* tp_name */
+    "IK.Solver",                                   /* tp_name */
     sizeof(ik_Solver),                             /* tp_basicsize */
     0,                                             /* tp_itemsize */
     (destructor)Solver_dealloc,                    /* tp_dealloc */

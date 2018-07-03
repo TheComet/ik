@@ -1,16 +1,22 @@
 #include "gmock/gmock.h"
 #include "Python.h"
+#include "ik/ik.h"
 
 #define NAME python_bindings
 
-PyMODINIT_FUNC
-PyInit_ik(void);
+#define PASTER(x, y) x ## y
+#define EVALUATOR(x, y) PASTER(x, y)
+
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
+PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void);
 
 using namespace ::testing;
 
 static void init_python()
 {
-    PyImport_AppendInittab("ik", PyInit_ik);
+    PyImport_AppendInittab(EXPAND_AND_QUOTE(IKAPI), EVALUATOR(PyInit_, IKAPI));
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
         PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");

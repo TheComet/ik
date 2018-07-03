@@ -4,6 +4,12 @@
 #define NAME FABRIK
 
 using namespace ::testing;
+
+TEST(NAME, todo)
+{
+    ASSERT_TRUE(0);
+}
+
 /*
 class NAME : public Test
 {

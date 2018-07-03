@@ -7,7 +7,12 @@
 ik_quat_t
 ik_quat_static_quat(ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
 {
-    return (ik_quat_t){.x = x, .y = y, .z = z, .w = w};
+    ik_quat_t ret;
+    ret.x = x;
+    ret.y = y;
+    ret.z = z;
+    ret.w = w;
+    return ret;
 }
 
 /* ------------------------------------------------------------------------- */

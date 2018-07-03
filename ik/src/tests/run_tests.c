@@ -2,5 +2,5 @@
 
 int main(int argc, char** argv)
 {
-    return IK.tests.run();
+    return IKAPI.tests.run();
 }

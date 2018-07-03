@@ -22,7 +22,7 @@ ik_log_static_init(void)
         return IK_OK;
 
     /* The log depends on the ik library being initialized */
-    if (IK.init() != IK_OK)
+    if (IKAPI.init() != IK_OK)
         goto ik_init_failed;
 
     g_log = (log_t*)MALLOC(sizeof *g_log);
@@ -33,7 +33,7 @@ ik_log_static_init(void)
 
     return IK_OK;
 
-    alloc_log_failed : IK.deinit();
+    alloc_log_failed : IKAPI.deinit();
     ik_init_failed   : return IK_RAN_OUT_OF_MEMORY;
 }
 
@@ -47,7 +47,7 @@ ik_log_static_deinit(void)
     vector_clear_free(&g_log->message_buffer);
     FREE(g_log);
     g_log = NULL;
-    IK.deinit();
+    IKAPI.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -70,6 +70,6 @@ ik_log_static_message(const char* fmt, ...)
     vsprintf((char*)g_log->message_buffer.data, fmt, va);
     va_end(va);
 
-    if (IK.internal.callbacks->on_log_message != NULL)
-        IK.internal.callbacks->on_log_message((char*)g_log->message_buffer.data);
+    if (IKAPI.internal.callbacks->on_log_message != NULL)
+        IKAPI.internal.callbacks->on_log_message((char*)g_log->message_buffer.data);
 }
