@@ -414,14 +414,12 @@ static void
 recurse_into_children(const struct chain_t* chain)
 {
     /* Recurse into children chains */
-    ik_quat_t average_rotation = {{0, 0, 0, 0}};
+    ik_quat_t average_rotation = ik_quat_static_quat(0, 0, 0, 0);
     int average_count = 0;
     CHAIN_FOR_EACH_CHILD(chain, child)
         ik_quat_t rotation;
         calculate_joint_rotations(child);
 
-        /* Note: All chains *MUST* have at least two nodes */
-        assert(chain_length(child) >= 2);
         rotation = chain_get_base_node(child)->rotation;
 
         /*
@@ -439,7 +437,7 @@ recurse_into_children(const struct chain_t* chain)
      * sub-base node (which is our tip node). Average the accumulated
      * quaternion and set this node's correct solved rotation.
      */
-    if (average_count > 0 && chain_length(chain) != 0)
+    if (average_count > 0)
     {
         ik_quat_static_div_scalar(average_rotation.f, average_count);
         ik_quat_static_normalize(average_rotation.f);
@@ -455,7 +453,7 @@ calculate_delta_rotation_of_each_segment(const struct chain_t* chain)
 
     /*
      * Compare each segment in the input and output chain and calculate the
-     * delta (!) angles. The result will be written to the output tree's
+     * delta (!) angles. The result will be written to the tree's
      * node->rotation field.
      *
      * NOTE: Assumes we're working on local space.
@@ -463,15 +461,15 @@ calculate_delta_rotation_of_each_segment(const struct chain_t* chain)
     node_idx = chain_length(chain) - 1;
     while (node_idx-- > 0)
     {
-        struct ik_node_FABRIK_t* child_node   = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
+        struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
         struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
 
-        ik_vec3_t original_segment  = child_node->initial_position;
+        /*ik_vec3_t initial_segment  = child_node->initial_position;
         ik_vec3_t solved_segment = child_node->position;
-        ik_vec3_static_sub_vec3(original_segment.f, parent_node->position.f);
-        ik_vec3_static_sub_vec3(solved_segment.f, parent_node->position.f);
+        ik_vec3_static_sub_vec3(initial_segment.f, parent_node->initial_position.f);
+        ik_vec3_static_sub_vec3(solved_segment.f, parent_node->position.f);*/
 
-        ik_quat_static_angle_unnormalized(parent_node->rotation.f, child_node->initial_position.f, child_node->position.f);
+        ik_quat_static_angle(parent_node->rotation.f, child_node->initial_position.f, child_node->position.f);
     }
 }
 
@@ -479,6 +477,9 @@ calculate_delta_rotation_of_each_segment(const struct chain_t* chain)
 static void
 calculate_joint_rotations(const struct chain_t* chain)
 {
+    /* Note: All chains *MUST* have at least two nodes */
+    assert(chain_length(chain) > 1);
+
     /*
      * Calculates the "global" (world) angles of each joint and writes them to
      * each node->rotation slot.
@@ -501,24 +502,15 @@ calculate_joint_rotations(const struct chain_t* chain)
      * At this point, all nodes have calculated their delta angles *except* for
      * the end effector nodes, which remain untouched. It makes sense to copy
      * the delta rotation of the parent node into the effector node by default.
-     */
-    assert(chain_length(chain) > 1);
+     *
     {
         struct ik_node_t* effector_node  = chain_get_node(chain, 0);
         struct ik_node_t* parent_node    = chain_get_node(chain, 1);
         effector_node->rotation = parent_node->rotation;
-    }
+    }*/
 
-    /*
-     * Finally, apply initial global rotations to calculated delta rotations to
-     * obtain the solved global rotations.
-     */
-    CHAIN_FOR_EACH_NODE(chain, node_base)
-        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
-        ik_quat_static_mul_quat(node->rotation.f, node->initial_rotation.f);
-    CHAIN_END_EACH
+
 }
-
 
 /* ------------------------------------------------------------------------- */
 ikret_t
@@ -560,6 +552,64 @@ store_initial_transform(const struct vector_t* chain_list)
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+calculate_joint_rotations_and_transform_chain(struct chain_t* chain, ik_vec3_t acc_pos, ik_quat_t acc_rot)
+{
+    int node_idx = chain_length(chain) - 1;
+    assert(node_idx > 0);
+    while (node_idx--)
+    {
+        struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
+        struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
+
+        /*
+         * The following transforms child_node's position from global space
+         * into local space and leaves its rotation untouched.
+         */
+        ik_quat_t inv_rot_acc;
+        ik_quat_static_set(inv_rot_acc.f, acc_rot.f);
+        ik_quat_static_conj(inv_rot_acc.f);
+        ik_quat_static_mul_quat(acc_rot.f, child_node->rotation.f);
+
+        ik_vec3_static_sub_vec3(child_node->position.f, acc_pos.f);
+        ik_vec3_static_add_vec3(acc_pos.f, child_node->position.f);
+        ik_vec3_static_rotate(child_node->position.f, inv_rot_acc.f);
+
+        /*
+        ik_quat_t inv_rot_acc;
+        ik_quat_static_set(inv_rot_acc.f, acc_rot);
+        ik_quat_static_conj(inv_rot_acc.f);
+
+        ik_quat_static_mul_quat(acc_rot, node->rotation.f);
+
+        ik_vec3_static_sub_vec3(node->position.f, acc_pos);
+        ik_vec3_static_add_vec3(acc_pos, node->position.f);
+        ik_vec3_static_rotate(node->position.f, inv_rot_acc.f);
+        */
+
+       /*
+        * With both the position and initial_position in local space, it's now
+        * trivial to calculate the parent node's delta rotation.
+        */
+        ik_quat_static_angle(parent_node->rotation.f, child_node->initial_position.f, child_node->position.f);
+        ik_quat_static_mul_quat(parent_node->rotation.f, parent_node->initial_rotation.f);
+    }
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        calculate_joint_rotations_and_transform_chain(child, acc_pos, acc_rot);
+    CHAIN_END_EACH
+}
+static void
+calculate_joint_rotations_and_transform(struct vector_t* chain_list)
+{
+    VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
+        ik_vec3_t acc_pos;  ik_vec3_static_set_zero(acc_pos.f);
+        ik_quat_t acc_rot;  ik_quat_static_set_identity(acc_rot.f);
+        calculate_joint_rotations_and_transform_chain(chain, acc_pos, acc_rot);
+    VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
 ikret_t
 ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 {
@@ -569,9 +619,9 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
     /*
      * Joint rotations are calculated by comparing positional differences
-     * before and after solving the tree. These occur in local space, so we
-     * need to store the current state of the tree before continuing with the
-     * algorithm.
+     * before and after solving the tree. This comparison needs to occur in
+     * global space (doesn't work in local as far as I can see). Store the
+     * positions and locations before solving for later.
      */
     if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
         store_initial_transform(&solver->chain_list);
@@ -620,14 +670,10 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     }
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(&solver->chain_list, TR_G2L | TR_TRANSLATIONS);
-
     if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
-    {
-        SOLVER_FOR_EACH_CHAIN(solver, chain)
-            calculate_joint_rotations(chain);
-        SOLVER_END_EACH
-    }
+        calculate_joint_rotations_and_transform(&solver->chain_list);
+    else
+        ik_transform_chain_list(&solver->chain_list, TR_G2L | TR_TRANSLATIONS);
 
     return result;
 }

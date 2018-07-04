@@ -154,7 +154,7 @@ ik_quat_static_normalize_sign(ikreal_t q1[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_static_angle_unnormalized(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_quat_static_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t cos_a, sin_a, angle, denominator;
 
@@ -183,7 +183,7 @@ ik_quat_static_angle_unnormalized(ikreal_t q[4], const ikreal_t v1[3], const ikr
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_static_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_quat_static_angle_normalized_vectors(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t cos_a, sin_a, angle;
 
@@ -193,7 +193,7 @@ ik_quat_static_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
         /* calculate axis of rotation and write it to the quaternion's vector section */
         ik_vec3_static_set(q, v1);
         ik_vec3_static_cross(q, v2);
-        /* would usually normalizehere, but cross product of two normalized
+        /* would usually normalize here, but cross product of two normalized
          * vectors is already normalized*/
 
         /* quaternion's vector needs to be weighted with sin_a */

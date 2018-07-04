@@ -195,81 +195,6 @@ Quat_normalize_sign(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_angle_unnormalized(ik_Quat* self, PyObject* args)
-{
-    PyObject *vec1, *vec2;
-
-    if (PyTuple_GET_SIZE(args) != 2)
-    {
-        PyErr_SetString(PyExc_TypeError, "Wrong number of arguments, expected two vectors.");
-        return NULL;
-    }
-
-    vec1 = PyTuple_GET_ITEM(args, 0);
-    vec2 = PyTuple_GET_ITEM(args, 1);
-
-    if (PyObject_TypeCheck(vec1, &ik_Vec3Type))
-    {
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            IKAPI.quat.angle_unnormalized(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            ik_vec3_t other;
-            other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            IKAPI.quat.angle_unnormalized(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
-    {
-        ik_vec3_t other1;
-        other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
-        other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
-        other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
-        if (PyErr_Occurred())
-            return NULL;
-
-        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
-        {
-            IKAPI.quat.angle_unnormalized(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
-        }
-        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
-        {
-            ik_vec3_t other2;
-            other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
-            other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
-            other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
-            if (PyErr_Occurred())
-                return NULL;
-            IKAPI.quat.angle_unnormalized(self->quat.f, other1.f, other2.f);
-        }
-        else
-        {
-            PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
-            return NULL;
-        }
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
 Quat_angle(ik_Quat* self, PyObject* args)
 {
     PyObject *vec1, *vec2;
@@ -345,6 +270,81 @@ Quat_angle(ik_Quat* self, PyObject* args)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
+Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
+{
+    PyObject *vec1, *vec2;
+
+    if (PyTuple_GET_SIZE(args) != 2)
+    {
+        PyErr_SetString(PyExc_TypeError, "Wrong number of arguments, expected two vectors.");
+        return NULL;
+    }
+
+    vec1 = PyTuple_GET_ITEM(args, 0);
+    vec2 = PyTuple_GET_ITEM(args, 1);
+
+    if (PyObject_TypeCheck(vec1, &ik_Vec3Type))
+    {
+        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
+        {
+            IKAPI.quat.angle_normalized_vectors(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
+        }
+        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
+        {
+            ik_vec3_t other;
+            other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
+            other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
+            other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
+            if (PyErr_Occurred())
+                return NULL;
+            IKAPI.quat.angle_normalized_vectors(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
+        }
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
+            return NULL;
+        }
+    }
+    else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
+    {
+        ik_vec3_t other1;
+        other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
+        other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
+        other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
+        if (PyErr_Occurred())
+            return NULL;
+
+        if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
+        {
+            IKAPI.quat.angle_normalized_vectors(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
+        }
+        else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
+        {
+            ik_vec3_t other2;
+            other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
+            other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
+            other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
+            if (PyErr_Occurred())
+                return NULL;
+            IKAPI.quat.angle_normalized_vectors(self->quat.f, other1.f, other2.f);
+        }
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
+            return NULL;
+        }
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected either a IK.Quat type or a tuple with 4 floats");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
 Quat_repr(ik_Quat* self)
 {
     PyObject *fmt, *args, *str, *w, *x, *y, *z;
@@ -372,19 +372,19 @@ Quat_repr(ik_Quat* self)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Quat_methods[] = {
-    {"set_identity",       (PyCFunction)Quat_set_identity,       METH_NOARGS,  "Sets all components to 0.0"},
-    {"set",                (PyCFunction)Quat_set,                METH_O,       "Copies components from another vector or tuple"},
-    {"add",                (PyCFunction)Quat_add,                METH_O,       "Adds another vector or scalar to this vector"},
-    {"mag",                (PyCFunction)Quat_mag,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"conj",               (PyCFunction)Quat_conj,               METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"invert_sign",        (PyCFunction)Quat_invert_sign,        METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"normalize",          (PyCFunction)Quat_normalize,          METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"mul",                (PyCFunction)Quat_mul,                METH_O,       "Adds another vector or scalar to this vector"},
-    {"div",                (PyCFunction)Quat_div,                METH_O,       "Adds another vector or scalar to this vector"},
-    {"dot",                (PyCFunction)Quat_dot,                METH_O,       "Adds another vector or scalar to this vector"},
-    {"normalize_sign",     (PyCFunction)Quat_normalize_sign,     METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"angle_unnormalized", (PyCFunction)Quat_angle_unnormalized, METH_VARARGS, "Adds another vector or scalar to this vector"},
-    {"angle",              (PyCFunction)Quat_angle,              METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"set_identity",             (PyCFunction)Quat_set_identity,             METH_NOARGS,  "Sets all components to 0.0"},
+    {"set",                      (PyCFunction)Quat_set,                      METH_O,       "Copies components from another vector or tuple"},
+    {"add",                      (PyCFunction)Quat_add,                      METH_O,       "Adds another vector or scalar to this vector"},
+    {"mag",                      (PyCFunction)Quat_mag,                      METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"conj",                     (PyCFunction)Quat_conj,                     METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"invert_sign",              (PyCFunction)Quat_invert_sign,              METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"normalize",                (PyCFunction)Quat_normalize,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"mul",                      (PyCFunction)Quat_mul,                      METH_O,       "Adds another vector or scalar to this vector"},
+    {"div",                      (PyCFunction)Quat_div,                      METH_O,       "Adds another vector or scalar to this vector"},
+    {"dot",                      (PyCFunction)Quat_dot,                      METH_O,       "Adds another vector or scalar to this vector"},
+    {"normalize_sign",           (PyCFunction)Quat_normalize_sign,           METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"angle",                    (PyCFunction)Quat_angle,                    METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"angle_normalized_vectors", (PyCFunction)Quat_angle_normalized_vectors, METH_VARARGS, "Adds another vector or scalar to this vector"},
     {NULL}
 };
 

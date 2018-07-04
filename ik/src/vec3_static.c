@@ -181,7 +181,7 @@ ik_vec3_static_rotate(ikreal_t v[3], const ikreal_t q[4])
     ik_quat_t conj;
     ik_quat_t point;
 
-    memcpy(point.f, v, sizeof(ikreal_t) * 3);
+    ik_vec3_static_set(point.f, v);
     point.w = 0.0;
 
     ik_quat_static_set(conj.f, q);
@@ -190,5 +190,5 @@ ik_vec3_static_rotate(ikreal_t v[3], const ikreal_t q[4])
     ik_quat_static_set(result.f, q);
     mul_quat_no_normalize(result.f, point.f);
     mul_quat_no_normalize(result.f, conj.f);
-    memcpy(v, result.f, sizeof(ikreal_t) * 3);
+    ik_vec3_static_set(v, result.f);
 }

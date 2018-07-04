@@ -10,11 +10,11 @@ ik_node_FABRIK_create(uint32_t guid)
     struct ik_node_FABRIK_t* node = MALLOC(sizeof *node);
     if (node == NULL)
     {
-        ik.log.message("fFailed to allocate node: Ran out of memory");
+        IKAPI.log.message("fFailed to allocate node: Ran out of memory");
         return NULL;
     }
 
-    ik.internal.node_FABRIK.construct((struct ik_node_t*)node, guid);
+    IKAPI.internal.node_FABRIK.construct((struct ik_node_t*)node, guid);
 
     return (struct ik_node_t*)node;
 }

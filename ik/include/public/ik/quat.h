@@ -102,26 +102,27 @@ IK_INTERFACE(quat_interface)
     (*normalize_sign)(ikreal_t q1[4]);
 
     /*!
-     * @brief Calculates the angle between two vectors. If the angle is 0 or 180,
-     * the delta rotation is set to identity.
+     * @brief Calculates the angle between two vectors and assumes those vectors
+     * are **NOT** normalized. If the angle is 0 or 180, the delta rotation is
+     * set to identity.
      * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
      * The result is written to this. Any previous data is overwritten.
      * @param[in] v1 The first vector.
      * @param[in] v2 The second vector.
      */
     void
-    (*angle_unnormalized)(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
+    (*angle)(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
 
     /*!
-     * @brief Calculates the angle between two normalizedvectors. If the angle is
-     * 0 or 180, the delta rotation is set to identity.
+     * @brief Calculates the angle between two **normalized** vectors. If the
+     * angle is 0 or 180, the delta rotation is set to identity.
      * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
      * The result is written to this. Any previous data is overwritten.
      * @param[in] v1 The first vector (must be nomralized).
      * @param[in] v2 The second vector (must be normalized).
      */
     void
-    (*angle)(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
+    (*angle_normalized_vectors)(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
 };
 
 C_END
