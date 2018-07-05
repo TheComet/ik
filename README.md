@@ -81,16 +81,16 @@ int main()
     struct ik_node_t* child3 = solver->node->create_child(3, child2);
 
     /* Set node positions in local space so they form a straight line in the Y direction*/
-    child1->position = ik.vec3(0, 10, 0);
-    child2->position = ik.vec3(0, 10, 0);
-    child3->position = ik.vec3(0, 10, 0);
+    child1->position = ik.vec3.vec3(0, 10, 0);
+    child2->position = ik.vec3.vec3(0, 10, 0);
+    child3->position = ik.vec3.vec3(0, 10, 0);
 
     /* Attach an effector at the end */
     struct ik_effector_t* eff = solver->effector->create();
-    solver->node->attach_effector(child3, eff);
+    solver->effector->attach(eff, child3);
 
     /* set the target position of the effector to be somewhere within range */
-    eff->target_position = ik.vec3(2, -3, 5);
+    eff->target_position = ik.vec3.vec3(2, -3, 5);
 
     /* We want to calculate rotations as well as positions */
     solver->flags |= IK_ENABLE_TARGET_ROTATIONS;
