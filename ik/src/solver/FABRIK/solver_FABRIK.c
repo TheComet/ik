@@ -466,7 +466,7 @@ recurse_into_children(struct chain_t* chain)
          * Averaging quaternions taken from here
          * http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
          */
-        ik_quat_static_normalize_sign(rotation.f);
+        ik_quat_static_ensure_positive_sign(rotation.f);
         ik_quat_static_add_quat(average_rotation.f, rotation.f);
         ++average_count;
     CHAIN_END_EACH
@@ -574,7 +574,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(&solver->chain_list, TR_L2G | TR_TRANSLATIONS);
+    IKAPI.transform.chain_list(&solver->chain_list, IK_L2G | IK_TRANSLATIONS);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -629,7 +629,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
         calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(&solver->chain_list, TR_G2L | TR_TRANSLATIONS);
+    IKAPI.transform.chain_list(&solver->chain_list, IK_G2L | IK_TRANSLATIONS);
 
     return result;
 }

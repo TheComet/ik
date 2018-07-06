@@ -98,7 +98,7 @@ static PyObject*
 Quat_invert_sign(ik_Quat* self, PyObject* arg)
 {
     (void)arg;
-    IKAPI.quat.invert_sign(self->quat.f);
+    IKAPI.quat.negate(self->quat.f);
     Py_RETURN_NONE;
 }
 
@@ -189,7 +189,7 @@ static PyObject*
 Quat_normalize_sign(ik_Quat* self, PyObject* arg)
 {
     (void)arg;
-    IKAPI.quat.normalize_sign(self->quat.f);
+    IKAPI.quat.ensure_positive_sign(self->quat.f);
     Py_RETURN_NONE;
 }
 
@@ -287,7 +287,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
     {
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            IKAPI.quat.angle_normalized_vectors(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
+            IKAPI.quat.angle_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -297,7 +297,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
             other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            IKAPI.quat.angle_normalized_vectors(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
+            IKAPI.quat.angle_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
         }
         else
         {
@@ -316,7 +316,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
 
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            IKAPI.quat.angle_normalized_vectors(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
+            IKAPI.quat.angle_no_normalize(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -326,7 +326,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
             other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            IKAPI.quat.angle_normalized_vectors(self->quat.f, other1.f, other2.f);
+            IKAPI.quat.angle_no_normalize(self->quat.f, other1.f, other2.f);
         }
         else
         {

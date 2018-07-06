@@ -1,6 +1,6 @@
 #include "ik/bstv.h"
 #include "ik/quat_static.h"
-#include "ik/transform.h"
+#include "ik/transform_static.h"
 #include "ik/vec3_static.h"
 #include "ik/node.h"
 #include <stddef.h>
@@ -151,7 +151,7 @@ static transform_func transform_table[8] = {
 
 /* ------------------------------------------------------------------------- */
 void
-ik_transform_tree(struct ik_node_t* node, uint8_t flags)
+ik_transform_static_node(struct ik_node_t* node, uint8_t flags)
 {
     ikreal_t base_transform[7];
     memcpy(base_transform, node->transform, sizeof(ikreal_t) * 7);

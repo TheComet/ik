@@ -1,6 +1,6 @@
 #include "ik/bstv.h"
 #include "ik/quat_static.h"
-#include "ik/transform.h"
+#include "ik/transform_static.h"
 #include "ik/vec3_static.h"
 #include "ik/chain.h"
 #include "ik/node.h"
@@ -208,16 +208,16 @@ static transform_func transform_table[8] = {
 
 /* ------------------------------------------------------------------------- */
 void
-ik_transform_chain_list(const struct vector_t* chain_list, uint8_t flags)
+ik_transform_static_chain_list(const struct vector_t* chain_list, uint8_t flags)
 {
     VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        ik_transform_chain(chain, flags);
+        ik_transform_static_chain(chain, flags);
     VECTOR_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_transform_chain(struct chain_t* chain, uint8_t flags)
+ik_transform_static_chain(struct chain_t* chain, uint8_t flags)
 {
     ikreal_t base_transform[7];
 

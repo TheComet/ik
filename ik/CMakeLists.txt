@@ -201,6 +201,7 @@ set (IK_VTABLES
     "include/vtables/solver_static.v"
     "include/vtables/solver_TWO_BONE.v"
     "include/vtables/tests_static.v"
+    "include/vtables/transform_static.v"
     "include/vtables/vec3_static.v")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"

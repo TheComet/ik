@@ -61,7 +61,7 @@ ik_quat_static_conj(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_static_invert_sign(ikreal_t q[4])
+ik_quat_static_negate(ikreal_t q[4])
 {
     q[0] = -q[0];
     q[1] = -q[1];
@@ -69,40 +69,60 @@ ik_quat_static_invert_sign(ikreal_t q[4])
     q[3] = -q[3];
 }
 
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_static_invert(ikreal_t q[4])
+{
+    ikreal_t mag_squared = ik_quat_static_dot(q, q);
+    ik_quat_static_conj(q);
+    ik_quat_static_div_scalar(q, mag_squared);
+}
 
 /* ------------------------------------------------------------------------- */
 void
 ik_quat_static_normalize(ikreal_t q[4])
 {
-    ikreal_t mag = ik_quat_static_mag(q);
-    if (mag != 0.0)
-        mag = 1.0 / mag;
-    q[0] *= mag;
-    q[1] *= mag;
-    q[2] *= mag;
-    q[3] *= mag;
+    ikreal_t r_mag = 1.0 / ik_quat_static_mag(q);
+    q[0] *= r_mag;
+    q[1] *= r_mag;
+    q[2] *= r_mag;
+    q[3] *= r_mag;
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-mul_ik_quat_static_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
+void
+ik_quat_static_mul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
-    ik_vec3_t v1;
-    ik_vec3_t v2;
-    ik_vec3_static_set(v1.f, q1);
-    ik_vec3_static_set(v2.f, q2);
+    ikreal_t q1[4]; 
+    ik_quat_static_set(q1, q);
 
-    ik_vec3_static_mul_scalar(v1.f, q2[3]);
-    ik_vec3_static_mul_scalar(v2.f, q1[3]);
-    q1[3] = q1[3]*q2[3] - ik_vec3_static_dot(q1, q2);
-    ik_vec3_static_cross(q1, q2);
-    ik_vec3_static_add_vec3(q1, v1.f);
-    ik_vec3_static_add_vec3(q1, v2.f);
+#define w1 q1[3]
+#define x1 q1[0]
+#define y1 q1[1]
+#define z1 q1[2]
+#define w2 q2[3]
+#define x2 q2[0]
+#define y2 q2[1]
+#define z2 q2[2]
+
+    q[3] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
+    q[0] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
+    q[1] = w1*y2 + y1*w2 + z1*x2 - x1*z2;
+    q[2] = w1*z2 + z1*w2 + x1*y2 - y1*x2;
+
+#undef w1
+#undef x1
+#undef y1
+#undef z1
+#undef w2
+#undef x2
+#undef y2
+#undef z2
 }
 void
 ik_quat_static_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
 {
-    mul_ik_quat_static_no_normalize(q1, q2);
+    ik_quat_static_mul_no_normalize(q1, q2);
     ik_quat_static_normalize(q1);
 }
 
@@ -136,20 +156,17 @@ ik_quat_static_div_scalar(ikreal_t q[4], ikreal_t scalar)
 ikreal_t
 ik_quat_static_dot(const ikreal_t q1[4], const ikreal_t q2[4])
 {
-    return q1[0] * q2[0] +
-           q1[1] * q2[1] +
-           q1[2] * q2[2] +
-           q1[3] * q2[3];
+    return q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3];
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_static_normalize_sign(ikreal_t q1[4])
+ik_quat_static_ensure_positive_sign(ikreal_t q1[4])
 {
-    ik_quat_t unit = {{0, 0, 0, 1}};
-    ikreal_t dot = ik_quat_static_dot(q1, unit.f);
+    ikreal_t unit[4] = {0, 0, 0, 1};
+    ikreal_t dot = ik_quat_static_dot(q1, unit);
     if (dot < 0.0)
-        ik_quat_static_invert_sign(q1);
+        ik_quat_static_negate(q1);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -183,7 +200,7 @@ ik_quat_static_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_static_angle_normalized_vectors(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_quat_static_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t cos_a, sin_a, angle;
 

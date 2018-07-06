@@ -9,6 +9,7 @@
 #include "ik/node.h"
 #include "ik/solver.h"
 #include "ik/tests.h"
+#include "ik/transform.h"
 
 C_BEGIN
 
@@ -62,6 +63,7 @@ struct ik_interface_t
     const struct ik_quat_interface_t       quat;
     const struct ik_solver_interface_t     solver;
     const struct ik_tests_interface_t      tests;
+    const struct ik_transform_interface_t  transform;
     const struct ik_vec3_interface_t       vec3;
 
     /* "Private" interface, should not be used by clients of the library. */

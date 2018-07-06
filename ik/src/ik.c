@@ -14,6 +14,7 @@
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_MSS.h"
 #include "ik/tests_static.h"
+#include "ik/transform_static.h"
 #include "ik/vec3_static.h"
 #include <stddef.h>
 #include <stdio.h>
@@ -73,6 +74,7 @@ struct ik_interface_t IKAPI = {
     { IK_QUAT_STATIC_IMPL },
     { IK_SOLVER_STATIC_IMPL },
     { IK_TESTS_STATIC_IMPL },
+    { IK_TRANSFORM_STATIC_IMPL },
     { IK_VEC3_STATIC_IMPL },
     {
         &dummy_callbacks,
