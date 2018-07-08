@@ -33,6 +33,27 @@ ik_effector_base_destroy(struct ik_effector_t* effector)
 }
 
 /* ------------------------------------------------------------------------- */
+struct ik_effector_t*
+ik_effector_base_duplicate(const struct ik_effector_t* effector)
+{
+    struct ik_effector_t* new_effector = effector->v->create();
+    if (effector == NULL)
+        return NULL;
+
+    new_effector->node = NULL;
+    new_effector->target_position = effector->target_position;
+    new_effector->target_rotation = effector->target_rotation;
+    new_effector->_actual_target  = effector->_actual_target;
+    new_effector->weight          = effector->weight;
+    new_effector->rotation_weight = effector->rotation_weight;
+    new_effector->rotation_decay  = effector->rotation_decay;
+    new_effector->chain_length    = effector->chain_length;
+    new_effector->flags           = effector->flags;
+
+    return new_effector;
+}
+
+/* ------------------------------------------------------------------------- */
 int
 ik_effector_base_attach(struct ik_effector_t* effector, struct ik_node_t* node)
 {

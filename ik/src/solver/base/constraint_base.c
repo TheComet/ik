@@ -1,6 +1,7 @@
 #include "ik/constraint_base.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
+#include "ik/quat_static.h"
 #include <string.h>
 #include <assert.h>
 
@@ -9,37 +10,33 @@
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
-static int
-apply_none(struct ik_node_t* node)
+static void
+apply_dummy(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    return 0;
+    ik_quat_static_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
-static int
-apply_stiff(struct ik_node_t* node)
+static void
+apply_stiff(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    /*
-     * The stiff constraint should never actually be reached, because joints
-     * that have a stiff constraint will be excluded from the chain tree
-     * entirely. This function exists solely to debug the chain tree.
-     */
-    assert(1);
-    return 0;
+    ik_quat_static_set(compensate_rotation, node->rotation.f);
+    ik_quat_static_conj(compensate_rotation);
+    ik_quat_static_mul_quat(compensate_rotation, node->constraint->stiff.angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
-static int
-apply_hinge(struct ik_node_t* node)
+static void
+apply_hinge(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    return 0;
+    ik_quat_static_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
-static int
-apply_cone(struct ik_node_t* node)
+static void
+apply_cone(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    return 0;
+    ik_quat_static_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -47,14 +44,51 @@ apply_cone(struct ik_node_t* node)
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
+struct ik_constraint_t*
+ik_constraint_base_create()
+{
+    struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
+    if (constraint == NULL)
+    {
+        IKAPI.log.message("Failed to allocate constraint: Out of memory");
+        return NULL;
+    }
+
+    memset(constraint, 0, sizeof *constraint);
+    constraint->v = &IKAPI.internal.constraint_base;
+    ik_constraint_base_set_custom(constraint, apply_dummy);
+
+    return constraint;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_constraint_base_destroy(struct ik_constraint_t* constraint)
+{
+    constraint->v->detach(constraint);
+    FREE(constraint);
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_constraint_t*
+ik_constraint_base_duplicate(const struct ik_constraint_t* constraint)
+{
+    struct ik_constraint_t* new_constraint = constraint->v->create();
+    if (new_constraint == NULL)
+        return NULL;
+
+    memcpy(new_constraint, constraint, sizeof *constraint);
+    new_constraint->node = NULL;
+
+    return new_constraint;
+}
+
+/* ------------------------------------------------------------------------- */
 ikret_t
 ik_constraint_base_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type)
 {
     switch (constraint_type)
     {
-        case IK_NONE:
-            constraint->apply = apply_none;
-            break;
 
         case IK_STIFF:
             constraint->apply = apply_stiff;
@@ -116,30 +150,4 @@ ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* 
     node->constraint = constraint;
 
     return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_constraint_t*
-ik_constraint_base_create(enum ik_constraint_type_e constraint_type)
-{
-    struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
-    if (constraint == NULL)
-    {
-        IKAPI.log.message("Failed to allocate constraint: Out of memory");
-        return NULL;
-    }
-
-    memset(constraint, 0, sizeof *constraint);
-    constraint->v = &IKAPI.internal.constraint_base;
-    constraint->v->set_type(constraint, constraint_type);
-
-    return constraint;
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_constraint_base_destroy(struct ik_constraint_t* constraint)
-{
-    constraint->v->detach(constraint);
-    FREE(constraint);
 }

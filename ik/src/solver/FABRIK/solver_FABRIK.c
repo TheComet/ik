@@ -116,15 +116,24 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     ik_vec3_t target_position;
 
     /*
-     * Target position is the average of all solved child chain base positions.
+     * Target position and rotation is the average of all solved child chain
+     * base positions and rotations
      */
     ik_vec3_static_set_zero(target_position.f);
     average_count = 0;
     CHAIN_FOR_EACH_CHILD(chain, child)
         ik_vec3_t child_base_position = solve_chain_forwards_with_constraints(child);
         ik_vec3_static_add_vec3(target_position.f, child_base_position.f);
+        /*
+         * Averaging quaternions taken from here
+         * http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
+         *
+        ik_quat_static_ensure_positive_sign(rotation.f);
+        ik_quat_static_add_quat(average_rotation.f, rotation.f);*/
+
         ++average_count;
     CHAIN_END_EACH
+
 
     /*
      * If there are no child chains, then the first node in the chain must
@@ -152,17 +161,8 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     node_count = chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        ik_vec3_t initial_segment;
         struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
         struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
-
-        /*
-         * Need the initial (unsolved) segment so we can calculate joint
-         * rotation for constraints.
-         */
-        ik_vec3_static_set(initial_segment.f, child_node->initial_position.f);
-        ik_vec3_static_sub_vec3(initial_segment.f, parent_node->initial_position.f);
-        ik_vec3_static_normalize(initial_segment.f);
 
         /* move node to target */
         child_node->position = target_position;
@@ -175,48 +175,8 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
         ik_vec3_static_normalize(target_position.f);                                /* normalise */
         ik_vec3_static_mul_scalar(target_position.f, -child_node->dist_to_parent);  /* child points to parent */
         ik_vec3_static_add_vec3(target_position.f, child_node->position.f);         /* attach to child -- this is the new target for the next segment */
-
-        /* Calculate global rotation of parent node *
-        segment_original = child_node->initial_position;
-        segment_current  = child_node->position;
-        ik_vec3_static_sub_vec3(segment_original.f, parent_node->initial_position.f);
-        ik_vec3_static_sub_vec3(segment_current.f, target_position.f);
-        ik_vec3_static_angle(parent_node->rotation.f, segment_original.f, segment_current.f);
-        ik_quat_static_mul_quat(parent_node->rotation.f, parent_node->initial_rotation.f);
-
-        * Convert global transform to local *
-        inv_rotation = accumulated.rotation;
-        ik_quat_static_conj(inv_rotation.f);
-        ik_quat_static_mul_quat(parent_node->rotation.f, inv_rotation.f);
-        ik_vec3_static_sub_vec3(parent_node->position.f, accumulated.position.f);
-        ik_quat_static_rotate_vec(parent_node->position.f, inv_rotation.f);
-
-        if (child_node->constraint != NULL)
-            child_node->constraint->apply(parent_node);
-
-        * Accumulate local rotation and translation for deeper nodes *after*
-         * constraint was applied *
-        accumulated_previous = accumulated;
-        ik_quat_static_mul_quat(accumulated.rotation.f, parent_node->rotation.f);
-        ik_vec3_static_add_vec3(accumulated.position.f, parent_node->position.f);
-
-        * Convert local transform back to global *
-        ik_quat_static_rotate_vec(parent_node->position.f, accumulated_previous.rotation.f);
-        ik_vec3_static_add_vec3(parent_node->position.f, accumulated_previous.position.f);
-        ik_quat_static_mul_quat(parent_node->rotation.f, accumulated_previous.rotation.f);
-
-        if (child_node->constraint != NULL)
-        {
-            * XXX combine this? *
-            inv_rotation = parent_node->initial_rotation;
-            ik_quat_static_conj(inv_rotation.f);
-            ik_quat_static_mul_quat(parent_node->rotation.f, inv_rotation.f);
-
-            target_position = parent_node->position;
-            ik_quat_static_rotate_vec(segment_original.f, parent_node->rotation.f);
-            ik_vec3_static_add_vec3(target_position.f, segment_original.f);
-        }*/
     }
+
 
     return target_position;
 }
@@ -408,45 +368,6 @@ solve_chain_backwards(struct chain_t* chain, ik_vec3_t target_position)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_FABRIK_construct(struct ik_solver_t* solver)
-{
-    /* typical default values */
-    solver->max_iterations = 20;
-    solver->tolerance = 1e-3;
-
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_solver_FABRIK_destruct(struct ik_solver_t* solver)
-{
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-store_initial_transform_for_chain(struct chain_t* chain)
-{
-    CHAIN_FOR_EACH_NODE(chain, node_base)
-        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
-        node->initial_position = node->position;
-        node->initial_rotation = node->rotation;
-    CHAIN_END_EACH
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        store_initial_transform_for_chain(child);
-    CHAIN_END_EACH
-}
-static void
-store_initial_transform(const struct vector_t* chain_list)
-{
-    VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        store_initial_transform_for_chain(chain);
-    VECTOR_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
 static void
 calculate_joint_rotations_for_chain(struct chain_t* chain);
 static void
@@ -563,6 +484,52 @@ calculate_joint_rotations(struct vector_t* chain_list)
     VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
         calculate_joint_rotations_for_chain(chain);
     VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+store_initial_transform_for_chain(struct chain_t* chain)
+{
+    CHAIN_FOR_EACH_NODE(chain, node_base)
+        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
+        node->initial_position = node->position;
+        node->initial_rotation = node->rotation;
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        store_initial_transform_for_chain(child);
+    CHAIN_END_EACH
+}
+static void
+store_initial_transform(const struct vector_t* chain_list)
+{
+    VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
+        store_initial_transform_for_chain(chain);
+    VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_solver_FABRIK_construct(struct ik_solver_t* solver)
+{
+    /* typical default values */
+    solver->max_iterations = 20;
+    solver->tolerance = 1e-3;
+
+    return IK_OK;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_FABRIK_destruct(struct ik_solver_t* solver)
+{
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_solver_FABRIK_rebuild(struct ik_solver_t* solver)
+{
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */

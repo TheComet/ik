@@ -109,6 +109,12 @@ IK_INTERFACE(effector_interface)
     (*destroy)(struct ik_effector_t* effector);
 
     /*!
+     * @brief Duplicates the specified effector object and returns it.
+     */
+    struct ik_effector_t*
+    (*duplicate)(const struct ik_effector_t* effector);
+
+    /*!
      * @brief Attaches an effector object to the node. The node gains ownership
      * of the effector and is responsible for its deallocation. If the node
      * already owns an effector, then it is first destroyed.

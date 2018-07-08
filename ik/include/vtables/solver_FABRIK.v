@@ -5,6 +5,7 @@ IK_IMPLEMENT(solver_FABRIK, solver_base)
     IK_OVERRIDE(type_size)
     IK_CONSTRUCTOR(construct)
     IK_BEFORE(destruct)
+    IK_AFTER(rebuild)
     IK_AFTER(solve)
 }
 
@@ -20,6 +21,11 @@ IK_IMPLEMENT(constraint_FABRIK, constraint_base)
  * Need to combine multiple ikret_t return values from the various before/after
  * functions.
  */
+static inline ikret_t ik_solver_FABRIK_harness_rebuild_return_value(ikret_t a, ikret_t b) {
+    if (a != IK_OK) return a;
+    return b;
+}
+
 static inline ikret_t ik_solver_FABRIK_harness_solve_return_value(ikret_t a, ikret_t b) {
     if (a != IK_OK) return a;
     return b;

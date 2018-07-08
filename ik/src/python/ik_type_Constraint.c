@@ -34,7 +34,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    self->constraint = pySolver->solver->constraint->create(IK_NONE);
+    self->constraint = pySolver->solver->constraint->create();
     if (self->constraint == NULL)
         goto create_constraint_failed;
 

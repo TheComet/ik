@@ -163,21 +163,17 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
     {
         if (node->effector != NULL)
         {
-            const struct ik_effector_interface_t* ei = node->effector->v;
-            struct ik_effector_t* new_effector = ei->create();
-            if (new_effector == NULL)
+            struct ik_effector_t* effector = node->effector->v->duplicate(node->effector);
+            if (effector == NULL)
                 goto copy_child_node_failed;
-            memcpy(new_effector, node->effector, sizeof *new_effector);
-            ei->attach(new_effector, new_node);
+            effector->v->attach(effector, new_node);
         }
         if (node->constraint != NULL)
         {
-            const struct ik_constraint_interface_t* ci = node->constraint->v;
-            struct ik_constraint_t* new_constraint = ci->create(node->constraint->type);
-            if (new_constraint == NULL)
+            struct ik_constraint_t* constraint = node->constraint->v->duplicate(node->constraint);
+            if (constraint == NULL)
                 goto copy_child_node_failed;
-            memcpy(new_constraint, node->constraint, sizeof *new_constraint);
-            ci->attach(new_constraint, new_node);
+            constraint->v->attach(constraint, new_node);
         }
     }
 

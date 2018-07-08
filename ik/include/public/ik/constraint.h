@@ -2,16 +2,17 @@
 #define IK_CONSTRAINT_H
 
 #include "ik/config.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_BEGIN
 
 struct ik_node_t;
 struct ik_constraint_interface_t;
 
-typedef int (*ik_constraint_apply_func)(struct ik_node_t*);
+typedef void (*ik_constraint_apply_func)(const struct ik_node_t* node, ikreal_t compensate_rotation[4]);
 
 #define IK_CONSTRAINTS \
-    X(NONE) \
     X(STIFF) \
     X(HINGE) \
     X(CONE) \
@@ -30,6 +31,22 @@ struct ik_constraint_t
     struct ik_node_t* node;
     ik_constraint_apply_func apply;
     enum ik_constraint_type_e type;
+
+    union {
+        struct {
+            ik_quat_t angle;
+        } stiff;
+        struct {
+            ik_vec3_t axis;
+            ikreal_t min_angle;
+            ikreal_t max_angle;
+        } hinge;
+        struct {
+            ik_vec3_t center;
+            ikreal_t max_angle;
+        } cone;
+        ikreal_t custom[5];
+    };
 };
 
 IK_INTERFACE(constraint_interface)
@@ -39,7 +56,21 @@ IK_INTERFACE(constraint_interface)
      * tree using ik_node_attach_constraint().
      */
     struct ik_constraint_t*
-    (*create)(enum ik_constraint_type_e constraint_type);
+    (*create)(void);
+
+    /*!
+     * @brief Destroys and frees a constraint object. This should **NOT** be called
+     * on constraints that are attached to nodes. Use ik_node_destroy_constraint()
+     * instead.
+     */
+    void
+    (*destroy)(struct ik_constraint_t* constraint);
+
+    /*!
+     * @brief Duplicates the specified constraint and returns it.
+     */
+    struct ik_constraint_t*
+    (*duplicate)(const struct ik_constraint_t* constraint);
 
     /*!
      * @brief Sets the type of constraint to enforce.
@@ -58,14 +89,6 @@ IK_INTERFACE(constraint_interface)
      */
     void
     (*set_custom)(struct ik_constraint_t* constraint, ik_constraint_apply_func callback);
-
-    /*!
-     * @brief Destroys and frees a constraint object. This should **NOT** be called
-     * on constraints that are attached to nodes. Use ik_node_destroy_constraint()
-     * instead.
-     */
-    void
-    (*destroy)(struct ik_constraint_t* constraint);
 
     /*!
      * @brief The constraint is attached to the specified node.
