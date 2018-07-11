@@ -58,7 +58,7 @@ Quat_add(ik_Quat* self, PyObject* arg)
         IKAPI.quat.add_quat(self->quat.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
     {
-        ik_quat_t other;
+        struct ik_quat_t other;
         other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -123,7 +123,7 @@ Quat_mul(ik_Quat* self, PyObject* arg)
         IKAPI.quat.mul_scalar(self->quat.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
     {
-        ik_quat_t other;
+        struct ik_quat_t other;
         other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -166,7 +166,7 @@ Quat_dot(ik_Quat* self, PyObject* arg)
         IKAPI.quat.dot(self->quat.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
     {
-        ik_quat_t other;
+        struct ik_quat_t other;
         other.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -216,7 +216,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
-            ik_vec3_t other;
+            struct ik_vec3_t other;
             other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
             other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
             other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
@@ -232,7 +232,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
     }
     else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
     {
-        ik_vec3_t other1;
+        struct ik_vec3_t other1;
         other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
         other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
         other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
@@ -245,7 +245,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
-            ik_vec3_t other2;
+            struct ik_vec3_t other2;
             other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
             other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
             other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
@@ -291,7 +291,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
-            ik_vec3_t other;
+            struct ik_vec3_t other;
             other.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
             other.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
             other.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
@@ -307,7 +307,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
     }
     else if (PySequence_Check(vec1) && PySequence_Fast_GET_SIZE(vec1) == 3)
     {
-        ik_vec3_t other1;
+        struct ik_vec3_t other1;
         other1.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 0));
         other1.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 1));
         other1.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec1, 2));
@@ -320,7 +320,7 @@ Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
-            ik_vec3_t other2;
+            struct ik_vec3_t other2;
             other2.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 0));
             other2.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 1));
             other2.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));

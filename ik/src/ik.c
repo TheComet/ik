@@ -3,6 +3,7 @@
 #include "ik/constraint_base.h"
 #include "ik/effector_base.h"
 #include "ik/log_static.h"
+#include "ik/mat3x3_static.h"
 #include "ik/memory.h"
 #include "ik/node_base.h"
 #include "ik/node_FABRIK.h"
@@ -37,9 +38,9 @@ static void
 ik_implement_callbacks(const struct ik_callback_interface_t* callbacks)
 {
     if (callbacks)
-        IKAPI.internal.callbacks = callbacks;
+        ik_callback = callbacks;
     else
-        IKAPI.internal.callbacks = &dummy_callbacks;
+        ik_callback = &dummy_callbacks;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -65,19 +66,22 @@ ik_deinit(void)
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_interface_t IKAPI = {
+const struct ik_callback_interface_t* ik_callback = &dummy_callbacks;
+
+/* ------------------------------------------------------------------------- */
+const struct ik_interface_t IKAPI = {
     ik_init,
     ik_deinit,
     ik_implement_callbacks,
     { IK_BUILD_INFO_STATIC_IMPL },
     { IK_LOG_STATIC_IMPL },
+    { IK_MAT3X3_STATIC_IMPL },
     { IK_QUAT_STATIC_IMPL },
     { IK_SOLVER_STATIC_IMPL },
     { IK_TESTS_STATIC_IMPL },
     { IK_TRANSFORM_STATIC_IMPL },
     { IK_VEC3_STATIC_IMPL },
     {
-        &dummy_callbacks,
         { IK_CONSTRAINT_BASE_IMPL},
         { IK_EFFECTOR_BASE_IMPL},
         { IK_NODE_BASE_IMPL },

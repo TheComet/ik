@@ -4,10 +4,10 @@
 #include <math.h>
 
 /* ------------------------------------------------------------------------- */
-ik_vec3_t
+struct ik_vec3_t
 ik_vec3_static_vec3(ikreal_t x, ikreal_t y, ikreal_t z)
 {
-    ik_vec3_t ret;
+    struct ik_vec3_t ret;
     ret.x = x;
     ret.y = y;
     ret.z = z;
@@ -152,43 +152,58 @@ ik_vec3_static_cross(ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t v1x = v1[1] * v2[2] - v2[1] * v1[2];
     ikreal_t v1z = v1[0] * v2[1] - v2[0] * v1[1];
-    v1[1]       = v1[2] * v2[0] - v2[2] * v1[0];
+    v1[1]        = v1[2] * v2[0] - v2[2] * v1[0];
     v1[0] = v1x;
     v1[2] = v1z;
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4])
+void
+ik_vec3_static_ncross(ikreal_t v1[3], const ikreal_t v2[3])
 {
-    ik_vec3_t v1;
-    ik_vec3_t v2;
-    ik_vec3_static_set(v1.f, q1);
-    ik_vec3_static_set(v2.f, q2);
-
-    ik_vec3_static_mul_scalar(v1.f, q2[3]);
-    ik_vec3_static_mul_scalar(v2.f, q1[3]);
-    q1[3] = q1[3]*q2[3] - ik_vec3_static_dot(q1, q2);
-    ik_vec3_static_cross(q1, q2);
-    ik_vec3_static_add_vec3(q1, v1.f);
-    ik_vec3_static_add_vec3(q1, v2.f);
+    ikreal_t v1x = v2[1] * v1[2] - v1[1] * v2[2];
+    ikreal_t v1z = v2[0] * v1[1] - v1[0] * v2[1];
+    v1[1]        = v2[2] * v1[0] - v1[2] * v2[0];
+    v1[0] = v1x;
+    v1[2] = v1z;
 }
+
+/* ------------------------------------------------------------------------- */
 void
 ik_vec3_static_rotate(ikreal_t v[3], const ikreal_t q[4])
 {
-    /* P' = RPR' */
-    ik_quat_t result;
-    ik_quat_t conj;
-    ik_quat_t point;
+    /* v' = q * v * q' */
+    /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
+    struct ik_vec3_t tmp;
+    ikreal_t dot_qv = ik_vec3_static_dot(q, v);
+    ikreal_t dot_qq = ik_vec3_static_dot(q, q);
+    ik_vec3_static_set(tmp.f, v);
+    /* 2.0f * s * cross(u, v) */
+    ik_vec3_static_ncross(v, q);
+    ik_vec3_static_mul_scalar(v, 2.0 * q[3]);
+    /* + (s*s - dot(u, u)) * v */
+    ik_vec3_static_mul_scalar(tmp.f, q[3]*q[3] - dot_qq);
+    ik_vec3_static_add_vec3(v, tmp.f);
+    /* + 2.0f * dot(u, v) * u */
+    ik_vec3_static_set(tmp.f, q);
+    ik_vec3_static_mul_scalar(tmp.f, 2.0 * dot_qv);
+    ik_vec3_static_add_vec3(v, tmp.f);
+}
 
-    ik_vec3_static_set(point.f, v);
-    point.w = 0.0;
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_static_project(ikreal_t v1[3], const ikreal_t v2[3])
+{
+    ikreal_t dot = ik_vec3_static_dot(v1, v2);
+    ikreal_t l1 = ik_vec3_static_length(v1);
+    ikreal_t l2 = ik_vec3_static_length(v2);
+    ik_vec3_static_mul_scalar(v1, dot / (l1 * l2));
+}
 
-    ik_quat_static_set(conj.f, q);
-    ik_quat_static_conj(conj.f);
-
-    ik_quat_static_set(result.f, q);
-    mul_quat_no_normalize(result.f, point.f);
-    mul_quat_no_normalize(result.f, conj.f);
-    ik_vec3_static_set(v, result.f);
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_static_project_normalized(ikreal_t v1[3], const ikreal_t v2[3])
+{
+    ikreal_t dot = ik_vec3_static_dot(v1, v2);
+    ik_vec3_static_mul_scalar(v1, dot);
 }

@@ -10,8 +10,8 @@
 static void
 local_to_global_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
-    ik_vec3_t position;
-    ik_quat_t rotation;
+    struct ik_vec3_t position;
+    struct ik_quat_t rotation;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
     ikreal_t* acc_rot = &acc_rot_pos[0];
@@ -36,7 +36,7 @@ local_to_global_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 static void
 global_to_local_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
-    ik_quat_t inv_rot_acc;
+    struct ik_quat_t inv_rot_acc;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
     ikreal_t* acc_rot = &acc_rot_pos[0];
@@ -61,7 +61,7 @@ global_to_local_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 static void
 local_to_global_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 {
-    ik_quat_t rotation = node->rotation;
+    struct ik_quat_t rotation = node->rotation;
     ik_quat_static_mul_quat(node->rotation.f, acc_rot);
     ik_quat_static_mul_quat(acc_rot, rotation.f);
 
@@ -74,7 +74,7 @@ local_to_global_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 static void
 global_to_local_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 {
-    ik_quat_t inv_rot_acc;
+    struct ik_quat_t inv_rot_acc;
     ik_quat_static_set(inv_rot_acc.f, acc_rot);
     ik_quat_static_conj(inv_rot_acc.f);
     ik_quat_static_mul_quat(node->rotation.f, inv_rot_acc.f);
@@ -89,7 +89,7 @@ global_to_local_rotation_recursive(struct ik_node_t* node, ikreal_t acc_rot[4])
 static void
 local_to_global_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
-    ik_vec3_t position;
+    struct ik_vec3_t position;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
     ikreal_t* acc_rot = &acc_rot_pos[0];
@@ -112,7 +112,7 @@ local_to_global_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_p
 static void
 global_to_local_translation_recursive(struct ik_node_t* node, ikreal_t acc_rot_pos[7])
 {
-    ik_quat_t inv_rot_acc;
+    struct ik_quat_t inv_rot_acc;
 
     /* Unpack rotation (first 4 floats) and position (last 3 floats) from argument */
     ikreal_t* acc_rot = &acc_rot_pos[0];

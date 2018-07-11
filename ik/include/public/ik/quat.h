@@ -6,27 +6,30 @@
 
 C_BEGIN
 
-typedef union ik_quat_t
+struct ik_quat_t
 {
-    struct {
-        ikreal_t x;
-        ikreal_t y;
-        ikreal_t z;
-        ikreal_t w;
+    union
+    {
+        struct {
+            ikreal_t x;
+            ikreal_t y;
+            ikreal_t z;
+            ikreal_t w;
+        };
+        struct {
+            struct ik_vec3_t v;
+            ikreal_t _w;
+        };
+        ikreal_t f[4];
     };
-    struct {
-        ik_vec3_t v;
-        ikreal_t _w;
-    };
-    ikreal_t f[4];
-} ik_quat_t;
+};
 
 IK_INTERFACE(quat_interface)
 {
     /*!
      * @brief Convenience function for initializing a quaternion.
      */
-    ik_quat_t
+    struct ik_quat_t
     (*quat)(ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w);
 
     /*!
@@ -42,6 +45,9 @@ IK_INTERFACE(quat_interface)
      */
     void
     (*set)(ikreal_t q[4], const ikreal_t src[4]);
+
+    void
+    (*set_axis_angle)(ikreal_t q[4], const ikreal_t v[3], ikreal_t a);
 
     /*!
      * @brief Adds the elements from one quaternion to another. Required for
@@ -151,6 +157,9 @@ IK_INTERFACE(quat_interface)
      */
     void
     (*angle_no_normalize)(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3]);
+
+    void
+    (*print)(char* buf, const ikreal_t q[4]);
 };
 
 C_END

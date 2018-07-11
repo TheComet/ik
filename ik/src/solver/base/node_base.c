@@ -27,9 +27,10 @@ ikret_t
 ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 {
     memset(node, 0, sizeof *node);
-    bstv_construct(&node->children);
+
     node->v = &IKAPI.internal.node_base;
     node->guid = guid;
+    bstv_construct(&node->children);
     ik_quat_static_set_identity(node->rotation.f);
     ik_vec3_static_set_zero(node->rotation.f);
 
@@ -50,6 +51,8 @@ destruct_recursive(struct ik_node_t* node)
         node->effector->v->destroy(node->effector);
     if (node->constraint)
         node->constraint->v->destroy(node->constraint);
+    if (node->pole)
+        node->pole->v->destroy(node->pole);
 
     bstv_clear_free(&node->children);
 }
@@ -64,6 +67,8 @@ ik_node_base_destruct(struct ik_node_t* node)
         node->effector->v->destroy(node->effector);
     if (node->constraint)
         node->constraint->v->destroy(node->constraint);
+    if (node->pole)
+        node->pole->v->destroy(node->pole);
 
     node->v->unlink(node);
     bstv_clear_free(&node->children);
@@ -79,8 +84,8 @@ destroy_recursive(struct ik_node_t* node)
 void
 ik_node_base_destroy(struct ik_node_t* node)
 {
-    if (IKAPI.internal.callbacks->on_node_destroy != NULL)
-        IKAPI.internal.callbacks->on_node_destroy(node);
+    if (ik_callback->on_node_destroy != NULL)
+        ik_callback->on_node_destroy(node);
     node->v->destruct(node);
     FREE(node);
 }
@@ -174,6 +179,13 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
             if (constraint == NULL)
                 goto copy_child_node_failed;
             constraint->v->attach(constraint, new_node);
+        }
+        if (node->pole != NULL)
+        {
+            struct ik_pole_t* pole = node->pole->v->duplicate(node->pole);
+            if (pole == NULL)
+                goto copy_child_node_failed;
+            pole->v->attach(pole, new_node);
         }
     }
 

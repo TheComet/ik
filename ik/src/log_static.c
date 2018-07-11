@@ -68,7 +68,7 @@ ik_log_static_set_severity(enum ik_log_severity_e severity)
     if (g_log == NULL)
         return;
 
-    /* Need to map to a strictly increasing number for easier comparison later. 
+    /* Need to map to a strictly increasing number for easier comparison later.
      * IK_DEBUG starts at 0 */
     switch (severity)
     {
@@ -111,6 +111,6 @@ ik_log_static_message(const char* fmt, ...)
     vsprintf((char*)g_log->message_buffer.data, fmt, va);
     va_end(va);
 
-    if (IKAPI.internal.callbacks->on_log_message != NULL)
-        IKAPI.internal.callbacks->on_log_message((char*)g_log->message_buffer.data);
+    if (ik_callback->on_log_message != NULL)
+        ik_callback->on_log_message((char*)g_log->message_buffer.data);
 }

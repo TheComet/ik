@@ -34,15 +34,15 @@ struct ik_constraint_t
 
     union {
         struct {
-            ik_quat_t angle;
+            struct ik_quat_t angle;
         } stiff;
         struct {
-            ik_vec3_t axis;
+            struct ik_vec3_t axis;
             ikreal_t min_angle;
             ikreal_t max_angle;
         } hinge;
         struct {
-            ik_vec3_t center;
+            struct ik_vec3_t center;
             ikreal_t max_angle;
         } cone;
         ikreal_t custom[5];

@@ -14,8 +14,8 @@ enum node_FABRIK_constraint_marker_e
     {                                                                         \
         struct                                                                \
         {                                                                     \
-            ik_quat_t initial_rotation;                                       \
-            ik_vec3_t initial_position;                                       \
+            struct ik_quat_t initial_rotation;                                \
+            struct ik_vec3_t initial_position;                                \
         };                                                                    \
         ikreal_t initial_transform[7];                                        \
     };                                                                        \

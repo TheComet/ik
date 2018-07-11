@@ -10,6 +10,7 @@
 #include "ik/solver.h"
 #include "ik/tests.h"
 #include "ik/transform.h"
+#include "ik/mat3x3.h"
 
 C_BEGIN
 
@@ -22,10 +23,10 @@ struct ik_callback_interface_t
     (*on_node_destroy)(struct ik_node_t* node);
 };
 
+IK_PRIVATE_API extern const struct ik_callback_interface_t* ik_callback;
+
 struct ik_internal_interface_t
 {
-    const struct ik_callback_interface_t* callbacks;
-
     /* Base interface implementations*/
     const struct ik_constraint_interface_t constraint_base;
     const struct ik_effector_interface_t effector_base;
@@ -60,6 +61,7 @@ struct ik_interface_t
 
     const struct ik_build_info_interface_t info;
     const struct ik_log_interface_t        log;
+    const struct ik_mat3x3_interface_t     mat3x3;
     const struct ik_quat_interface_t       quat;
     const struct ik_solver_interface_t     solver;
     const struct ik_tests_interface_t      tests;
@@ -67,10 +69,10 @@ struct ik_interface_t
     const struct ik_vec3_interface_t       vec3;
 
     /* "Private" interface, should not be used by clients of the library. */
-    struct ik_internal_interface_t internal;
+    const struct ik_internal_interface_t internal;
 };
 
-IK_PUBLIC_API extern struct ik_interface_t IKAPI;
+IK_PUBLIC_API extern const struct ik_interface_t IKAPI;
 
 C_END
 

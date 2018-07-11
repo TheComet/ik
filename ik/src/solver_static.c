@@ -110,13 +110,6 @@ ik_solver_static_unlink_tree(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_static_destroy_tree(struct ik_solver_t* solver)
-{
-    solver->v->destroy_tree(solver);
-}
-
-/* ------------------------------------------------------------------------- */
-void
 ik_solver_static_iterate_all_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
     solver->v->iterate_all_nodes(solver, callback);

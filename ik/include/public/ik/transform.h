@@ -20,7 +20,7 @@ enum ik_transform_mode_e
 IK_INTERFACE(transform_interface)
 {
     void
-    (*node)(struct ik_node_t* node, uint8_t mode);
+    (*node)(struct ik_node_t* root, uint8_t mode);
 
     void
     (*chain)(struct chain_t* chain, uint8_t mode);

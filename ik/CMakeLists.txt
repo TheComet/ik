@@ -12,6 +12,7 @@ endif ()
 
 set (IK_API_NAME "ik" CACHE STRING "The symbol name exported for consumers of the library. Also controls the module name for the python bindings")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
+option (IK_BIFEC "'Build Info For Every Compile' -- If true (default) the updated build number is written to a header, which causes the library to recompile build_info.c. This can get annoying for developers, so disable this if you are annoyed." ON)
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 set (IK_LIB_TYPE "STATIC" CACHE STRING "SHARED or STATIC library")
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
@@ -122,18 +123,17 @@ configure_file ("templates/build_info.c.in" "src/build_info.c")
 ###############################################################################
 
 # Update build info every time the project is compiled
-set (GENERATED_BUILD_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/build_info_for_every_compile.h")
-add_custom_command (OUTPUT always_rebuild COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake COMMENT "")
-add_custom_command (
-    OUTPUT ${GENERATED_BUILD_INFO_HEADER}
+set (BIFEC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/build_info_for_every_compile.h")
+add_custom_target (ik_bifec_header
     COMMAND ${CMAKE_COMMAND}
-            -DOUTPUT_FILE=${GENERATED_BUILD_INFO_HEADER}
+            -DOUTPUT_FILE=${BIFEC_HEADER}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -DIK_BIFEC=${IK_BIFEC}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake" always_rebuild
     COMMENT "Updating build information"
     VERBATIM)
+add_custom_command (OUTPUT ${BIFEC_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_bifec_header)
 
 set (IK_HEADERS
     "include/private/ik/backtrace.h"
@@ -145,6 +145,7 @@ set (IK_HEADERS
     "include/public/ik/effector.h"
     "include/public/ik/ik.h"
     "include/public/ik/log.h"
+    "include/public/ik/mat3x3.h"
     "include/public/ik/node.h"
     "include/public/ik/pole.h"
     "include/public/ik/pstdint.h"
@@ -157,12 +158,13 @@ set (IK_HEADERS
     "include/public/ik/vec3.h"
     "include/public/ik/vector.h"
     "templates/config.h.in"
-    "${GENERATED_BUILD_INFO_HEADER}")
+    "${BIFEC_HEADER}")
 set (IK_SOURCES
     "src/bstv.c"
     "src/chain.c"
     "src/ik.c"
     "src/log_static.c"
+    "src/mat3x3_static.c"
     "src/memory.c"
     "src/quat_static.c"
     "src/retcodes.c"
@@ -193,6 +195,7 @@ set (IK_VTABLES
     "include/vtables/constraint_base.v"
     "include/vtables/effector_base.v"
     "include/vtables/log_static.v"
+    "include/vtables/mat3x3_static.v"
     "include/vtables/node_base.v"
     "include/vtables/node_FABRIK.v"
     "include/vtables/pole_base.v"
@@ -233,6 +236,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_bstv.cpp"
     "src/tests/test_effector.cpp"
     "src/tests/test_FABRIK.cpp"
+    "src/tests/test_mat3x3.cpp"
     "src/tests/test_node.cpp"
     "src/tests/test_quat.cpp"
     "src/tests/test_transform_chain.cpp"

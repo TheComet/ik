@@ -41,7 +41,7 @@ struct ik_effector_t
      * position where the node it is attached to should head for.
      * @note Default value is (0, 0, 0).
      */
-    ik_vec3_t target_position;
+    struct ik_vec3_t target_position;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -49,7 +49,7 @@ struct ik_effector_t
      * rotation where the node it is attached to should head for.
      * @note Default value is the identity quaternion.
      */
-    ik_quat_t target_rotation;
+    struct ik_quat_t target_rotation;
 
     /*!
      * Used internally to hold the actual target position/rotation, which will
@@ -57,7 +57,7 @@ struct ik_effector_t
      * 1.0. This value is updated right after calling solve() and before the
      * solving algorithm begins.
      */
-    ik_vec3_t _actual_target;
+    struct ik_vec3_t _actual_target;
 
     /*!
      * @brief Specifies how much influence the solver has on the chain of

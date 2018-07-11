@@ -65,8 +65,8 @@ ik_solver_base_destruct(struct ik_solver_t* solver)
 struct ik_node_t*
 ik_solver_base_unlink_tree(struct ik_solver_t* solver)
 {
-    struct ik_node_t* base = solver->tree;
-    if (base == NULL)
+    struct ik_node_t* root = solver->tree;
+    if (root == NULL)
         return NULL;
     solver->tree = NULL;
 
@@ -76,25 +76,42 @@ ik_solver_base_unlink_tree(struct ik_solver_t* solver)
      */
     vector_clear(&solver->effector_nodes_list);
 
-    return base;
+    return root;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_destroy_tree(struct ik_solver_t* solver)
+ik_solver_base_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
-    struct ik_node_t* base;
-    if ((base = solver->v->unlink_tree(solver)) == NULL)
-        return;
-    solver->node->destroy(base);
+    struct ik_node_t* old_root;
+    if ((old_root = solver->v->unlink_tree(solver)) != NULL)
+        solver->node->destroy(old_root);
+
+    solver->tree = root;
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_solver_base_set_tree(struct ik_solver_t* solver, struct ik_node_t* base)
+static void
+determine_pole_target_tips(struct chain_t* chain)
 {
-    solver->v->destroy_tree(solver);
-    solver->tree = base;
+    int idx;
+    struct ik_node_t* last_tip_node;
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        determine_pole_target_tips(child);
+    CHAIN_END_EACH
+
+    /* Want to start at tip and work our way down to the base of the chain */
+    last_tip_node = chain_get_tip_node(chain);
+    for (idx = 0; idx != (int)chain_length(chain); ++idx)
+    {
+        struct ik_node_t* node = chain_get_node(chain, idx);
+        if (node->pole == NULL)
+            continue;
+
+        node->pole->tip = last_tip_node;
+        last_tip_node = node;
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -129,7 +146,14 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
             &solver->chain_list,
             solver->tree,
             &solver->effector_nodes_list)) != IK_OK)
+    {
         return result;
+    }
+
+    /* Pole targets need to know what their tip nodes are */
+    VECTOR_FOR_EACH(&solver->chain_list, struct chain_t, chain)
+        determine_pole_target_tips(chain);
+    VECTOR_END_EACH
 
     update_distances(&solver->chain_list);
 
@@ -161,8 +185,8 @@ calculate_effector_target(const struct chain_t* chain)
     if (effector->flags & IK_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
-        ik_vec3_t base_to_effector;
-        ik_vec3_t base_to_target;
+        struct ik_vec3_t base_to_effector;
+        struct ik_vec3_t base_to_target;
         struct ik_node_t* base_node;
 
         /* Need distance from base node to target and base to effector node */

@@ -5,19 +5,21 @@
 
 C_BEGIN
 
-typedef union ik_vec3_t
+struct ik_vec3_t
 {
-    struct {
-        ikreal_t x;
-        ikreal_t y;
-        ikreal_t z;
+    union {
+        struct {
+            ikreal_t x;
+            ikreal_t y;
+            ikreal_t z;
+        };
+        ikreal_t f[3];
     };
-    ikreal_t f[3];
-} ik_vec3_t;
+};
 
 IK_INTERFACE(vec3_interface)
 {
-    ik_vec3_t
+    struct ik_vec3_t
     (*vec3)(ikreal_t x, ikreal_t y, ikreal_t z);
 
     void
@@ -65,11 +67,20 @@ IK_INTERFACE(vec3_interface)
     void
     (*cross)(ikreal_t v1[3], const ikreal_t v2[3]);
 
+    void
+    (*ncross)(ikreal_t v1[3], const ikreal_t v2[3]);
+
     /*!
      * @brief Rotations a vector by the specified quaternion.
      */
     void
     (*rotate)(ikreal_t v[3], const ikreal_t q[4]);
+
+    void
+    (*project)(ikreal_t v1[3], const ikreal_t v2[3]);
+
+    void
+    (*project_normalized)(ikreal_t v1[3], const ikreal_t v2[3]);
 };
 
 

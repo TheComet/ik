@@ -4,10 +4,10 @@
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
-ik_quat_t
+struct ik_quat_t
 ik_quat_static_quat(ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
 {
-    ik_quat_t ret;
+    struct ik_quat_t ret;
     ret.x = x;
     ret.y = y;
     ret.z = z;
@@ -31,6 +31,16 @@ ik_quat_static_set(ikreal_t q[4], const ikreal_t src[4])
     q[1] = src[1];
     q[2] = src[2];
     q[3] = src[3];
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_static_set_axis_angle(ikreal_t q[4], const ikreal_t v[3], ikreal_t a)
+{
+    ik_vec3_static_set(q, v);
+    ik_vec3_static_normalize(q);
+    ik_vec3_static_mul_scalar(q, sin(a * 0.5));
+    q[3] = cos(a * 0.5);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -93,7 +103,7 @@ ik_quat_static_normalize(ikreal_t q[4])
 void
 ik_quat_static_mul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
-    ikreal_t q1[4]; 
+    ikreal_t q1[4];
     ik_quat_static_set(q1, q);
 
 #define w1 q1[3]
@@ -225,4 +235,11 @@ ik_quat_static_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikr
         /* Important! otherwise garbage happens when applying initial rotations */
         ik_quat_static_set_identity(q);
     }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_static_print(char* buf, const ikreal_t q[4])
+{
+
 }

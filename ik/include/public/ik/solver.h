@@ -182,10 +182,10 @@ IK_INTERFACE(solver_interface)
     /*!
      * @brief Sets the tree to solve. The solver takes ownership of the tree, so
      * destroying the solver will destroy all nodes in the tree. You may also
-     * pass NULL. If the solver already has a tree, then said tree will be 
+     * pass NULL. If the solver already has a tree, then said tree will be
      * destroyed.
-     * @note You will have to call ik_solver_rebuild_data() before being able 
-     * to solve it. 
+     * @note You will have to call ik_solver_rebuild_data() before being able
+     * to solve it.
      * @param[in] solver The solver object.
      * @param[in] tree The root node of a tree you built. Passing NULL will
      * destroy any existing tree the solver owns.
@@ -201,24 +201,6 @@ IK_INTERFACE(solver_interface)
      */
     struct ik_node_t*
     (*unlink_tree)(struct ik_solver_t* solver);
-
-    /*!
-     * @brief Assigns a pole target to the solver. The solver takes ownership of
-     * the pole, so destroying the solver will also destroy the pole. It is not
-     * necessary to rebuild the tree when adding or removing poles.
-     * @param[in] solver The solver object.
-     * @param[in] The pole you created. Passing NULL will destroy any existing
-     * pole the solver owns.
-     */
-    void
-    (*set_pole)(struct ik_solver_t* solver, struct ik_pole_t* pole);
-
-    /*!
-     * @brief The solver releases any references to the pole object and return
-     * @return If the solver has no pole target then NULL is returned.
-     */
-    struct ik_pole_t*
-    (*unlink_pole)(struct ik_solver_t* solver);
 
     /*!
      * @brief Iterates all nodes in the internal tree, breadth first, and passes

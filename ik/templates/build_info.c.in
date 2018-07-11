@@ -7,10 +7,11 @@
 #define IK_VERSION "${IK_VERSION}." EXPAND_AND_QUOTE(IK_BUILD_NUMBER)
 #define IK_CMAKE_CONFIG \
     "    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \\\n" \
-    "    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \\\n" \
-    "    -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \\\n" \
+    "    -DCMAKE_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\" \\\n" \
+    "    -DCMAKE_PREFIX_PATH=\"${CMAKE_PREFIX_PATH}\" \\\n" \
     "    -DIK_API_NAME=\"${IK_API_NAME}\" \\\n" \
     "    -DIK_BENCHMARKS=${IK_BENCHMARKS} \\\n" \
+    "    -DIK_BIFEC=${IK_BIFEC} \\\n" \
     "    -DIK_DOT_EXPORT=${IK_DOT_EXPORT} \\\n" \
     "    -DIK_LIB_TYPE=${IK_LIB_TYPE} \\\n" \
     "    -DIK_MEMORY_DEBUGGING=${IK_MEMORY_DEBUGGING} \\\n" \

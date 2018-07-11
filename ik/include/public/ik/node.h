@@ -10,6 +10,7 @@ C_BEGIN
 
 struct ik_effector_t;
 struct ik_constraint_t;
+struct ik_pole_t;
 struct ik_node_interface_t;
 
 #define IK_NODE_HEAD                                                          \
@@ -26,8 +27,8 @@ struct ik_node_interface_t;
              * WARNING: HAS to be in this order -- there's some hacking going on \
              * in transform.c which relies on the order of ikreal_t's in transform[7]. \
              */                                                               \
-            ik_quat_t rotation;                                               \
-            ik_vec3_t position;                                               \
+            struct ik_quat_t rotation;                                        \
+            struct ik_vec3_t position;                                        \
         };                                                                    \
         ikreal_t transform[7];                                                \
     };                                                                        \
@@ -67,8 +68,9 @@ struct ik_node_interface_t;
      * the target position/rotation of the effector by writing to             \
      * node->effector->target_position or node->effector->target_rotation.    \
      */                                                                       \
-    struct ik_effector_t* effector;                                           \
+    struct ik_effector_t*   effector;                                         \
     struct ik_constraint_t* constraint;                                       \
+    struct ik_pole_t*       pole;                                             \
                                                                               \
     ikreal_t rotation_weight;                                                 \
     ikreal_t dist_to_parent;
