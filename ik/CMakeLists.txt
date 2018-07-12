@@ -214,7 +214,7 @@ set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_log.h"
     "include/python/ik/python/ik_type_Constraint.h"
     "include/python/ik/python/ik_type_Node.h"
-    "include/python/ik/python/ik_type_Node.h"
+    "include/python/ik/python/ik_type_Pole.h"
     "include/python/ik/python/ik_type_Quat.h"
     "include/python/ik/python/ik_type_Solver.h"
     "include/python/ik/python/ik_type_Vec3.h")
@@ -225,6 +225,7 @@ set (IK_PYTHON_SOURCES
     "src/python/ik_type_Constraint.c"
     "src/python/ik_type_Effector.c"
     "src/python/ik_type_Node.c"
+    "src/python/ik_type_Pole.c"
     "src/python/ik_type_Quat.c"
     "src/python/ik_type_Solver.c"
     "src/python/ik_type_Vec3.c")
