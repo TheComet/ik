@@ -36,12 +36,12 @@ ik_solver_ONE_BONE_rebuild(struct ik_solver_t* solver)
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         if (chain_length(chain) != 2) /* 2 nodes = 1 bone */
         {
-            IKAPI.log.message("ERROR: Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
+            IKAPI.log.error("Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            IKAPI.log.message("ERROR: Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            IKAPI.log.error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
     SOLVER_END_EACH

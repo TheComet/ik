@@ -24,7 +24,7 @@ ik_solver_static_create(enum ik_algorithm_e algorithm)
         case IK_##algorithm : {                                                                     \
             solver = MALLOC(IKAPI.internal.solver_##algorithm.type_size()); \
             if (solver == NULL) {                                             \
-                IKAPI.log.message("Failed to allocate solver: ran out of memory"); \
+                IKAPI.log.fatal("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
             memset(solver, 0, IKAPI.internal.solver_##algorithm.type_size()); \
@@ -36,7 +36,7 @@ ik_solver_static_create(enum ik_algorithm_e algorithm)
         IK_ALGORITHMS
 #undef X
         default : {
-            IKAPI.log.message("Unknown solver algorithm with enum value %d", algorithm);
+            IKAPI.log.error("Unknown solver algorithm with enum value %d", algorithm);
             goto alloc_solver_failed;
         } break;
     }

@@ -123,7 +123,7 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
     /* If the solver has no tree, then there's nothing to do */
     if (solver->tree == NULL)
     {
-        IKAPI.log.message("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
+        IKAPI.log.error("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
         return IK_SOLVER_HAS_NO_TREE;
     }
 
@@ -131,13 +131,13 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
      * Traverse the entire tree and generate a list of the effectors. This
      * makes the process of building the chain list for FABRIK much easier.
      */
-    IKAPI.log.message("Rebuilding effector nodes list");
+    IKAPI.log.info("Rebuilding effector nodes list");
     vector_clear(&solver->effector_nodes_list);
     if ((result = recursively_get_all_effector_nodes(
             solver->tree,
             &solver->effector_nodes_list)) != IK_OK)
     {
-        IKAPI.log.message("Ran out of memory while building the effector nodes list");
+        IKAPI.log.fatal("Ran out of memory while building the effector nodes list");
         return result;
     }
 
@@ -254,7 +254,7 @@ ik_solver_base_iterate_all_nodes(struct ik_solver_t* solver,
 {
     if (solver->tree == NULL)
     {
-        IKAPI.log.message("Warning: Tried iterating the tree, but no tree was set");
+        IKAPI.log.warning("Tried iterating the tree, but no tree was set");
         return;
     }
 

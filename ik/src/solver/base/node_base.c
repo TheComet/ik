@@ -14,7 +14,7 @@ ik_node_base_create(uint32_t guid)
     struct ik_node_t* node = MALLOC(sizeof *node);
     if (node == NULL)
     {
-        IKAPI.log.message("fFailed to allocate node: Ran out of memory");
+        IKAPI.log.fatal("Failed to allocate node: Ran out of memory");
         return NULL;
     }
     IKAPI.internal.node_base.construct(node, guid);
@@ -112,7 +112,7 @@ ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
     if ((result = bstv_insert(&node->children, child->guid, child)) != IK_OK)
     {
 #ifdef DEBUG
-        IKAPI.log.message("wChild guid %d already exists in this node's list of children!", child->guid);
+        IKAPI.log.error("Child guid %d already exists in this node's list of children!", child->guid);
 #endif
         return result;
     }
@@ -242,7 +242,7 @@ ik_node_base_dump_to_dot(struct ik_node_t* node, const char* file_name)
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)
     {
-        IKAPI.log.message("Failed to open file %s", file_name);
+        IKAPI.log.error("Failed to open file %s", file_name);
         return;
     }
 

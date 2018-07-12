@@ -63,7 +63,7 @@ ik_pole_base_create(void)
     struct ik_pole_t* pole = MALLOC(sizeof *pole);
     if (pole == NULL)
     {
-        IKAPI.log.message("fFailed to allocate pole: Out of memory");
+        IKAPI.log.fatal("Failed to allocate pole: Out of memory");
         return NULL;
     }
 
@@ -117,8 +117,8 @@ ik_pole_base_attach(struct ik_pole_t* pole, struct ik_node_t* node)
 {
     if (node->pole != NULL)
     {
-        IKAPI.log.message(
-            "Warning! You are trying to attach a pole to a node that "
+        IKAPI.log.error(
+            "You are trying to attach a pole to a node that "
             "already has a pole attached to it. The new pole will not "
             "be attached!"
         );

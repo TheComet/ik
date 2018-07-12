@@ -5,7 +5,7 @@ IK_IMPLEMENT(solver_ONE_BONE, solver_base)
     IK_OVERRIDE(type_size)
     IK_CONSTRUCTOR(construct)
     IK_DESTRUCTOR(destruct)
-    IK_AFTER(rebuild_data)
+    IK_AFTER(rebuild)
     IK_AFTER(solve)
 }
 

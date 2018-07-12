@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 typedef struct log_t
 {
@@ -41,9 +42,9 @@ ik_log_static_init(void)
     g_log->prefix = NULL;
     g_log->timestamps = 1;
 #ifdef DEBUG
-    ik_log_static_set_severity(IK_DEBUG);
+    ik_log_static_severity(IK_DEBUG);
 #else
-    ik_log_static_set_severity(IK_INFO);
+    ik_log_static_severity(IK_INFO);
 #endif
     ik_log_static_prefix("ik");
 
@@ -120,7 +121,7 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
     struct tm* timeinfo;
     char timestamp[12];
     const char* tag;
-    const char* buf_ptr;
+    char* buf_ptr;
     va_list vargs_copy;
 
     rawtime = time(NULL); /* get system time */
@@ -152,9 +153,60 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
     buf_ptr = (char*)g_log->message_buffer.data;
     if (g_log->prefix)
         buf_ptr += sprintf(buf_ptr, "[%s] ", g_log->prefix);
-    buf_ptr += sprintf(g_log->message_buffer.data, "[%s] [%s] ", tag, timestamp);
+    buf_ptr += sprintf(buf_ptr, "[%s] [%s] ", tag, timestamp);
     vsprintf(buf_ptr, fmt, vargs);
 
     if (ik_callback->on_log_message != NULL)
         ik_callback->on_log_message((char*)g_log->message_buffer.data);
 }
+
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_debug(const char* fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, fmt);
+    log_message(IK_DEBUG, fmt, vargs);
+    va_end(vargs);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_info(const char* fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, fmt);
+    log_message(IK_INFO, fmt, vargs);
+    va_end(vargs);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_warning(const char* fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, fmt);
+    log_message(IK_WARNING, fmt, vargs);
+    va_end(vargs);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_error(const char* fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, fmt);
+    log_message(IK_ERROR, fmt, vargs);
+    va_end(vargs);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_fatal(const char* fmt, ...)
+{
+    va_list vargs;
+    va_start(vargs, fmt);
+    log_message(IK_FATAL, fmt, vargs);
+    va_end(vargs);
+}
+

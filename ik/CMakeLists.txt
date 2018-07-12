@@ -14,7 +14,7 @@ set (IK_API_NAME "ik" CACHE STRING "The symbol name exported for consumers of th
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_BIFEC "'Build Info For Every Compile' -- If true (default) the updated build number is written to a header, which causes the library to recompile build_info.c. This can get annoying for developers, so disable this if you are annoyed." ON)
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
-set (IK_LIB_TYPE "STATIC" CACHE STRING "SHARED or STATIC library")
+set (IK_LIB_TYPE "SHARED" CACHE STRING "SHARED or STATIC library")
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
 cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
 option (IK_PIC "Position independent code when building as a static library" ON)

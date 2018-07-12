@@ -5,9 +5,8 @@
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-log_message(PyObject* self, PyObject* args)
+log_message(PyObject* args, void (*log_func)(const char* fmt, ...))
 {
-    (void)self;
     PyObject* uni;
     PyObject* ascii;
 
@@ -17,7 +16,7 @@ log_message(PyObject* self, PyObject* args)
     if ((ascii = PyUnicode_AsASCIIString(uni)) == NULL)
         goto ascii_conversion_failed;
 
-    IKAPI.log.message("%s", PyBytes_AS_STRING(ascii));
+    log_func("%s", PyBytes_AS_STRING(ascii));
 
     Py_DECREF(ascii);
     Py_DECREF(uni);
@@ -25,6 +24,38 @@ log_message(PyObject* self, PyObject* args)
 
     ascii_conversion_failed : Py_DECREF(uni);
     str_call_failed         : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+log_debug(PyObject* self, PyObject* args)
+{
+    (void)self;
+    return log_message(args, IKAPI.log.debug);
+}
+static PyObject*
+log_info(PyObject* self, PyObject* args)
+{
+    (void)self;
+    return log_message(args, IKAPI.log.info);
+}
+static PyObject*
+log_warning(PyObject* self, PyObject* args)
+{
+    (void)self;
+    return log_message(args, IKAPI.log.warning);
+}
+static PyObject*
+log_error(PyObject* self, PyObject* args)
+{
+    (void)self;
+    return log_message(args, IKAPI.log.error);
+}
+static PyObject*
+log_fatal(PyObject* self, PyObject* args)
+{
+    (void)self;
+    return log_message(args, IKAPI.log.fatal);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -37,7 +68,11 @@ module_free(void* x)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef log_functions[] = {
-    {"message", log_message, METH_O, "Log a message to the library."},
+    {"debug",   log_debug,   METH_O, "Log a debug message to the library."},
+    {"info",    log_info,    METH_O, "Log an info message to the library."},
+    {"warning", log_warning, METH_O, "Log a warning message to the library."},
+    {"error",   log_error,   METH_O, "Log an error message to the library."},
+    {"fatal",   log_fatal,   METH_O, "Log a fatal message to the library."},
     {NULL}
 };
 
