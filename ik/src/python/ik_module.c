@@ -50,12 +50,32 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    Py_INCREF(&ik_ConstraintType); if (PyModule_AddObject(m, "Constraint", (PyObject*)&ik_ConstraintType) < 0) return -1;
-    Py_INCREF(&ik_EffectorType);   if (PyModule_AddObject(m, "Effector",   (PyObject*)&ik_EffectorType) < 0)   return -1;
-    Py_INCREF(&ik_NodeType);       if (PyModule_AddObject(m, "Node",       (PyObject*)&ik_NodeType) < 0)       return -1;
-    Py_INCREF(&ik_QuatType);       if (PyModule_AddObject(m, "Quat",       (PyObject*)&ik_QuatType) < 0)       return -1;
-    Py_INCREF(&ik_SolverType);     if (PyModule_AddObject(m, "Solver",     (PyObject*)&ik_SolverType) < 0)     return -1;
-    Py_INCREF(&ik_Vec3Type);       if (PyModule_AddObject(m, "Vec3",       (PyObject*)&ik_Vec3Type) < 0)       return -1;
+    Py_INCREF(&ik_ConstraintType); if (PyModule_AddObject(m, "Constraint", (PyObject*)&ik_ConstraintType) != 0) return -1;
+    Py_INCREF(&ik_EffectorType);   if (PyModule_AddObject(m, "Effector",   (PyObject*)&ik_EffectorType) != 0)   return -1;
+    Py_INCREF(&ik_NodeType);       if (PyModule_AddObject(m, "Node",       (PyObject*)&ik_NodeType) != 0)       return -1;
+    Py_INCREF(&ik_QuatType);       if (PyModule_AddObject(m, "Quat",       (PyObject*)&ik_QuatType) != 0)       return -1;
+    Py_INCREF(&ik_SolverType);     if (PyModule_AddObject(m, "Solver",     (PyObject*)&ik_SolverType) != 0)     return -1;
+    Py_INCREF(&ik_Vec3Type);       if (PyModule_AddObject(m, "Vec3",       (PyObject*)&ik_Vec3Type) != 0)       return -1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+add_constants_to_module(PyObject* m)
+{
+    /* All X macro constants follow the same naming scheme */
+#define X(value) if (PyModule_AddIntConstant(m, #value, IK_##value) != 0) return -1;
+    IK_ALGORITHMS
+    IK_CONSTRAINTS
+#undef X
+
+    /* Log constants */
+    if (PyModule_AddIntConstant(m, "DEBUG",   IK_DEBUG) != 0)   return -1;
+    if (PyModule_AddIntConstant(m, "INFO",    IK_INFO) != 0)    return -1;
+    if (PyModule_AddIntConstant(m, "WARNING", IK_WARNING) != 0) return -1;
+    if (PyModule_AddIntConstant(m, "ERROR",   IK_ERROR) != 0)   return -1;
+    if (PyModule_AddIntConstant(m, "FATAL",   IK_FATAL) != 0)   return -1;
+
     return 0;
 }
 
@@ -68,7 +88,7 @@ add_submodules_to_module(PyObject* m)
     submodule = ik_module_info_create();
     if (submodule == NULL)
         return -1;
-    if (PyModule_AddObject(m, "info", submodule) < 0)
+    if (PyModule_AddObject(m, "info", submodule) != 0)
     {
         Py_DECREF(submodule);
         return -1;
@@ -77,7 +97,7 @@ add_submodules_to_module(PyObject* m)
     submodule = ik_module_log_create();
     if (submodule == NULL)
         return -1;
-    if (PyModule_AddObject(m, "log", submodule) < 0)
+    if (PyModule_AddObject(m, "log", submodule) != 0)
     {
         Py_DECREF(submodule);
         return -1;
@@ -103,6 +123,7 @@ PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void)
     if (init_builtin_types() != 0)            goto init_module_failed;
     if (add_builtin_types_to_module(m) != 0)  goto init_module_failed;
     if (add_submodules_to_module(m) != 0)     goto init_module_failed;
+    if (add_constants_to_module(m) != 0)      goto init_module_failed;
 
     return m;
 

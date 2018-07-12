@@ -46,7 +46,10 @@ ik_log_static_init(void)
 #else
     ik_log_static_severity(IK_INFO);
 #endif
-    ik_log_static_prefix("ik");
+
+#define STRINGIFY(x) #x
+#define STR(x) STRINGIFY(x)
+    ik_log_static_prefix(STR(IKAPI));
 
     return IK_OK;
 
@@ -73,15 +76,7 @@ ik_log_static_deinit(void)
 void
 ik_log_static_severity(enum ik_log_severity_e severity)
 {
-    /* Need to map to a strictly increasing number for easier comparison later. */
-    switch (severity)
-    {
-        case IK_DEBUG   : g_log->severity = 0; break;
-        case IK_INFO    : g_log->severity = 1; break;
-        case IK_WARNING : g_log->severity = 2; break;
-        case IK_ERROR   : g_log->severity = 3; break;
-        case IK_FATAL   : g_log->severity = 4; break;
-    }
+    g_log->severity = severity;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -96,12 +91,16 @@ void
 ik_log_static_prefix(const char* prefix)
 {
     char* buf;
-    int len = strlen(prefix);
+    int len;
 
     if (g_log->prefix != NULL)
         FREE(g_log->prefix);
     g_log->prefix = NULL;
 
+    if (prefix == NULL)
+        return;
+
+    len = strlen(prefix);
     if (len == 0)
         return;
 
@@ -113,28 +112,22 @@ ik_log_static_prefix(const char* prefix)
 }
 
 /* ------------------------------------------------------------------------- */
+static const char* severities[] = {
+    "[DEBUG]", "[INFO]", "[WARNING]", "[ERROR]", "[FATAL]"
+};
 static void
 log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
 {
     uintptr_t msg_len;
-    time_t rawtime;
-    struct tm* timeinfo;
     char timestamp[12];
-    const char* tag;
     char* buf_ptr;
     va_list vargs_copy;
 
-    rawtime = time(NULL); /* get system time */
-    timeinfo = localtime(&rawtime); /* convert to local time */
-    strftime(timestamp, 12, "[%X] ", timeinfo);
-
-    switch (severity)
+    if (g_log->timestamps)
     {
-        case IK_DEBUG:   tag = "[DEBUG]";   break;
-        case IK_INFO:    tag = "[INFO]";    break;
-        case IK_WARNING: tag = "[WARNING]"; break;
-        case IK_ERROR:   tag = "[ERROR]";   break;
-        case IK_FATAL:   tag = "[FATAL]";   break;
+        time_t rawtime = time(NULL); /* get system time */
+        struct tm* timeinfo = localtime(&rawtime); /* convert to local time */
+        strftime(timestamp, 12, "[%X]", timeinfo);
     }
 
     /* Deterine total length of message */
@@ -152,8 +145,10 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
 
     buf_ptr = (char*)g_log->message_buffer.data;
     if (g_log->prefix)
-        buf_ptr += sprintf(buf_ptr, "[%s] ", g_log->prefix);
-    buf_ptr += sprintf(buf_ptr, "[%s] [%s] ", tag, timestamp);
+        buf_ptr += sprintf(buf_ptr, "[%s]", g_log->prefix);
+    if (g_log->timestamps)
+        buf_ptr += sprintf(buf_ptr, "%s", timestamp);
+    buf_ptr += sprintf(buf_ptr, "%s ", severities[severity]);
     vsprintf(buf_ptr, fmt, vargs);
 
     if (ik_callback->on_log_message != NULL)
@@ -165,6 +160,10 @@ void
 ik_log_static_debug(const char* fmt, ...)
 {
     va_list vargs;
+
+    if (g_log == NULL || g_log->severity > IK_DEBUG)
+        return;
+
     va_start(vargs, fmt);
     log_message(IK_DEBUG, fmt, vargs);
     va_end(vargs);
@@ -175,6 +174,10 @@ void
 ik_log_static_info(const char* fmt, ...)
 {
     va_list vargs;
+
+    if (g_log == NULL || g_log->severity > IK_INFO)
+        return;
+
     va_start(vargs, fmt);
     log_message(IK_INFO, fmt, vargs);
     va_end(vargs);
@@ -185,6 +188,10 @@ void
 ik_log_static_warning(const char* fmt, ...)
 {
     va_list vargs;
+
+    if (g_log == NULL || g_log->severity > IK_WARNING)
+        return;
+
     va_start(vargs, fmt);
     log_message(IK_WARNING, fmt, vargs);
     va_end(vargs);
@@ -195,6 +202,10 @@ void
 ik_log_static_error(const char* fmt, ...)
 {
     va_list vargs;
+
+    if (g_log == NULL || g_log->severity > IK_ERROR)
+        return;
+
     va_start(vargs, fmt);
     log_message(IK_ERROR, fmt, vargs);
     va_end(vargs);
@@ -205,6 +216,10 @@ void
 ik_log_static_fatal(const char* fmt, ...)
 {
     va_list vargs;
+
+    if (g_log == NULL || g_log->severity > IK_FATAL)
+        return;
+
     va_start(vargs, fmt);
     log_message(IK_FATAL, fmt, vargs);
     va_end(vargs);

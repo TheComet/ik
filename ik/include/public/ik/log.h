@@ -7,11 +7,11 @@ C_BEGIN
 
 enum ik_log_severity_e
 {
-    IK_DEBUG    = 'd',
-    IK_INFO     = 'i',
-    IK_WARNING  = 'w',
-    IK_ERROR    = 'e',
-    IK_FATAL    = 'f'
+    IK_DEBUG = 0,
+    IK_INFO,
+    IK_WARNING,
+    IK_ERROR,
+    IK_FATAL
 };
 
 IK_INTERFACE(log_interface)
