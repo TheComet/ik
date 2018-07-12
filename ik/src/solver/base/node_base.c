@@ -95,8 +95,28 @@ ikret_t
 ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
 {
     ikret_t result;
+
+    /* Searches the entire tree for the child guid -- disabled in release mode
+     * for performance reasons */
+#ifdef DEBUG
+    {
+        struct ik_node_t* root = node;
+        while (root->parent) root = root->parent;
+        if (node->v->find_child(node, child->guid) != NULL)
+        {
+            IKAPI.log.warning("Child guid %d already exists in the tree!", child->guid);
+        }
+    }
+#endif
+
     if ((result = bstv_insert(&node->children, child->guid, child)) != IK_OK)
+    {
+#ifdef DEBUG
+        IKAPI.log.message("wChild guid %d already exists in this node's list of children!", child->guid);
+#endif
         return result;
+    }
+
     child->parent = node;
     return IK_OK;
 }

@@ -10,6 +10,8 @@ typedef struct log_t
 {
     struct vector_t message_buffer;
     uint8_t severity;
+    char* prefix;
+    int8_t timestamps;
 } log_t;
 
 static log_t* g_log = NULL;
@@ -36,11 +38,14 @@ ik_log_static_init(void)
     }
 
     vector_construct(&g_log->message_buffer, sizeof(char));
+    g_log->prefix = NULL;
+    g_log->timestamps = 1;
 #ifdef DEBUG
     ik_log_static_set_severity(IK_DEBUG);
 #else
     ik_log_static_set_severity(IK_INFO);
 #endif
+    ik_log_static_prefix("ik");
 
     return IK_OK;
 
@@ -56,6 +61,8 @@ ik_log_static_deinit(void)
         return;
 
     vector_clear_free(&g_log->message_buffer);
+    if (g_log->prefix != NULL)
+        FREE(g_log->prefix);
     FREE(g_log);
     g_log = NULL;
     IKAPI.deinit();
@@ -63,13 +70,9 @@ ik_log_static_deinit(void)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_set_severity(enum ik_log_severity_e severity)
+ik_log_static_severity(enum ik_log_severity_e severity)
 {
-    if (g_log == NULL)
-        return;
-
-    /* Need to map to a strictly increasing number for easier comparison later.
-     * IK_DEBUG starts at 0 */
+    /* Need to map to a strictly increasing number for easier comparison later. */
     switch (severity)
     {
         case IK_DEBUG   : g_log->severity = 0; break;
@@ -82,34 +85,75 @@ ik_log_static_set_severity(enum ik_log_severity_e severity)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_message(const char* fmt, ...)
+ik_log_static_timestamps(int enable)
 {
-    va_list va;
-    uintptr_t msg_len;
+    g_log->timestamps = (enable != 0);
+}
 
-    if (g_log == NULL)
+/* ------------------------------------------------------------------------- */
+void
+ik_log_static_prefix(const char* prefix)
+{
+    char* buf;
+    int len = strlen(prefix);
+
+    if (g_log->prefix != NULL)
+        FREE(g_log->prefix);
+    g_log->prefix = NULL;
+
+    if (len == 0)
         return;
 
-    /* Discard the message if its severity level is beneath the configured one */
-    switch (fmt[0])
+    buf = MALLOC((sizeof(char) + 1) * len);
+    if (buf == NULL)
+        return;
+    strcpy(buf, prefix);
+    g_log->prefix = buf;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
+{
+    uintptr_t msg_len;
+    time_t rawtime;
+    struct tm* timeinfo;
+    char timestamp[12];
+    const char* tag;
+    const char* buf_ptr;
+    va_list vargs_copy;
+
+    rawtime = time(NULL); /* get system time */
+    timeinfo = localtime(&rawtime); /* convert to local time */
+    strftime(timestamp, 12, "[%X] ", timeinfo);
+
+    switch (severity)
     {
-        case IK_DEBUG   : if (g_log->severity > 0) return; break;
-        case IK_INFO    : if (g_log->severity > 1) return; break;
-        case IK_WARNING : if (g_log->severity > 2) return; break;
-        case IK_ERROR   : if (g_log->severity > 3) return; break;
-        case IK_FATAL   : if (g_log->severity > 4) return; break;
-        default: break; /* assume nothing */
+        case IK_DEBUG:   tag = "[DEBUG]";   break;
+        case IK_INFO:    tag = "[INFO]";    break;
+        case IK_WARNING: tag = "[WARNING]"; break;
+        case IK_ERROR:   tag = "[ERROR]";   break;
+        case IK_FATAL:   tag = "[FATAL]";   break;
     }
 
-    va_start(va, fmt);
-    msg_len = vsnprintf(NULL, 0, fmt, va);
-    va_end(va);
+    /* Deterine total length of message */
+    va_copy(vargs_copy, vargs);
+    msg_len = vsnprintf(NULL, 0, fmt, vargs_copy);
+    va_end(vargs_copy);
+    if (g_log->prefix)
+        msg_len += strlen(g_log->prefix) + 3;
+    msg_len += 10; /* for tag */
+    msg_len += 12; /* for timestamp */
+    msg_len += 2;  /* for 2 spaces */
 
     if (vector_resize(&g_log->message_buffer, (msg_len + 1) * sizeof(char)) < 0)
         return;
-    va_start(va, fmt);
-    vsprintf((char*)g_log->message_buffer.data, fmt, va);
-    va_end(va);
+
+    buf_ptr = (char*)g_log->message_buffer.data;
+    if (g_log->prefix)
+        buf_ptr += sprintf(buf_ptr, "[%s] ", g_log->prefix);
+    buf_ptr += sprintf(g_log->message_buffer.data, "[%s] [%s] ", tag, timestamp);
+    vsprintf(buf_ptr, fmt, vargs);
 
     if (ik_callback->on_log_message != NULL)
         ik_callback->on_log_message((char*)g_log->message_buffer.data);

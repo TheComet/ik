@@ -8,7 +8,7 @@ C_BEGIN
 IK_INTERFACE(tests_interface)
 {
     ikret_t
-    (*run)(void);
+    (*run)(int* argc, char** argv);
 };
 
 C_END

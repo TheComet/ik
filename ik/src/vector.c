@@ -86,17 +86,18 @@ vector_clear_free(struct vector_t* vector)
 ikret_t
 vector_resize(struct vector_t* vector, uint32_t size)
 {
-    ikret_t result = IK_OK;
-
     assert(vector);
 
-    if (vector->count < size)
+    if (vector->capacity < size)
     {
-        if ((result = vector_expand(vector, VECTOR_ERROR, size)) == IK_OK)
-            vector->count = size;
+        ikret_t result;
+        if ((result = vector_expand(vector, VECTOR_ERROR, size)) != IK_OK)
+            return result;
     }
 
-    return result;
+    vector->count = size;
+
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */

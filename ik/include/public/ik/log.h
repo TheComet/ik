@@ -23,10 +23,24 @@ IK_INTERFACE(log_interface)
     (*deinit)(void);
 
     void
-    (*set_severity)(enum ik_log_severity_e severity);
+    (*severity)(enum ik_log_severity_e severity);
 
     void
-    (*message)(const char* fmt, ...);
+    (*timestamps)(int enable);
+
+    void
+    (*prefix)(const char* prefix);
+
+    void
+    (*debug)(const char* fmt, ...);
+    void
+    (*info)(const char* fmt, ...);
+    void
+    (*warning)(const char* fmt, ...);
+    void
+    (*error)(const char* fmt, ...);
+    void
+    (*fatal)(const char* fmt, ...);
 };
 
 C_END
