@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define BST_VECTOR_INVALID_HASH ((uint32_t)-1)
-
 /* ------------------------------------------------------------------------- */
 struct bstv_t*
 bstv_create(void)
@@ -84,13 +82,13 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
     assert(bstv);
 
     /* don't insert reserved hashes */
-    if (hash == BST_VECTOR_INVALID_HASH)
-        return -1;
+    if (hash == BSTV_INVALID_HASH)
+        return IK_HASH_RESERVED;
 
     /* lookup location in bstv to insert */
     lower_bound = bstv_find_lower_bound(bstv, hash);
     if (lower_bound && lower_bound->hash == hash)
-        return 1;
+        return IK_HASH_EXISTS;
 
     /* either push back or insert, depending on whether there is already data
      * in the bstv */
@@ -155,7 +153,7 @@ bstv_find_element(const struct bstv_t* bstv, const void* value)
         if (kv->value == value)
             return kv->hash;
     VECTOR_END_EACH
-    return BST_VECTOR_INVALID_HASH;
+    return BSTV_INVALID_HASH;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -171,7 +169,7 @@ bstv_get_any_element(const struct bstv_t* bstv)
 }
 
 /* ------------------------------------------------------------------------- */
-int
+ikret_t
 bstv_hash_exists(struct bstv_t* bstv, uint32_t hash)
 {
     bstv_hash_value_t* data;
@@ -228,7 +226,7 @@ bstv_erase_element(struct bstv_t* bstv, void* value)
     assert(bstv);
 
     hash = bstv_find_element(bstv, value);
-    if (hash == BST_VECTOR_INVALID_HASH)
+    if (hash == BSTV_INVALID_HASH)
         return NULL;
 
     data = bstv_find_lower_bound(bstv, hash);

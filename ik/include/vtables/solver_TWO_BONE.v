@@ -17,6 +17,7 @@ IK_IMPLEMENT(solver_TWO_BONE, solver_base)
 IK_IMPLEMENT(node_TWO_BONE, node_base)
 IK_IMPLEMENT(effector_TWO_BONE, effector_base)
 IK_IMPLEMENT(constraint_TWO_BONE, constraint_base)
+IK_IMPLEMENT(pole_TWO_BONE, pole_base)
 
 /*
  * Need to combine multiple ikret_t return values from the various before/after

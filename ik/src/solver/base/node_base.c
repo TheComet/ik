@@ -26,6 +26,8 @@ ik_node_base_create(uint32_t guid)
 ikret_t
 ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 {
+    assert(node);
+
     memset(node, 0, sizeof *node);
 
     node->v = &IKAPI.internal.node_base;
@@ -59,6 +61,8 @@ destruct_recursive(struct ik_node_t* node)
 void
 ik_node_base_destruct(struct ik_node_t* node)
 {
+    assert(node);
+
     NODE_FOR_EACH(node, guid, child)
         destroy_recursive(child);
     NODE_END_EACH
@@ -84,6 +88,8 @@ destroy_recursive(struct ik_node_t* node)
 void
 ik_node_base_destroy(struct ik_node_t* node)
 {
+    assert(node);
+
     if (ik_callback->on_node_destroy != NULL)
         ik_callback->on_node_destroy(node);
     node->v->destruct(node);
@@ -95,6 +101,12 @@ ikret_t
 ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
 {
     ikret_t result;
+    assert(node);
+    assert(child);
+    assert(child != node);
+
+    /* May already be part of a tree */
+    child->v->unlink(child);
 
     /* Searches the entire tree for the child guid -- disabled in release mode
      * for performance reasons */
@@ -102,18 +114,16 @@ ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
     {
         struct ik_node_t* root = node;
         while (root->parent) root = root->parent;
-        if (node->v->find_child(node, child->guid) != NULL)
+        if (root->v->find_child(root, child->guid) != NULL)
         {
-            IKAPI.log.warning("Child guid %d already exists in the tree!", child->guid);
+            IKAPI.log.warning("Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", child->guid);
         }
     }
 #endif
 
     if ((result = bstv_insert(&node->children, child->guid, child)) != IK_OK)
     {
-#ifdef DEBUG
-        IKAPI.log.error("Child guid %d already exists in this node's list of children!", child->guid);
-#endif
+        IKAPI.log.error("Child guid %d already exists in this node's list of children! Node was not inserted into the tree.", child->guid);
         return result;
     }
 
@@ -141,11 +151,20 @@ ik_node_base_create_child(struct ik_node_t* node, uint32_t guid)
 void
 ik_node_base_unlink(struct ik_node_t* node)
 {
+    assert(node);
+
     if (node->parent == NULL)
         return;
 
     bstv_erase(&node->parent->children, node->guid);
     node->parent = NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+vector_size_t
+ik_node_base_child_count(const struct ik_node_t* node)
+{
+    return bstv_count(&node->children);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -182,7 +201,7 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
     new_node->position = node->position;
     new_node->rotation_weight = node->rotation_weight;
     new_node->dist_to_parent = node->dist_to_parent;
-    new_node->user_data = node->user_data;
+    new_node->user_data = NULL;
 
     if (copy_attachments)
     {
@@ -210,21 +229,21 @@ ik_node_base_duplicate(const struct ik_node_t* node, int copy_attachments)
     }
 
     NODE_FOR_EACH(node, child_guid, child)
-        struct ik_node_t* new_child_node = node->v->duplicate(child, copy_attachments);
+        struct ik_node_t* new_child_node = child->v->duplicate(child, copy_attachments);
         if (new_child_node == NULL)
             goto copy_child_node_failed;
-        node->v->add_child(new_node, new_child_node);
+        new_node->v->add_child(new_node, new_child_node);
     NODE_END_EACH
 
     return new_node;
 
-    copy_child_node_failed  : node->v->destroy(new_node);
+    copy_child_node_failed  : new_node->v->destroy(new_node);
     malloc_new_node_failed  : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-recursively_dump_dot(FILE* fp, struct ik_node_t* node)
+recursively_dump_dot(FILE* fp, const struct ik_node_t* node)
 {
     if (node->effector != NULL)
         fprintf(fp, "    %d [color=\"1.0 0.5 1.0\"];\n", node->guid);
@@ -237,7 +256,7 @@ recursively_dump_dot(FILE* fp, struct ik_node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_node_base_dump_to_dot(struct ik_node_t* node, const char* file_name)
+ik_node_base_dump_to_dot(const struct ik_node_t* node, const char* file_name)
 {
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)

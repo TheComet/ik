@@ -20,6 +20,7 @@ IK_IMPLEMENT(solver_MSS, solver_base)
  */
 IK_IMPLEMENT(effector_MSS, effector_base)
 IK_IMPLEMENT(constraint_MSS, constraint_base)
+IK_IMPLEMENT(pole_MSS, pole_base)
 
 /*
  * Need to combine multiple ikret_t return values from the various before/after

@@ -192,18 +192,28 @@ ik_vec3_static_rotate(ikreal_t v[3], const ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_static_project(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_static_project_from_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t dot = ik_vec3_static_dot(v1, v2);
-    ikreal_t l1 = ik_vec3_static_length(v1);
-    ikreal_t l2 = ik_vec3_static_length(v2);
-    ik_vec3_static_mul_scalar(v1, dot / (l1 * l2));
+    ikreal_t det = ik_vec3_static_length_squared(v1);
+    ik_vec3_static_mul_scalar(v1, dot / det);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_static_project_normalized(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_static_project_from_vec3_normalized(ikreal_t v1[3], const ikreal_t v2[3])
 {
     ikreal_t dot = ik_vec3_static_dot(v1, v2);
     ik_vec3_static_mul_scalar(v1, dot);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_static_project_onto_plane(ikreal_t v[3], const ikreal_t x[3], const ikreal_t y[3])
+{
+    struct ik_vec3_t n;
+    ik_vec3_static_set(n.f, x);
+    ik_vec3_static_cross(n.f, y);              /* plane normal */
+    ik_vec3_static_project_from_vec3(n.f, v);  /* project vector onto normal */
+    ik_vec3_static_sub_vec3(v, n.f);           /* subtract projection from vector */
 }

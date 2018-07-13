@@ -138,6 +138,9 @@ IK_INTERFACE(node_interface)
     void
     (*unlink)(struct ik_node_t* node);
 
+    vector_size_t
+    (*child_count)(const struct ik_node_t* node);
+
     /*!
      * @brief Searches recursively for a node in a tree with the specified global
      * identifier.
@@ -155,7 +158,7 @@ IK_INTERFACE(node_interface)
      * or other compatible tools) to generate a graphic of the tree.
      */
     void
-    (*dump_to_dot)(struct ik_node_t* node, const char* file_name);
+    (*dump_to_dot)(const struct ik_node_t* node, const char* file_name);
 };
 
 #define NODE_FOR_EACH(node, key, value) \

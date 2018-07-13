@@ -16,6 +16,7 @@ IK_IMPLEMENT(solver_FABRIK, solver_base)
  */
 IK_IMPLEMENT(effector_FABRIK, effector_base)
 IK_IMPLEMENT(constraint_FABRIK, constraint_base)
+IK_IMPLEMENT(pole_FABRIK, pole_base)
 
 /*
  * Need to combine multiple ikret_t return values from the various before/after

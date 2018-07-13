@@ -76,11 +76,24 @@ IK_INTERFACE(vec3_interface)
     void
     (*rotate)(ikreal_t v[3], const ikreal_t q[4]);
 
+    /*!
+     * @brief Projects v2 onto v1
+     */
     void
-    (*project)(ikreal_t v1[3], const ikreal_t v2[3]);
+    (*project_from_vec3)(ikreal_t v1[3], const ikreal_t v2[3]);
 
+
+    /*!
+    * @brief Projects v2 onto v1 and assumes both v1 and v2 are normalized.
+    */
     void
-    (*project_normalized)(ikreal_t v1[3], const ikreal_t v2[3]);
+    (*project_from_vec3_normalized)(ikreal_t v1[3], const ikreal_t v2[3]);
+
+    /*!
+     * @brief Projects v into the plane spanned by x,y.
+     */
+    void
+    (*project_onto_plane)(ikreal_t v[3], const ikreal_t x[3], const ikreal_t y[3]);
 };
 
 

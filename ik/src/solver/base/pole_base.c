@@ -4,6 +4,7 @@
 #include "ik/quat_static.h"
 #include "ik/vec3_static.h"
 #include <stddef.h>
+#include <string.h>
 
 /* ------------------------------------------------------------------------- */
 static void
@@ -32,7 +33,7 @@ calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
      * Determine "pole axis", which is perpendicular to "ik axis" and points to
      * the pole position.
      */
-    ik_vec3_static_project(work.f, pole->position.f);
+    ik_vec3_static_project_from_vec3(work.f, pole->position.f);
     ik_vec3_static_sub_vec3(work.f, pole->position.f);
 
     /* Determine global XZ basis vectors of pole node */
@@ -44,8 +45,8 @@ calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
     /* Project the pole axis onto these basis nodes to obtain the projected
      * pole axis */
     ik_vec3_static_normalize(work.f);
-    ik_vec3_static_project_normalized(x_axis.f, work.f);
-    ik_vec3_static_project_normalized(z_axis.f, work.f);
+    ik_vec3_static_project_from_vec3_normalized(x_axis.f, work.f);
+    ik_vec3_static_project_from_vec3_normalized(z_axis.f, work.f);
     ik_vec3_static_add_vec3(z_axis.f, x_axis.f);  /* z_axis is now projected pole axis */
 }
 
@@ -67,8 +68,9 @@ ik_pole_base_create(void)
         return NULL;
     }
 
-    pole->node = NULL;
-    pole->tip = NULL;
+    memset(pole, 0, sizeof *pole);
+
+    pole->v = &(IKAPI.internal.pole_base);
     pole->angle = 0.0;
     pole->calculate_roll = calculate_roll_generic;
     ik_vec3_static_set_zero(pole->position.f);
@@ -80,7 +82,8 @@ ik_pole_base_create(void)
 void
 ik_pole_base_destroy(struct ik_pole_t* pole)
 {
-
+    pole->v->detach(pole);
+    FREE(pole);
 }
 
 /* ------------------------------------------------------------------------- */

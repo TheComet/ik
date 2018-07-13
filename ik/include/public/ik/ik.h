@@ -7,6 +7,7 @@
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
+#include "ik/pole.h"
 #include "ik/solver.h"
 #include "ik/tests.h"
 #include "ik/transform.h"
@@ -29,9 +30,10 @@ struct ik_internal_interface_t
 {
     /* Base interface implementations*/
     const struct ik_constraint_interface_t constraint_base;
-    const struct ik_effector_interface_t effector_base;
-    const struct ik_node_interface_t node_base;
-    const struct ik_solver_interface_t solver_base;
+    const struct ik_effector_interface_t   effector_base;
+    const struct ik_node_interface_t       node_base;
+    const struct ik_pole_interface_t       pole_base;
+    const struct ik_solver_interface_t     solver_base;
 
     /* Derived interface implementations */
 #define X(algorithm) const struct ik_constraint_interface_t constraint_##algorithm;
@@ -41,6 +43,9 @@ struct ik_internal_interface_t
         IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_node_interface_t node_##algorithm;
+        IK_ALGORITHMS
+#undef X
+#define X(algorithm) const struct ik_pole_interface_t pole_##algorithm;
         IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_solver_interface_t solver_##algorithm;

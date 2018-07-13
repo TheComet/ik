@@ -7,6 +7,8 @@
 #include "ik/memory.h"
 #include "ik/node_base.h"
 #include "ik/node_FABRIK.h"
+#include "ik/node_base.h"
+#include "ik/pole_base.h"
 #include "ik/quat_static.h"
 #include "ik/solver_static.h"
 #include "ik/solver_base.h"
@@ -85,6 +87,7 @@ const struct ik_interface_t IKAPI = {
         { IK_CONSTRAINT_BASE_IMPL},
         { IK_EFFECTOR_BASE_IMPL},
         { IK_NODE_BASE_IMPL },
+        { IK_POLE_BASE_IMPL },
         { IK_SOLVER_BASE_IMPL },
 #define X(algorithm) { IK_CONSTRAINT_##algorithm##_IMPL },
         IK_ALGORITHMS
@@ -93,6 +96,9 @@ const struct ik_interface_t IKAPI = {
         IK_ALGORITHMS
 #undef X
 #define X(algorithm) { IK_NODE_##algorithm##_IMPL },
+        IK_ALGORITHMS
+#undef X
+#define X(algorithm) { IK_POLE_##algorithm##_IMPL },
         IK_ALGORITHMS
 #undef X
 #define X(algorithm) { IK_SOLVER_##algorithm##_IMPL },

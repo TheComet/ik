@@ -32,6 +32,7 @@ ik_solver_static_create(enum ik_algorithm_e algorithm)
             solver->node       = &(IKAPI.internal.node_##algorithm);    \
             solver->effector   = &(IKAPI.internal.effector_##algorithm); \
             solver->constraint = &(IKAPI.internal.constraint_##algorithm); \
+            solver->pole       = &(IKAPI.internal.pole_##algorithm); \
         } break;
         IK_ALGORITHMS
 #undef X

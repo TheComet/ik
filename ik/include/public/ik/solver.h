@@ -50,9 +50,9 @@ struct ik_node_t;
     const struct ik_constraint_interface_t*  constraint;                      \
     const struct ik_effector_interface_t*    effector;                        \
     const struct ik_node_interface_t*        node;                            \
+    const struct ik_pole_interface_t*        pole;                            \
                                                                               \
     struct ik_node_t*                        tree;                            \
-    struct ik_pole_t*                        pole;                            \
                                                                               \
     /* list of effector_t* references (not owned by us) */                    \
     struct vector_t                          effector_nodes_list;             \

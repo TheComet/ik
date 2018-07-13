@@ -3,6 +3,8 @@
 
 #define NAME vector
 
+using namespace ::testing;
+
 TEST(NAME, init)
 {
     struct vector_t vec;
@@ -240,12 +242,6 @@ TEST(NAME, erase_invalid_index)
     vector_destroy(vec);
 }
 
-/* ========================================================================= */
-/* EVERYTHING ABOVE THIS POINT IS IDENTICAL TO unvector              */
-/* ========================================================================= */
-/* EVERYTHING BELOW THIS POINT IS UNIQUE TO vector                   */
-/* ========================================================================= */
-
 TEST(NAME, inserting_preserves_existing_elements)
 {
     struct vector_t* vec = vector_create(sizeof(int));
@@ -354,6 +350,39 @@ TEST(NAME, insert_emplacing_preserves_existing_elements)
     ASSERT_EQ(65, *(int*)vector_get_element(vec, 6));
     ASSERT_EQ(37, *(int*)vector_get_element(vec, 7));
     ASSERT_EQ(82, *(int*)vector_get_element(vec, 8));
+
+    vector_destroy(vec);
+}
+
+TEST(NAME, resizing_larger_than_capacity_reallocates_and_updates_size)
+{
+    struct vector_t* vec = vector_create(sizeof(int));
+
+    int* old_ptr = (int*)vector_push_emplace(vec);
+    *old_ptr = 42;
+    vector_resize(vec, 64);
+    int* new_ptr = (int*)vector_get_element(vec, 0);
+    EXPECT_THAT(old_ptr, Ne(new_ptr));
+    EXPECT_THAT(*new_ptr, Eq(42));
+    EXPECT_THAT(vec->capacity, Eq(64u));
+    EXPECT_THAT(vec->count, Eq(64u));
+
+    vector_destroy(vec);
+}
+
+TEST(NAME, resizing_smaller_than_capacity_updates_size_but_not_capacity)
+{
+    struct vector_t* vec = vector_create(sizeof(int));
+    vector_push_emplace(vec);
+    vector_resize(vec, 64);
+
+    EXPECT_THAT(vec->capacity, Eq(64u));
+    EXPECT_THAT(vec->count, Eq(64u));
+
+    vector_resize(vec, 8);
+
+    EXPECT_THAT(vec->capacity, Eq(64u));
+    EXPECT_THAT(vec->count, Eq(8u));
 
     vector_destroy(vec);
 }

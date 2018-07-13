@@ -11,6 +11,8 @@
 #include "ik/config.h"
 #include "ik/vector.h"
 
+#define BSTV_INVALID_HASH ((uint32_t)-1)
+
 C_BEGIN
 
 typedef struct bstv_hash_value_t
