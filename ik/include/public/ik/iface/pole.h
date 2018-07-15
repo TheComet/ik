@@ -2,7 +2,7 @@
 #define IK_POLE_H
 
 #include "ik/config.h"
-#include "ik/vec3.h"
+#include "ik/iface/vec3.h"
 
 C_BEGIN
 

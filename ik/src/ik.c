@@ -1,88 +1,39 @@
 #include "ik/ik.h"
-#include "ik/build_info_static.h"
-#include "ik/constraint_base.h"
-#include "ik/effector_base.h"
-#include "ik/log_static.h"
-#include "ik/mat3x3_static.h"
-#include "ik/memory.h"
-#include "ik/node_base.h"
-#include "ik/node_FABRIK.h"
-#include "ik/node_base.h"
-#include "ik/pole_base.h"
-#include "ik/quat_static.h"
-#include "ik/solver_static.h"
-#include "ik/solver_base.h"
-#include "ik/solver_ONE_BONE.h"
-#include "ik/solver_TWO_BONE.h"
-#include "ik/solver_FABRIK.h"
-#include "ik/solver_MSS.h"
-#include "ik/tests_static.h"
-#include "ik/transform_static.h"
-#include "ik/vec3_static.h"
-#include <stddef.h>
-#include <stdio.h>
-
-static int g_init_counter = 0;
-
-/* ------------------------------------------------------------------------- */
-static void
-log_stdout_callback(const char* msg)
-{
-    puts(msg);
-}
-
-/* ------------------------------------------------------------------------- */
-static const struct ik_callback_interface_t dummy_callbacks = {
-    log_stdout_callback,
-    NULL
-};
-static void
-ik_implement_callbacks(const struct ik_callback_interface_t* callbacks)
-{
-    if (callbacks)
-        ik_callback = callbacks;
-    else
-        ik_callback = &dummy_callbacks;
-}
-
-/* ------------------------------------------------------------------------- */
-static ikret_t
-ik_init(void)
-{
-    if (g_init_counter++ != 0)
-        return IK_OK;
-
-    ik_memory_init();
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-static uintptr_t
-ik_deinit(void)
-{
-    if (--g_init_counter != 0)
-        return 0;
-
-    ik_implement_callbacks(NULL);
-    return ik_memory_deinit();
-}
-
-/* ------------------------------------------------------------------------- */
-const struct ik_callback_interface_t* ik_callback = &dummy_callbacks;
+#include "ik/init.h"
+#include "ik/impl/build_info.h"
+#include "ik/impl/callback.h"
+#include "ik/impl/constraint_base.h"
+#include "ik/impl/effector_base.h"
+#include "ik/impl/log.h"
+#include "ik/impl/mat3x3.h"
+#include "ik/impl/node_base.h"
+#include "ik/impl/node_FABRIK.h"
+#include "ik/impl/node_base.h"
+#include "ik/impl/pole_base.h"
+#include "ik/impl/quat.h"
+#include "ik/impl/solver.h"
+#include "ik/impl/solver_base.h"
+#include "ik/impl/solver_ONE_BONE.h"
+#include "ik/impl/solver_TWO_BONE.h"
+#include "ik/impl/solver_FABRIK.h"
+#include "ik/impl/solver_MSS.h"
+#include "ik/impl/tests.h"
+#include "ik/impl/transform.h"
+#include "ik/impl/vec3.h"
 
 /* ------------------------------------------------------------------------- */
 const struct ik_interface_t IKAPI = {
     ik_init,
     ik_deinit,
-    ik_implement_callbacks,
-    { IK_BUILD_INFO_STATIC_IMPL },
-    { IK_LOG_STATIC_IMPL },
-    { IK_MAT3X3_STATIC_IMPL },
-    { IK_QUAT_STATIC_IMPL },
-    { IK_SOLVER_STATIC_IMPL },
-    { IK_TESTS_STATIC_IMPL },
-    { IK_TRANSFORM_STATIC_IMPL },
-    { IK_VEC3_STATIC_IMPL },
+    { IK_CALLBACK_IMPL },
+    { IK_BUILD_INFO_IMPL },
+    { IK_LOG_IMPL },
+    { IK_MAT3X3_IMPL },
+    { IK_QUAT_IMPL },
+    { IK_SOLVER_IMPL },
+    { IK_TESTS_IMPL },
+    { IK_TRANSFORM_IMPL },
+    { IK_VEC3_IMPL },
     {
         { IK_CONSTRAINT_BASE_IMPL},
         { IK_EFFECTOR_BASE_IMPL},

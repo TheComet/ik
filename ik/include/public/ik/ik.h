@@ -2,31 +2,23 @@
 #define IK_LIB_H
 
 #include "ik/config.h"
-#include "ik/build_info.h"
-#include "ik/constraint.h"
-#include "ik/effector.h"
-#include "ik/log.h"
-#include "ik/node.h"
-#include "ik/pole.h"
-#include "ik/solver.h"
-#include "ik/tests.h"
-#include "ik/transform.h"
-#include "ik/mat3x3.h"
+#include "ik/iface/build_info.h"
+#include "ik/iface/callback.h"
+#include "ik/iface/constraint.h"
+#include "ik/iface/effector.h"
+#include "ik/iface/log.h"
+#include "ik/iface/mat3x3.h"
+#include "ik/iface/node.h"
+#include "ik/iface/pole.h"
+#include "ik/iface/solver.h"
+#include "ik/iface/tests.h"
+#include "ik/iface/transform.h"
 
 C_BEGIN
 
-struct ik_callback_interface_t
-{
-    void
-    (*on_log_message)(const char* message);
+struct ik_callback_implementation_t;
 
-    void
-    (*on_node_destroy)(struct ik_node_t* node);
-};
-
-IK_PRIVATE_API extern const struct ik_callback_interface_t* ik_callback;
-
-struct ik_internal_interface_t
+struct ik_polymorphic_interface_t
 {
     /* Base interface implementations*/
     const struct ik_constraint_interface_t constraint_base;
@@ -40,16 +32,16 @@ struct ik_internal_interface_t
     IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_effector_interface_t effector_##algorithm;
-        IK_ALGORITHMS
+    IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_node_interface_t node_##algorithm;
-        IK_ALGORITHMS
+    IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_pole_interface_t pole_##algorithm;
-        IK_ALGORITHMS
+    IK_ALGORITHMS
 #undef X
 #define X(algorithm) const struct ik_solver_interface_t solver_##algorithm;
-        IK_ALGORITHMS
+    IK_ALGORITHMS
 #undef X
 };
 
@@ -61,20 +53,17 @@ struct ik_interface_t
     uintptr_t
     (*deinit)(void);
 
-    void
-    (*implement_callbacks)(const struct ik_callback_interface_t* callbacks);
+    const struct ik_callback_interface_t    callback;
+    const struct ik_build_info_interface_t  info;
+    const struct ik_log_interface_t         log;
+    const struct ik_mat3x3_interface_t      mat3x3;
+    const struct ik_quat_interface_t        quat;
+    const struct ik_solver_interface_t      solver;
+    const struct ik_tests_interface_t       tests;
+    const struct ik_transform_interface_t   transform;
+    const struct ik_vec3_interface_t        vec3;
 
-    const struct ik_build_info_interface_t info;
-    const struct ik_log_interface_t        log;
-    const struct ik_mat3x3_interface_t     mat3x3;
-    const struct ik_quat_interface_t       quat;
-    const struct ik_solver_interface_t     solver;
-    const struct ik_tests_interface_t      tests;
-    const struct ik_transform_interface_t  transform;
-    const struct ik_vec3_interface_t       vec3;
-
-    /* "Private" interface, should not be used by clients of the library. */
-    const struct ik_internal_interface_t internal;
+    const struct ik_polymorphic_interface_t base;
 };
 
 IK_PUBLIC_API extern const struct ik_interface_t IKAPI;

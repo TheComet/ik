@@ -1,5 +1,5 @@
-#include "ik/solver_MSS.h"
 #include "ik/ik.h"
+#include "ik/impl/solver_MSS.h"
 #include <math.h>
 
 struct mss_solver_t

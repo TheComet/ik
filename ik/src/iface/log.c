@@ -1,7 +1,8 @@
-#include "ik/log_static.h"
+#include "ik/init.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
-#include "ik/ik.h"
+#include "ik/impl/callback.h"
+#include "ik/impl/log.h"
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,7 +21,7 @@ static int g_init_counter = 0;
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_log_static_init(void)
+ik_log_init(void)
 {
     ikret_t result;
 
@@ -28,7 +29,7 @@ ik_log_static_init(void)
         return IK_OK;
 
     /* The log depends on the ik library being initialized */
-    if ((result = IKAPI.init()) != IK_OK)
+    if ((result = ik_init()) != IK_OK)
         goto ik_init_failed;
 
     g_log = (log_t*)MALLOC(sizeof *g_log);
@@ -42,24 +43,24 @@ ik_log_static_init(void)
     g_log->prefix = NULL;
     g_log->timestamps = 1;
 #ifdef DEBUG
-    ik_log_static_severity(IK_DEBUG);
+    ik_log_severity(IK_DEBUG);
 #else
-    ik_log_static_severity(IK_INFO);
+    ik_log_severity(IK_INFO);
 #endif
 
 #define STRINGIFY(x) #x
 #define STR(x) STRINGIFY(x)
-    ik_log_static_prefix(STR(IKAPI));
+    ik_log_prefix(STR(IKAPI));
 
     return IK_OK;
 
-    alloc_log_failed : IKAPI.deinit();
+    alloc_log_failed : ik_deinit();
     ik_init_failed   : return result;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_deinit(void)
+ik_log_deinit(void)
 {
     if (--g_init_counter != 0)
         return;
@@ -69,26 +70,26 @@ ik_log_static_deinit(void)
         FREE(g_log->prefix);
     FREE(g_log);
     g_log = NULL;
-    IKAPI.deinit();
+    ik_deinit();
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_severity(enum ik_log_severity_e severity)
+ik_log_severity(enum ik_log_severity_e severity)
 {
     g_log->severity = severity;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_timestamps(int enable)
+ik_log_timestamps(int enable)
 {
     g_log->timestamps = (enable != 0);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_prefix(const char* prefix)
+ik_log_prefix(const char* prefix)
 {
     char* buf;
     int len;
@@ -151,13 +152,12 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
     buf_ptr += sprintf(buf_ptr, "%s ", severities[severity]);
     vsprintf(buf_ptr, fmt, vargs);
 
-    if (ik_callback->on_log_message != NULL)
-        ik_callback->on_log_message((char*)g_log->message_buffer.data);
+    ik_callback_on_log_message((char*)g_log->message_buffer.data);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_debug(const char* fmt, ...)
+ik_log_debug(const char* fmt, ...)
 {
     va_list vargs;
 
@@ -171,7 +171,7 @@ ik_log_static_debug(const char* fmt, ...)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_info(const char* fmt, ...)
+ik_log_info(const char* fmt, ...)
 {
     va_list vargs;
 
@@ -185,7 +185,7 @@ ik_log_static_info(const char* fmt, ...)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_warning(const char* fmt, ...)
+ik_log_warning(const char* fmt, ...)
 {
     va_list vargs;
 
@@ -199,7 +199,7 @@ ik_log_static_warning(const char* fmt, ...)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_error(const char* fmt, ...)
+ik_log_error(const char* fmt, ...)
 {
     va_list vargs;
 
@@ -213,7 +213,7 @@ ik_log_static_error(const char* fmt, ...)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_static_fatal(const char* fmt, ...)
+ik_log_fatal(const char* fmt, ...)
 {
     va_list vargs;
 

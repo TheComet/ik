@@ -1,10 +1,9 @@
 #include "ik/ik.h"
-#include "ik/solver_base.h"
 #include "ik/chain.h"
 #include "ik/memory.h"
-#include "ik/quat_static.h"
-#include "ik/transform.h"
-#include "ik/vec3_static.h"
+#include "ik/impl/log.h"
+#include "ik/impl/solver_base.h"
+#include "ik/impl/vec3.h"
 #include <string.h>
 #include <assert.h>
 
@@ -123,7 +122,7 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
     /* If the solver has no tree, then there's nothing to do */
     if (solver->tree == NULL)
     {
-        IKAPI.log.error("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
+        ik_log_error("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
         return IK_SOLVER_HAS_NO_TREE;
     }
 
@@ -131,13 +130,13 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
      * Traverse the entire tree and generate a list of the effectors. This
      * makes the process of building the chain list for FABRIK much easier.
      */
-    IKAPI.log.info("Rebuilding effector nodes list");
+    ik_log_info("Rebuilding effector nodes list");
     vector_clear(&solver->effector_nodes_list);
     if ((result = recursively_get_all_effector_nodes(
             solver->tree,
             &solver->effector_nodes_list)) != IK_OK)
     {
-        IKAPI.log.fatal("Ran out of memory while building the effector nodes list");
+        ik_log_fatal("Ran out of memory while building the effector nodes list");
         return result;
     }
 
@@ -177,9 +176,9 @@ calculate_effector_target(const struct chain_t* chain)
 
     /* lerp using effector weight to get actual target position */
     effector->_actual_target = effector->target_position;
-    ik_vec3_static_sub_vec3(effector->_actual_target.f, node->position.f);
-    ik_vec3_static_mul_scalar(effector->_actual_target.f, effector->weight);
-    ik_vec3_static_add_vec3(effector->_actual_target.f, node->position.f);
+    ik_vec3_sub_vec3(effector->_actual_target.f, node->position.f);
+    ik_vec3_mul_scalar(effector->_actual_target.f, effector->weight);
+    ik_vec3_add_vec3(effector->_actual_target.f, node->position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
     if (effector->flags & IK_WEIGHT_NLERP && effector->weight < 1.0)
@@ -193,18 +192,18 @@ calculate_effector_target(const struct chain_t* chain)
         base_node = chain_get_base_node(chain);
         base_to_effector = node->position;
         base_to_target = effector->target_position;
-        ik_vec3_static_sub_vec3(base_to_effector.f, base_node->position.f);
-        ik_vec3_static_sub_vec3(base_to_target.f, base_node->position.f);
+        ik_vec3_sub_vec3(base_to_effector.f, base_node->position.f);
+        ik_vec3_sub_vec3(base_to_target.f, base_node->position.f);
 
         /* The effective distance is a lerp between these two distances */
-        distance_to_target = ik_vec3_static_length(base_to_target.f) * effector->weight;
-        distance_to_target += ik_vec3_static_length(base_to_effector.f) * (1.0 - effector->weight);
+        distance_to_target = ik_vec3_length(base_to_target.f) * effector->weight;
+        distance_to_target += ik_vec3_length(base_to_effector.f) * (1.0 - effector->weight);
 
         /* nlerp the target position by pinning it to the base node */
-        ik_vec3_static_sub_vec3(effector->_actual_target.f, base_node->position.f);
-        ik_vec3_static_normalize(effector->_actual_target.f);
-        ik_vec3_static_mul_scalar(effector->_actual_target.f, distance_to_target);
-        ik_vec3_static_add_vec3(effector->_actual_target.f, base_node->position.f);
+        ik_vec3_sub_vec3(effector->_actual_target.f, base_node->position.f);
+        ik_vec3_normalize(effector->_actual_target.f);
+        ik_vec3_mul_scalar(effector->_actual_target.f, distance_to_target);
+        ik_vec3_add_vec3(effector->_actual_target.f, base_node->position.f);
     }
 }
 static void
@@ -254,7 +253,7 @@ ik_solver_base_iterate_all_nodes(struct ik_solver_t* solver,
 {
     if (solver->tree == NULL)
     {
-        IKAPI.log.warning("Tried iterating the tree, but no tree was set");
+        ik_log_warning("Tried iterating the tree, but no tree was set");
         return;
     }
 

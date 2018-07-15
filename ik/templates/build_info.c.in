@@ -1,4 +1,4 @@
-#include "ik/build_info_static.h"
+#include "ik/iface/build_info.h"
 #include "ik/build_info_for_every_compile.h"
 
 #define QUOTE(str) #str
@@ -24,56 +24,56 @@
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_version(void)
+ik_build_info_version(void)
 {
     return IK_VERSION;
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_build_info_static_build_number(void)
+ik_build_info_build_number(void)
 {
     return IK_BUILD_NUMBER;
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_host(void)
+ik_build_info_host(void)
 {
     return "${IK_HOST_COMPUTER}";
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_date(void)
+ik_build_info_date(void)
 {
     return IK_BUILD_TIME;
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_commit(void)
+ik_build_info_commit(void)
 {
     return "${IK_COMMIT_INFO}";
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_compiler(void)
+ik_build_info_compiler(void)
 {
     return "${IK_COMPILER}";
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_cmake(void)
+ik_build_info_cmake(void)
 {
     return IK_CMAKE_CONFIG;
 }
 
 /* ------------------------------------------------------------------------- */
 const char*
-ik_build_info_static_all(void)
+ik_build_info_all(void)
 {
     return
     "This is IK " IK_VERSION " (major,minor,patch,build number)\n"

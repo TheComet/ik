@@ -1,9 +1,7 @@
 /*!
  * @file chain.h
- * @brief Manages synthesising the user specified tree of nodes (ik_node_t)
+ * @brief Manages synthesizing the user specified tree of nodes (ik_node_t)
  * into a structure more optimal for solvers.
- *
- *
  */
 #ifndef IK_CHAIN_H
 #define IK_CHAIN_H
@@ -125,6 +123,13 @@ count_chains(const struct vector_t* chains);
  */
 #define chain_get_tip_node(chain_var) \
     chain_get_node(chain_var, 0)
+
+
+#define chain_child_count(chain_var) \
+    vector_count(&(chain_var)->children)
+
+#define chain_get_child(chain_var, idx) \
+    ((chain_t*)vector_get_element(&(chain_var)->children, idx))
 
 #define CHAIN_FOR_EACH_CHILD(chain_var, var_name) \
     VECTOR_FOR_EACH(&(chain_var)->children, struct chain_t, var_name) {

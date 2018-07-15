@@ -1,9 +1,9 @@
-#include "ik/tests_static.h"
+#include "ik/impl/tests.h"
 #include <gmock/gmock.h>
 #include <stdio.h>
 
 ikret_t
-ik_tests_static_run(int* argc, char** argv)
+ik_tests_run(int* argc, char** argv)
 {
 
     // Since Google Mock depends on Google Test, InitGoogleMock() is

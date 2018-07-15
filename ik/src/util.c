@@ -1,7 +1,7 @@
 #include "ik/chain.h"
-#include "ik/effector.h"
-#include "ik/node.h"
 #include "ik/util.h"
+#include "ik/iface/effector.h"
+#include "ik/iface/node.h"
 #include <assert.h>
 
 typedef struct effector_data_t

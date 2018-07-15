@@ -1,4 +1,4 @@
-#include "ik/solver_base.h"
+#include "ik/impl/solver_base.h"
 
 IK_IMPLEMENT(solver_ONE_BONE, solver_base)
 {

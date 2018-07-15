@@ -138,42 +138,46 @@ add_custom_command (OUTPUT ${BIFEC_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOUR
 set (IK_HEADERS
     "include/private/ik/backtrace.h"
     "include/private/ik/chain.h"
+    "include/private/ik/init.h"
     "include/private/ik/memory.h"
     "include/public/ik/bstv.h"
-    "include/public/ik/build_info.h"
-    "include/public/ik/constraint.h"
-    "include/public/ik/effector.h"
     "include/public/ik/ik.h"
-    "include/public/ik/log.h"
-    "include/public/ik/mat3x3.h"
-    "include/public/ik/node.h"
-    "include/public/ik/pole.h"
     "include/public/ik/pstdint.h"
-    "include/public/ik/quat.h"
     "include/public/ik/retcodes.h"
-    "include/public/ik/solver.h"
-    "include/public/ik/tests.h"
-    "include/public/ik/transform.h"
     "include/public/ik/util.h"
-    "include/public/ik/vec3.h"
     "include/public/ik/vector.h"
+    "include/public/ik/iface/build_info.h"
+    "include/public/ik/iface/callback.h"
+    "include/public/ik/iface/constraint.h"
+    "include/public/ik/iface/effector.h"
+    "include/public/ik/iface/log.h"
+    "include/public/ik/iface/mat3x3.h"
+    "include/public/ik/iface/node.h"
+    "include/public/ik/iface/pole.h"
+    "include/public/ik/iface/quat.h"
+    "include/public/ik/iface/solver.h"
+    "include/public/ik/iface/tests.h"
+    "include/public/ik/iface/transform.h"
+    "include/public/ik/iface/vec3.h"
     "templates/config.h.in"
     "${BIFEC_HEADER}")
 set (IK_SOURCES
     "src/bstv.c"
     "src/chain.c"
     "src/ik.c"
-    "src/log_static.c"
-    "src/mat3x3_static.c"
+    "src/init.c"
     "src/memory.c"
-    "src/quat_static.c"
     "src/retcodes.c"
-    "src/solver_static.c"
-    "src/transform_chains.c"
-    "src/transform_tree.c"
     "src/util.c"
-    "src/vec3_static.c"
     "src/vector.c"
+    "src/iface/callback.c"
+    "src/iface/log.c"
+    "src/iface/mat3x3.c"
+    "src/iface/quat.c"
+    "src/iface/solver.c"
+    "src/iface/transform_chains.c"
+    "src/iface/transform_tree.c"
+    "src/iface/vec3.c"
     "src/solver/base/constraint_base.c"
     "src/solver/base/effector_base.c"
     "src/solver/base/node_base.c"
@@ -184,31 +188,32 @@ set (IK_SOURCES
     "src/solver/MSS/solver_MSS.c"
     "src/solver/ONE_BONE/solver_ONE_BONE.c"
     "src/solver/TWO_BONE/solver_TWO_BONE.c"
-    "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests_static_stub.c>"
+    "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests.c>"
     "${CMAKE_CURRENT_BINARY_DIR}/src/build_info.c"
     $<$<PLATFORM_ID:Linux>:
         "src/platform/linux/backtrace_linux.c"
     >
     "templates/build_info.c.in")
 set (IK_VTABLES
-    "include/vtables/build_info_static.v"
+    "include/vtables/build_info.v"
+    "include/vtables/callback.v"
     "include/vtables/constraint_base.v"
     "include/vtables/effector_base.v"
-    "include/vtables/log_static.v"
-    "include/vtables/mat3x3_static.v"
+    "include/vtables/log.v"
+    "include/vtables/mat3x3.v"
     "include/vtables/node_base.v"
     "include/vtables/node_FABRIK.v"
     "include/vtables/pole_base.v"
-    "include/vtables/quat_static.v"
+    "include/vtables/quat.v"
     "include/vtables/solver_base.v"
     "include/vtables/solver_FABRIK.v"
     "include/vtables/solver_MSS.v"
     "include/vtables/solver_ONE_BONE.v"
-    "include/vtables/solver_static.v"
+    "include/vtables/solver.v"
     "include/vtables/solver_TWO_BONE.v"
-    "include/vtables/tests_static.v"
-    "include/vtables/transform_static.v"
-    "include/vtables/vec3_static.v")
+    "include/vtables/tests.v"
+    "include/vtables/transform.v"
+    "include/vtables/vec3.v")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
@@ -233,8 +238,9 @@ set (IK_TESTS_SOURCES
     "thirdparty/googletest/src/gtest-all.cc"
     "thirdparty/googlemock/src/gmock-all.cc"
     "src/tests/environment_library_init.cpp"
-    "src/tests/tests_static.cpp"
+    "src/tests/tests.cpp"
     "src/tests/test_bstv.cpp"
+    "src/tests/test_chain.cpp"
     "src/tests/test_effector.cpp"
     "src/tests/test_FABRIK.cpp"
     "src/tests/test_mat3x3.cpp"
@@ -257,7 +263,7 @@ set (PYTHON_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/ik_gen_vtable.py)
 macro (add_vtable_file VTABLE_FILE)
     get_filename_component (H_FILE_BASENAME ${VTABLE_FILE} NAME)
     string (REPLACE ".v" ".h" H_FILE_BASENAME ${H_FILE_BASENAME})
-    set (H_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/${H_FILE_BASENAME})
+    set (H_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/impl/${H_FILE_BASENAME})
     add_custom_command (
         OUTPUT ${H_FILE}
         DEPENDS ${VTABLE_FILE} ${PYTHON_SCRIPT}
@@ -298,7 +304,7 @@ target_compile_options (ik_obj
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
         -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough
-        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math -flto
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
@@ -331,7 +337,7 @@ if (IK_PYTHON)
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer -flto>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
@@ -375,6 +381,7 @@ if (IK_TESTS)
             ${CMAKE_CURRENT_BINARY_DIR}/include/public
             ${CMAKE_CURRENT_BINARY_DIR}/include/private
             ${CMAKE_CURRENT_SOURCE_DIR}/include/public
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/private
             ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googlemock
             ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googlemock/include
             ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googletest
@@ -429,7 +436,7 @@ if (IK_BENCHMARKS)
         >
         PRIVATE $<$<C_COMPILER_ID:GNU>:
             -Wno-unused-result
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer -flto>
         >
         PRIVATE $<$<C_COMPILER_ID:Clang>:
             -Wno-unused-result

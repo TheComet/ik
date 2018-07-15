@@ -1,9 +1,14 @@
-#include "ik/constraint_base.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/quat_static.h"
+#include "ik/impl/constraint_base.h"
+#include "ik/impl/log.h"
+#include "ik/impl/quat.h"
 #include <string.h>
 #include <assert.h>
+
+static const struct ik_constraint_interface_t constraint_base = {
+    IK_CONSTRAINT_BASE_IMPL
+};
 
 /* ------------------------------------------------------------------------- */
 /* Constraint implementations */
@@ -13,30 +18,30 @@
 static void
 apply_dummy(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_static_set_identity(compensate_rotation);
+    ik_quat_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
 apply_stiff(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_static_set(compensate_rotation, node->rotation.f);
-    ik_quat_static_conj(compensate_rotation);
-    ik_quat_static_mul_quat(compensate_rotation, node->constraint->stiff.angle.f);
+    ik_quat_set(compensate_rotation, node->rotation.f);
+    ik_quat_conj(compensate_rotation);
+    ik_quat_mul_quat(compensate_rotation, node->constraint->stiff.angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
 apply_hinge(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_static_set_identity(compensate_rotation);
+    ik_quat_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
 apply_cone(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_static_set_identity(compensate_rotation);
+    ik_quat_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -50,12 +55,12 @@ ik_constraint_base_create()
     struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
     if (constraint == NULL)
     {
-        IKAPI.log.fatal("Failed to allocate constraint: Out of memory");
+        ik_log_fatal("Failed to allocate constraint: Out of memory");
         return NULL;
     }
 
     memset(constraint, 0, sizeof *constraint);
-    constraint->v = &IKAPI.internal.constraint_base;
+    constraint->v = &constraint_base;
     ik_constraint_base_set_custom(constraint, apply_dummy);
 
     return constraint;
@@ -103,7 +108,7 @@ ik_constraint_base_set_type(struct ik_constraint_t* constraint, enum ik_constrai
             break;
 
         case IK_CUSTOM:
-            IKAPI.log.error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
+            ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
             return IK_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
     }
 
@@ -135,7 +140,7 @@ ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* 
 {
     if (node->constraint != NULL)
     {
-        IKAPI.log.error(
+        ik_log_error(
             "You are trying to attach a constraint to a node that "
             "already has a constraint attached to it. The new constraint will "
             "not be attached!"

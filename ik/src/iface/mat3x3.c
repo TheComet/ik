@@ -1,8 +1,8 @@
-#include "ik/mat3x3_static.h"
+#include "ik/impl/mat3x3.h"
 
 /* ------------------------------------------------------------------------- */
 void
-ik_mat3x3_static_from_quat(ikreal_t m[9], const ikreal_t q[4])
+ik_mat3x3_from_quat(ikreal_t m[9], const ikreal_t q[4])
 {
     ikreal_t xx = q[0]*q[0];
     ikreal_t xy = q[0]*q[1];

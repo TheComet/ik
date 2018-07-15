@@ -1,7 +1,8 @@
-#include "ik/solver_TWO_BONE.h"
-#include "ik/chain.h"
-#include "ik/vec3_static.h"
 #include "ik/ik.h"
+#include "ik/chain.h"
+#include "ik/impl/log.h"
+#include "ik/impl/solver_TWO_BONE.h"
+#include "ik/impl/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
@@ -37,12 +38,12 @@ ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver)
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         if (chain_length(chain) != 3) /* 3 nodes = 2 bones */
         {
-            IKAPI.log.error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
+            ik_log_error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            IKAPI.log.error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
     SOLVER_END_EACH
@@ -68,7 +69,7 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
 
         assert(node_tip->effector != NULL);
         to_target = node_tip->effector->target_position;
-        ik_vec3_static_sub_vec3(to_target.f, node_base->position.f);
+        ik_vec3_sub_vec3(to_target.f, node_base->position.f);
 
         /*
          * Form a triangle from the two segment lengths so we can calculate the
@@ -86,7 +87,7 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
         b = node_mid->dist_to_parent;
         aa = a*a;
         bb = b*b;
-        cc = ik_vec3_static_length_squared(to_target.f);
+        cc = ik_vec3_length_squared(to_target.f);
         c = sqrt(cc);
 
         /* check if in reach */
@@ -100,37 +101,37 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
 
             /* Cross product of both segment vectors defines axis of rotation */
             alpha_rotation.v = node_tip->position;
-            ik_vec3_static_sub_vec3(alpha_rotation.f, node_mid->position.f);  /* top segment */
-            ik_vec3_static_sub_vec3(node_mid->position.f, node_base->position.f);  /* bottom segment */
-            ik_vec3_static_cross(alpha_rotation.f, node_mid->position.f);
+            ik_vec3_sub_vec3(alpha_rotation.f, node_mid->position.f);  /* top segment */
+            ik_vec3_sub_vec3(node_mid->position.f, node_base->position.f);  /* bottom segment */
+            ik_vec3_cross(alpha_rotation.f, node_mid->position.f);
 
             /*
              * Set up quaternion describing the rotation of alpha. Need to
              * normalise vec3 component of quaternion so rotation is correct.
              */
-            ik_vec3_static_normalize(alpha_rotation.f);
-            ik_vec3_static_mul_scalar(alpha_rotation.f, sin_a);
+            ik_vec3_normalize(alpha_rotation.f);
+            ik_vec3_mul_scalar(alpha_rotation.f, sin_a);
             alpha_rotation.w = cos_a;
 
             /* Rotate side c and scale to length of side b to get the unknown position */
             node_mid->position = to_target;
-            ik_vec3_static_normalize(node_mid->position.f);
-            ik_vec3_static_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            ik_vec3_static_rotate(node_mid->position.f, alpha_rotation.f);
-            ik_vec3_static_add_vec3(node_mid->position.f, node_base->position.f);
+            ik_vec3_normalize(node_mid->position.f);
+            ik_vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
+            ik_vec3_rotate(node_mid->position.f, alpha_rotation.f);
+            ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
 
             node_tip->position = node_tip->effector->target_position;
         }
         else
         {
             /* Just point both segments at target */
-            ik_vec3_static_normalize(to_target.f);
+            ik_vec3_normalize(to_target.f);
             node_mid->position = to_target;
             node_tip->position = to_target;
-            ik_vec3_static_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            ik_vec3_static_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
-            ik_vec3_static_add_vec3(node_mid->position.f, node_base->position.f);
-            ik_vec3_static_add_vec3(node_tip->position.f, node_mid->position.f);
+            ik_vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
+            ik_vec3_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
+            ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
+            ik_vec3_add_vec3(node_tip->position.f, node_mid->position.f);
         }
     SOLVER_END_EACH
 

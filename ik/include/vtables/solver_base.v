@@ -1,4 +1,4 @@
-#include "ik/solver.h"
+#include "ik/iface/solver.h"
 
 IK_IMPLEMENT(solver_base, solver_interface)
 {

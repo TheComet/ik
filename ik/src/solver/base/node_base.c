@@ -1,8 +1,9 @@
-#include "ik/node_base.h"
 #include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/quat_static.h"
-#include "ik/vec3_static.h"
+#include "ik/impl/callback.h"
+#include "ik/impl/log.h"
+#include "ik/impl/quat.h"
+#include "ik/impl/vec3.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -14,10 +15,10 @@ ik_node_base_create(uint32_t guid)
     struct ik_node_t* node = MALLOC(sizeof *node);
     if (node == NULL)
     {
-        IKAPI.log.fatal("Failed to allocate node: Ran out of memory");
+        ik_log_fatal("Failed to allocate node: Ran out of memory");
         return NULL;
     }
-    IKAPI.internal.node_base.construct(node, guid);
+    IKAPI.base.node_base.construct(node, guid);
 
     return node;
 }
@@ -30,11 +31,11 @@ ik_node_base_construct(struct ik_node_t* node, uint32_t guid)
 
     memset(node, 0, sizeof *node);
 
-    node->v = &IKAPI.internal.node_base;
+    node->v = &IKAPI.base.node_base;
     node->guid = guid;
     bstv_construct(&node->children);
-    ik_quat_static_set_identity(node->rotation.f);
-    ik_vec3_static_set_zero(node->rotation.f);
+    ik_quat_set_identity(node->rotation.f);
+    ik_vec3_set_zero(node->rotation.f);
 
     return IK_OK;
 }
@@ -90,8 +91,7 @@ ik_node_base_destroy(struct ik_node_t* node)
 {
     assert(node);
 
-    if (ik_callback->on_node_destroy != NULL)
-        ik_callback->on_node_destroy(node);
+    ik_callback_on_node_destroy(node);
     node->v->destruct(node);
     FREE(node);
 }
@@ -116,14 +116,14 @@ ik_node_base_add_child(struct ik_node_t* node, struct ik_node_t* child)
         while (root->parent) root = root->parent;
         if (root->v->find_child(root, child->guid) != NULL)
         {
-            IKAPI.log.warning("Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", child->guid);
+            ik_log_warning("Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", child->guid);
         }
     }
 #endif
 
     if ((result = bstv_insert(&node->children, child->guid, child)) != IK_OK)
     {
-        IKAPI.log.error("Child guid %d already exists in this node's list of children! Node was not inserted into the tree.", child->guid);
+        ik_log_error("Child guid %d already exists in this node's list of children! Node was not inserted into the tree.", child->guid);
         return result;
     }
 
@@ -261,7 +261,7 @@ ik_node_base_dump_to_dot(const struct ik_node_t* node, const char* file_name)
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)
     {
-        IKAPI.log.error("Failed to open file %s", file_name);
+        ik_log_error("Failed to open file %s", file_name);
         return;
     }
 

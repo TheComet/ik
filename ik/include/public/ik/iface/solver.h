@@ -2,8 +2,6 @@
 #define IK_SOLVER_H
 
 #include "ik/config.h"
-#include "ik/constraint.h"
-#include "ik/pole.h"
 #include "ik/vector.h"
 
 /*!

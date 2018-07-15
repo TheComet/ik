@@ -1,4 +1,4 @@
-#include "ik/node_base.h"
+#include "ik/impl/node_base.h"
 
 enum node_FABRIK_constraint_marker_e
 {

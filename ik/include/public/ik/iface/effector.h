@@ -2,8 +2,8 @@
 #define EFFECTOR_H
 
 #include "ik/config.h"
-#include "ik/vec3.h"
-#include "ik/quat.h"
+#include "ik/iface/vec3.h"
+#include "ik/iface/quat.h"
 
 C_BEGIN
 

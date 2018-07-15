@@ -1,8 +1,11 @@
+#include "ik/bstv.h"
 #include "ik/chain.h"
-#include "ik/ik.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
-#include "ik/vec3_static.h"
+#include "ik/iface/effector.h"
+#include "ik/iface/node.h"
+#include "ik/impl/log.h"
+#include "ik/impl/vec3.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -20,7 +23,7 @@ chain_create(void)
     struct chain_t* chain = MALLOC(sizeof *chain);
     if (chain == NULL)
     {
-        IKAPI.log.fatal("Failed to allocate chain: out of memory");
+        ik_log_fatal("Failed to allocate chain: out of memory");
         return NULL;
     }
     chain_construct(chain);
@@ -144,7 +147,7 @@ mark_involved_nodes(struct bstv_t* involved_nodes,
             {
                 if (bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
                 {
-                    IKAPI.log.fatal("Ran out of memory while marking involved nodes");
+                    ik_log_fatal("Ran out of memory while marking involved nodes");
                     return IK_RAN_OUT_OF_MEMORY;
                 }
             }
@@ -224,7 +227,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                     child_chain = vector_push_emplace(chain_list);
                     if (child_chain == NULL)
                     {
-                        IKAPI.log.fatal("Failed to create base chain: Ran out of memory");
+                        ik_log_fatal("Failed to create base chain: Ran out of memory");
                         return IK_RAN_OUT_OF_MEMORY;
                     }
                     chain_construct(child_chain);
@@ -238,7 +241,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                     child_chain = chain_create_child(chain_current);
                     if (child_chain == NULL)
                     {
-                        IKAPI.log.fatal("Failed to create child chain: Ran out of memory");
+                        ik_log_fatal("Failed to create child chain: Ran out of memory");
                         return IK_RAN_OUT_OF_MEMORY;
                     }
                     chain_construct(child_chain);
@@ -251,12 +254,12 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                 for (node = node_current; node != node_base; node = node->parent)
                     if (chain_add_node(child_chain, node) != 0)
                     {
-                        IKAPI.log.fatal("Failed to insert node into chain: Ran out of memory");
+                        ik_log_fatal("Failed to insert node into chain: Ran out of memory");
                         return IK_RAN_OUT_OF_MEMORY;
                     }
                 if (chain_add_node(child_chain, node_base) != 0)
                 {
-                    IKAPI.log.fatal("Failed to insert node into chain: Ran out of memory");
+                    ik_log_fatal("Failed to insert node into chain: Ran out of memory");
                     return IK_RAN_OUT_OF_MEMORY;
                 }
 
@@ -321,7 +324,7 @@ chain_tree_rebuild(struct vector_t* chain_list,
     dump_to_dot(base_node, chains, buffer);
 #endif
 
-    IKAPI.log.info("There are %d effector(s) involving %d node(s). %d chain(s) were created",
+    ik_log_info("There are %d effector(s) involving %d node(s). %d chain(s) were created",
                    vector_count(effector_nodes_list),
                    involved_nodes_count,
                    count_chains(chain_list));
@@ -351,7 +354,7 @@ calculate_segment_lengths_in_island(struct chain_t* chain)
     {
         struct ik_node_t* node = chain_get_node(chain, last_idx);
 
-        node->dist_to_parent = ik_vec3_static_length(node->position.f);
+        node->dist_to_parent = ik_vec3_length(node->position.f);
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)

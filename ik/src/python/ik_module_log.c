@@ -1,5 +1,4 @@
 #include "Python.h"
-
 #include "ik/python/ik_module_log.h"
 #include "ik/ik.h"
 

@@ -1,7 +1,8 @@
-#include "ik/solver_ONE_BONE.h"
 #include "ik/ik.h"
 #include "ik/chain.h"
-#include "ik/vec3_static.h"
+#include "ik/impl/log.h"
+#include "ik/impl/vec3.h"
+#include "ik/impl/solver_ONE_BONE.h"
 #include <stddef.h>
 #include <assert.h>
 
@@ -36,12 +37,12 @@ ik_solver_ONE_BONE_rebuild(struct ik_solver_t* solver)
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         if (chain_length(chain) != 2) /* 2 nodes = 1 bone */
         {
-            IKAPI.log.error("Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
+            ik_log_error("Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            IKAPI.log.error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
     SOLVER_END_EACH
@@ -64,10 +65,10 @@ ik_solver_ONE_BONE_solve(struct ik_solver_t* solver)
         assert(node_tip->effector != NULL);
         node_tip->position = node_tip->effector->target_position;
 
-        ik_vec3_static_sub_vec3(node_tip->position.f, node_base->position.f);
-        ik_vec3_static_normalize(node_tip->position.f);
-        ik_vec3_static_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
-        ik_vec3_static_add_vec3(node_tip->position.f, node_base->position.f);
+        ik_vec3_sub_vec3(node_tip->position.f, node_base->position.f);
+        ik_vec3_normalize(node_tip->position.f);
+        ik_vec3_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
+        ik_vec3_add_vec3(node_tip->position.f, node_base->position.f);
     SOLVER_END_EACH
 
     return 0;

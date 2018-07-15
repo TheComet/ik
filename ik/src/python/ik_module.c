@@ -130,7 +130,7 @@ PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void)
 
     return m;
 
-    init_module_failed            : Py_DECREF(m);
-    module_alloc_failed           : IKAPI.deinit();
-    ik_init_failed                : return NULL;
+    init_module_failed  : Py_DECREF(m);
+    module_alloc_failed : IKAPI.deinit();
+    ik_init_failed      : return NULL;
 }

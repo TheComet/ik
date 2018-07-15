@@ -1,7 +1,7 @@
 #include "gmock/gmock.h"
 #include "ik/bstv.h"
 
-#define NAME bst_vector
+#define NAME bstv
 
 using namespace testing;
 
@@ -393,12 +393,12 @@ TEST(NAME, hash_exists)
 {
     struct bstv_t* bstv = bstv_create();
 
-    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(-1));
+    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(IK_HASH_NOT_FOUND));
     bstv_insert(bstv, 29, NULL);
-    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(0));
-    EXPECT_THAT(bstv_hash_exists(bstv, 40), Eq(-1));
+    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(IK_OK));
+    EXPECT_THAT(bstv_hash_exists(bstv, 40), Eq(IK_HASH_NOT_FOUND));
     bstv_erase(bstv, 29);
-    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(-1));
+    EXPECT_THAT(bstv_hash_exists(bstv, 29), Eq(IK_HASH_NOT_FOUND));
 
     bstv_destroy(bstv);
 }
