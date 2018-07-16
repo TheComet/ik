@@ -2,6 +2,7 @@
 #include "ik/chain.h"
 #include "ik/impl/log.h"
 #include "ik/impl/solver_TWO_BONE.h"
+#include "ik/impl/transform.h"
 #include "ik/impl/vec3.h"
 #include <assert.h>
 #include <math.h>
@@ -55,6 +56,9 @@ ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver)
 int
 ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
 {
+    /* Tree is in local space, we need global positions */
+    ik_transform_chain_list(&solver->chain_list, IK_L2G | IK_TRANSLATIONS);
+
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         struct ik_node_t* node_tip;
         struct ik_node_t* node_mid;
@@ -94,30 +98,37 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
         if (c < a + b)
         {
             /* Cosine law to get base angle (alpha) */
-            struct ik_quat_t alpha_rotation;
-            ikreal_t alpha = acos((bb + cc - aa) / (2.0 * node_mid->dist_to_parent * sqrt(cc)));
-            ikreal_t cos_a = cos(alpha * 0.5);
-            ikreal_t sin_a = sin(alpha * 0.5);
+            struct ik_quat_t base_rotation;
+            ikreal_t base_angle = acos((bb + cc - aa) / (2.0 * b * c));
+            ikreal_t cos_a = cos(base_angle * 0.5);
+            ikreal_t sin_a = sin(base_angle * 0.5);
 
             /* Cross product of both segment vectors defines axis of rotation */
-            alpha_rotation.v = node_tip->position;
-            ik_vec3_sub_vec3(alpha_rotation.f, node_mid->position.f);  /* top segment */
+            base_rotation.v = node_tip->position;
+            ik_vec3_sub_vec3(base_rotation.f, node_mid->position.f);  /* top segment */
             ik_vec3_sub_vec3(node_mid->position.f, node_base->position.f);  /* bottom segment */
-            ik_vec3_cross(alpha_rotation.f, node_mid->position.f);
+            ik_vec3_cross(base_rotation.f, node_mid->position.f);
 
             /*
              * Set up quaternion describing the rotation of alpha. Need to
              * normalise vec3 component of quaternion so rotation is correct.
+             * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
+             * length vector. We rely on this behavior for a default axis.
              */
-            ik_vec3_normalize(alpha_rotation.f);
-            ik_vec3_mul_scalar(alpha_rotation.f, sin_a);
-            alpha_rotation.w = cos_a;
+            ik_vec3_normalize(base_rotation.f);
+            ik_vec3_mul_scalar(base_rotation.f, sin_a);
+            base_rotation.w = cos_a;
 
-            /* Rotate side c and scale to length of side b to get the unknown position */
+            /*
+             * Rotate side c and scale to length of side b to get the unknown
+             * position. node_base was already subtracted from node_mid
+             * previously, which means it will rotate around the base node's
+             * position (as it should)
+             */
             node_mid->position = to_target;
             ik_vec3_normalize(node_mid->position.f);
+            ik_vec3_rotate(node_mid->position.f, base_rotation.f);
             ik_vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            ik_vec3_rotate(node_mid->position.f, alpha_rotation.f);
             ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
 
             node_tip->position = node_tip->effector->target_position;
@@ -134,6 +145,9 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
             ik_vec3_add_vec3(node_tip->position.f, node_mid->position.f);
         }
     SOLVER_END_EACH
+
+    /* Transform back again */
+    ik_transform_chain_list(&solver->chain_list, IK_G2L | IK_TRANSLATIONS);
 
     return 0;
 }

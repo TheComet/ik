@@ -248,6 +248,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_quat.cpp"
     "src/tests/test_transform_chain.cpp"
     "src/tests/test_transform_tree.cpp"
+    "src/tests/test_TWO_BONE.cpp"
     "src/tests/test_vector.cpp"
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
