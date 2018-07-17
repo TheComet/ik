@@ -153,8 +153,8 @@ static transform_func transform_table[8] = {
 void
 ik_transform_node(struct ik_node_t* node, uint8_t flags)
 {
-    ikreal_t base_transform[7];
-    memcpy(base_transform, node->transform, sizeof(ikreal_t) * 7);
+    ikreal_t base_transform[7] = { 0, 0, 0, 1, 0, 0, 0 };
+    /*memcpy(base_transform, node->transform, sizeof(ikreal_t) * 7);*/
 
     (*transform_table[flags])(node, base_transform);
 }
