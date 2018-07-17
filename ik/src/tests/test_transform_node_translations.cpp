@@ -1,7 +1,7 @@
 #include "gmock/gmock.h"
 #include "ik/ik.h"
 
-#define NAME transform_tree
+#define NAME transform_node_translations
 
 using namespace ::testing;
 
@@ -116,9 +116,8 @@ TEST_F(NAME, global_to_local_translations_single_chain)
     ONE_TO_FOUR
 #undef X
 
-    IKAPI.transform.node(n1, IK_G2L | IK_TRANSLATIONS);
-
     // Test positions L1-L4, which are the local transforms of G1-G4
+    IKAPI.transform.node(n1, IK_G2L | IK_TRANSLATIONS);
 #define X(arg) \
     EXPECT_THAT((n##arg)->position.x, DoubleEq(L##arg##X)); \
     EXPECT_THAT((n##arg)->position.y, DoubleEq(L##arg##Y)); \
@@ -169,9 +168,8 @@ TEST_F(NAME, local_to_global_translations_single_chain)
     ONE_TO_FOUR
 #undef X
 
-    IKAPI.transform.node(n1, IK_L2G | IK_TRANSLATIONS);
-
     // Test positions G1-G4, which are the global transforms of L1-L4
+    IKAPI.transform.node(n1, IK_L2G | IK_TRANSLATIONS);
 #define X(arg) \
     EXPECT_THAT((n##arg)->position.x, DoubleEq(G##arg##X)); \
     EXPECT_THAT((n##arg)->position.y, DoubleEq(G##arg##Y)); \
@@ -225,9 +223,8 @@ TEST_F(NAME, global_to_local_translations_two_arms)
     ONE_TO_SEVEN
 #undef X
 
-    IKAPI.transform.node(n1, IK_G2L | IK_TRANSLATIONS);
-
     // Test positions L1-L7, which are the local transforms of G1-G7
+    IKAPI.transform.node(n1, IK_G2L | IK_TRANSLATIONS);
 #define X(arg) \
     EXPECT_THAT((n##arg)->position.x, DoubleEq(L##arg##X)); \
     EXPECT_THAT((n##arg)->position.y, DoubleEq(L##arg##Y)); \
@@ -281,9 +278,8 @@ TEST_F(NAME, local_to_global_translations_two_arms)
     ONE_TO_SEVEN
 #undef X
 
-    IKAPI.transform.node(n1, IK_L2G | IK_TRANSLATIONS);
-
     // Test positions G1-G7, which are the global transforms of L1-L7
+    IKAPI.transform.node(n1, IK_L2G | IK_TRANSLATIONS);
 #define X(arg) \
     EXPECT_THAT((n##arg)->position.x, DoubleEq(G##arg##X)); \
     EXPECT_THAT((n##arg)->position.y, DoubleEq(G##arg##Y)); \
