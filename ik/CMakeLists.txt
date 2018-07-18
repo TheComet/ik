@@ -247,6 +247,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_node.cpp"
     "src/tests/test_quat.cpp"
     "src/tests/test_transform_chain.cpp"
+    "src/tests/test_transform_node.cpp"
     "src/tests/test_transform_node_rotations.cpp"
     "src/tests/test_transform_node_translations.cpp"
     "src/tests/test_TWO_BONE.cpp"
