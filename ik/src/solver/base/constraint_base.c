@@ -25,7 +25,7 @@ apply_dummy(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 static void
 apply_stiff(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_set(compensate_rotation, node->rotation.f);
+    ik_quat_copy(compensate_rotation, node->rotation.f);
     ik_quat_conj(compensate_rotation);
     ik_quat_mul_quat(compensate_rotation, node->constraint->stiff.angle.f);
 }

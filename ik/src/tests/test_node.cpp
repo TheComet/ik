@@ -144,8 +144,8 @@ TEST_F(NAME, duplicate_works)
     ik_node_t* n4 = solver_->node->create_child(n1, 5);
 
     // Set some params we can test...
-    n3->position = IKAPI.vec3.vec3(1, 2, 3);
-    n3->rotation = IKAPI.quat.quat(4, 5, 6, 7);
+    IKAPI.vec3.set(n3->position.f, 1, 2, 3);
+    IKAPI.quat.set(n3->rotation.f, 4, 5, 6, 7);
     n3->user_data = this;
 
     ik_node_t* dup = solver_->node->duplicate(n1, 0);

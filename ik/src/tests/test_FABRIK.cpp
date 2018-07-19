@@ -110,11 +110,11 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
     ik_node_t* root = solver->node->create(0);
     ik_node_t* mid = solver->node->create_child(root, 1);
     ik_node_t* tip = solver->node->create_child(mid, 2);
-    mid->position = ik.vec3.vec3(0, 1, 0);
-    tip->position = ik.vec3.vec3(0, 1, 0);
+    IKAPI.vec3.set(mid->position.f, 0, 1, 0);
+    IKAPI.vec3.set(tip->position.f, 0, 1, 0);
 
     ik_effector_t* eff = solver->effector->create();
-    eff->target_position = ik.vec3.vec3(1, 0, 0);
+    IKAPI.vec3.set(eff->target_position.f, 1, 0, 0);
     solver->effector->attach(eff, tip);
 
     ik.solver.set_tree(solver, root);

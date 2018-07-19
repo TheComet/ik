@@ -27,10 +27,20 @@ struct ik_quat_t
 IK_INTERFACE(quat_interface)
 {
     /*!
-     * @brief Convenience function for initializing a quaternion.
+     * @brief Copies x, y, z, w components from another quaternion.
+     * @param[out] q Destination quaternion.
+     * @param[in] src Source quaternion to copy from.
      */
-    struct ik_quat_t
-    (*quat)(ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w);
+    void
+    (*copy)(ikreal_t q[4], const ikreal_t src[4]);
+
+    /*!
+     * @brief Sets the x, y, z, w components of the specified quaternion.
+     * @param[out] q Destination quaternion.
+     * @param[in] src Source quaternion to copy from.
+     */
+    void
+    (*set)(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w);
 
     /*!
      * @brief Sets the quaternion to its identity rotation.
@@ -38,16 +48,8 @@ IK_INTERFACE(quat_interface)
     void
     (*set_identity)(ikreal_t q[4]);
 
-    /*!
-     * @brief Copies x, y, z, w components from another quaternion.
-     * @param[out] q Destination quaternion.
-     * @param[in] src Source quaternion to copy from.
-     */
     void
-    (*set)(ikreal_t q[4], const ikreal_t src[4]);
-
-    void
-    (*set_axis_angle)(ikreal_t q[4], const ikreal_t v[3], ikreal_t a);
+    (*set_axis_angle)(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t a);
 
     /*!
      * @brief Adds the elements from one quaternion to another. Required for
@@ -100,11 +102,28 @@ IK_INTERFACE(quat_interface)
     (*mul_quat)(ikreal_t q1[4], const ikreal_t q2[4]);
 
     /*!
+     * @brief Multiplies the conjugate of the specified quaternion, combining
+     * the rotations. This operation is not commutative. The resulting quaternion is
+     * normalized. See nmul_no_normalize() for a version of this function that
+     * doesn't normalize the result.
+     */
+    void
+    (*nmul_quat)(ikreal_t q1[4], const ikreal_t q2[4]);
+
+    /*!
      * @brief Multiplies two quaternions together, combining the rotations, and
      * does not normalize the result. This operation is not commutative.
      */
     void
     (*mul_no_normalize)(ikreal_t q1[4], const ikreal_t q2[4]);
+
+    /*!
+     * @brief Multiplies the conjugate of the specified quaternion, combining
+     * the rotations. This operation is not commutative. The resulting
+     * quaternion is not normalized. This operation is not commutative.
+     */
+    void
+    (*nmul_no_normalize)(ikreal_t q1[4], const ikreal_t q2[4]);
 
     /*!
      * @brief Multiplies each component by a scalar value.

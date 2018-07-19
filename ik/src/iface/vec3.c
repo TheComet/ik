@@ -3,14 +3,12 @@
 #include <math.h>
 
 /* ------------------------------------------------------------------------- */
-struct ik_vec3_t
-ik_vec3_vec3(ikreal_t x, ikreal_t y, ikreal_t z)
+void
+ik_vec3_set(ikreal_t v[3], ikreal_t x, ikreal_t y, ikreal_t z)
 {
-    struct ik_vec3_t ret;
-    ret.x = x;
-    ret.y = y;
-    ret.z = z;
-    return ret;
+    v[0] = x;
+    v[1] = y;
+    v[2] = z;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -24,7 +22,7 @@ ik_vec3_set_zero(ikreal_t v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_set(ikreal_t v[3], const ikreal_t src[3])
+ik_vec3_copy(ikreal_t v[3], const ikreal_t src[3])
 {
     v[0] = src[0];
     v[1] = src[1];
@@ -176,7 +174,7 @@ ik_vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
     struct ik_vec3_t tmp;
     ikreal_t dot_qv = ik_vec3_dot(q, v);
     ikreal_t dot_qq = ik_vec3_dot(q, q);
-    ik_vec3_set(tmp.f, v);
+    ik_vec3_copy(tmp.f, v);
     /* 2.0f * s * cross(u, v) */
     ik_vec3_ncross(v, q);
     ik_vec3_mul_scalar(v, 2.0 * q[3]);
@@ -184,9 +182,31 @@ ik_vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
     ik_vec3_mul_scalar(tmp.f, q[3]*q[3] - dot_qq);
     ik_vec3_add_vec3(v, tmp.f);
     /* + 2.0f * dot(u, v) * u */
-    ik_vec3_set(tmp.f, q);
+    ik_vec3_copy(tmp.f, q);
     ik_vec3_mul_scalar(tmp.f, 2.0 * dot_qv);
     ik_vec3_add_vec3(v, tmp.f);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_nrotate(ikreal_t v[3], const ikreal_t q[4])
+{
+    /* v' = q * v * q' */
+    /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
+    struct ik_vec3_t tmp;
+    ikreal_t dot_qv = -ik_vec3_dot(q, v);
+    ikreal_t dot_qq = -ik_vec3_dot(q, q);
+    ik_vec3_copy(tmp.f, v);
+    /* 2.0f * s * cross(u, v) */
+    ik_vec3_cross(v, q);
+    ik_vec3_mul_scalar(v, 2.0 * q[3]);
+    /* + (s*s - dot(u, u)) * v */
+    ik_vec3_mul_scalar(tmp.f, q[3]*q[3] - dot_qq);
+    ik_vec3_add_vec3(v, tmp.f);
+    /* + 2.0f * dot(u, v) * u */
+    ik_vec3_copy(tmp.f, q);
+    ik_vec3_mul_scalar(tmp.f, 2.0 * dot_qv);
+    ik_vec3_sub_vec3(v, tmp.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -211,7 +231,7 @@ void
 ik_vec3_project_onto_plane(ikreal_t v[3], const ikreal_t x[3], const ikreal_t y[3])
 {
     struct ik_vec3_t n;
-    ik_vec3_set(n.f, x);
+    ik_vec3_copy(n.f, x);
     ik_vec3_cross(n.f, y);              /* plane normal */
     ik_vec3_project_from_vec3(n.f, v);  /* project vector onto normal */
     ik_vec3_sub_vec3(v, n.f);           /* subtract projection from vector */

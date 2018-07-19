@@ -4,15 +4,13 @@
 #include <string.h>
 
 /* ------------------------------------------------------------------------- */
-struct ik_quat_t
-ik_quat_quat(ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
+void
+ik_quat_set(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
 {
-    struct ik_quat_t ret;
-    ret.x = x;
-    ret.y = y;
-    ret.z = z;
-    ret.w = w;
-    return ret;
+    q[0] = x;
+    q[1] = y;
+    q[2] = z;
+    q[3] = w;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -25,7 +23,7 @@ ik_quat_set_identity(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_set(ikreal_t q[4], const ikreal_t src[4])
+ik_quat_copy(ikreal_t q[4], const ikreal_t src[4])
 {
     q[0] = src[0];
     q[1] = src[1];
@@ -35,9 +33,9 @@ ik_quat_set(ikreal_t q[4], const ikreal_t src[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_set_axis_angle(ikreal_t q[4], const ikreal_t v[3], ikreal_t a)
+ik_quat_set_axis_angle(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t a)
 {
-    ik_vec3_set(q, v);
+    ik_vec3_set(q, x, y, z);
     ik_vec3_normalize(q);
     ik_vec3_mul_scalar(q, sin(a * 0.5));
     q[3] = cos(a * 0.5);
@@ -104,7 +102,7 @@ void
 ik_quat_mul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
     ikreal_t q1[4];
-    ik_quat_set(q1, q);
+    ik_quat_copy(q1, q);
 
 #define w1 q1[3]
 #define x1 q1[0]
@@ -133,6 +131,43 @@ void
 ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
 {
     ik_quat_mul_no_normalize(q1, q2);
+    ik_quat_normalize(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_nmul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+{
+    ikreal_t q1[4];
+    ik_quat_copy(q1, q);
+
+#define w1 q1[3]
+#define x1 q1[0]
+#define y1 q1[1]
+#define z1 q1[2]
+#define w2 q2[3]
+#define x2 q2[0]
+#define y2 q2[1]
+#define z2 q2[2]
+
+    q[3] = w1*w2 + x1*x2 + y1*y2 + z1*z2;
+    q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
+    q[1] = -w1*y2 + y1*w2 - z1*x2 + x1*z2;
+    q[2] = -w1*z2 + z1*w2 - x1*y2 + y1*x2;
+
+#undef w1
+#undef x1
+#undef y1
+#undef z1
+#undef w2
+#undef x2
+#undef y2
+#undef z2
+}
+void
+ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+{
+    ik_quat_nmul_no_normalize(q1, q2);
     ik_quat_normalize(q1);
 }
 
@@ -218,7 +253,7 @@ ik_quat_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v
     if (cos_a >= -1.0 && cos_a <= 1.0)
     {
         /* calculate axis of rotation and write it to the quaternion's vector section */
-        ik_vec3_set(q, v1);
+        ik_vec3_copy(q, v1);
         ik_vec3_cross(q, v2);
         /* would usually normalize here, but cross product of two normalized
          * vectors is already normalized*/

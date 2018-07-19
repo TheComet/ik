@@ -19,11 +19,11 @@ struct ik_vec3_t
 
 IK_INTERFACE(vec3_interface)
 {
-    struct ik_vec3_t
-    (*vec3)(ikreal_t x, ikreal_t y, ikreal_t z);
+    void
+    (*copy)(ikreal_t v[3], const ikreal_t src[3]);
 
     void
-    (*set)(ikreal_t v[3], const ikreal_t src[3]);
+    (*set)(ikreal_t v[3], ikreal_t x, ikreal_t y, ikreal_t z);
 
     void
     (*set_zero)(ikreal_t v[3]);
@@ -71,10 +71,16 @@ IK_INTERFACE(vec3_interface)
     (*ncross)(ikreal_t v1[3], const ikreal_t v2[3]);
 
     /*!
-     * @brief Rotations a vector by the specified quaternion.
+     * @brief Rotates a vector by the specified quaternion.
      */
     void
     (*rotate)(ikreal_t v[3], const ikreal_t q[4]);
+
+    /*!
+     * @brief Rotations a vector by the conjugate of the specified quaternion.
+     */
+    void
+    (*nrotate)(ikreal_t v[3], const ikreal_t q[4]);
 
     /*!
      * @brief Projects v2 onto v1

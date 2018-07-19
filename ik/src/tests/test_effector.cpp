@@ -50,8 +50,8 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
     ik_node_t* n = solver_->node->create(0);
 
     eff->node = n; /* make node not null so we can test duplicated version */
-    eff->target_position = IKAPI.vec3.vec3(1, 2, 3);
-    eff->target_rotation = IKAPI.quat.quat(4, 5, 6, 7);
+    IKAPI.vec3.set(eff->target_position.f, 1, 2, 3);
+    IKAPI.quat.set(eff->target_rotation.f, 4, 5, 6, 7);
     eff->weight = 0.4;
     eff->rotation_weight = 0.8;
     eff->rotation_decay = 0.12;

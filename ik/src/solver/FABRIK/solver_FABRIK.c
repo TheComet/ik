@@ -368,7 +368,8 @@ static void
 recurse_into_children(struct chain_t* chain)
 {
     int average_count = 0;
-    struct ik_quat_t average_rotation = ik_quat_quat(0, 0, 0, 0);
+    struct ik_quat_t average_rotation;
+    ik_quat_set(average_rotation.f, 0, 0, 0, 0);
 
     /* Recurse into children chains */
     CHAIN_FOR_EACH_CHILD(chain, child)

@@ -28,7 +28,7 @@ calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
      * Determine "ik axis", which is the vector from the pole node to the
      * effector node.
      */
-    ik_vec3_set(work.f, pole->tip->position.f);
+    ik_vec3_copy(work.f, pole->tip->position.f);
     ik_vec3_sub_vec3(work.f, pole->node->position.f);
 
     /*
@@ -39,8 +39,8 @@ calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
     ik_vec3_sub_vec3(work.f, pole->position.f);
 
     /* Determine global XZ basis vectors of pole node */
-    x_axis = ik_vec3_vec3(1, 0, 0);
-    z_axis = ik_vec3_vec3(0, 0, 1);
+    ik_vec3_set(x_axis.f, 1, 0, 0);
+    ik_vec3_set(z_axis.f, 0, 0, 1);
     ik_vec3_rotate(x_axis.f, pole->node->rotation.f);
     ik_vec3_rotate(z_axis.f, pole->node->rotation.f);
 

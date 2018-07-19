@@ -30,22 +30,22 @@ public:
          */
 
         // Global xyz positions...
-        tg[0] = IKAPI.vec3.vec3(1, 1.5, 2);
-        tg[1] = IKAPI.vec3.vec3(3, 3, 3);
-        tg[2] = IKAPI.vec3.vec3(5, -2, 4);
-        tg[3] = IKAPI.vec3.vec3(5.5, 4, 5.5);
-        tg[4] = IKAPI.vec3.vec3(6, 8, 7);
-        tg[5] = IKAPI.vec3.vec3(-5.5, 4, -5.5);
-        tg[6] = IKAPI.vec3.vec3(-6, 8, -7);
+        IKAPI.vec3.set(tg[0].f, 1, 1.5, 2);
+        IKAPI.vec3.set(tg[1].f, 3, 3, 3);
+        IKAPI.vec3.set(tg[2].f, 5, -2, 4);
+        IKAPI.vec3.set(tg[3].f, 5.5, 4, 5.5);
+        IKAPI.vec3.set(tg[4].f, 6, 8, 7);
+        IKAPI.vec3.set(tg[5].f, -5.5, 4, -5.5);
+        IKAPI.vec3.set(tg[6].f, -6, 8, -7);
 
         // ..and their respective local xyz positions
-        tl[0] = IKAPI.vec3.vec3(1, 1.5, 2);
-        tl[1] = IKAPI.vec3.vec3(2, 1.5, 1);
-        tl[2] = IKAPI.vec3.vec3(2, -5, 1);
-        tl[3] = IKAPI.vec3.vec3(0.5, 6, 1.5);
-        tl[4] = IKAPI.vec3.vec3(0.5, 4, 1.5);
-        tl[5] = IKAPI.vec3.vec3(-10.5, 6, -9.5);
-        tl[6] = IKAPI.vec3.vec3(-0.5, 4, -1.5);
+        IKAPI.vec3.set(tl[0].f, 1, 1.5, 2);
+        IKAPI.vec3.set(tl[1].f, 2, 1.5, 1);
+        IKAPI.vec3.set(tl[2].f, 2, -5, 1);
+        IKAPI.vec3.set(tl[3].f, 0.5, 6, 1.5);
+        IKAPI.vec3.set(tl[4].f, 0.5, 4, 1.5);
+        IKAPI.vec3.set(tl[5].f, -10.5, 6, -9.5);
+        IKAPI.vec3.set(tl[6].f, -0.5, 4, -1.5);
     }
 
     virtual void TearDown() override
@@ -70,7 +70,7 @@ TEST_F(NAME, global_to_local_single_chain)
 
     // Load positions tg[] into nodes
     for (int i = 0; i != 4; ++i)
-        IKAPI.vec3.set(n[i]->position.f, tg[i].f);
+        IKAPI.vec3.copy(n[i]->position.f, tg[i].f);
 
     // Test to see if transform produces the expected local positions
     IKAPI.transform.node(n[0], IK_G2L | IK_TRANSLATIONS);
@@ -123,7 +123,7 @@ TEST_F(NAME, local_to_global_single_chain)
 
     // Load positions tl[] into nodes
     for (int i = 0; i != 4; ++i)
-        IKAPI.vec3.set(n[i]->position.f, tl[i].f);
+        IKAPI.vec3.copy(n[i]->position.f, tl[i].f);
 
     // Test to see if transform produces the expected local positions
     IKAPI.transform.node(n[0], IK_L2G | IK_TRANSLATIONS);
@@ -179,7 +179,7 @@ TEST_F(NAME, global_to_local_two_arms)
 
     // Load positions tg[] into nodes
     for (int i = 0; i != 7; ++i)
-        IKAPI.vec3.set(n[i]->position.f, tg[i].f);
+        IKAPI.vec3.copy(n[i]->position.f, tg[i].f);
 
     // Test to see if transform produces the expected local positions
     IKAPI.transform.node(n[0], IK_G2L | IK_TRANSLATIONS);
@@ -235,7 +235,7 @@ TEST_F(NAME, local_to_global_two_arms)
 
     // Load positions tl[] into nodes
     for (int i = 0; i != 7; ++i)
-        IKAPI.vec3.set(n[i]->position.f, tl[i].f);
+        IKAPI.vec3.copy(n[i]->position.f, tl[i].f);
 
     // Test to see if transform produces the expected local positions
     IKAPI.transform.node(n[0], IK_L2G | IK_TRANSLATIONS);
