@@ -251,7 +251,7 @@ TEST(NAME, rotate_vector_120_degree_steps)
     ik_quat_t q;
     ik_vec3_t v;
     IKAPI.vec3.set(v.f, 1, 0, 0);
-    IKAPI.quat.set_axis_angle(q.f, 1, 1, 0, 120 * pi / 180);
+    IKAPI.quat.set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
 
     IKAPI.vec3.rotate(v.f, q.f);
     EXPECT_THAT(v.x, DoubleNear(0, 1e-15));
@@ -282,6 +282,58 @@ TEST(NAME, rotate_vector_there_and_back)
     EXPECT_THAT(v.y, DoubleNear(7, 1e-15));
     EXPECT_THAT(v.z, DoubleNear(4, 1e-15));
 }
+
+TEST(NAME, nrotate_vector_45_degree)
+{
+    ik_quat_t q;
+    IKAPI.quat.set_axis_angle(q.f, 0, 1, 0, 45.0*pi/180);
+
+    ik_vec3_t v;
+    IKAPI.vec3.set(v.f, 1, 0, 0);
+    IKAPI.vec3.nrotate(v.f, q.f);
+
+    EXPECT_THAT(v.x, DoubleEq(1/sqrt(2)));
+    EXPECT_THAT(v.y, DoubleEq(0));
+    EXPECT_THAT(v.z, DoubleEq(1/sqrt(2)));
+}
+
+TEST(NAME, nrotate_vector_120_degree_steps)
+{
+    ik_quat_t q;
+    ik_vec3_t v;
+    IKAPI.vec3.set(v.f, 1, 0, 0);
+    IKAPI.quat.set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
+
+    IKAPI.vec3.nrotate(v.f, q.f);
+    EXPECT_THAT(v.x, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.y, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.z, DoubleNear(1, 1e-15));
+
+    IKAPI.vec3.nrotate(v.f, q.f);
+    EXPECT_THAT(v.x, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.y, DoubleNear(1, 1e-15));
+    EXPECT_THAT(v.z, DoubleNear(0, 1e-15));
+
+    IKAPI.vec3.nrotate(v.f, q.f);
+    EXPECT_THAT(v.x, DoubleNear(1, 1e-15));
+    EXPECT_THAT(v.y, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.z, DoubleNear(0, 1e-15));
+}
+
+TEST(NAME, nrotate_vector_there_and_back)
+{
+    ik_quat_t q;
+    ik_vec3_t v;
+    IKAPI.vec3.set(v.f, 3, 7, 4);
+    IKAPI.quat.set_axis_angle(q.f, 63, 9679, 34, 48.32 * pi / 180);
+    IKAPI.vec3.nrotate(v.f, q.f);
+    IKAPI.quat.conj(q.f);
+    IKAPI.vec3.nrotate(v.f, q.f);
+    EXPECT_THAT(v.x, DoubleNear(3, 1e-15));
+    EXPECT_THAT(v.y, DoubleNear(7, 1e-15));
+    EXPECT_THAT(v.z, DoubleNear(4, 1e-15));
+}
+
 
 TEST(NAME, project)
 {

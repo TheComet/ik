@@ -35,11 +35,11 @@ Quat_set_identity(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_set(ik_Quat* self, PyObject* arg)
+Quat_copy(ik_Quat* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_QuatType))
     {
-        IKAPI.quat.set(self->quat.f, ((ik_Quat*)arg)->quat.f);
+        IKAPI.quat.copy(self->quat.f, ((ik_Quat*)arg)->quat.f);
         Py_RETURN_NONE;
     }
     else if (PyArg_ParseTuple(arg, FMT FMT FMT FMT, &self->quat.w, &self->quat.x, &self->quat.y, &self->quat.z))
@@ -186,7 +186,7 @@ Quat_dot(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_normalize_sign(ik_Quat* self, PyObject* arg)
+Quat_ensure_positive_sign(ik_Quat* self, PyObject* arg)
 {
     (void)arg;
     IKAPI.quat.ensure_positive_sign(self->quat.f);
@@ -270,7 +270,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_angle_normalized_vectors(ik_Quat* self, PyObject* args)
+Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
 {
     PyObject *vec1, *vec2;
 
@@ -372,19 +372,19 @@ Quat_repr(ik_Quat* self)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Quat_methods[] = {
-    {"set_identity",             (PyCFunction)Quat_set_identity,             METH_NOARGS,  "Sets all components to 0.0"},
-    {"set",                      (PyCFunction)Quat_set,                      METH_O,       "Copies components from another vector or tuple"},
-    {"add",                      (PyCFunction)Quat_add,                      METH_O,       "Adds another vector or scalar to this vector"},
-    {"mag",                      (PyCFunction)Quat_mag,                      METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"conj",                     (PyCFunction)Quat_conj,                     METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"invert_sign",              (PyCFunction)Quat_invert_sign,              METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"normalize",                (PyCFunction)Quat_normalize,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"mul",                      (PyCFunction)Quat_mul,                      METH_O,       "Adds another vector or scalar to this vector"},
-    {"div",                      (PyCFunction)Quat_div,                      METH_O,       "Adds another vector or scalar to this vector"},
-    {"dot",                      (PyCFunction)Quat_dot,                      METH_O,       "Adds another vector or scalar to this vector"},
-    {"normalize_sign",           (PyCFunction)Quat_normalize_sign,           METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"angle",                    (PyCFunction)Quat_angle,                    METH_VARARGS, "Adds another vector or scalar to this vector"},
-    {"angle_normalized_vectors", (PyCFunction)Quat_angle_normalized_vectors, METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"set_identity",        (PyCFunction)Quat_set_identity,        METH_NOARGS,  "Sets all components to 0.0"},
+    {"copy",                (PyCFunction)Quat_copy,                METH_O,       "Copies components from another vector or tuple"},
+    {"add",                 (PyCFunction)Quat_add,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"mag",                 (PyCFunction)Quat_mag,                 METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"conj",                (PyCFunction)Quat_conj,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"invert_sign",         (PyCFunction)Quat_invert_sign,         METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"normalize",           (PyCFunction)Quat_normalize,           METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"mul",                 (PyCFunction)Quat_mul,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"div",                 (PyCFunction)Quat_div,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"dot",                 (PyCFunction)Quat_dot,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"ensure_positive_sign",(PyCFunction)Quat_ensure_positive_sign,METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"angle",               (PyCFunction)Quat_angle,               METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"angle_no_normalize",  (PyCFunction)Quat_angle_no_normalize,  METH_VARARGS, "Adds another vector or scalar to this vector"},
     {NULL}
 };
 

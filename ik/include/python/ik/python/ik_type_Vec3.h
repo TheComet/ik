@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "ik/vec3.h"
+#include "ik/iface/vec3.h"
 
 typedef struct ik_Vec3
 {

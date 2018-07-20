@@ -195,7 +195,7 @@ ik_vec3_nrotate(ikreal_t v[3], const ikreal_t q[4])
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
     struct ik_vec3_t tmp;
     ikreal_t dot_qv = -ik_vec3_dot(q, v);
-    ikreal_t dot_qq = -ik_vec3_dot(q, q);
+    ikreal_t dot_qq = ik_vec3_dot(q, q);
     ik_vec3_copy(tmp.f, v);
     /* 2.0f * s * cross(u, v) */
     ik_vec3_cross(v, q);

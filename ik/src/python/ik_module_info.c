@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "ik/ik.h"
 #include "ik/python/ik_module_info.h"
+#include "ik/ik.h"
 
 /* ------------------------------------------------------------------------- */
 static PyModuleDef ik_module_info = {

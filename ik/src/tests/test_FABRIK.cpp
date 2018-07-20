@@ -114,7 +114,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
     IKAPI.vec3.set(tip->position.f, 0, 1, 0);
 
     ik_effector_t* eff = solver->effector->create();
-    IKAPI.vec3.set(eff->target_position.f, 1, 0, 0);
+    IKAPI.vec3.set(eff->target_position.f, 1, 1, 0);
     solver->effector->attach(eff, tip);
 
     ik.solver.set_tree(solver, root);
@@ -130,7 +130,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
     EXPECT_THAT(mid->position.y, DoubleNear(1, error));
     EXPECT_THAT(mid->position.z, DoubleNear(0, error));
 
-    EXPECT_THAT(tip->position.x, DoubleNear(1, error));
-    EXPECT_THAT(tip->position.y, DoubleNear(0, error));
+    EXPECT_THAT(tip->position.x, DoubleNear(0, error));
+    EXPECT_THAT(tip->position.y, DoubleNear(1, error));
     EXPECT_THAT(tip->position.z, DoubleNear(0, error));
 }

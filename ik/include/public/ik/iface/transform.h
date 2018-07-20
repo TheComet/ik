@@ -21,13 +21,13 @@ IK_INTERFACE(transform_interface)
 {
     void
     (*node)(struct ik_node_t* root, uint8_t mode);
-
-    void
-    (*chain)(struct chain_t* chain, uint8_t mode);
-
-    void
-    (*chain_list)(const struct vector_t* chain_list, uint8_t mode);
 };
+
+IK_PRIVATE_API void
+ik_transform_chain(struct chain_t* chain, uint8_t mode);
+
+IK_PRIVATE_API void
+ik_transform_chain_list(const struct vector_t* chain_list, uint8_t mode);
 
 C_END
 

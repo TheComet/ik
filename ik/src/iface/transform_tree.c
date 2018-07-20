@@ -63,9 +63,7 @@ global_to_local_translation_recursive(struct ik_node_t* node)
 }
 
 /* ------------------------------------------------------------------------- */
-typedef void (*transform_func)(struct ik_node_t*);
-
-static transform_func transform_table[8] = {
+static void (*transform_table[8])(struct ik_node_t*) = {
     global_to_local_recursive,
     local_to_global_recursive,
     global_to_local_rotation_recursive,

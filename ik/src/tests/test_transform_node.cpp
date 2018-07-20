@@ -34,23 +34,23 @@ TEST_F(NAME, rotations_cause_vector_translations)
     IKAPI.vec3.set(n2->position.f, 1, 3, 1);
     IKAPI.vec3.set(n3->position.f, 1, 6, 1);
 
-    ik_vec3_t buf;
     IKAPI.quat.set_axis_angle(n1->rotation.f, 0, 0, 1, 45*pi/180);
     IKAPI.quat.set_axis_angle(n2->rotation.f, 1, 0, 0, 90*pi/180);
 
     IKAPI.transform.node(n1, IK_G2L);
 
-    EXPECT_THAT(n1->position.x, DoubleEq(1));
-    EXPECT_THAT(n1->position.y, DoubleEq(1));
-    EXPECT_THAT(n1->position.z, DoubleEq(1));
+    const double error = 1e-15;
+    EXPECT_THAT(n1->position.x, DoubleNear(1, error));
+    EXPECT_THAT(n1->position.y, DoubleNear(1, error));
+    EXPECT_THAT(n1->position.z, DoubleNear(1, error));
 
-    EXPECT_THAT(n2->position.x, DoubleEq(-2/sqrt(2)));
-    EXPECT_THAT(n2->position.y, DoubleEq(2/sqrt(2)));
-    EXPECT_THAT(n2->position.z, DoubleEq(0));
+    EXPECT_THAT(n2->position.x, DoubleNear(-2/sqrt(2), error));
+    EXPECT_THAT(n2->position.y, DoubleNear(2/sqrt(2), error));
+    EXPECT_THAT(n2->position.z, DoubleNear(0, error));
 
-    EXPECT_THAT(n3->position.x, DoubleEq(0));
-    EXPECT_THAT(n3->position.y, DoubleEq(0));
-    EXPECT_THAT(n3->position.z, DoubleEq(-3));
+    EXPECT_THAT(n3->position.x, DoubleNear(0, error));
+    EXPECT_THAT(n3->position.y, DoubleNear(0, error));
+    EXPECT_THAT(n3->position.z, DoubleNear(3, error));
 
     solver->node->destroy(n1);
 }

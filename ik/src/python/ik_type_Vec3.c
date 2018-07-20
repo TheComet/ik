@@ -15,7 +15,7 @@
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Vec3_set(ik_Vec3* self, PyObject* arg);
+Vec3_copy(ik_Vec3* self, PyObject* arg);
 static int
 Vec3_init(ik_Vec3* self, PyObject* args, PyObject* kwds)
 {
@@ -26,7 +26,7 @@ Vec3_init(ik_Vec3* self, PyObject* args, PyObject* kwds)
     if (!PyArg_ParseTuple(args, "|O", &position))
         return -1;
 
-    if (position && Vec3_set(self, position) == NULL)
+    if (position && Vec3_copy(self, position) == NULL)
         return -1;
 
     return 0;
@@ -34,11 +34,11 @@ Vec3_init(ik_Vec3* self, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Vec3_set(ik_Vec3* self, PyObject* arg)
+Vec3_copy(ik_Vec3* self, PyObject* arg)
 {
     if (PyObject_TypeCheck(arg, &ik_Vec3Type))
     {
-        IKAPI.vec3.set(self->vec.f, ((ik_Vec3*)arg)->vec.f);
+        IKAPI.vec3.copy(self->vec.f, ((ik_Vec3*)arg)->vec.f);
         Py_RETURN_NONE;
     }
     else if (PyArg_ParseTuple(arg, FMT FMT FMT, &self->vec.x, &self->vec.y, &self->vec.z))
@@ -299,7 +299,7 @@ Vec3_repr(ik_Vec3* self)
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Vec3_methods[] = {
     {"set_zero",       (PyCFunction)Vec3_set_zero,       METH_NOARGS, "Sets all components to 0.0"},
-    {"set",            (PyCFunction)Vec3_set,            METH_O,      "Copies components from another vector or tuple"},
+    {"copy",           (PyCFunction)Vec3_copy,           METH_O,      "Copies components from another vector or tuple"},
     {"add",            (PyCFunction)Vec3_add,            METH_O,      "Adds another vector or scalar to this vector"},
     {"sub",            (PyCFunction)Vec3_sub,            METH_O,      "Subtracts another vector or scalar from this vector"},
     {"mul",            (PyCFunction)Vec3_mul,            METH_O,      "Multiplies another vector or scalar to this vector"},

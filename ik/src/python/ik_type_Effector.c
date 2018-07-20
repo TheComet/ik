@@ -3,8 +3,7 @@
 #include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
-#include "ik/solver.h"
-#include "ik/effector.h"
+#include "ik/ik.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
