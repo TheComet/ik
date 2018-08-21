@@ -25,7 +25,7 @@ struct ik_mat3x3_t
     };
 };
 
-void
+IK_PUBLIC_API void
 ik_mat3x3_from_quat(ikreal_t m[9], const ikreal_t q[4]);
 
 C_END

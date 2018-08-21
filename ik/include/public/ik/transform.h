@@ -17,7 +17,7 @@ enum ik_transform_mode_e
     IK_TRANSLATIONS   = 0x04
 };
 
-void
+IK_PUBLIC_API void
 ik_transform_node(struct ik_node_t* root, uint8_t mode);
 
 IK_PRIVATE_API void

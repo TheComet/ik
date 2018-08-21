@@ -2,9 +2,10 @@
 #include "ik/ik.h"
 
 int main(int argc, char** argv) {
-    IKAPI.init();
+    ik_init();
     ::benchmark::Initialize(&argc, argv);
-    if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+    if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+        return 1;
     ::benchmark::RunSpecifiedBenchmarks();
-    IKAPI.deinit();
+    ik_deinit();
 }

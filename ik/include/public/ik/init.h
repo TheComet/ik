@@ -5,10 +5,10 @@
 
 C_BEGIN
 
-IK_PRIVATE_API ikret_t
+IK_PUBLIC_API ikret_t
 ik_init(void);
 
-IK_PRIVATE_API uintptr_t
+IK_PUBLIC_API uintptr_t
 ik_deinit(void);
 
 C_END

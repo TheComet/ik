@@ -5,7 +5,7 @@
 
 C_BEGIN
 
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_tests_run(int* argc, char** argv);
 
 C_END

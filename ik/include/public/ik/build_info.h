@@ -5,28 +5,28 @@
 
 C_BEGIN
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_version(void);
 
-int
+IK_PUBLIC_API int
 ik_build_info_build_number(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_host(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_date(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_commit(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_compiler(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_cmake(void);
 
-const char*
+IK_PUBLIC_API const char*
 ik_build_info_all(void);
 
 C_END

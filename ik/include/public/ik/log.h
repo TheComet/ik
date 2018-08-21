@@ -14,30 +14,30 @@ enum ik_log_severity_e
     IK_FATAL
 };
 
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_log_init(void);
 
-void
+IK_PUBLIC_API void
 ik_log_deinit(void);
 
-void
+IK_PUBLIC_API void
 ik_log_severity(enum ik_log_severity_e severity);
 
-void
+IK_PUBLIC_API void
 ik_log_timestamps(int enable);
 
-void
+IK_PUBLIC_API void
 ik_log_prefix(const char* prefix);
 
-void
+IK_PUBLIC_API void
 ik_log_debug(const char* fmt, ...);
-void
+IK_PUBLIC_API void
 ik_log_info(const char* fmt, ...);
-void
+IK_PUBLIC_API void
 ik_log_warning(const char* fmt, ...);
-void
+IK_PUBLIC_API void
 ik_log_error(const char* fmt, ...);
-void
+IK_PUBLIC_API void
 ik_log_fatal(const char* fmt, ...);
 
 C_END

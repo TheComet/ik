@@ -27,19 +27,19 @@ struct ik_pole_t
     struct ik_vec3_t position;
 };
 
-struct ik_pole_t*
+IK_PUBLIC_API struct ik_pole_t*
 ik_pole_create(void);
 
-void
+IK_PUBLIC_API void
 ik_pole_destroy(struct ik_pole_t* pole);
 
-void
+IK_PUBLIC_API void
 ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type);
 
 /*!
  * @brief Duplicates the specified pole object and returns it.
  */
-struct ik_pole_t*
+IK_PUBLIC_API struct ik_pole_t*
 ik_pole_duplicate(const struct ik_pole_t* pole);
 
 /*!
@@ -50,7 +50,7 @@ ik_pole_duplicate(const struct ik_pole_t* pole);
  * a pole attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_pole_attach(struct ik_pole_t* pole, struct ik_node_t* node);
 
 /*!
@@ -60,7 +60,7 @@ ik_pole_attach(struct ik_pole_t* pole, struct ik_node_t* node);
  * done with it. You may also attach it to another node.
  * @note You will need to rebuild the solver's tree before solving.
  */
-void
+IK_PUBLIC_API void
 ik_pole_detach(struct ik_pole_t* pole);
 
 C_END

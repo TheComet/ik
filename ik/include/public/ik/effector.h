@@ -93,7 +93,7 @@ struct ik_effector_t
  * @brief Creates a new effector object. It can be attached to any node in the
  * tree using ik_node_attach_effector().
  */
-struct ik_effector_t*
+IK_PUBLIC_API struct ik_effector_t*
 ik_effector_create(void);
 
 /*!
@@ -101,13 +101,13 @@ ik_effector_create(void);
  * on effectors that are attached to nodes. Use ik_node_destroy_effector()
  * instead.
  */
-void
+IK_PUBLIC_API void
 ik_effector_destroy(struct ik_effector_t* effector);
 
 /*!
  * @brief Duplicates the specified effector object and returns it.
  */
-struct ik_effector_t*
+IK_PUBLIC_API struct ik_effector_t*
 ik_effector_duplicate(const struct ik_effector_t* effector);
 
 /*!
@@ -118,7 +118,7 @@ ik_effector_duplicate(const struct ik_effector_t* effector);
  * an effector attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
 
 /*!
@@ -128,7 +128,7 @@ ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
  * done with it. You may also attach it to another node.
  * @note You will need to rebuild the solver's tree before solving.
  */
-void
+IK_PUBLIC_API void
 ik_effector_detach(struct ik_effector_t* effector);
 
 C_END

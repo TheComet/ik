@@ -16,13 +16,13 @@ struct ik_callbacks_t
     (*on_node_destroy)(struct ik_node_t* node);
 };
 
-void
+IK_PUBLIC_API void
 ik_callbacks_implement(const struct ik_callbacks_t* callbacks);
 
-void
+IK_PRIVATE_API void
 ik_callbacks_notify_log_message(const char* message);
 
-void
+IK_PRIVATE_API void
 ik_callbacks_notify_node_destroy(struct ik_node_t* node);
 
 C_END

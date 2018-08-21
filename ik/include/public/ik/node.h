@@ -96,20 +96,20 @@ struct ik_node_t
  * @brief Creates a new node and returns it. Each node requires a tree-unique
  * ID, which can be used later to search for nodes in the tree.
  */
-struct ik_node_t*
+IK_PUBLIC_API struct ik_node_t*
 ik_node_create(uint32_t guid);
 
 /*!
  * @brief Constructs an already allocated node.
  */
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_node_construct(struct ik_node_t* node, uint32_t guid);
 
 /*!
  * @brief Destructs a node, destroying all children in the process, but does
  * not deallocate the node object itself.
  */
-void
+IK_PUBLIC_API void
 ik_node_destruct(struct ik_node_t* node);
 
 /*!
@@ -117,7 +117,7 @@ ik_node_destruct(struct ik_node_t* node);
  * If the node was part of a tree, then it will be removed from its parents.
  * @note You will need to rebuild the solver's tree before solving.
  */
-void
+IK_PUBLIC_API void
 ik_node_destroy(struct ik_node_t* node);
 
 /*!
@@ -125,7 +125,7 @@ ik_node_destroy(struct ik_node_t* node);
  * and returns it. Each node requires a tree-unique ID, which can be used
  * later to search for nodes in the tree.
  */
-struct ik_node_t*
+IK_PUBLIC_API struct ik_node_t*
 ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
 
 /*!
@@ -133,7 +133,7 @@ ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
  * ownership of the child node and is responsible for deallocating it.
  * @note You will need to rebuild the solver's tree before solving.
  */
-ikret_t
+IK_PUBLIC_API ikret_t
 ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
 
 /*!
@@ -142,10 +142,10 @@ ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
  * affiliated with the original tree.
  * @note You will need to rebuild the solver's tree before solving.
  */
-void
+IK_PUBLIC_API void
 ik_node_unlink(struct ik_node_t* node);
 
-vector_size_t
+IK_PUBLIC_API vector_size_t
 ik_node_child_count(const struct ik_node_t* node);
 
 /*!
@@ -154,10 +154,10 @@ ik_node_child_count(const struct ik_node_t* node);
  * @return Returns NULL if the node was not found, otherwise the node is
  * returned.
  */
-struct ik_node_t*
+IK_PUBLIC_API struct ik_node_t*
 ik_node_find_child(const struct ik_node_t* node, uint32_t guid);
 
-struct ik_node_t*
+IK_PUBLIC_API struct ik_node_t*
 ik_node_duplicate(const struct ik_node_t* node, int copy_attachments);
 
 /*!
