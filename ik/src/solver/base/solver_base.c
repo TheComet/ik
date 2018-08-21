@@ -154,7 +154,7 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
         determine_pole_target_tips(chain);
     VECTOR_END_EACH
 
-    update_distances(&solver->chain_list);
+        update_distances(&solver->chain_list);
 
     return IK_OK;
 }

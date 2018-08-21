@@ -44,7 +44,7 @@ global_to_local_rotation_recursive(const struct chain_t* chain)
         global_to_local_rotation_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 2; ++idx)
+    for (idx = 0; idx != (int)chain_length(chain) - 1; ++idx)
     {
         struct ik_node_t* child  = chain_get_node(chain, idx + 0);
         struct ik_node_t* parent = chain_get_node(chain, idx + 1);
@@ -80,7 +80,7 @@ global_to_local_translation_recursive(const struct chain_t* chain)
         global_to_local_translation_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 2; idx++)
+    for (idx = 0; idx != (int)chain_length(chain) - 1; idx++)
     {
         struct ik_node_t* child  = chain_get_node(chain, idx + 0);
         struct ik_node_t* parent = chain_get_node(chain, idx + 1);
@@ -118,7 +118,7 @@ global_to_local_recursive(const struct chain_t* chain)
         global_to_local_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 2; ++idx)
+    for (idx = 0; idx != (int)chain_length(chain) - 1; ++idx)
     {
         struct ik_node_t* child  = chain_get_node(chain, idx + 0);
         struct ik_node_t* parent = chain_get_node(chain, idx + 1);

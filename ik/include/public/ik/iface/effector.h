@@ -20,7 +20,7 @@ enum effector_flags_e
      */
     IK_WEIGHT_NLERP      = 0x01,
 
-    IK_INHERIT_ROTATION  = 0x02
+    IK_KEEP_ORIENTATION  = 0x02
 };
 
 /*!

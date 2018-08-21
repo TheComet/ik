@@ -420,7 +420,7 @@ calculate_delta_rotation_of_each_segment(struct chain_t* chain)
         struct ik_vec3_t segment_solved   = child_node->position;
         ik_vec3_sub_vec3(segment_original.f, parent_node->initial_position.f);
         ik_vec3_sub_vec3(segment_solved.f, parent_node->position.f);
-        ik_quat_angle(parent_node->rotation.f, segment_original.f, segment_solved.f);
+        ik_quat_angle(parent_node->rotation.f, segment_solved.f, segment_original.f);
     }
 }
 
@@ -459,7 +459,7 @@ calculate_joint_rotations_for_chain(struct chain_t* chain)
      * node to inherit its parent rotation.
      */
     effector_node = chain_get_tip_node(chain);
-    if (effector_node->effector && effector_node->effector->flags & IK_INHERIT_ROTATION)
+    if (effector_node->effector && !(effector_node->effector->flags & IK_KEEP_ORIENTATION))
     {
         effector_node->rotation = chain_get_node(chain, 1)->rotation; /* parent node */
     }
@@ -564,7 +564,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(&solver->chain_list, IK_L2G | IK_TRANSLATIONS);
+    ik_transform_chain_list(&solver->chain_list, IK_L2G);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -577,7 +577,19 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
     while (iteration-- > 0)
     {
-        /* Actual algorithm here */
+        /* Check if all effectors are within range */
+        SOLVER_FOR_EACH_EFFECTOR_NODE(solver, node)
+            struct ik_vec3_t diff = node->position;
+            ik_vec3_sub_vec3(diff.f, node->effector->target_position.f);
+            if (ik_vec3_length_squared(diff.f) > tolerance_squared)
+            {
+                goto hasnt_converged;
+            }
+        SOLVER_END_EACH
+        result = IK_RESULT_CONVERGED;
+        break;
+        hasnt_converged:
+
         SOLVER_FOR_EACH_CHAIN(solver, chain)
             struct  ik_node_t* base_node;
             int idx;
@@ -603,23 +615,13 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
                 solve_chain_backwards(chain, base_node->position);
         SOLVER_END_EACH
 
-        /* Check if all effectors are within range */
-        SOLVER_FOR_EACH_EFFECTOR_NODE(solver, node)
-            struct ik_vec3_t diff = node->position;
-            ik_vec3_sub_vec3(diff.f, node->effector->target_position.f);
-            if (ik_vec3_length_squared(diff.f) > tolerance_squared)
-            {
-                result = IK_RESULT_CONVERGED;
-                break;
-            }
-        SOLVER_END_EACH
     }
 
     if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
         calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(&solver->chain_list, IK_G2L | IK_TRANSLATIONS);
+    ik_transform_chain_list(&solver->chain_list, IK_G2L);
 
     return result;
 }
