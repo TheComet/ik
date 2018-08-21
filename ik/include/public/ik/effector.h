@@ -91,50 +91,47 @@ struct ik_effector_t
     uint8_t flags;
 };
 
-IK_INTERFACE(effector_interface)
-{
-    /*!
-     * @brief Creates a new effector object. It can be attached to any node in the
-     * tree using ik_node_attach_effector().
-     */
-    struct ik_effector_t*
-    (*create)(void);
+/*!
+ * @brief Creates a new effector object. It can be attached to any node in the
+ * tree using ik_node_attach_effector().
+ */
+struct ik_effector_t*
+ik_effector_create(void);
 
-    /*!
-     * @brief Destroys and frees an effector object. This should **NOT** be called
-     * on effectors that are attached to nodes. Use ik_node_destroy_effector()
-     * instead.
-     */
-    void
-    (*destroy)(struct ik_effector_t* effector);
+/*!
+ * @brief Destroys and frees an effector object. This should **NOT** be called
+ * on effectors that are attached to nodes. Use ik_node_destroy_effector()
+ * instead.
+ */
+void
+ik_effector_destroy(struct ik_effector_t* effector);
 
-    /*!
-     * @brief Duplicates the specified effector object and returns it.
-     */
-    struct ik_effector_t*
-    (*duplicate)(const struct ik_effector_t* effector);
+/*!
+ * @brief Duplicates the specified effector object and returns it.
+ */
+struct ik_effector_t*
+ik_effector_duplicate(const struct ik_effector_t* effector);
 
-    /*!
-     * @brief Attaches an effector object to the node. The node gains ownership
-     * of the effector and is responsible for its deallocation. If the node
-     * already owns an effector, then it is first destroyed.
-     * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
-     * an effector attached. IK_OK if otherwise.
-     * @note You will need to rebuild the solver's tree before solving.
-     */
-    ikret_t
-    (*attach)(struct ik_effector_t* effector, struct ik_node_t* node);
+/*!
+ * @brief Attaches an effector object to the node. The node gains ownership
+ * of the effector and is responsible for its deallocation. If the node
+ * already owns an effector, then it is first destroyed.
+ * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
+ * an effector attached. IK_OK if otherwise.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+ikret_t
+ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
 
-    /*!
-     * @brief Removes effector from the node it is attached to, if it exists.
-     * The field node->effector  is set to NULL.
-     * @note You regain ownership of the object and must destroy it manually when
-     * done with it. You may also attach it to another node.
-     * @note You will need to rebuild the solver's tree before solving.
-     */
-    void
-    (*detach)(struct ik_effector_t* effector);
-};
+/*!
+ * @brief Removes effector from the node it is attached to, if it exists.
+ * The field node->effector  is set to NULL.
+ * @note You regain ownership of the object and must destroy it manually when
+ * done with it. You may also attach it to another node.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+void
+ik_effector_detach(struct ik_effector_t* effector);
 
 C_END
 

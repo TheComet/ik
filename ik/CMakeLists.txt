@@ -10,7 +10,6 @@ else ()
     set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
 endif ()
 
-set (IK_API_NAME "ik" CACHE STRING "The symbol name exported for consumers of the library. Also controls the module name for the python bindings")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_BIFEC "'Build Info For Every Compile' -- If true (default) the updated build number is written to a header, which causes the library to recompile build_info.c. This can get annoying for developers, so disable this if you are annoyed." ON)
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)

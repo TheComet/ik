@@ -83,83 +83,80 @@ struct ik_node_t
     IK_NODE_HEAD
 };
 
-IK_INTERFACE(node_interface)
-{
-    /*!
-     * @brief Creates a new node and returns it. Each node requires a tree-unique
-     * ID, which can be used later to search for nodes in the tree.
-     */
-    struct ik_node_t*
-    (*create)(uint32_t guid);
+/*!
+ * @brief Creates a new node and returns it. Each node requires a tree-unique
+ * ID, which can be used later to search for nodes in the tree.
+ */
+struct ik_node_t*
+ik_node_create(uint32_t guid);
 
-    /*!
-     * @brief Constructs an already allocated node.
-     */
-    ikret_t
-    (*construct)(struct ik_node_t* node, uint32_t guid);
+/*!
+ * @brief Constructs an already allocated node.
+ */
+ikret_t
+ik_node_construct(struct ik_node_t* node, uint32_t guid);
 
-    /*!
-     * @brief Destructs a node, destroying all children in the process, but does
-     * not deallocate the node object itself.
-     */
-    void
-    (*destruct)(struct ik_node_t* node);
+/*!
+ * @brief Destructs a node, destroying all children in the process, but does
+ * not deallocate the node object itself.
+ */
+void
+ik_node_destruct(struct ik_node_t* node);
 
-    /*!
-     * @brief Destructs and frees the node, destroying all children in the process.
-     * If the node was part of a tree, then it will be removed from its parents.
-     * @note You will need to rebuild the solver's tree before solving.
-     */
-    void
-    (*destroy)(struct ik_node_t* node);
+/*!
+ * @brief Destructs and frees the node, destroying all children in the process.
+ * If the node was part of a tree, then it will be removed from its parents.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+void
+ik_node_destroy(struct ik_node_t* node);
 
-    /*!
-     * @brief Creates a new node, attaches it as a child to the specified node,
-     * and returns it. Each node requires a tree-unique ID, which can be used
-     * later to search for nodes in the tree.
-     */
-    struct ik_node_t*
-    (*create_child)(struct ik_node_t* node, uint32_t child_guid);
+/*!
+ * @brief Creates a new node, attaches it as a child to the specified node,
+ * and returns it. Each node requires a tree-unique ID, which can be used
+ * later to search for nodes in the tree.
+ */
+struct ik_node_t*
+ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
 
-    /*!
-     * @brief Attaches a node as a child to another node. The parent node gains
-     * ownership of the child node and is responsible for deallocating it.
-     * @note You will need to rebuild the solver's tree before solving.
-     */
-    ikret_t
-    (*add_child)(struct ik_node_t* node, struct ik_node_t* child);
+/*!
+ * @brief Attaches a node as a child to another node. The parent node gains
+ * ownership of the child node and is responsible for deallocating it.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+ikret_t
+ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
 
-    /*!
-     * @brief Unlinks a node from the tree, without destroying anything. All
-     * children of the unlinked node remain in tact and will no longer be
-     * affiliated with the original tree.
-     * @note You will need to rebuild the solver's tree before solving.
-     */
-    void
-    (*unlink)(struct ik_node_t* node);
+/*!
+ * @brief Unlinks a node from the tree, without destroying anything. All
+ * children of the unlinked node remain in tact and will no longer be
+ * affiliated with the original tree.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+void
+ik_node_unlink(struct ik_node_t* node);
 
-    vector_size_t
-    (*child_count)(const struct ik_node_t* node);
+vector_size_t
+ik_node_child_count(const struct ik_node_t* node);
 
-    /*!
-     * @brief Searches recursively for a node in a tree with the specified global
-     * identifier.
-     * @return Returns NULL if the node was not found, otherwise the node is
-     * returned.
-     */
-    struct ik_node_t*
-    (*find_child)(const struct ik_node_t* node, uint32_t guid);
+/*!
+ * @brief Searches recursively for a node in a tree with the specified global
+ * identifier.
+ * @return Returns NULL if the node was not found, otherwise the node is
+ * returned.
+ */
+struct ik_node_t*
+ik_node_find_child(const struct ik_node_t* node, uint32_t guid);
 
-    struct ik_node_t*
-    (*duplicate)(const struct ik_node_t* node, int copy_attachments);
+struct ik_node_t*
+ik_node_duplicate(const struct ik_node_t* node, int copy_attachments);
 
-    /*!
-     * @brief Dumps all nodes recursively to DOT format. You can use graphviz (
-     * or other compatible tools) to generate a graphic of the tree.
-     */
-    void
-    (*dump_to_dot)(const struct ik_node_t* node, const char* file_name);
-};
+/*!
+ * @brief Dumps all nodes recursively to DOT format. You can use graphviz (
+ * or other compatible tools) to generate a graphic of the tree.
+ */
+void
+ik_node_dump_to_dot(const struct ik_node_t* node, const char* file_name);
 
 #define NODE_FOR_EACH(node, key, value) \
     BSTV_FOR_EACH(&(node)->children, struct ik_node_t, key, value)

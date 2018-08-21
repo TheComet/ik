@@ -25,11 +25,8 @@ struct ik_mat3x3_t
     };
 };
 
-IK_INTERFACE(mat3x3_interface)
-{
-    void
-    (*from_quat)(ikreal_t m[9], const ikreal_t q[4]);
-};
+void
+ik_mat3x3_from_quat(ikreal_t m[9], const ikreal_t q[4]);
 
 C_END
 

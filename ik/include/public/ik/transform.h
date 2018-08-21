@@ -17,11 +17,8 @@ enum ik_transform_mode_e
     IK_TRANSLATIONS   = 0x04
 };
 
-IK_INTERFACE(transform_interface)
-{
-    void
-    (*node)(struct ik_node_t* root, uint8_t mode);
-};
+void
+ik_transform_node(struct ik_node_t* root, uint8_t mode);
 
 IK_PRIVATE_API void
 ik_transform_chain(struct chain_t* chain, uint8_t mode);

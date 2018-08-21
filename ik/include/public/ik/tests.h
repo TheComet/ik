@@ -5,11 +5,8 @@
 
 C_BEGIN
 
-IK_INTERFACE(tests_interface)
-{
-    ikret_t
-    (*run)(int* argc, char** argv);
-};
+ikret_t
+ik_tests_run(int* argc, char** argv);
 
 C_END
 

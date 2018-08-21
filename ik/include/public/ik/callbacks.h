@@ -7,17 +7,17 @@ C_BEGIN
 
 struct ik_node_t;
 
-IK_INTERFACE(callback_interface)
+struct ik_callbacks_t
 {
     void
     (*on_log_message)(const char* message);
 
     void
     (*on_node_destroy)(struct ik_node_t* node);
-
-    void
-    (*implement)(const IK_INTERFACE(callback_interface)* callbacks);
 };
+
+void
+ik_callbacks_implement(const struct ik_callbacks_t* callbacks);
 
 C_END
 

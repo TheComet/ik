@@ -1,6 +1,7 @@
 #ifndef IK_RETCODES_H
 #define IK_RETCODES_H
 
+/* Don't use C_BEGIN because config.h includes retcodes.h */
 #ifdef __cplusplus
 extern "C" {
 #endif
