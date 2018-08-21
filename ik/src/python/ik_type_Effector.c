@@ -11,7 +11,7 @@ static void
 Effector_dealloc(ik_Effector* self)
 {
     if (self->effector)
-        self->effector->v->destroy(self->effector);
+        ik_effector_destroy(self->effector);
     Py_DECREF(self->target_position);
     Py_DECREF(self->target_rotation);
 }
@@ -34,7 +34,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_self_failed;
 
     /* Allocate internal effector */
-    self->effector = pySolver->ik_effector_create();
+    self->effector = ik_effector_create();
     if (self->effector == NULL)
         goto create_effector_failed;
 
@@ -49,7 +49,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     return (PyObject*)self;
 
     alloc_target_rotation_failed : Py_DECREF(self->target_position);
-    alloc_target_position_failed : self->effector->v->destroy(self->effector);
+    alloc_target_position_failed : ik_effector_destroy(self->effector);
     create_effector_failed       : Py_DECREF(self);
     alloc_self_failed            : return NULL;
 }
@@ -93,7 +93,7 @@ Effector_attach(ik_Effector* self, PyObject* pyNode)
         return NULL;
     }
 
-    if (self->effector->v->attach(self->effector, node) != IK_OK)
+    if (ik_effector_attach(self->effector, node) != IK_OK)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to attach effector. Does the node already have a effector?");
         return NULL;
@@ -114,7 +114,7 @@ Effector_detach(ik_Effector* self, PyObject* args)
         return NULL;
     }
 
-    self->effector->v->detach(self->effector);
+    ik_effector_detach(self->effector);
 
     Py_RETURN_NONE;
 }

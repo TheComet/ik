@@ -4,19 +4,13 @@
 
 #define NAME python_bindings
 
-#define PASTER(x, y) x ## y
-#define EVALUATOR(x, y) PASTER(x, y)
-
-#define QUOTE(str) #str
-#define EXPAND_AND_QUOTE(str) QUOTE(str)
-
-PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void);
+PyMODINIT_FUNC PyInit_ik(void);
 
 using namespace ::testing;
 
 static void init_python()
 {
-    PyImport_AppendInittab(EXPAND_AND_QUOTE(IKAPI), EVALUATOR(PyInit_, IKAPI));
+    PyImport_AppendInittab("ik", PyInit_ik);
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
         PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");

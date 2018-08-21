@@ -9,7 +9,6 @@
      * Build settings
      * --------------------------------------------------------------------- */
 
-#   define IKAPI ${IK_API_NAME}
     #cmakedefine IK_BENCHMARKS
     #cmakedefine IK_DOT_EXPORT
     #cmakedefine IK_HAVE_STDINT_H
@@ -79,6 +78,5 @@ typedef ${IK_PRECISION} ikreal_t;
     #else
         #include "ik/pstdint.h"
     #endif
-
 
 #endif /* IK_CONFIG_H */

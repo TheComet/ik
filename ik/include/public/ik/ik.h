@@ -1,6 +1,7 @@
 #ifndef IK_LIB_H
 #define IK_LIB_H
 
+#include "ik/build_info.h"
 #include "ik/constraint.h"
 #include "ik/effector.h"
 #include "ik/init.h"

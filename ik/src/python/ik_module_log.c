@@ -64,31 +64,31 @@ static PyObject*
 log_debug(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.debug);
+    return log_message(args, ik_log_debug);
 }
 static PyObject*
 log_info(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.info);
+    return log_message(args, ik_log_info);
 }
 static PyObject*
 log_warning(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.warning);
+    return log_message(args, ik_log_warning);
 }
 static PyObject*
 log_error(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.error);
+    return log_message(args, ik_log_error);
 }
 static PyObject*
 log_fatal(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.fatal);
+    return log_message(args, ik_log_fatal);
 }
 
 /* ------------------------------------------------------------------------- */
