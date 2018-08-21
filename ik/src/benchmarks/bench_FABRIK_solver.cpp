@@ -110,23 +110,23 @@ static ik_node_t* create_tree(ik_solver_t* solver, Type type)
 
 static ik_solver_t* create_solver(Type type)
 {
-    ik_solver_t* solver = IKAPI.solver.create(IK_FABRIK);
+    ik_solver_t* solver = ik_solver_create(IK_FABRIK);
     ik_node_t* root = create_tree(solver, type);
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
     return solver;
 }
 
 static void BM_rebuild_tree(State& state)
 {
-    ik_solver_t* solver = IKAPI.solver.create(IK_FABRIK);
+    ik_solver_t* solver = ik_solver_create(IK_FABRIK);
     ik_node_t* root = create_tree(solver, (Type)state.range(0));
-    IKAPI.solver.set_tree(solver, root);
+    ik_solver_set_tree(solver, root);
 
     while (state.KeepRunning())
-        IKAPI.solver.rebuild(solver);
+        ik_solver_rebuild(solver);
 
-    IKAPI.solver.destroy(solver);
+    ik_solver_destroy(solver);
 }
 BENCHMARK(BM_rebuild_tree)
     ->Arg(CHAIN_10)
@@ -141,10 +141,10 @@ static void BM_FABRIK_solve(State& state)
     while (state.KeepRunning())
     {
         /*ik_solver_reset_to_original_pose(solver);*/
-        IKAPI.solver.solve(solver);
+        ik_solver_solve(solver);
     }
 
-    IKAPI.solver.destroy(solver);
+    ik_solver_destroy(solver);
 }
 BENCHMARK(BM_FABRIK_solve)
     ->Arg(CHAIN_10)
@@ -159,10 +159,10 @@ static void BM_FABRIK_solve_final_rotations(State& state)
     while (state.KeepRunning())
     {
         /*ik_solver_reset_to_original_pose(solver);*/
-        IKAPI.solver.solve(solver);
+        ik_solver_solve(solver);
     }
 
-    IKAPI.solver.destroy(solver);
+    ik_solver_destroy(solver);
 }
 BENCHMARK(BM_FABRIK_solve_final_rotations)
     ->Arg(CHAIN_10)

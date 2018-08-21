@@ -13,12 +13,12 @@ public:
 
     virtual void SetUp()
     {
-        solver = IKAPI.solver.create(IK_FABRIK);
+        solver = ik_solver_create(IK_FABRIK);
     }
 
     virtual void TearDown()
     {
-        IKAPI.solver.destroy(solver);
+        ik_solver_destroy(solver);
     }
 
 protected:
@@ -63,8 +63,8 @@ TEST_F(NAME, weird_tree)
     eff2->chain_length = 4;
     eff3->chain_length = 7;
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
 
     // There are two separate chain trees
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
@@ -139,8 +139,8 @@ TEST_F(NAME, just_one_node)
     ik_node_t* root = solver->node->create(0);
     ik_effector_t* eff = solver->effector->create();
     solver->effector->attach(eff, root);
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
 
     // We expect no chains to be created
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(0u));
@@ -169,8 +169,8 @@ TEST_F(NAME, two_arms_meet_at_same_node)
     eff1->chain_length = 2;
     eff2->chain_length = 2;
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
     chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
@@ -228,8 +228,8 @@ TEST_F(NAME, two_separate_arms)
     eff1->chain_length = 1;
     eff2->chain_length = 1;
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
     chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
@@ -281,8 +281,8 @@ TEST_F(NAME, effector_in_middle_of_chain)
     solver->effector->attach(eff1, child3);
     solver->effector->attach(eff2, child6);
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
 
     // We expect the chain to be broken into 2 parts, one as a child of the other
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(1u));

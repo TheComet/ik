@@ -23,12 +23,12 @@ ik_solver_create(enum ik_algorithm_e algorithm)
     {
 #define X(algorithm)                                                          \
         case IK_##algorithm : {                                               \
-            solver = MALLOC(IKAPI.base.solver_##algorithm.type_size());       \
+            solver = MALLOC(ik_base.solver_##algorithm_type_size());       \
             if (solver == NULL) {                                             \
                 ik_log_fatal("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(solver, 0, IKAPI.base.solver_##algorithm.type_size());     \
+            memset(solver, 0, ik_base.solver_##algorithm_type_size());     \
             solver->v          = &(IKAPI.base.solver_##algorithm);            \
             solver->node       = &(IKAPI.base.node_##algorithm);              \
             solver->effector   = &(IKAPI.base.effector_##algorithm);          \

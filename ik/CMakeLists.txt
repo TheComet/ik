@@ -145,19 +145,19 @@ set (IK_HEADERS
     "include/public/ik/retcodes.h"
     "include/public/ik/util.h"
     "include/public/ik/vector.h"
-    "include/public/ik/iface/build_info.h"
-    "include/public/ik/iface/callback.h"
-    "include/public/ik/iface/constraint.h"
-    "include/public/ik/iface/effector.h"
-    "include/public/ik/iface/log.h"
-    "include/public/ik/iface/mat3x3.h"
-    "include/public/ik/iface/node.h"
-    "include/public/ik/iface/pole.h"
-    "include/public/ik/iface/quat.h"
-    "include/public/ik/iface/solver.h"
-    "include/public/ik/iface/tests.h"
-    "include/public/ik/iface/transform.h"
-    "include/public/ik/iface/vec3.h"
+    "include/public/ik/build_info.h"
+    "include/public/ik/callbacks.h"
+    "include/public/ik/constraint.h"
+    "include/public/ik/effector.h"
+    "include/public/ik/log.h"
+    "include/public/ik/mat3x3.h"
+    "include/public/ik/node.h"
+    "include/public/ik/pole.h"
+    "include/public/ik/quat.h"
+    "include/public/ik/solver.h"
+    "include/public/ik/tests.h"
+    "include/public/ik/transform.h"
+    "include/public/ik/vec3.h"
     "templates/config.h.in"
     "${BIFEC_HEADER}")
 set (IK_SOURCES
@@ -169,14 +169,14 @@ set (IK_SOURCES
     "src/retcodes.c"
     "src/util.c"
     "src/vector.c"
-    "src/iface/callback.c"
-    "src/iface/log.c"
-    "src/iface/mat3x3.c"
-    "src/iface/quat.c"
-    "src/iface/solver.c"
-    "src/iface/transform_chains.c"
-    "src/iface/transform_node.c"
-    "src/iface/vec3.c"
+    "src/callback.c"
+    "src/log.c"
+    "src/mat3x3.c"
+    "src/quat.c"
+    "src/solver.c"
+    "src/transform_chains.c"
+    "src/transform_node.c"
+    "src/vec3.c"
     "src/solver/base/constraint_base.c"
     "src/solver/base/effector_base.c"
     "src/solver/base/node_base.c"
@@ -193,26 +193,6 @@ set (IK_SOURCES
         "src/platform/linux/backtrace_linux.c"
     >
     "templates/build_info.c.in")
-set (IK_VTABLES
-    "include/vtables/build_info.v"
-    "include/vtables/callback.v"
-    "include/vtables/constraint_base.v"
-    "include/vtables/effector_base.v"
-    "include/vtables/log.v"
-    "include/vtables/mat3x3.v"
-    "include/vtables/node_base.v"
-    "include/vtables/node_FABRIK.v"
-    "include/vtables/pole_base.v"
-    "include/vtables/quat.v"
-    "include/vtables/solver_base.v"
-    "include/vtables/solver_FABRIK.v"
-    "include/vtables/solver_MSS.v"
-    "include/vtables/solver_ONE_BONE.v"
-    "include/vtables/solver.v"
-    "include/vtables/solver_TWO_BONE.v"
-    "include/vtables/tests.v"
-    "include/vtables/transform.v"
-    "include/vtables/vec3.v")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
@@ -259,36 +239,13 @@ set (IK_BENCHMARK_SOURCES
     "src/benchmarks/bench_FABRIK_solver.cpp"
     "src/benchmarks/bench_solve.cpp")
 
-# IK preprocessor script
-set (Python_ADDITIONAL_VERSIONS 3)
-find_package (PythonInterp REQUIRED)
-set (IK_VTABLES_H "")
-set (PYTHON_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/ik_gen_vtable.py)
-macro (add_vtable_file VTABLE_FILE)
-    get_filename_component (H_FILE_BASENAME ${VTABLE_FILE} NAME)
-    string (REPLACE ".v" ".h" H_FILE_BASENAME ${H_FILE_BASENAME})
-    set (H_FILE ${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/impl/${H_FILE_BASENAME})
-    add_custom_command (
-        OUTPUT ${H_FILE}
-        DEPENDS ${VTABLE_FILE} ${PYTHON_SCRIPT}
-        COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_SCRIPT} ${VTABLE_FILE} ${H_FILE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Generating vtable ${H_FILE}" VERBATIM)
-    set (IK_VTABLES_H ${IK_VTABLES_H} ${H_FILE})
-endmacro ()
-foreach (VTABLE_FILE ${IK_VTABLES})
-    add_vtable_file (${VTABLE_FILE})
-endforeach ()
-
 ###############################################################################
 # Main library
 ###############################################################################
 
 add_library (ik_obj OBJECT
     ${IK_HEADERS}
-    ${IK_SOURCES}
-    ${IK_VTABLES}
-    ${IK_VTABLES_H})
+    ${IK_SOURCES})
 set_target_properties (ik_obj
     PROPERTIES
         C_STANDARD 11
@@ -475,7 +432,7 @@ target_include_directories (ik
 set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
-    OUTPUT_NAME ${IK_API_NAME}
+    OUTPUT_NAME "ik"
     SOVERSION ${PROJECT_VERSION})
 
 if (IK_PYTHON)

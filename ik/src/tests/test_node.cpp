@@ -10,12 +10,12 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver_ = IKAPI.solver.create(IK_FABRIK);
+        solver_ = ik_solver_create(IK_FABRIK);
     }
 
     virtual void TearDown() override
     {
-        IKAPI.solver.destroy(solver_);
+        ik_solver_destroy(solver_);
     }
 
 protected:
@@ -144,8 +144,8 @@ TEST_F(NAME, duplicate_works)
     ik_node_t* n4 = solver_->node->create_child(n1, 5);
 
     // Set some params we can test...
-    IKAPI.vec3.set(n3->position.f, 1, 2, 3);
-    IKAPI.quat.set(n3->rotation.f, 4, 5, 6, 7);
+    ik_vec3_set(n3->position.f, 1, 2, 3);
+    ik_quat_set(n3->rotation.f, 4, 5, 6, 7);
     n3->user_data = this;
 
     ik_node_t* dup = solver_->node->duplicate(n1, 0);

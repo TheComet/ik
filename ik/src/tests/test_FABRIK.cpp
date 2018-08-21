@@ -14,12 +14,12 @@ public:
 
     virtual void SetUp()
     {
-        solver = IKAPI.solver.create(IK_FABRIK);
+        solver = ik_solver_create(IK_FABRIK);
     }
 
     virtual void TearDown()
     {
-        IKAPI.solver.destroy(solver);
+        ik_solver_destroy(solver);
     }
 
 protected:
@@ -84,9 +84,9 @@ TEST_F(NAME, binary_tree_with_long_chains)
     ik_node_t* root = solver->node->create(0);
     buildTreeLongChains(solver, root, 0, &guid);
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
-    IKAPI.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 }
 
 TEST_F(NAME, binary_tree_with_short_chains)
@@ -95,9 +95,9 @@ TEST_F(NAME, binary_tree_with_short_chains)
     ik_node_t* root = solver->node->create(0);
     buildTreeShortChains(solver, root, 0, &guid);
 
-    IKAPI.solver.set_tree(solver, root);
-    IKAPI.solver.rebuild(solver);
-    IKAPI.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 }
 
 TEST_F(NAME, two_bone_reach_90_degree_to_right)
@@ -112,11 +112,11 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
     ik_node_t* root = solver->node->create(0);
     ik_node_t* mid = solver->node->create_child(root, 1);
     ik_node_t* tip = solver->node->create_child(mid, 2);
-    IKAPI.vec3.set(mid->position.f, 0, 2, 0);
-    IKAPI.vec3.set(tip->position.f, 0, 3, 0);
+    ik_vec3_set(mid->position.f, 0, 2, 0);
+    ik_vec3_set(tip->position.f, 0, 3, 0);
 
     ik_effector_t* eff = solver->effector->create();
-    IKAPI.vec3.set(eff->target_position.f, 3, 2, 0);
+    ik_vec3_set(eff->target_position.f, 3, 2, 0);
     solver->effector->attach(eff, tip);
 
     ik.solver.set_tree(solver, root);
@@ -164,13 +164,13 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_rotations)
     ik_node_t* root = solver->node->create(0);
     ik_node_t* mid = solver->node->create_child(root, 1);
     ik_node_t* tip = solver->node->create_child(mid, 2);
-    IKAPI.vec3.set(mid->position.f, 0, 2, 0);
-    IKAPI.vec3.set(tip->position.f, 0, 3, 0);
-    IKAPI.quat.set_axis_angle(root->rotation.f, 0, 0, 1, 45*pi/180);
-    IKAPI.quat.set_axis_angle(mid->rotation.f, 0, 0, 1, 45*pi/180);
+    ik_vec3_set(mid->position.f, 0, 2, 0);
+    ik_vec3_set(tip->position.f, 0, 3, 0);
+    ik_quat_set_axis_angle(root->rotation.f, 0, 0, 1, 45*pi/180);
+    ik_quat_set_axis_angle(mid->rotation.f, 0, 0, 1, 45*pi/180);
 
     ik_effector_t* eff = solver->effector->create();
-    IKAPI.vec3.set(eff->target_position.f, 3, 2, 0);
+    ik_vec3_set(eff->target_position.f, 3, 2, 0);
     solver->effector->attach(eff, tip);
 
     ik.solver.set_tree(solver, root);
@@ -218,11 +218,11 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_translations)
     ik_node_t* root = solver->node->create(0);
     ik_node_t* mid = solver->node->create_child(root, 1);
     ik_node_t* tip = solver->node->create_child(mid, 2);
-    IKAPI.vec3.set(mid->position.f, 2/sqrt(2), 2/sqrt(2), 0);
-    IKAPI.vec3.set(tip->position.f, 3/sqrt(2), 3/sqrt(2), 0);
+    ik_vec3.set(mid->position_f, 2/sqrt(2), 2/sqrt(2), 0);
+    ik_vec3.set(tip->position_f, 3/sqrt(2), 3/sqrt(2), 0);
 
     ik_effector_t* eff = solver->effector->create();
-    IKAPI.vec3.set(eff->target_position.f, 3, 2, 0);
+    ik_vec3_set(eff->target_position.f, 3, 2, 0);
     solver->effector->attach(eff, tip);
 
     ik.solver.set_tree(solver, root);
@@ -230,8 +230,8 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_translations)
     ik.solver.solve(solver);
 
     ik_quat_t expected_root, expected_mid;
-    IKAPI.quat.set_axis_angle(expected_root.f, 0, 0, 1, -45*pi/180);
-    IKAPI.quat.set_axis_angle(expected_mid.f, 0, 0, 1, 45*pi/180);
+    ik_quat_set_axis_angle(expected_root.f, 0, 0, 1, -45*pi/180);
+    ik_quat_set_axis_angle(expected_mid.f, 0, 0, 1, 45*pi/180);
 
     const double error = solver->tolerance;
     EXPECT_THAT(root->position.x, DoubleNear(0, error));

@@ -12,7 +12,7 @@ static void
 Log_dealloc(ik_Log* self)
 {
     (void)self;
-    IKAPI.log.deinit();
+    ik_log_deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -23,7 +23,7 @@ Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     (void)kwds;
     ik_Log* self;
 
-    if (IKAPI.log.init() != IK_OK)
+    if (ik_log_init() != IK_OK)
         goto ik_log_init_failed;
 
     self = (ik_Log*)type->tp_alloc(type, 0);
@@ -32,7 +32,7 @@ Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    alloc_self_failed  : IKAPI.log.deinit();
+    alloc_self_failed  : ik_log_deinit();
     ik_log_init_failed : return NULL;
 }
 
@@ -112,7 +112,7 @@ Log_setseverity(ik_Log* self, PyObject* value, void* closure)
         return -1;
     }
 
-    IKAPI.log.severity(severity);
+    ik_log_severity(severity);
 
     return 0;
 }
@@ -130,7 +130,7 @@ Log_settimestamps(ik_Log* self, PyObject* value, void* closure)
         return -1;
     }
 
-    IKAPI.log.timestamps(PyObject_IsTrue(value));
+    ik_log_timestamps(PyObject_IsTrue(value));
 
     return 0;
 }
@@ -148,12 +148,12 @@ Log_setprefix(ik_Log* self, PyObject* value, void* closure)
         if (ascii == NULL)
             return -1;
 
-        IKAPI.log.prefix(PyBytes_AS_STRING(ascii));
+        ik_log_prefix(PyBytes_AS_STRING(ascii));
         Py_DECREF(ascii);
     }
     else if(value == Py_None)
     {
-        IKAPI.log.prefix("");
+        ik_log_prefix("");
     }
     else
     {

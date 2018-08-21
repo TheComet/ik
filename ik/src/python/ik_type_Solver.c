@@ -8,7 +8,7 @@ static void
 Solver_dealloc(ik_Solver* self)
 {
     if (self->solver)
-        IKAPI.solver.destroy(self->solver);
+        ik_solver_destroy(self->solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -26,7 +26,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    /*self->solver = IKAPI.solver.create(solverName);*/
+    /*self->solver = ik_solver_create(solverName);*/
     if (self->solver == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");
@@ -203,7 +203,7 @@ Solver_settree(ik_Solver* self, PyObject* value, void* closure)
 
     if (value == Py_None)
     {
-        IKAPI.solver.unlink_tree(self->solver);
+        ik_solver_unlink_tree(self->solver);
         Py_DECREF(self->tree);
         self->tree = NULL;
     }
@@ -239,7 +239,7 @@ static PyObject*
 Solver_rebuild_data(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    if (IKAPI.solver.rebuild(self->solver) != IK_OK)
+    if (ik_solver_rebuild(self->solver) != IK_OK)
         Py_RETURN_FALSE;
     Py_RETURN_TRUE;
 }
@@ -249,7 +249,7 @@ static PyObject*
 Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    IKAPI.solver.update_distances(self->solver);
+    ik_solver_update_distances(self->solver);
     Py_RETURN_NONE;
 }
 
@@ -258,7 +258,7 @@ static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ikret_t ret = IKAPI.solver.solve(self->solver);
+    ikret_t ret = ik_solver_solve(self->solver);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "solve() returned an error code");

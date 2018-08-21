@@ -15,7 +15,7 @@ ik_node_FABRIK_create(uint32_t guid)
         return NULL;
     }
 
-    IKAPI.base.node_FABRIK.construct((struct ik_node_t*)node, guid);
+    ik_base.node_FABRIK_construct((struct ik_node_t*)node, guid);
 
     return (struct ik_node_t*)node;
 }

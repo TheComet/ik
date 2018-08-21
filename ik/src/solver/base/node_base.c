@@ -18,7 +18,7 @@ ik_node_base_create(uint32_t guid)
         ik_log_fatal("Failed to allocate node: Ran out of memory");
         return NULL;
     }
-    IKAPI.base.node_base.construct(node, guid);
+    ik_base.node_base_construct(node, guid);
 
     return node;
 }

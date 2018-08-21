@@ -19,14 +19,14 @@ static PyModuleDef ik_module_info = {
 static int
 add_module_constants(PyObject* m)
 {
-    if (PyModule_AddStringConstant(m, "version", IKAPI.info.version()) == -1) return -1;
-    if (PyModule_AddIntConstant(m, "build_number", IKAPI.info.build_number()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "host", IKAPI.info.host()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "date", IKAPI.info.date()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "commit", IKAPI.info.commit()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "compiler", IKAPI.info.compiler()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "cmake", IKAPI.info.cmake()) == -1) return -1;
-    if (PyModule_AddStringConstant(m, "all", IKAPI.info.all()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "version", ik_info_version()) == -1) return -1;
+    if (PyModule_AddIntConstant(m, "build_number", ik_info_build_number()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "host", ik_info_host()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "date", ik_info_date()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "commit", ik_info_commit()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "compiler", ik_info_compiler()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "cmake", ik_info_cmake()) == -1) return -1;
+    if (PyModule_AddStringConstant(m, "all", ik_info_all()) == -1) return -1;
 
     return 0;
 }

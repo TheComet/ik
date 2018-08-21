@@ -12,12 +12,12 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IK_FABRIK);
+        solver = ik_solver_create(IK_FABRIK);
     }
 
     virtual void TearDown() override
     {
-        IKAPI.solver.destroy(solver);
+        ik_solver_destroy(solver);
     }
 
 protected:
@@ -32,15 +32,15 @@ TEST_F(NAME, rotations_cause_vector_translations)
     ik_effector_t* eff = solver->effector->create();
     solver->effector->attach(eff, n3);
 
-    IKAPI.vec3.set(n1->position.f, 1, 1, 1);
-    IKAPI.vec3.set(n2->position.f, 1, 3, 1);
-    IKAPI.vec3.set(n3->position.f, 1, 6, 1);
+    ik_vec3_set(n1->position.f, 1, 1, 1);
+    ik_vec3_set(n2->position.f, 1, 3, 1);
+    ik_vec3_set(n3->position.f, 1, 6, 1);
 
-    IKAPI.quat.set_axis_angle(n1->rotation.f, 0, 0, 1, 45*pi/180);
-    IKAPI.quat.set_axis_angle(n2->rotation.f, 1, 0, 0, 90*pi/180);
+    ik_quat_set_axis_angle(n1->rotation.f, 0, 0, 1, 45*pi/180);
+    ik_quat_set_axis_angle(n2->rotation.f, 1, 0, 0, 90*pi/180);
 
-    IKAPI.solver.set_tree(solver, n1);
-    IKAPI.solver.rebuild(solver);
+    ik_solver_set_tree(solver, n1);
+    ik_solver_rebuild(solver);
 
     ik_transform_chain_list(&solver->chain_list, IK_G2L);
 
