@@ -34,7 +34,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_self_failed;
 
     /* Allocate internal effector */
-    self->effector = pySolver->solver->effector->create();
+    self->effector = pySolver->ik_effector_create();
     if (self->effector == NULL)
         goto create_effector_failed;
 

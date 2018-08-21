@@ -27,38 +27,38 @@ protected:
 
 TEST_F(NAME, weird_tree)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* child1 = solver->node->create(1);
-    ik_node_t* child2 = solver->node->create(2);
-    ik_node_t* child3 = solver->node->create(3);
-    ik_node_t* child4 = solver->node->create(4);
-    ik_node_t* child5 = solver->node->create(5);
-    ik_node_t* child6 = solver->node->create(6);
-    ik_node_t* child7 = solver->node->create(7);
-    ik_node_t* child8 = solver->node->create(8);
-    ik_node_t* child9 = solver->node->create(9);
-    ik_node_t* child10 = solver->node->create(10);
-    ik_node_t* child11 = solver->node->create(11);
-    ik_node_t* child12 = solver->node->create(12);
-    solver->node->add_child(root, child1);
-    solver->node->add_child(child1, child2);
-    solver->node->add_child(child2, child3);
-    solver->node->add_child(child3, child4);
-    solver->node->add_child(child2, child5);
-    solver->node->add_child(child5, child6);
-    solver->node->add_child(child6, child7);
-    solver->node->add_child(child6, child8);
-    solver->node->add_child(child8, child9);
-    solver->node->add_child(child9, child10);
-    solver->node->add_child(child10, child11);
-    solver->node->add_child(child11, child12);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_t* child7 = ik_node_create(7);
+    ik_node_t* child8 = ik_node_create(8);
+    ik_node_t* child9 = ik_node_create(9);
+    ik_node_t* child10 = ik_node_create(10);
+    ik_node_t* child11 = ik_node_create(11);
+    ik_node_t* child12 = ik_node_create(12);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child2, child5);
+    ik_node_add_child(child5, child6);
+    ik_node_add_child(child6, child7);
+    ik_node_add_child(child6, child8);
+    ik_node_add_child(child8, child9);
+    ik_node_add_child(child9, child10);
+    ik_node_add_child(child10, child11);
+    ik_node_add_child(child11, child12);
 
-    ik_effector_t* eff1 = solver->effector->create();
-    ik_effector_t* eff2 = solver->effector->create();
-    ik_effector_t* eff3 = solver->effector->create();
-    solver->effector->attach(eff1, child4);
-    solver->effector->attach(eff2, child7);
-    solver->effector->attach(eff3, child11);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_effector_t* eff3 = ik_effector_create();
+    ik_effector_attach(eff1, child4);
+    ik_effector_attach(eff2, child7);
+    ik_effector_attach(eff3, child11);
     eff1->chain_length = 1;
     eff2->chain_length = 4;
     eff3->chain_length = 7;
@@ -136,9 +136,9 @@ TEST_F(NAME, weird_tree)
 
 TEST_F(NAME, just_one_node)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_effector_t* eff = solver->effector->create();
-    solver->effector->attach(eff, root);
+    ik_node_t* root = ik_node_create(0);
+    ik_effector_t* eff = ik_effector_create();
+    ik_effector_attach(eff, root);
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild(solver);
 
@@ -148,24 +148,24 @@ TEST_F(NAME, just_one_node)
 
 TEST_F(NAME, two_arms_meet_at_same_node)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* child1 = solver->node->create(1);
-    ik_node_t* child2 = solver->node->create(2);
-    ik_node_t* child3 = solver->node->create(3);
-    ik_node_t* child4 = solver->node->create(4);
-    ik_node_t* child5 = solver->node->create(5);
-    ik_node_t* child6 = solver->node->create(6);
-    solver->node->add_child(root, child1);
-    solver->node->add_child(child1, child2);
-    solver->node->add_child(child2, child3);
-    solver->node->add_child(child3, child4);
-    solver->node->add_child(child2, child5);
-    solver->node->add_child(child5, child6);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child2, child5);
+    ik_node_add_child(child5, child6);
 
-    ik_effector_t* eff1 = solver->effector->create();
-    ik_effector_t* eff2 = solver->effector->create();
-    solver->effector->attach(eff1, child4);
-    solver->effector->attach(eff2, child6);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_effector_attach(eff1, child4);
+    ik_effector_attach(eff2, child6);
     eff1->chain_length = 2;
     eff2->chain_length = 2;
 
@@ -209,22 +209,22 @@ TEST_F(NAME, two_arms_meet_at_same_node)
 
 TEST_F(NAME, two_separate_arms)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* child1 = solver->node->create(1);
-    ik_node_t* child2 = solver->node->create(2);
-    ik_node_t* child3 = solver->node->create(3);
-    ik_node_t* child4 = solver->node->create(4);
-    ik_node_t* child5 = solver->node->create(5);
-    solver->node->add_child(root, child1);
-    solver->node->add_child(child1, child2);
-    solver->node->add_child(child2, child3);
-    solver->node->add_child(child1, child4);
-    solver->node->add_child(child4, child5);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child1, child4);
+    ik_node_add_child(child4, child5);
 
-    ik_effector_t* eff1 = solver->effector->create();
-    ik_effector_t* eff2 = solver->effector->create();
-    solver->effector->attach(eff1, child3);
-    solver->effector->attach(eff2, child5);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_effector_attach(eff1, child3);
+    ik_effector_attach(eff2, child5);
     eff1->chain_length = 1;
     eff2->chain_length = 1;
 
@@ -262,24 +262,24 @@ TEST_F(NAME, two_separate_arms)
 
 TEST_F(NAME, effector_in_middle_of_chain)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* child1 = solver->node->create(1);
-    ik_node_t* child2 = solver->node->create(2);
-    ik_node_t* child3 = solver->node->create(3);
-    ik_node_t* child4 = solver->node->create(4);
-    ik_node_t* child5 = solver->node->create(5);
-    ik_node_t* child6 = solver->node->create(6);
-    solver->node->add_child(root, child1);
-    solver->node->add_child(child1, child2);
-    solver->node->add_child(child2, child3);
-    solver->node->add_child(child3, child4);
-    solver->node->add_child(child4, child5);
-    solver->node->add_child(child5, child6);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* child1 = ik_node_create(1);
+    ik_node_t* child2 = ik_node_create(2);
+    ik_node_t* child3 = ik_node_create(3);
+    ik_node_t* child4 = ik_node_create(4);
+    ik_node_t* child5 = ik_node_create(5);
+    ik_node_t* child6 = ik_node_create(6);
+    ik_node_add_child(root, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
+    ik_node_add_child(child3, child4);
+    ik_node_add_child(child4, child5);
+    ik_node_add_child(child5, child6);
 
-    ik_effector_t* eff1 = solver->effector->create();
-    ik_effector_t* eff2 = solver->effector->create();
-    solver->effector->attach(eff1, child3);
-    solver->effector->attach(eff2, child6);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
+    ik_effector_attach(eff1, child3);
+    ik_effector_attach(eff2, child6);
 
     ik_solver_set_tree(solver, root);
     ik_solver_rebuild(solver);

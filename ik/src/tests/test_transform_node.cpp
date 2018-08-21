@@ -26,9 +26,9 @@ protected:
 
 TEST_F(NAME, rotations_cause_vector_translations)
 {
-    ik_node_t* n1 = solver->node->create(0);
-    ik_node_t* n2 = solver->node->create_child(n1, 1);
-    ik_node_t* n3 = solver->node->create_child(n2, 2);
+    ik_node_t* n1 = ik_node_create(0);
+    ik_node_t* n2 = ik_node_create_child(n1, 1);
+    ik_node_t* n3 = ik_node_create_child(n2, 2);
 
     ik_vec3_set(n1->position.f, 1, 1, 1);
     ik_vec3_set(n2->position.f, 1, 3, 1);
@@ -52,5 +52,5 @@ TEST_F(NAME, rotations_cause_vector_translations)
     EXPECT_THAT(n3->position.y, DoubleNear(0, error));
     EXPECT_THAT(n3->position.z, DoubleNear(3, error));
 
-    solver->node->destroy(n1);
+    ik_node_destroy(n1);
 }

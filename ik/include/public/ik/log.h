@@ -40,4 +40,6 @@ ik_log_error(const char* fmt, ...);
 void
 ik_log_fatal(const char* fmt, ...);
 
+C_END
+
 #endif /* IK_LOG_H */

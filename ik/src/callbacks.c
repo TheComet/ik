@@ -35,7 +35,7 @@ ik_callbacks_notify_node_destroy(struct ik_node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_callback_implement(const struct ik_callbacks_t* callback)
+ik_callbacks_implement(const struct ik_callbacks_t* callback)
 {
     if (callback)
         g_callback = callback;

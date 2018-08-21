@@ -76,10 +76,10 @@ protected:
 TEST_F(NAME, global_to_local_single_chain)
 {
     ik_node_t* n[4];
-    n[0] = solver->node->create(0);
-    n[1] = solver->node->create_child(n[0], 1);
-    n[2] = solver->node->create_child(n[1], 2);
-    n[3] = solver->node->create_child(n[2], 3);
+    n[0] = ik_node_create(0);
+    n[1] = ik_node_create_child(n[0], 1);
+    n[2] = ik_node_create_child(n[1], 2);
+    n[3] = ik_node_create_child(n[2], 3);
 
     // Load n1-n4 with global rotations
     for (int i = 0; i != 4; ++i)
@@ -128,16 +128,16 @@ TEST_F(NAME, global_to_local_single_chain)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rg[i].w, error)) << "Index: " << i;
     }
 
-    solver->node->destroy(n[0]);
+    ik_node_destroy(n[0]);
 }
 
 TEST_F(NAME, local_to_global_single_chain)
 {
     ik_node_t* n[4];
-    n[0] = solver->node->create(0);
-    n[1] = solver->node->create_child(n[0], 1);
-    n[2] = solver->node->create_child(n[1], 2);
-    n[3] = solver->node->create_child(n[2], 3);
+    n[0] = ik_node_create(0);
+    n[1] = ik_node_create_child(n[0], 1);
+    n[2] = ik_node_create_child(n[1], 2);
+    n[3] = ik_node_create_child(n[2], 3);
 
     // Load n1-n4 with local rotations
     for (int i = 0; i != 4; ++i)
@@ -186,19 +186,19 @@ TEST_F(NAME, local_to_global_single_chain)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rl[i].w, error)) << "Index: " << i;
     }
 
-    solver->node->destroy(n[0]);
+    ik_node_destroy(n[0]);
 }
 
 TEST_F(NAME, global_to_local_two_arms)
 {
     ik_node_t* n[7];
-    n[0] = solver->node->create(0);
-    n[1] = solver->node->create_child(n[0], 1);
-    n[2] = solver->node->create_child(n[1], 2);
-    n[3] = solver->node->create_child(n[2], 3);
-    n[4] = solver->node->create_child(n[3], 4);
-    n[5] = solver->node->create_child(n[2], 5);
-    n[6] = solver->node->create_child(n[5], 6);
+    n[0] = ik_node_create(0);
+    n[1] = ik_node_create_child(n[0], 1);
+    n[2] = ik_node_create_child(n[1], 2);
+    n[3] = ik_node_create_child(n[2], 3);
+    n[4] = ik_node_create_child(n[3], 4);
+    n[5] = ik_node_create_child(n[2], 5);
+    n[6] = ik_node_create_child(n[5], 6);
 
     // Load n1-n7 with global rotations
     for (int i = 0; i != 7; ++i)
@@ -247,19 +247,19 @@ TEST_F(NAME, global_to_local_two_arms)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rg[i].w, error)) << "Index: " << i;
     }
 
-    solver->node->destroy(n[0]);
+    ik_node_destroy(n[0]);
 }
 
 TEST_F(NAME, local_to_global_two_arms)
 {
     ik_node_t* n[7];
-    n[0] = solver->node->create(0);
-    n[1] = solver->node->create_child(n[0], 1);
-    n[2] = solver->node->create_child(n[1], 2);
-    n[3] = solver->node->create_child(n[2], 3);
-    n[4] = solver->node->create_child(n[3], 4);
-    n[5] = solver->node->create_child(n[2], 5);
-    n[6] = solver->node->create_child(n[5], 6);
+    n[0] = ik_node_create(0);
+    n[1] = ik_node_create_child(n[0], 1);
+    n[2] = ik_node_create_child(n[1], 2);
+    n[3] = ik_node_create_child(n[2], 3);
+    n[4] = ik_node_create_child(n[3], 4);
+    n[5] = ik_node_create_child(n[2], 5);
+    n[6] = ik_node_create_child(n[5], 6);
 
     // Load n1-n4 with local rotations
     for (int i = 0; i != 7; ++i)
@@ -308,5 +308,5 @@ TEST_F(NAME, local_to_global_two_arms)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rl[i].w, error)) << "Index: " << i;
     }
 
-    solver->node->destroy(n[0]);
+    ik_node_destroy(n[0]);
 }

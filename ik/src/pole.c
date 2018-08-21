@@ -61,7 +61,7 @@ calculate_roll_maya(ikreal_t q[4], const struct ik_pole_t* pole)
 
 /* ------------------------------------------------------------------------- */
 struct ik_pole_t*
-ik_pole_base_create(void)
+ik_pole_create(void)
 {
     struct ik_pole_t* pole = MALLOC(sizeof *pole);
     if (pole == NULL)
@@ -81,7 +81,7 @@ ik_pole_base_create(void)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_base_destroy(struct ik_pole_t* pole)
+ik_pole_destroy(struct ik_pole_t* pole)
 {
     ik_pole_detach(pole);
     FREE(pole);
@@ -89,7 +89,7 @@ ik_pole_base_destroy(struct ik_pole_t* pole)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_base_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
+ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
 {
     switch (type)
     {
@@ -101,7 +101,7 @@ ik_pole_base_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
 
 /* ------------------------------------------------------------------------- */
 struct ik_pole_t*
-ik_pole_base_duplicate(const struct ik_pole_t* pole)
+ik_pole_duplicate(const struct ik_pole_t* pole)
 {
     struct ik_pole_t* new_pole = ik_pole_create();
     if (pole == NULL)
@@ -116,8 +116,8 @@ ik_pole_base_duplicate(const struct ik_pole_t* pole)
 }
 
 /* ------------------------------------------------------------------------- */
-int
-ik_pole_base_attach(struct ik_pole_t* pole, struct ik_node_t* node)
+ikret_t
+ik_pole_attach(struct ik_pole_t* pole, struct ik_node_t* node)
 {
     if (node->pole != NULL)
     {
@@ -140,7 +140,7 @@ ik_pole_base_attach(struct ik_pole_t* pole, struct ik_node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_base_detach(struct ik_pole_t* pole)
+ik_pole_detach(struct ik_pole_t* pole)
 {
     if (pole->node == NULL)
         return;

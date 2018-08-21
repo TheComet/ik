@@ -130,42 +130,42 @@ TEST(NAME, length_squared_positive_numbers)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, 1, 2, 3);
-    EXPECT_THAT(ik_vec3.length_squared(v_f), DoubleEq(14));
+    EXPECT_THAT(ik_vec3_length_squared(v.f), DoubleEq(14));
 }
 
 TEST(NAME, length_squared_negative_numbers)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, -1, -2, -3);
-    EXPECT_THAT(ik_vec3.length_squared(v_f), DoubleEq(14));
+    EXPECT_THAT(ik_vec3_length_squared(v.f), DoubleEq(14));
 }
 
 TEST(NAME, length_squared_zero)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, 0, 0, 0);
-    EXPECT_THAT(ik_vec3.length_squared(v_f), DoubleEq(0));
+    EXPECT_THAT(ik_vec3_length_squared(v.f), DoubleEq(0));
 }
 
 TEST(NAME, length_positive_numbers)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, 1, 2, 3);
-    EXPECT_THAT(ik_vec3.length(v_f), DoubleEq(sqrt(14)));
+    EXPECT_THAT(ik_vec3_length(v.f), DoubleEq(sqrt(14)));
 }
 
 TEST(NAME, length_negative_numbers)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, -1, -2, -3);
-    EXPECT_THAT(ik_vec3.length(v_f), DoubleEq(sqrt(14)));
+    EXPECT_THAT(ik_vec3_length(v.f), DoubleEq(sqrt(14)));
 }
 
 TEST(NAME, length_zero)
 {
     ik_vec3_t v;
     ik_vec3_set(v.f, 0, 0, 0);
-    EXPECT_THAT(ik_vec3.length(v_f), DoubleEq(0));
+    EXPECT_THAT(ik_vec3_length(v.f), DoubleEq(0));
 }
 
 TEST(NAME, normalize_positive_numbers)
@@ -205,7 +205,7 @@ TEST(NAME, dot)
     ik_vec3_set(v1.f, 1, 2, 3);
     ik_vec3_t v2;
     ik_vec3_set(v2.f, 4, 5, 6);
-    EXPECT_THAT(ik_vec3.dot(v1.f, v2_f), DoubleEq(32));
+    EXPECT_THAT(ik_vec3_dot(v1.f, v2.f), DoubleEq(32));
 }
 
 TEST(NAME, cross)

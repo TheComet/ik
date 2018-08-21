@@ -26,11 +26,11 @@ protected:
 
 TEST_F(NAME, rotations_cause_vector_translations)
 {
-    ik_node_t* n1 = solver->node->create(0);
-    ik_node_t* n2 = solver->node->create_child(n1, 1);
-    ik_node_t* n3 = solver->node->create_child(n2, 2);
-    ik_effector_t* eff = solver->effector->create();
-    solver->effector->attach(eff, n3);
+    ik_node_t* n1 = ik_node_create(0);
+    ik_node_t* n2 = ik_node_create_child(n1, 1);
+    ik_node_t* n3 = ik_node_create_child(n2, 2);
+    ik_effector_t* eff = ik_effector_create();
+    ik_effector_attach(eff, n3);
 
     ik_vec3_set(n1->position.f, 1, 1, 1);
     ik_vec3_set(n2->position.f, 1, 3, 1);

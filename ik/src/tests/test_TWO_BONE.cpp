@@ -41,19 +41,19 @@ TEST_F(NAME, reach_target_1)
      *    \               |
      *     o              o
      */
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* mid = solver->node->create_child(root, 1);
-    ik_node_t* tip = solver->node->create_child(mid, 2);
-    ik_vec3.set(mid->position_f, -3/sqrt(3), 3/sqrt(3), -3/sqrt(3));  /* length 3 */
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* mid = ik_node_create_child(root, 1);
+    ik_node_t* tip = ik_node_create_child(mid, 2);
+    ik_vec3_set(mid->position.f, -3/sqrt(3), 3/sqrt(3), -3/sqrt(3));  /* length 3 */
     ik_vec3_set(tip->position.f, 0, 3, 0);
 
-    ik_effector_t* eff = solver->effector->create();
-    ik_vec3.set(eff->target_position_f, 3/sqrt(2), 3, 3/sqrt(2));
-    solver->effector->attach(eff, tip);
+    ik_effector_t* eff = ik_effector_create();
+    ik_vec3_set(eff->target_position.f, 3/sqrt(2), 3, 3/sqrt(2));
+    ik_effector_attach(eff, tip);
 
-    ik.solver.set_tree(solver, root);
-    ik.solver.rebuild(solver);
-    ik.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 
     const double error = 1e-15;
 
@@ -84,19 +84,19 @@ TEST_F(NAME, reach_target_1)
 
 TEST_F(NAME, unreachable_1)
 {
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* mid = solver->node->create_child(root, 1);
-    ik_node_t* tip = solver->node->create_child(mid, 2);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* mid = ik_node_create_child(root, 1);
+    ik_node_t* tip = ik_node_create_child(mid, 2);
     ik_vec3_set(mid->position.f, 0, 3, 0);
     ik_vec3_set(tip->position.f, 0, 3, 0);
 
-    ik_effector_t* eff = solver->effector->create();
-    ik_vec3.set(eff->target_position.f, 6.1/sqrt(3), 6.1/sqrt(3), 6_1/sqrt(3));
-    solver->effector->attach(eff, tip);
+    ik_effector_t* eff = ik_effector_create();
+    ik_vec3_set(eff->target_position.f, 6.1/sqrt(3), 6.1/sqrt(3), 6.1/sqrt(3));
+    ik_effector_attach(eff, tip);
 
-    ik.solver.set_tree(solver, root);
-    ik.solver.rebuild(solver);
-    ik.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 
     const double error = 1e-15;
 

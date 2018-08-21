@@ -28,19 +28,19 @@ protected:
 
 static void buildTreeLongChains(ik_solver_t* solver, ik_node_t* parent, int depth, int* guid)
 {
-    ik_node_t* child1 = solver->node->create(++(*guid));
-    ik_node_t* child2 = solver->node->create(++(*guid));
-    ik_node_t* child3 = solver->node->create(++(*guid));
-    ik_node_t* child4 = solver->node->create(++(*guid));
-    ik_node_t* child5 = solver->node->create(++(*guid));
-    ik_node_t* child6 = solver->node->create(++(*guid));
-    solver->node->add_child(parent, child1);
-    solver->node->add_child(child1, child2);
-    solver->node->add_child(child2, child3);
+    ik_node_t* child1 = ik_node_create(++(*guid));
+    ik_node_t* child2 = ik_node_create(++(*guid));
+    ik_node_t* child3 = ik_node_create(++(*guid));
+    ik_node_t* child4 = ik_node_create(++(*guid));
+    ik_node_t* child5 = ik_node_create(++(*guid));
+    ik_node_t* child6 = ik_node_create(++(*guid));
+    ik_node_add_child(parent, child1);
+    ik_node_add_child(child1, child2);
+    ik_node_add_child(child2, child3);
 
-    solver->node->add_child(parent, child4);
-    solver->node->add_child(child4, child5);
-    solver->node->add_child(child5, child6);
+    ik_node_add_child(parent, child4);
+    ik_node_add_child(child4, child5);
+    ik_node_add_child(child5, child6);
 
     if(depth < 4)
     {
@@ -49,19 +49,19 @@ static void buildTreeLongChains(ik_solver_t* solver, ik_node_t* parent, int dept
     }
     else
     {
-        ik_effector_t* eff1 = solver->effector->create();
-        ik_effector_t* eff2 = solver->effector->create();
-        solver->effector->attach(eff1, child3);
-        solver->effector->attach(eff2, child6);
+        ik_effector_t* eff1 = ik_effector_create();
+        ik_effector_t* eff2 = ik_effector_create();
+        ik_effector_attach(eff1, child3);
+        ik_effector_attach(eff2, child6);
     }
 }
 
 static void buildTreeShortChains(ik_solver_t* solver, ik_node_t* parent, int depth, int* guid)
 {
-    ik_node_t* child1 = solver->node->create(++(*guid));
-    ik_node_t* child2 = solver->node->create(++(*guid));
-    solver->node->add_child(parent, child1);
-    solver->node->add_child(parent, child2);
+    ik_node_t* child1 = ik_node_create(++(*guid));
+    ik_node_t* child2 = ik_node_create(++(*guid));
+    ik_node_add_child(parent, child1);
+    ik_node_add_child(parent, child2);
 
     if(depth < 4)
     {
@@ -70,10 +70,10 @@ static void buildTreeShortChains(ik_solver_t* solver, ik_node_t* parent, int dep
     }
     else
     {
-        ik_effector_t* eff1 = solver->effector->create();
-        ik_effector_t* eff2 = solver->effector->create();
-        solver->effector->attach(eff1, child1);
-        solver->effector->attach(eff2, child2);
+        ik_effector_t* eff1 = ik_effector_create();
+        ik_effector_t* eff2 = ik_effector_create();
+        ik_effector_attach(eff1, child1);
+        ik_effector_attach(eff2, child2);
     }
 }
 
@@ -81,7 +81,7 @@ static void buildTreeShortChains(ik_solver_t* solver, ik_node_t* parent, int dep
 TEST_F(NAME, binary_tree_with_long_chains)
 {
     int guid = 0;
-    ik_node_t* root = solver->node->create(0);
+    ik_node_t* root = ik_node_create(0);
     buildTreeLongChains(solver, root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
@@ -92,7 +92,7 @@ TEST_F(NAME, binary_tree_with_long_chains)
 TEST_F(NAME, binary_tree_with_short_chains)
 {
     int guid = 0;
-    ik_node_t* root = solver->node->create(0);
+    ik_node_t* root = ik_node_create(0);
     buildTreeShortChains(solver, root, 0, &guid);
 
     ik_solver_set_tree(solver, root);
@@ -109,19 +109,19 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
      *    |             |
      *    o             o
      */
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* mid = solver->node->create_child(root, 1);
-    ik_node_t* tip = solver->node->create_child(mid, 2);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* mid = ik_node_create_child(root, 1);
+    ik_node_t* tip = ik_node_create_child(mid, 2);
     ik_vec3_set(mid->position.f, 0, 2, 0);
     ik_vec3_set(tip->position.f, 0, 3, 0);
 
-    ik_effector_t* eff = solver->effector->create();
+    ik_effector_t* eff = ik_effector_create();
     ik_vec3_set(eff->target_position.f, 3, 2, 0);
-    solver->effector->attach(eff, tip);
+    ik_effector_attach(eff, tip);
 
-    ik.solver.set_tree(solver, root);
-    ik.solver.rebuild(solver);
-    ik.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 
     const double error = solver->tolerance;
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
@@ -161,21 +161,21 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_rotations)
      *    |             |
      *    o             o
      */
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* mid = solver->node->create_child(root, 1);
-    ik_node_t* tip = solver->node->create_child(mid, 2);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* mid = ik_node_create_child(root, 1);
+    ik_node_t* tip = ik_node_create_child(mid, 2);
     ik_vec3_set(mid->position.f, 0, 2, 0);
     ik_vec3_set(tip->position.f, 0, 3, 0);
     ik_quat_set_axis_angle(root->rotation.f, 0, 0, 1, 45*pi/180);
     ik_quat_set_axis_angle(mid->rotation.f, 0, 0, 1, 45*pi/180);
 
-    ik_effector_t* eff = solver->effector->create();
+    ik_effector_t* eff = ik_effector_create();
     ik_vec3_set(eff->target_position.f, 3, 2, 0);
-    solver->effector->attach(eff, tip);
+    ik_effector_attach(eff, tip);
 
-    ik.solver.set_tree(solver, root);
-    ik.solver.rebuild(solver);
-    ik.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 
     const double error = solver->tolerance;
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
@@ -215,19 +215,19 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_translations)
      *    |             |
      *    o             o
      */
-    ik_node_t* root = solver->node->create(0);
-    ik_node_t* mid = solver->node->create_child(root, 1);
-    ik_node_t* tip = solver->node->create_child(mid, 2);
-    ik_vec3.set(mid->position_f, 2/sqrt(2), 2/sqrt(2), 0);
-    ik_vec3.set(tip->position_f, 3/sqrt(2), 3/sqrt(2), 0);
+    ik_node_t* root = ik_node_create(0);
+    ik_node_t* mid = ik_node_create_child(root, 1);
+    ik_node_t* tip = ik_node_create_child(mid, 2);
+    ik_vec3_set(mid->position.f, 2/sqrt(2), 2/sqrt(2), 0);
+    ik_vec3_set(tip->position.f, 3/sqrt(2), 3/sqrt(2), 0);
 
-    ik_effector_t* eff = solver->effector->create();
+    ik_effector_t* eff = ik_effector_create();
     ik_vec3_set(eff->target_position.f, 3, 2, 0);
-    solver->effector->attach(eff, tip);
+    ik_effector_attach(eff, tip);
 
-    ik.solver.set_tree(solver, root);
-    ik.solver.rebuild(solver);
-    ik.solver.solve(solver);
+    ik_solver_set_tree(solver, root);
+    ik_solver_rebuild(solver);
+    ik_solver_solve(solver);
 
     ik_quat_t expected_root, expected_mid;
     ik_quat_set_axis_angle(expected_root.f, 0, 0, 1, -45*pi/180);

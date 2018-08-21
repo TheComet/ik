@@ -50,7 +50,7 @@ void
 ik_solver_destruct(struct ik_solver_t* solver)
 {
     if (solver->tree)
-        solver->node->destroy(solver->tree);
+        ik_node_destroy(solver->tree);
 
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         chain_destruct(chain);
@@ -84,7 +84,7 @@ ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
     struct ik_node_t* old_root;
     if ((old_root = solver->v->unlink_tree(solver)) != NULL)
-        solver->node->destroy(old_root);
+        ik_node_destroy(old_root);
 
     solver->tree = root;
 }

@@ -24,9 +24,8 @@ protected:
 
 TEST_F(NAME, create_initializes_fields_properly)
 {
-    ik_effector_t* eff = solver_->effector->create();
+    ik_effector_t* eff = ik_effector_create();
 
-    EXPECT_THAT(eff->v, Eq(&IKAPI.base.effector_base));
     EXPECT_THAT(eff->node, IsNull());
     EXPECT_THAT(eff->target_position.x, DoubleEq(0));
     EXPECT_THAT(eff->target_position.y, DoubleEq(0));
@@ -41,13 +40,13 @@ TEST_F(NAME, create_initializes_fields_properly)
     EXPECT_THAT(eff->chain_length, Eq(0u));
     EXPECT_THAT(eff->flags, Eq(0u));
 
-    solver_->effector->destroy(eff);
+    ik_effector_destroy(eff);
 }
 
 TEST_F(NAME, duplicate_copies_parameters_correctly)
 {
-    ik_effector_t* eff = solver_->effector->create();
-    ik_node_t* n = solver_->node->create(0);
+    ik_effector_t* eff = ik_effector_create();
+    ik_node_t* n = ik_node_create(0);
 
     eff->node = n; /* make node not null so we can test duplicated version */
     ik_vec3_set(eff->target_position.f, 1, 2, 3);
@@ -58,9 +57,8 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
     eff->chain_length = 7;
     eff->flags = IK_WEIGHT_NLERP;
 
-    ik_effector_t* dup = eff->v->duplicate(eff);
+    ik_effector_t* dup = ik_effector_duplicate(eff);
 
-    EXPECT_THAT(dup->v, Eq(&IKAPI.base.effector_base));
     EXPECT_THAT(dup->node, IsNull());
     EXPECT_THAT(dup->target_position.x, DoubleEq(1));
     EXPECT_THAT(dup->target_position.y, DoubleEq(2));
@@ -75,71 +73,71 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
     EXPECT_THAT(dup->chain_length, Eq(7u));
     EXPECT_THAT(dup->flags, Eq(IK_WEIGHT_NLERP));
 
-    solver_->effector->destroy(eff);
-    solver_->effector->destroy(dup);
-    solver_->node->destroy(n);
+    ik_effector_destroy(eff);
+    ik_effector_destroy(dup);
+    ik_node_destroy(n);
 }
 
 TEST_F(NAME, attach_detach_works)
 {
-    ik_node_t* n = solver_->node->create(0);
-    ik_effector_t* eff = solver_->effector->create();
-    solver_->effector->attach(eff, n);
+    ik_node_t* n = ik_node_create(0);
+    ik_effector_t* eff = ik_effector_create();
+    ik_effector_attach(eff, n);
 
     EXPECT_THAT(eff->node, Eq(n));
     EXPECT_THAT(n->effector, Eq(eff));
 
-    solver_->effector->detach(eff);
+    ik_effector_detach(eff);
 
     EXPECT_THAT(eff->node, IsNull());
     EXPECT_THAT(n->effector, IsNull());
 
-    solver_->effector->destroy(eff);
-    solver_->node->destroy(n);
+    ik_effector_destroy(eff);
+    ik_node_destroy(n);
 }
 
 TEST_F(NAME, reattach_removes_from_previous_node)
 {
-    ik_node_t* n1 = solver_->node->create(0);
-    ik_node_t* n2 = solver_->node->create_child(n1, 1);
-    ik_effector_t* eff = solver_->effector->create();
-    solver_->effector->attach(eff, n1);
+    ik_node_t* n1 = ik_node_create(0);
+    ik_node_t* n2 = ik_node_create_child(n1, 1);
+    ik_effector_t* eff = ik_effector_create();
+    ik_effector_attach(eff, n1);
 
     EXPECT_THAT(eff->node, Eq(n1));
     EXPECT_THAT(n1->effector, Eq(eff));
 
-    solver_->effector->attach(eff, n2);
+    ik_effector_attach(eff, n2);
 
     EXPECT_THAT(n1->effector, IsNull());
     EXPECT_THAT(eff->node, Eq(n2));
     EXPECT_THAT(n2->effector, Eq(eff));
 
-    solver_->node->destroy(n1);
+    ik_node_destroy(n1);
 }
 
 TEST_F(NAME, attach_two_effectors_to_same_node)
 {
-    ik_node_t* n = solver_->node->create(0);
-    ik_effector_t* eff1 = solver_->effector->create();
-    ik_effector_t* eff2 = solver_->effector->create();
+    ik_node_t* n = ik_node_create(0);
+    ik_effector_t* eff1 = ik_effector_create();
+    ik_effector_t* eff2 = ik_effector_create();
 
-    EXPECT_THAT(solver_->effector->attach(eff1, n), Eq(IK_OK));
-    EXPECT_THAT(solver_->effector->attach(eff2, n), Eq(IK_ALREADY_HAS_ATTACHMENT));
+    EXPECT_THAT(ik_effector_attach(eff1, n), Eq(IK_OK));
+    EXPECT_THAT(ik_effector_attach(eff2, n), Eq(IK_ALREADY_HAS_ATTACHMENT));
     EXPECT_THAT(n->effector, Eq(eff1));
     EXPECT_THAT(eff1->node, Eq(n));
 
-    solver_->effector->destroy(eff2);
-    solver_->node->destroy(n);
+    ik_effector_destroy(eff2);
+    ik_node_destroy(n);
 }
 
 TEST_F(NAME, destroy_attached_effector)
 {
-    ik_node_t* n = solver_->node->create(0);
-    ik_effector_t* eff = solver_->effector->create();
-    solver_->effector->attach(eff, n);
-    solver_->effector->destroy(eff);
+    ik_node_t* n = ik_node_create(0);
+    ik_effector_t* eff = ik_effector_create();
+    ik_effector_attach(eff, n);
+    ik_effector_destroy(eff);
 
     EXPECT_THAT(n->effector, IsNull());
 
-    solver_->node->destroy(n);
+    ik_node_destroy(n);
 }
