@@ -1,10 +1,10 @@
 #include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/iface/node.h"
-#include "ik/impl/log.h"
-#include "ik/impl/pole_base.h"
-#include "ik/impl/quat.h"
-#include "ik/impl/vec3.h"
+#include "ik/node.h"
+#include "ik/log.h"
+#include "ik/pole.h"
+#include "ik/quat.h"
+#include "ik/vec3.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -72,7 +72,6 @@ ik_pole_base_create(void)
 
     memset(pole, 0, sizeof *pole);
 
-    pole->v = &IKAPI.base.pole_base;
     pole->angle = 0.0;
     pole->calculate_roll = calculate_roll_generic;
     ik_vec3_set_zero(pole->position.f);
@@ -84,7 +83,7 @@ ik_pole_base_create(void)
 void
 ik_pole_base_destroy(struct ik_pole_t* pole)
 {
-    pole->v->detach(pole);
+    ik_pole_detach(pole);
     FREE(pole);
 }
 
@@ -104,7 +103,7 @@ ik_pole_base_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
 struct ik_pole_t*
 ik_pole_base_duplicate(const struct ik_pole_t* pole)
 {
-    struct ik_pole_t* new_pole = pole->v->create();
+    struct ik_pole_t* new_pole = ik_pole_create();
     if (pole == NULL)
         return NULL;
 
@@ -131,7 +130,7 @@ ik_pole_base_attach(struct ik_pole_t* pole, struct ik_node_t* node)
     }
 
     /* pole may be attached to another node */
-    pole->v->detach(pole);
+    ik_pole_detach(pole);
 
     node->pole = pole;
     pole->node = node;

@@ -2,13 +2,12 @@
 #define EFFECTOR_H
 
 #include "ik/config.h"
-#include "ik/iface/vec3.h"
-#include "ik/iface/quat.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_BEGIN
 
 struct ik_node_t;
-struct ik_effector_interface_t;
 
 enum effector_flags_e
 {
@@ -32,7 +31,6 @@ enum effector_flags_e
  */
 struct ik_effector_t
 {
-    const struct ik_effector_interface_t* v;
     struct ik_node_t* node;
 
     /*!

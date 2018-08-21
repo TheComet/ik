@@ -2,10 +2,10 @@
 #include "ik/chain.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
-#include "ik/iface/effector.h"
-#include "ik/iface/node.h"
-#include "ik/impl/log.h"
-#include "ik/impl/vec3.h"
+#include "ik/effector.h"
+#include "ik/node.h"
+#include "ik/log.h"
+#include "ik/vec3.h"
 #include <assert.h>
 #include <stdio.h>
 

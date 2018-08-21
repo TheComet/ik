@@ -1,7 +1,11 @@
 #include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/impl/log.h"
-#include "ik/impl/solver.h"
+#include "ik/log.h"
+#include "ik/solver.h"
+#include "ik/solver_ONE_BONE.h"
+#include "ik/solver_TWO_BONE.h"
+#include "ik/solver_FABRIK.h"
+#include "ik/solver_MSS.h"
 #include <assert.h>
 #include <string.h>
 
@@ -23,17 +27,16 @@ ik_solver_create(enum ik_algorithm_e algorithm)
     {
 #define X(algorithm)                                                          \
         case IK_##algorithm : {                                               \
-            solver = MALLOC(ik_base.solver_##algorithm_type_size());       \
+            solver = MALLOC(ik_solver_##algorithm##_type_size());             \
             if (solver == NULL) {                                             \
                 ik_log_fatal("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(solver, 0, ik_base.solver_##algorithm_type_size());     \
-            solver->v          = &(IKAPI.base.solver_##algorithm);            \
-            solver->node       = &(IKAPI.base.node_##algorithm);              \
-            solver->effector   = &(IKAPI.base.effector_##algorithm);          \
-            solver->constraint = &(IKAPI.base.constraint_##algorithm);        \
-            solver->pole       = &(IKAPI.base.pole_##algorithm);              \
+            memset(solver, 0, ik_solver_##algorithm##_type_size());           \
+            solver->construct = ik_solver_##algorithm##_construct;            \
+            solver->destruct = ik_solver_##algorithm##_destruct;              \
+            solver->rebuild = ik_solver_##algorithm##_rebuild;                \
+            solver->solve = ik_solver_##algorithm##_solve;                    \
         } break;
         IK_ALGORITHMS
 #undef X
@@ -43,7 +46,7 @@ ik_solver_create(enum ik_algorithm_e algorithm)
         } break;
     }
 
-    if (solver->v->construct(solver) != IK_OK)
+    if (solver->construct(solver) != IK_OK)
         goto construct_solver_failed;
 
     return solver;
@@ -56,7 +59,7 @@ ik_solver_create(enum ik_algorithm_e algorithm)
 void
 ik_solver_destroy(struct ik_solver_t* solver)
 {
-    solver->v->destruct(solver);
+    solver->destruct(solver);
     FREE(solver);
 }
 
@@ -72,61 +75,61 @@ ik_solver_construct(struct ik_solver_t* solver)
 void
 ik_solver_destruct(struct ik_solver_t* solver)
 {
-    solver->v->destruct(solver);
+    solver->destruct(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_solver_rebuild(struct ik_solver_t* solver)
 {
-    return solver->v->rebuild(solver);
+    return solver->rebuild(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_update_distances(struct ik_solver_t* solver)
 {
-    solver->v->update_distances(solver);
+    ik_solver_update_distances(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_solver_solve(struct ik_solver_t* solver)
 {
-    return solver->v->solve(solver);
+    return ik_solver_solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* base)
 {
-    solver->v->set_tree(solver, base);
+    ik_solver_set_tree(solver, base);
 }
 
 /* ------------------------------------------------------------------------- */
 struct ik_node_t*
 ik_solver_unlink_tree(struct ik_solver_t* solver)
 {
-    return solver->v->unlink_tree(solver);
+    return ik_solver_unlink_tree(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_iterate_all_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
-    solver->v->iterate_all_nodes(solver, callback);
+    ik_solver_iterate_all_nodes(solver, callback);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_iterate_affected_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
-    solver->v->iterate_affected_nodes(solver, callback);
+    ik_solver_iterate_affected_nodes(solver, callback);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_iterate_base_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
 {
-    solver->v->iterate_base_nodes(solver, callback);
+    ik_solver_iterate_base_nodes(solver, callback);
 }

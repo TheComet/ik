@@ -19,6 +19,12 @@ struct ik_callbacks_t
 void
 ik_callbacks_implement(const struct ik_callbacks_t* callbacks);
 
+void
+ik_callbacks_notify_log_message(const char* message);
+
+void
+ik_callbacks_notify_node_destroy(struct ik_node_t* node);
+
 C_END
 
 #endif /* IK_CALLBACKS_H */

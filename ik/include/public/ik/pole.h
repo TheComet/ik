@@ -2,12 +2,11 @@
 #define IK_POLE_H
 
 #include "ik/config.h"
-#include "ik/iface/vec3.h"
+#include "ik/vec3.h"
 
 C_BEGIN
 
 struct ik_node_t;
-struct ik_pole_interface_t;
 
 enum ik_pole_type_e
 {
@@ -19,8 +18,7 @@ enum ik_pole_type_e
 struct ik_pole_t
 {
     /* private stuff */
-    const struct ik_pole_interface_t* v;
-    void ik_pole_calculate_roll(ikreal_t q[4], const struct ik_pole_t* pole);
+    void (*calculate_roll)(ikreal_t q[4], const struct ik_pole_t* pole);
     struct ik_node_t* node;
     struct ik_node_t* tip;
 

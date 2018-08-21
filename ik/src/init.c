@@ -1,6 +1,6 @@
 #include "ik/init.h"
 #include "ik/memory.h"
-#include "ik/impl/callback.h"
+#include "ik/callbacks.h"
 #include <stddef.h>
 
 static int g_init_counter = 0;
@@ -23,6 +23,6 @@ ik_deinit(void)
     if (--g_init_counter != 0)
         return 0;
 
-    ik_callback_implement(NULL);
+    ik_callbacks_implement(NULL);
     return ik_memory_deinit();
 }

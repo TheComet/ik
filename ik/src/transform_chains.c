@@ -1,10 +1,10 @@
 #include "ik/bstv.h"
 #include "ik/chain.h"
-#include "ik/iface/effector.h"
-#include "ik/iface/node.h"
-#include "ik/impl/quat.h"
-#include "ik/impl/transform.h"
-#include "ik/impl/vec3.h"
+#include "ik/effector.h"
+#include "ik/node.h"
+#include "ik/quat.h"
+#include "ik/transform.h"
+#include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 #include <string.h>

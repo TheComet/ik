@@ -1,13 +1,13 @@
 #include "ik/bstv.h"
 #include "ik/chain.h"
-#include "ik/ik.h"
+#include "ik/effector.h"
 #include "ik/memory.h"
-#include "ik/impl/log.h"
-#include "ik/impl/node_FABRIK.h"
-#include "ik/impl/quat.h"
-#include "ik/impl/solver_FABRIK.h"
-#include "ik/impl/transform.h"
-#include "ik/impl/vec3.h"
+#include "ik/log.h"
+#include "ik/node.h"
+#include "ik/quat.h"
+#include "ik/solver_FABRIK.h"
+#include "ik/transform.h"
+#include "ik/vec3.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -140,8 +140,7 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
      */
     if (average_count == 0)
     {
-        struct ik_node_FABRIK_t* effector_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, 0);
-        struct ik_effector_t* effector = effector_node->effector;
+        struct ik_effector_t* effector = chain_get_node(chain, 0)->effector;
         target_position = effector->_actual_target;
     }
     else
@@ -155,8 +154,8 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     node_count = chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
-        struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
+        struct ik_node_t* child_node  = chain_get_node(chain, node_idx + 0);
+        struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
 
         /* move node to target */
         child_node->position = target_position;
@@ -412,8 +411,8 @@ calculate_delta_rotation_of_each_segment(struct chain_t* chain)
     int node_idx = chain_length(chain) - 1;
     while (node_idx-- > 0)
     {
-        struct ik_node_FABRIK_t* child_node  = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 0);
-        struct ik_node_FABRIK_t* parent_node = (struct ik_node_FABRIK_t*)chain_get_node(chain, node_idx + 1);
+        struct ik_node_t* child_node  = chain_get_node(chain, node_idx + 0);
+        struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
         struct ik_vec3_t segment_original = child_node->initial_position;
@@ -469,7 +468,7 @@ calculate_joint_rotations_for_chain(struct chain_t* chain)
      * obtain the solved global rotations.
      */
     CHAIN_FOR_EACH_NODE(chain, node_base)
-        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
+        struct ik_node_t* node = node_base;
         ik_quat_mul_quat(node->rotation.f, node->initial_rotation.f);
     CHAIN_END_EACH
 }
@@ -486,7 +485,7 @@ static void
 store_initial_transform_for_chain(struct chain_t* chain)
 {
     CHAIN_FOR_EACH_NODE(chain, node_base)
-        struct ik_node_FABRIK_t* node = (struct ik_node_FABRIK_t*)node_base;
+        struct ik_node_t* node = node_base;
         node->initial_position = node->position;
         node->initial_rotation = node->rotation;
     CHAIN_END_EACH
@@ -508,27 +507,6 @@ uintptr_t
 ik_solver_FABRIK_type_size(void)
 {
     return sizeof(struct ik_solver_t);
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_solver_t*
-ik_solver_FABRIK_create(enum ik_algorithm_e algorithm)
-{
-    struct ik_solver_t* solver = MALLOC(sizeof(struct ik_solver_t));
-    if (solver == NULL)
-    {
-        ik_log_fatal("Failed to allocate solver: Ran out of memory");
-        goto alloc_solver_failed;
-    }
-
-    solver->v = &IKAPI.base.solver_FABRIK;
-    if (solver->v->construct(solver) != IK_OK)
-        goto construct_solver_failed;
-
-    return solver;
-
-    construct_solver_failed : FREE(solver);
-    alloc_solver_failed     : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -1,4 +1,4 @@
-#include "ik/impl/callback.h"
+#include "ik/callbacks.h"
 #include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
@@ -9,17 +9,17 @@ log_stdout_callback(const char* msg)
 }
 
 /* ------------------------------------------------------------------------- */
-static const struct ik_callback_interface_t dummy_callback = {
+static const struct ik_callbacks_t dummy_callback = {
     log_stdout_callback,
-    NULL,
     NULL
 };
+
 /* ------------------------------------------------------------------------- */
-static const struct ik_callback_interface_t* g_callback = &dummy_callback;
+static const struct ik_callbacks_t* g_callback = &dummy_callback;
 
 /* ------------------------------------------------------------------------- */
 void
-ik_callback_on_log_message(const char* message)
+ik_callbacks_notify_log_message(const char* message)
 {
     if (g_callback->on_log_message)
         g_callback->on_log_message(message);
@@ -27,7 +27,7 @@ ik_callback_on_log_message(const char* message)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_callback_on_node_destroy(struct ik_node_t* node)
+ik_callbacks_notify_node_destroy(struct ik_node_t* node)
 {
     if (g_callback->on_node_destroy)
         g_callback->on_node_destroy(node);
@@ -35,7 +35,7 @@ ik_callback_on_node_destroy(struct ik_node_t* node)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_callback_implement(const struct ik_callback_interface_t* callback)
+ik_callback_implement(const struct ik_callbacks_t* callback)
 {
     if (callback)
         g_callback = callback;

@@ -1,14 +1,10 @@
-#include "ik/ik.h"
 #include "ik/memory.h"
-#include "ik/impl/constraint_base.h"
-#include "ik/impl/log.h"
-#include "ik/impl/quat.h"
+#include "ik/constraint.h"
+#include "ik/log.h"
+#include "ik/node.h"
+#include "ik/quat.h"
 #include <string.h>
 #include <assert.h>
-
-static const struct ik_constraint_interface_t constraint_base = {
-    IK_CONSTRAINT_BASE_IMPL
-};
 
 /* ------------------------------------------------------------------------- */
 /* Constraint implementations */
@@ -50,7 +46,7 @@ apply_cone(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 
 /* ------------------------------------------------------------------------- */
 struct ik_constraint_t*
-ik_constraint_base_create()
+ik_constraint_create()
 {
     struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
     if (constraint == NULL)
@@ -60,25 +56,24 @@ ik_constraint_base_create()
     }
 
     memset(constraint, 0, sizeof *constraint);
-    constraint->v = &constraint_base;
-    ik_constraint_base_set_custom(constraint, apply_dummy);
+    ik_constraint_set_custom(constraint, apply_dummy);
 
     return constraint;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_base_destroy(struct ik_constraint_t* constraint)
+ik_constraint_destroy(struct ik_constraint_t* constraint)
 {
-    constraint->v->detach(constraint);
+    ik_constraint_detach(constraint);
     FREE(constraint);
 }
 
 /* ------------------------------------------------------------------------- */
 struct ik_constraint_t*
-ik_constraint_base_duplicate(const struct ik_constraint_t* constraint)
+ik_constraint_duplicate(const struct ik_constraint_t* constraint)
 {
-    struct ik_constraint_t* new_constraint = constraint->v->create();
+    struct ik_constraint_t* new_constraint = ik_constraint_create();
     if (new_constraint == NULL)
         return NULL;
 
@@ -90,7 +85,7 @@ ik_constraint_base_duplicate(const struct ik_constraint_t* constraint)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_constraint_base_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type)
+ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type)
 {
     switch (constraint_type)
     {
@@ -118,14 +113,14 @@ ik_constraint_base_set_type(struct ik_constraint_t* constraint, enum ik_constrai
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_base_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback)
+ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback)
 {
     constraint->apply = callback;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_base_detach(struct ik_constraint_t* constraint)
+ik_constraint_detach(struct ik_constraint_t* constraint)
 {
     if (constraint->node == NULL)
         return;
@@ -136,7 +131,7 @@ ik_constraint_base_detach(struct ik_constraint_t* constraint)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* node)
+ik_constraint_attach(struct ik_constraint_t* constraint, struct ik_node_t* node)
 {
     if (node->constraint != NULL)
     {
@@ -149,7 +144,7 @@ ik_constraint_base_attach(struct ik_constraint_t* constraint, struct ik_node_t* 
     }
 
     /* constraint may be attached to another node */
-    constraint->v->detach(constraint);
+    ik_constraint_detach(constraint);
 
     constraint->node = node;
     node->constraint = constraint;

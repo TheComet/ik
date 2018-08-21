@@ -2,15 +2,14 @@
 #define IK_CONSTRAINT_H
 
 #include "ik/config.h"
-#include "ik/iface/vec3.h"
-#include "ik/iface/quat.h"
+#include "ik/vec3.h"
+#include "ik/quat.h"
 
 C_BEGIN
 
 struct ik_node_t;
-struct ik_constraint_interface_t;
 
-typedef void ik_constraint_ik_constraint_apply_func(const struct ik_node_t* node, ikreal_t compensate_rotation[4]);
+typedef void (*ik_constraint_apply_func)(const struct ik_node_t* node, ikreal_t compensate_rotation[4]);
 
 #define IK_CONSTRAINTS \
     X(STIFF) \
@@ -27,7 +26,6 @@ enum ik_constraint_type_e
 
 struct ik_constraint_t
 {
-    const struct ik_constraint_interface_t* v;
     struct ik_node_t* node;
     ik_constraint_apply_func apply;
     enum ik_constraint_type_e type;

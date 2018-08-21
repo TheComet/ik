@@ -1,8 +1,8 @@
 #include "ik/init.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
-#include "ik/impl/callback.h"
-#include "ik/impl/log.h"
+#include "ik/callbacks.h"
+#include "ik/log.h"
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -152,7 +152,7 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
     buf_ptr += sprintf(buf_ptr, "%s ", severities[severity]);
     vsprintf(buf_ptr, fmt, vargs);
 
-    ik_callback_on_log_message((char*)g_log->message_buffer.data);
+    ik_callbacks_notify_log_message((char*)g_log->message_buffer.data);
 }
 
 /* ------------------------------------------------------------------------- */

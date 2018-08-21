@@ -1,17 +1,12 @@
 #include "ik/ik.h"
-#include "ik/impl/solver_MSS.h"
+#include "ik/solver_MSS.h"
 #include <math.h>
-
-struct mss_solver_t
-{
-    IK_SOLVER_HEAD
-};
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
 ik_solver_MSS_type_size(void)
 {
-    return sizeof(struct mss_solver_t);
+    return sizeof(struct ik_solver_t);
 }
 
 /* ------------------------------------------------------------------------- */

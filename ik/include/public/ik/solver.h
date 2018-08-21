@@ -31,38 +31,30 @@ enum ik_algorithm_e
 #undef X
 };
 
-typedef voidik_solver_ik_solver_iterate_node_cb_func(struct ik_node_t*);
-
-struct ik_solver_interface_t;
-struct ik_solver_t;
 struct ik_node_t;
-
-#define IK_SOLVER_HEAD                                                        \
-    const struct ik_solver_interface_t*      v;                               \
-                                                                              \
-    int32_t                                  max_iterations;                  \
-    ikreal_t                                 tolerance;                       \
-    uint8_t                                  flags;                           \
-                                                                              \
-    /* API functions */                                                       \
-    const struct ik_constraint_interface_t*  constraint;                      \
-    const struct ik_effector_interface_t*    effector;                        \
-    const struct ik_node_interface_t*        node;                            \
-    const struct ik_pole_interface_t*        pole;                            \
-                                                                              \
-    struct ik_node_t*                        tree;                            \
-                                                                              \
-    /* list of effector_t* references (not owned by us) */                    \
-    struct vector_t                          effector_nodes_list;             \
-    /* list of chain_t objects (allocated in-place, i.e. ik_solver_t owns them) */ \
-    struct vector_t                          chain_list;
+typedef void(*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
 
 /*!
  * @brief This is a base for all solvers.
  */
 struct ik_solver_t
 {
-    IK_SOLVER_HEAD
+    struct ik_node_t*                        tree;
+
+    /* Derived interface */
+    ikret_t (*construct)(struct ik_solver_t* solver);
+    void (*destruct)(struct ik_solver_t* solver);
+    ikret_t (*rebuild)(struct ik_solver_t* solver);
+    ikret_t (*solve)(struct ik_solver_t* solver);
+
+    /* list of effector_t* references (not owned by us) */
+    struct vector_t                          effector_nodes_list;
+    /* list of chain_t objects (allocated in-place, i.e. ik_solver_t owns them) */
+    struct vector_t                          chain_list;
+
+    int32_t                                  max_iterations;
+    ikreal_t                                 tolerance;
+    uint8_t                                  flags;
 };
 
 enum ik_flags_e
@@ -204,7 +196,7 @@ ik_solver_unlink_tree(struct ik_solver_t* solver);
  */
 void
 ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
-                 ik_solver_iterate_node_cb_func callback);
+                            ik_solver_iterate_node_cb_func callback);
 
 /*!
  * @brief Iterates just the nodes that are being affected by the solver,
@@ -218,7 +210,7 @@ ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
  */
 void
 ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
-                          ik_solver_iterate_node_cb_func callback);
+                                 ik_solver_iterate_node_cb_func callback);
 
 /*!
  * @brief Iterates all nodes that mark the beginning of a subtree.
@@ -235,7 +227,7 @@ ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
  */
 void
 ik_solver_iterate_base_nodes(struct ik_solver_t* solver,
-                      ik_solver_iterate_node_cb_func callback);
+                             ik_solver_iterate_node_cb_func callback);
 
 #define SOLVER_FOR_EACH_EFFECTOR_NODE(solver_var, effector_var) \
     VECTOR_FOR_EACH(&(solver_var)->effector_nodes_list, struct ik_node_t*, solver_var##effector_var) \

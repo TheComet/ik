@@ -1,5 +1,5 @@
-#include "ik/impl/quat.h"
-#include "ik/impl/vec3.h"
+#include "ik/quat.h"
+#include "ik/vec3.h"
 #include <math.h>
 #include <string.h>
 

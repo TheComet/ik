@@ -1,4 +1,4 @@
-#include "ik/impl/tests.h"
+#include "ik/tests.h"
 #include <gmock/gmock.h>
 #include <stdio.h>
 

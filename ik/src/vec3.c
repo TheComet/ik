@@ -1,4 +1,4 @@
-#include "ik/impl/vec3.h"
+#include "ik/vec3.h"
 #include <string.h>
 #include <math.h>
 

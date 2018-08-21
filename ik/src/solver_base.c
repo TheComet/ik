@@ -1,9 +1,9 @@
 #include "ik/ik.h"
 #include "ik/chain.h"
 #include "ik/memory.h"
-#include "ik/impl/log.h"
-#include "ik/impl/solver_base.h"
-#include "ik/impl/vec3.h"
+#include "ik/log.h"
+#include "ik/solver.h"
+#include "ik/vec3.h"
 #include <string.h>
 #include <assert.h>
 
@@ -12,7 +12,7 @@ recursively_get_all_effector_nodes(struct ik_node_t* node, struct vector_t* effe
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_solver_base_type_size(void)
+ik_solver_type_size(void)
 {
     assert("Solver didn't override type_size()");
     return 0;
@@ -20,7 +20,7 @@ ik_solver_base_type_size(void)
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_base_create(enum ik_algorithm_e algorithm)
+ik_solver_create(enum ik_algorithm_e algorithm)
 {
     assert("Don't use this function! Use ik.solver.create()");
     return NULL;
@@ -28,14 +28,14 @@ ik_solver_base_create(enum ik_algorithm_e algorithm)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_destroy(struct ik_solver_t* solver)
+ik_solver_destroy(struct ik_solver_t* solver)
 {
     assert("Don't use this function! Use ik.solver.destroy()");
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_base_construct(struct ik_solver_t* solver)
+ik_solver_construct(struct ik_solver_t* solver)
 {
     solver->max_iterations = 20;
     solver->tolerance = 1e-2;
@@ -47,7 +47,7 @@ ik_solver_base_construct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_destruct(struct ik_solver_t* solver)
+ik_solver_destruct(struct ik_solver_t* solver)
 {
     if (solver->tree)
         solver->node->destroy(solver->tree);
@@ -62,7 +62,7 @@ ik_solver_base_destruct(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 struct ik_node_t*
-ik_solver_base_unlink_tree(struct ik_solver_t* solver)
+ik_solver_unlink_tree(struct ik_solver_t* solver)
 {
     struct ik_node_t* root = solver->tree;
     if (root == NULL)
@@ -80,7 +80,7 @@ ik_solver_base_unlink_tree(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
+ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
     struct ik_node_t* old_root;
     if ((old_root = solver->v->unlink_tree(solver)) != NULL)
@@ -115,7 +115,7 @@ determine_pole_target_tips(struct chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_base_rebuild(struct ik_solver_t* solver)
+ik_solver_rebuild(struct ik_solver_t* solver)
 {
     ikret_t result;
 
@@ -161,7 +161,7 @@ ik_solver_base_rebuild(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_update_distances(struct ik_solver_t* solver)
+ik_solver_update_distances(struct ik_solver_t* solver)
 {
     update_distances(&solver->chain_list);
 }
@@ -230,7 +230,7 @@ update_actual_effector_targets(const struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_base_solve(struct ik_solver_t* solver)
+ik_solver_solve(struct ik_solver_t* solver)
 {
     update_actual_effector_targets(solver);
     return IK_OK;
@@ -248,7 +248,7 @@ iterate_tree_recursive(struct ik_node_t* node,
     NODE_END_EACH
 }
 void
-ik_solver_base_iterate_all_nodes(struct ik_solver_t* solver,
+ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
                                  ik_solver_iterate_node_cb_func callback)
 {
     if (solver->tree == NULL)
@@ -283,7 +283,7 @@ iterate_affected_nodes_recursive(struct chain_t* chain,
     CHAIN_END_EACH
 }
 void
-ik_solver_base_iterate_affected_nodes(struct ik_solver_t* solver,
+ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback)
 {
     SOLVER_FOR_EACH_CHAIN(solver, chain)
@@ -297,7 +297,7 @@ ik_solver_base_iterate_affected_nodes(struct ik_solver_t* solver,
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_base_iterate_base_nodes(struct ik_solver_t* solver,
+ik_solver_iterate_base_nodes(struct ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback)
 {
     SOLVER_FOR_EACH_CHAIN(solver, chain)

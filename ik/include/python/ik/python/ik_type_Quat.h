@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "ik/iface/quat.h"
+#include "ik/quat.h"
 
 typedef struct ik_Quat
 {

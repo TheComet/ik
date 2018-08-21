@@ -1,5 +1,5 @@
-#include "ik/impl/log.h"
-#include "ik/impl/tests.h"
+#include "ik/log.h"
+#include "ik/tests.h"
 #include <stdio.h>
 
 /* ------------------------------------------------------------------------- */

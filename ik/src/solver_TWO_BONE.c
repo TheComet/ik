@@ -1,9 +1,10 @@
-#include "ik/ik.h"
 #include "ik/chain.h"
-#include "ik/impl/log.h"
-#include "ik/impl/solver_TWO_BONE.h"
-#include "ik/impl/transform.h"
-#include "ik/impl/vec3.h"
+#include "ik/effector.h"
+#include "ik/log.h"
+#include "ik/node.h"
+#include "ik/solver_TWO_BONE.h"
+#include "ik/transform.h"
+#include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
