@@ -176,7 +176,7 @@ ik_solver_solve(struct ik_solver_t* solver);
  * destroy any existing tree the solver owns.
  */
 IK_PUBLIC_API void
-ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* tree);
+ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
 
 /*!
  * @brief The solver releases any references to a previously set tree and
