@@ -64,9 +64,6 @@ typedef ${IK_PRECISION} ikreal_t;
 #       error Unknown precision. Are you sure you defined IK_PRECISION and IK_PRECISION_CAPS_AND_NO_SPACES?
 #   endif
 
-    /* Dummy defines that are used to mark things to the interface generator script */
-    #define IK_INTERFACE(i) struct ik_##i##_t
-
     /* --------------------------------------------------------------
      * Common include files
      * --------------------------------------------------------------*/
