@@ -186,7 +186,7 @@ set (IK_SOURCES
     "src/solver_MSS.c"
     "src/solver_ONE_BONE.c"
     "src/solver_TWO_BONE.c"
-    "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests.c>"
+    "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>"
     "${CMAKE_CURRENT_BINARY_DIR}/src/build_info.c"
     $<$<PLATFORM_ID:Linux>:
         "src/platform/linux/backtrace_linux.c"
@@ -216,7 +216,7 @@ set (IK_TESTS_SOURCES
     "thirdparty/googletest/src/gtest-all.cc"
     "thirdparty/googlemock/src/gmock-all.cc"
     "src/tests/environment_library_init.cpp"
-    "src/tests/tests.cpp"
+    "src/tests/tests_run.cpp"
     "src/tests/test_bstv.cpp"
     "src/tests/test_chain.cpp"
     "src/tests/test_effector.cpp"
@@ -440,7 +440,7 @@ endif ()
 
 if (IK_TESTS)
     target_link_libraries (ik PRIVATE Threads::Threads)
-    add_executable (ik_tests "src/tests/run_tests.c")
+    add_executable (ik_tests "src/tests/tests_main.c")
     target_link_libraries (ik_tests PUBLIC ik)
     set_target_properties (ik_tests PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
