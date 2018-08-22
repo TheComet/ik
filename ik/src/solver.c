@@ -63,7 +63,7 @@ ik_solver_create(enum ik_algorithm_e algorithm)
 void
 ik_solver_destroy(struct ik_solver_t* solver)
 {
-    solver->destruct(solver);
+    ik_solver_destruct(solver);
     FREE(solver);
 }
 
