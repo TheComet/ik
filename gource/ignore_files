@@ -1,1 +1,1 @@
-tests/googlemock.*|tests/googletest.*|gmock.*
+tests/googlemock.*|tests/googletest.*|gmock.*|ik/thirdparty.*|benchmarks.*

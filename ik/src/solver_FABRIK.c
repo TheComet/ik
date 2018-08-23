@@ -415,9 +415,9 @@ calculate_delta_rotation_of_each_segment(struct chain_t* chain)
         struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
-        struct ik_vec3_t segment_original = child_node->initial_position;
+        struct ik_vec3_t segment_original = child_node->FABRIK.initial_position;
         struct ik_vec3_t segment_solved   = child_node->position;
-        ik_vec3_sub_vec3(segment_original.f, parent_node->initial_position.f);
+        ik_vec3_sub_vec3(segment_original.f, parent_node->FABRIK.initial_position.f);
         ik_vec3_sub_vec3(segment_solved.f, parent_node->position.f);
         ik_quat_angle(parent_node->rotation.f, segment_solved.f, segment_original.f);
     }
@@ -469,7 +469,7 @@ calculate_joint_rotations_for_chain(struct chain_t* chain)
      */
     CHAIN_FOR_EACH_NODE(chain, node_base)
         struct ik_node_t* node = node_base;
-        ik_quat_mul_quat(node->rotation.f, node->initial_rotation.f);
+        ik_quat_mul_quat(node->rotation.f, node->FABRIK.initial_rotation.f);
     CHAIN_END_EACH
 }
 static void
@@ -486,8 +486,8 @@ store_initial_transform_for_chain(struct chain_t* chain)
 {
     CHAIN_FOR_EACH_NODE(chain, node_base)
         struct ik_node_t* node = node_base;
-        node->initial_position = node->position;
-        node->initial_rotation = node->rotation;
+        node->FABRIK.initial_position = node->position;
+        node->FABRIK.initial_rotation = node->rotation;
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)
