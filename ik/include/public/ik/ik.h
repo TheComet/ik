@@ -130,6 +130,9 @@ struct ik_solver_api_t
 #define X(arg) enum ik_solver_algorithm_e arg;
     IK_SOLVER_ALGORITHM_LIST
 #undef X
+#define X(arg, value) enum ik_solver_flags_e arg;
+    IK_SOLVER_FLAGS_LIST
+#undef X
 };
 
 struct ik_quat_api_t

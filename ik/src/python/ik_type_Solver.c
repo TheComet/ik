@@ -112,7 +112,7 @@ static PyObject*
 Solver_getenable_constraints(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_ENABLE_CONSTRAINTS)
+    if (self->solver->flags & IK_SOLVER_CONSTRAINTS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -127,9 +127,9 @@ Solver_setenable_constraints(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_ENABLE_CONSTRAINTS;
+    self->solver->flags &= ~IK_SOLVER_CONSTRAINTS;
     if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_ENABLE_CONSTRAINTS;
+        self->solver->flags |= IK_SOLVER_CONSTRAINTS;
     return 0;
 }
 
@@ -138,7 +138,7 @@ static PyObject*
 Solver_getenable_target_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_ENABLE_TARGET_ROTATIONS)
+    if (self->solver->flags & IK_SOLVER_TARGET_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -153,9 +153,9 @@ Solver_setenable_target_rotations(ik_Solver* self, PyObject* value, void* closur
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_ENABLE_TARGET_ROTATIONS;
+    self->solver->flags &= ~IK_SOLVER_TARGET_ROTATIONS;
     if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_ENABLE_TARGET_ROTATIONS;
+        self->solver->flags |= IK_SOLVER_TARGET_ROTATIONS;
     return 0;
 }
 
@@ -164,7 +164,7 @@ static PyObject*
 Solver_getenable_joint_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_ENABLE_JOINT_ROTATIONS)
+    if (self->solver->flags & IK_SOLVER_JOINT_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -179,9 +179,9 @@ Solver_setenable_joint_rotations(ik_Solver* self, PyObject* value, void* closure
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_ENABLE_JOINT_ROTATIONS;
+    self->solver->flags &= ~IK_SOLVER_JOINT_ROTATIONS;
     if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_ENABLE_JOINT_ROTATIONS;
+        self->solver->flags |= IK_SOLVER_JOINT_ROTATIONS;
     return 0;
 }
 

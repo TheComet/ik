@@ -73,7 +73,7 @@ ik_solver_construct(struct ik_solver_t* solver)
 {
     solver->max_iterations = 20;
     solver->tolerance = 1e-2;
-    solver->flags = IK_ENABLE_JOINT_ROTATIONS;
+    solver->flags = IK_SOLVER_JOINT_ROTATIONS;
     vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
     vector_construct(&solver->chain_list, sizeof(struct chain_t));
 

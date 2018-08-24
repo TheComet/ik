@@ -550,7 +550,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
      * global space (doesn't work in local as far as I can see). Store the
      * positions and locations before solving for later.
      */
-    if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
+    if (solver->flags & IK_SOLVER_JOINT_ROTATIONS)
         store_initial_transform(&solver->chain_list);
 
     while (iteration-- > 0)
@@ -582,12 +582,12 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
             base_node = chain_get_node(chain, idx);
 
-            if (solver->flags & IK_ENABLE_TARGET_ROTATIONS)
+            if (solver->flags & IK_SOLVER_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
 
-            if (solver->flags & IK_ENABLE_CONSTRAINTS)
+            if (solver->flags & IK_SOLVER_CONSTRAINTS)
                 solve_chain_backwards_with_constraints(chain, base_node->position, base_node->rotation, base_node->position);
             else
                 solve_chain_backwards(chain, base_node->position);
@@ -595,7 +595,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
     }
 
-    if (solver->flags & IK_ENABLE_JOINT_ROTATIONS)
+    if (solver->flags & IK_SOLVER_JOINT_ROTATIONS)
         calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */

@@ -22,7 +22,15 @@
     X(FABRIK) \
     X(MSS)
 
+#define IK_SOLVER_FLAGS_LIST \
+    X(CONSTRAINTS, 0x01) \
+    X(TARGET_ROTATIONS, 0x02) \
+    X(JOINT_ROTATIONS, 0x04)
+
 C_BEGIN
+
+struct ik_node_t;
+typedef void(*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
 
 enum ik_solver_algorithm_e
 {
@@ -31,8 +39,12 @@ enum ik_solver_algorithm_e
 #undef X
 };
 
-struct ik_node_t;
-typedef void(*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
+enum ik_solver_flags_e
+{
+#define X(arg, value) IK_SOLVER_##arg = value,
+    IK_SOLVER_FLAGS_LIST
+#undef X
+};
 
 /*!
  * @brief This is a base for all solvers.
@@ -43,7 +55,7 @@ struct ik_solver_t
 
     /* Derived interface */
     ikret_t (*construct)(struct ik_solver_t* solver);
-    void (*destruct)(struct ik_solver_t* solver);
+    void    (*destruct)(struct ik_solver_t* solver);
     ikret_t (*rebuild)(struct ik_solver_t* solver);
     ikret_t (*solve)(struct ik_solver_t* solver);
 
@@ -55,20 +67,6 @@ struct ik_solver_t
     int32_t                                  max_iterations;
     ikreal_t                                 tolerance;
     uint8_t                                  flags;
-};
-
-enum ik_flags_e
-{
-    /*!
-     * @brief Causes the base node in the tree to be excluded from the list of
-     * nodes to solve for. It won't be affected by the solver, but it may still
-     * be passed through to the result callback function.
-     */
-    IK_ENABLE_CONSTRAINTS = 0x01,
-
-    IK_ENABLE_TARGET_ROTATIONS = 0x02,
-
-    IK_ENABLE_JOINT_ROTATIONS = 0x04
 };
 
 #if defined(IK_BUILDING)

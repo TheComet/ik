@@ -93,6 +93,9 @@ struct ik_api_t IKAPI = {
 #define X(arg) IK_SOLVER_##arg,
         IK_SOLVER_ALGORITHM_LIST
 #undef X
+#define X(arg, value) IK_SOLVER_##arg,
+        IK_SOLVER_FLAGS_LIST
+#undef X
     },
     {
         ik_quat_copy,
