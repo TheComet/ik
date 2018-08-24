@@ -19,6 +19,7 @@ static PyModuleDef ik_module_info = {
 static int
 add_module_constants(PyObject* m)
 {
+    if (PyModule_AddStringConstant(m, "author", IKAPI.info.author()) == -1) return -1;
     if (PyModule_AddStringConstant(m, "version", IKAPI.info.version()) == -1) return -1;
     if (PyModule_AddIntConstant(m, "build_number", IKAPI.info.build_number()) == -1) return -1;
     if (PyModule_AddStringConstant(m, "host", IKAPI.info.host()) == -1) return -1;

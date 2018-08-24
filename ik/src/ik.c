@@ -26,6 +26,7 @@ struct ik_api_t IKAPI = {
 #undef X
     },
     {
+        ik_info_author,
         ik_info_version,
         ik_info_build_number,
         ik_info_host,

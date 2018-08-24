@@ -23,6 +23,15 @@
     "    -DIK_UPDATE_INFO=${IK_BIFEC} \\\n" \
     "    -DIK_TESTS=${IK_TESTS} \\\n" \
     "    -DIK_VECTOR_64BIT=${IK_VECTOR_64BIT}"
+#define IK_AUTHOR \
+    "TheComet <alex.murray@gmx.ch>"
+
+/* ------------------------------------------------------------------------- */
+const char*
+ik_info_author(void)
+{
+    return IK_AUTHOR;
+}
 
 /* ------------------------------------------------------------------------- */
 const char*
@@ -79,7 +88,8 @@ ik_info_all(void)
 {
     return
     "This is IK " IK_VERSION " (major,minor,patch,build number)\n"
-    "Host: ${IK_HOST_COMPUTER}\n"
+    "Created by " IK_AUTHOR "\n"
+    "Build host: ${IK_HOST_COMPUTER}\n"
     "Time compiled: " IK_BUILD_TIME "\n"
     "Commit: ${IK_COMMIT_INFO}\n"
     "Compiler: ${IK_COMPILER}\n"

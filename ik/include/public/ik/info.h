@@ -8,6 +8,9 @@ C_BEGIN
 #if defined(IK_BUILDING)
 
 IK_PRIVATE_API const char*
+ik_info_author(void);
+
+IK_PRIVATE_API const char*
 ik_info_version(void);
 
 IK_PRIVATE_API int

@@ -49,6 +49,7 @@ struct ik_effector_api_t
 
 struct ik_info_api_t
 {
+    const char* (*author)      (void);
     const char* (*version)     (void);
     int         (*build_number)(void);
     const char* (*host)        (void);
