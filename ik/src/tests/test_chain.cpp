@@ -13,12 +13,12 @@ public:
 
     virtual void SetUp()
     {
-        solver = ik_solver_create(IK_FABRIK);
+        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown()
     {
-        ik_solver_destroy(solver);
+        IKAPI.solver.destroy(solver);
     }
 
 protected:
@@ -27,44 +27,44 @@ protected:
 
 TEST_F(NAME, weird_tree)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_t* child4 = ik_node_create(4);
-    ik_node_t* child5 = ik_node_create(5);
-    ik_node_t* child6 = ik_node_create(6);
-    ik_node_t* child7 = ik_node_create(7);
-    ik_node_t* child8 = ik_node_create(8);
-    ik_node_t* child9 = ik_node_create(9);
-    ik_node_t* child10 = ik_node_create(10);
-    ik_node_t* child11 = ik_node_create(11);
-    ik_node_t* child12 = ik_node_create(12);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
-    ik_node_add_child(child3, child4);
-    ik_node_add_child(child2, child5);
-    ik_node_add_child(child5, child6);
-    ik_node_add_child(child6, child7);
-    ik_node_add_child(child6, child8);
-    ik_node_add_child(child8, child9);
-    ik_node_add_child(child9, child10);
-    ik_node_add_child(child10, child11);
-    ik_node_add_child(child11, child12);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* child1 = IKAPI.node.create(1);
+    ik_node_t* child2 = IKAPI.node.create(2);
+    ik_node_t* child3 = IKAPI.node.create(3);
+    ik_node_t* child4 = IKAPI.node.create(4);
+    ik_node_t* child5 = IKAPI.node.create(5);
+    ik_node_t* child6 = IKAPI.node.create(6);
+    ik_node_t* child7 = IKAPI.node.create(7);
+    ik_node_t* child8 = IKAPI.node.create(8);
+    ik_node_t* child9 = IKAPI.node.create(9);
+    ik_node_t* child10 = IKAPI.node.create(10);
+    ik_node_t* child11 = IKAPI.node.create(11);
+    ik_node_t* child12 = IKAPI.node.create(12);
+    IKAPI.node.add_child(root, child1);
+    IKAPI.node.add_child(child1, child2);
+    IKAPI.node.add_child(child2, child3);
+    IKAPI.node.add_child(child3, child4);
+    IKAPI.node.add_child(child2, child5);
+    IKAPI.node.add_child(child5, child6);
+    IKAPI.node.add_child(child6, child7);
+    IKAPI.node.add_child(child6, child8);
+    IKAPI.node.add_child(child8, child9);
+    IKAPI.node.add_child(child9, child10);
+    IKAPI.node.add_child(child10, child11);
+    IKAPI.node.add_child(child11, child12);
 
-    ik_effector_t* eff1 = ik_effector_create();
-    ik_effector_t* eff2 = ik_effector_create();
-    ik_effector_t* eff3 = ik_effector_create();
-    ik_effector_attach(eff1, child4);
-    ik_effector_attach(eff2, child7);
-    ik_effector_attach(eff3, child11);
+    ik_effector_t* eff1 = IKAPI.effector.create();
+    ik_effector_t* eff2 = IKAPI.effector.create();
+    ik_effector_t* eff3 = IKAPI.effector.create();
+    IKAPI.effector.attach(eff1, child4);
+    IKAPI.effector.attach(eff2, child7);
+    IKAPI.effector.attach(eff3, child11);
     eff1->chain_length = 1;
     eff2->chain_length = 4;
     eff3->chain_length = 7;
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
+    IKAPI.solver.set_tree(solver, root);
+    IKAPI.solver.rebuild(solver);
 
     // There are two separate chain trees
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
@@ -136,11 +136,11 @@ TEST_F(NAME, weird_tree)
 
 TEST_F(NAME, just_one_node)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_effector_t* eff = ik_effector_create();
-    ik_effector_attach(eff, root);
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_effector_t* eff = IKAPI.effector.create();
+    IKAPI.effector.attach(eff, root);
+    IKAPI.solver.set_tree(solver, root);
+    IKAPI.solver.rebuild(solver);
 
     // We expect no chains to be created
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(0u));
@@ -148,29 +148,29 @@ TEST_F(NAME, just_one_node)
 
 TEST_F(NAME, two_arms_meet_at_same_node)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_t* child4 = ik_node_create(4);
-    ik_node_t* child5 = ik_node_create(5);
-    ik_node_t* child6 = ik_node_create(6);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
-    ik_node_add_child(child3, child4);
-    ik_node_add_child(child2, child5);
-    ik_node_add_child(child5, child6);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* child1 = IKAPI.node.create(1);
+    ik_node_t* child2 = IKAPI.node.create(2);
+    ik_node_t* child3 = IKAPI.node.create(3);
+    ik_node_t* child4 = IKAPI.node.create(4);
+    ik_node_t* child5 = IKAPI.node.create(5);
+    ik_node_t* child6 = IKAPI.node.create(6);
+    IKAPI.node.add_child(root, child1);
+    IKAPI.node.add_child(child1, child2);
+    IKAPI.node.add_child(child2, child3);
+    IKAPI.node.add_child(child3, child4);
+    IKAPI.node.add_child(child2, child5);
+    IKAPI.node.add_child(child5, child6);
 
-    ik_effector_t* eff1 = ik_effector_create();
-    ik_effector_t* eff2 = ik_effector_create();
-    ik_effector_attach(eff1, child4);
-    ik_effector_attach(eff2, child6);
+    ik_effector_t* eff1 = IKAPI.effector.create();
+    ik_effector_t* eff2 = IKAPI.effector.create();
+    IKAPI.effector.attach(eff1, child4);
+    IKAPI.effector.attach(eff2, child6);
     eff1->chain_length = 2;
     eff2->chain_length = 2;
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
+    IKAPI.solver.set_tree(solver, root);
+    IKAPI.solver.rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
     chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
@@ -209,27 +209,27 @@ TEST_F(NAME, two_arms_meet_at_same_node)
 
 TEST_F(NAME, two_separate_arms)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_t* child4 = ik_node_create(4);
-    ik_node_t* child5 = ik_node_create(5);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
-    ik_node_add_child(child1, child4);
-    ik_node_add_child(child4, child5);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* child1 = IKAPI.node.create(1);
+    ik_node_t* child2 = IKAPI.node.create(2);
+    ik_node_t* child3 = IKAPI.node.create(3);
+    ik_node_t* child4 = IKAPI.node.create(4);
+    ik_node_t* child5 = IKAPI.node.create(5);
+    IKAPI.node.add_child(root, child1);
+    IKAPI.node.add_child(child1, child2);
+    IKAPI.node.add_child(child2, child3);
+    IKAPI.node.add_child(child1, child4);
+    IKAPI.node.add_child(child4, child5);
 
-    ik_effector_t* eff1 = ik_effector_create();
-    ik_effector_t* eff2 = ik_effector_create();
-    ik_effector_attach(eff1, child3);
-    ik_effector_attach(eff2, child5);
+    ik_effector_t* eff1 = IKAPI.effector.create();
+    ik_effector_t* eff2 = IKAPI.effector.create();
+    IKAPI.effector.attach(eff1, child3);
+    IKAPI.effector.attach(eff2, child5);
     eff1->chain_length = 1;
     eff2->chain_length = 1;
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
+    IKAPI.solver.set_tree(solver, root);
+    IKAPI.solver.rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
     chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
@@ -262,27 +262,27 @@ TEST_F(NAME, two_separate_arms)
 
 TEST_F(NAME, effector_in_middle_of_chain)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* child1 = ik_node_create(1);
-    ik_node_t* child2 = ik_node_create(2);
-    ik_node_t* child3 = ik_node_create(3);
-    ik_node_t* child4 = ik_node_create(4);
-    ik_node_t* child5 = ik_node_create(5);
-    ik_node_t* child6 = ik_node_create(6);
-    ik_node_add_child(root, child1);
-    ik_node_add_child(child1, child2);
-    ik_node_add_child(child2, child3);
-    ik_node_add_child(child3, child4);
-    ik_node_add_child(child4, child5);
-    ik_node_add_child(child5, child6);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* child1 = IKAPI.node.create(1);
+    ik_node_t* child2 = IKAPI.node.create(2);
+    ik_node_t* child3 = IKAPI.node.create(3);
+    ik_node_t* child4 = IKAPI.node.create(4);
+    ik_node_t* child5 = IKAPI.node.create(5);
+    ik_node_t* child6 = IKAPI.node.create(6);
+    IKAPI.node.add_child(root, child1);
+    IKAPI.node.add_child(child1, child2);
+    IKAPI.node.add_child(child2, child3);
+    IKAPI.node.add_child(child3, child4);
+    IKAPI.node.add_child(child4, child5);
+    IKAPI.node.add_child(child5, child6);
 
-    ik_effector_t* eff1 = ik_effector_create();
-    ik_effector_t* eff2 = ik_effector_create();
-    ik_effector_attach(eff1, child3);
-    ik_effector_attach(eff2, child6);
+    ik_effector_t* eff1 = IKAPI.effector.create();
+    ik_effector_t* eff2 = IKAPI.effector.create();
+    IKAPI.effector.attach(eff1, child3);
+    IKAPI.effector.attach(eff2, child6);
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
+    IKAPI.solver.set_tree(solver, root);
+    IKAPI.solver.rebuild(solver);
 
     // We expect the chain to be broken into 2 parts, one as a child of the other
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(1u));

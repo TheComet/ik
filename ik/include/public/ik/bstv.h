@@ -26,6 +26,8 @@ struct bstv_t
     struct vector_t vector;
 };
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Creates a new bstv object.
  * @return Returns the newly created bstv object. It must be freed with
@@ -182,6 +184,8 @@ bstv_clear(struct bstv_t* bstv);
 
 IK_PRIVATE_API void
 bstv_clear_free(struct bstv_t* bstv);
+
+#endif /* IK_BUILDING */
 
 /*!
  * @brief Returns the number of elements in the specified bstv.

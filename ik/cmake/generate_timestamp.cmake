@@ -14,7 +14,7 @@ macro (write_header)
 endmacro ()
 
 # If "build info for every compile" setting is false, only write a new header file but don't replace an existing one
-if (NOT IK_BIFEC)
+if (NOT IK_UPDATE_INFO)
     if (NOT EXISTS ${OUTPUT_FILE})
         write_header()
     endif ()

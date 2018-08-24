@@ -12,12 +12,12 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = ik_solver_create(IK_FABRIK);
+        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown() override
     {
-        ik_solver_destroy(solver);
+        IKAPI.solver.destroy(solver);
     }
 
 protected:
@@ -26,23 +26,23 @@ protected:
 
 TEST_F(NAME, rotations_cause_vector_translations)
 {
-    ik_node_t* n1 = ik_node_create(0);
-    ik_node_t* n2 = ik_node_create_child(n1, 1);
-    ik_node_t* n3 = ik_node_create_child(n2, 2);
-    ik_effector_t* eff = ik_effector_create();
-    ik_effector_attach(eff, n3);
+    ik_node_t* n1 = IKAPI.node.create(0);
+    ik_node_t* n2 = IKAPI.node.create_child(n1, 1);
+    ik_node_t* n3 = IKAPI.node.create_child(n2, 2);
+    ik_effector_t* eff = IKAPI.effector.create();
+    IKAPI.effector.attach(eff, n3);
 
-    ik_vec3_set(n1->position.f, 1, 1, 1);
-    ik_vec3_set(n2->position.f, 1, 3, 1);
-    ik_vec3_set(n3->position.f, 1, 6, 1);
+    IKAPI.vec3.set(n1->position.f, 1, 1, 1);
+    IKAPI.vec3.set(n2->position.f, 1, 3, 1);
+    IKAPI.vec3.set(n3->position.f, 1, 6, 1);
 
-    ik_quat_set_axis_angle(n1->rotation.f, 0, 0, 1, 45*pi/180);
-    ik_quat_set_axis_angle(n2->rotation.f, 1, 0, 0, 90*pi/180);
+    IKAPI.quat.set_axis_angle(n1->rotation.f, 0, 0, 1, 45*pi/180);
+    IKAPI.quat.set_axis_angle(n2->rotation.f, 1, 0, 0, 90*pi/180);
 
-    ik_solver_set_tree(solver, n1);
-    ik_solver_rebuild(solver);
+    IKAPI.solver.set_tree(solver, n1);
+    IKAPI.solver.rebuild(solver);
 
-    ik_transform_chain_list(&solver->chain_list, IK_G2L);
+    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
 
     const double error = 1e-15;
     EXPECT_THAT(n1->position.x, DoubleNear(1, error));

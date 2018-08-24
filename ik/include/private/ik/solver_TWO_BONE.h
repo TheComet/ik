@@ -6,20 +6,24 @@
 
 C_BEGIN
 
-uintptr_t
+#if defined(IK_BUILDING)
+
+IK_PRIVATE_API uintptr_t
 ik_solver_TWO_BONE_type_size(void);
 
-ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_TWO_BONE_construct(struct ik_solver_t* solver);
 
-void
+IK_PRIVATE_API void
 ik_solver_TWO_BONE_destruct(struct ik_solver_t* solver);
 
-ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver);
 
-ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_TWO_BONE_solve(struct ik_solver_t* solver);
+
+#endif /* IK_BUILDING */
 
 C_END
 

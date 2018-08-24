@@ -12,7 +12,7 @@ static void
 Log_dealloc(ik_Log* self)
 {
     (void)self;
-    ik_log_deinit();
+    IKAPI.log.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -23,7 +23,7 @@ Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     (void)kwds;
     ik_Log* self;
 
-    if (ik_log_init() != IK_OK)
+    if (IKAPI.log.init() != IK_OK)
         goto ik_log_init_failed;
 
     self = (ik_Log*)type->tp_alloc(type, 0);
@@ -32,7 +32,7 @@ Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    alloc_self_failed  : ik_log_deinit();
+    alloc_self_failed  : IKAPI.log.deinit();
     ik_log_init_failed : return NULL;
 }
 
@@ -64,31 +64,31 @@ static PyObject*
 log_debug(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, ik_log_debug);
+    return log_message(args, IKAPI.log.debug);
 }
 static PyObject*
 log_info(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, ik_log_info);
+    return log_message(args, IKAPI.log.info);
 }
 static PyObject*
 log_warning(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, ik_log_warning);
+    return log_message(args, IKAPI.log.warning);
 }
 static PyObject*
 log_error(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, ik_log_error);
+    return log_message(args, IKAPI.log.error);
 }
 static PyObject*
 log_fatal(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, ik_log_fatal);
+    return log_message(args, IKAPI.log.fatal);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -101,18 +101,18 @@ Log_setseverity(ik_Log* self, PyObject* value, void* closure)
 
     if (!PyLong_Check(value))
     {
-        PyErr_SetString(PyExc_ValueError, "Expected a value. Use ik.DEBUG, ik.INFO, ik.WARNING, ik.ERROR or ik.FATAL");
+        PyErr_SetString(PyExc_ValueError, "Expected a value. Use ik.DEVEL, ik.INFO, ik.WARNING, ik.ERROR or ik.FATAL");
         return -1;
     }
 
     severity = PyLong_AS_LONG(value);
-    if (severity < IK_DEBUG || severity > IK_FATAL)
+    if (severity < IK_LOG_DEVEL || severity > IK_LOG_FATAL)
     {
-        PyErr_SetString(PyExc_ValueError, "Value out of range. Expected eitehr ik.DEBUG, ik.INFO, ik.WARNING, ik.ERROR or ik.FATAL");
+        PyErr_SetString(PyExc_ValueError, "Value out of range. Expected eitehr ik.DEVEL, ik.INFO, ik.WARNING, ik.ERROR or ik.FATAL");
         return -1;
     }
 
-    ik_log_severity(severity);
+    IKAPI.log.severity(severity);
 
     return 0;
 }
@@ -130,7 +130,7 @@ Log_settimestamps(ik_Log* self, PyObject* value, void* closure)
         return -1;
     }
 
-    ik_log_timestamps(PyObject_IsTrue(value));
+    IKAPI.log.timestamps(PyObject_IsTrue(value));
 
     return 0;
 }
@@ -148,12 +148,12 @@ Log_setprefix(ik_Log* self, PyObject* value, void* closure)
         if (ascii == NULL)
             return -1;
 
-        ik_log_prefix(PyBytes_AS_STRING(ascii));
+        IKAPI.log.prefix(PyBytes_AS_STRING(ascii));
         Py_DECREF(ascii);
     }
     else if(value == Py_None)
     {
-        ik_log_prefix("");
+        IKAPI.log.prefix("");
     }
     else
     {

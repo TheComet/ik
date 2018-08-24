@@ -15,14 +15,6 @@
 
 C_BEGIN
 
-/* #define IK_VECTOR_64BIT */
-
-#ifdef IK_VECTOR_64BIT
-typedef uintptr_t vector_size_t;
-#else
-typedef uint32_t vector_size_t;
-#endif
-
 #define VECTOR_ERROR (vector_size_t)-1
 
 struct vector_t
@@ -30,8 +22,10 @@ struct vector_t
     vector_size_t capacity;      /* how many elements actually fit into the allocated space */
     vector_size_t count;         /* number of elements inserted */
     uint8_t* data;               /* pointer to the contiguous section of memory */
-    uint32_t element_size;       /* how large one element is in bytes */
+    vector_size_t element_size;  /* how large one element is in bytes */
 };
+
+#if defined(IK_BUILDING)
 
 /*!
  * @brief Creates a new vector object. See @ref vector for details.
@@ -225,6 +219,8 @@ vector_erase_element(struct vector_t* vector, void* element);
  */
 IK_PRIVATE_API void*
 vector_get_element(const struct vector_t*, uint32_t index);
+
+#endif /* IK_BUILDING */
 
 /*!
  * @brief Convenient macro for iterating a vector's elements.

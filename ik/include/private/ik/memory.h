@@ -14,6 +14,8 @@
 
 C_BEGIN
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Initializes the memory system.
  *
@@ -51,6 +53,8 @@ free_wrapper(void* ptr);
 
 IK_PRIVATE_API void
 mutated_string_and_hex_dump(void* data, intptr_t size_in_bytes);
+
+#endif /* IK_BUILDING */
 
 C_END
 

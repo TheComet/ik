@@ -9,7 +9,7 @@ static void
 Constraint_dealloc(ik_Constraint* self)
 {
     if (self->constraint)
-        ik_constraint_destroy(self->constraint);
+        IKAPI.constraint.destroy(self->constraint);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -34,7 +34,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    self->constraint = ik_constraint_create();
+    self->constraint = IKAPI.constraint.create();
     if (self->constraint == NULL)
         goto create_constraint_failed;
 
@@ -45,7 +45,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    set_constraint_type_failed : ik_constraint_destroy(self->constraint);
+    set_constraint_type_failed : IKAPI.constraint.destroy(self->constraint);
     create_constraint_failed   : Py_DECREF(self);
     alloc_self_failed          : return NULL;
 }
@@ -84,18 +84,18 @@ Constraint_set_type(ik_Constraint* self, PyObject* arg)
     if (0) {}
 #define X(type) \
             else if (strcmp(PyBytes_AS_STRING(ascii_name), #type) == 0) { \
-                if (ik_constraint_set_type(self->constraint, IK_##type) != IK_OK) { \
+                if (IKAPI.constraint.set_type(self->constraint, IK_CONSTRAINT_##type) != IK_OK) { \
                     PyErr_SetString(PyExc_TypeError, "Failed to set constraint type. Did you use the correct method?"); \
                     goto set_constraint_type_failed; \
                 } \
             }
-    IK_CONSTRAINTS
+    IK_CONSTRAINTS_LIST
 #undef X
     else
     {
         PyErr_SetString(PyExc_TypeError, "Unknown constraint type. Exepected one of the following: "
 #define X(type) #type ", "
-        IK_CONSTRAINTS
+                        IK_CONSTRAINTS_LIST
 #undef X
         );
         goto set_constraint_type_failed;
@@ -133,7 +133,7 @@ Constraint_attach(ik_Constraint* self, PyObject* pyNode)
         return NULL;
     }
 
-    if (ik_constraint_attach(self->constraint, node) != IK_OK)
+    if (IKAPI.constraint.attach(self->constraint, node) != IK_OK)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to attach constraint. Does the node already have a constraint?");
         return NULL;
@@ -154,7 +154,7 @@ Constraint_detach(ik_Constraint* self, PyObject* args)
         return NULL;
     }
 
-    ik_constraint_detach(self->constraint);
+    IKAPI.constraint.detach(self->constraint);
 
     Py_RETURN_NONE;
 }

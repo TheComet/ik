@@ -25,6 +25,8 @@ struct chain_t
     struct vector_t children;
 };
 
+#if defined(IK_BUILDING)
+
 IK_PRIVATE_API struct chain_t*
 chain_create(void);
 
@@ -96,6 +98,23 @@ update_distances(const struct vector_t* chains);
 IK_PRIVATE_API int
 count_chains(const struct vector_t* chains);
 
+#ifdef IK_DOT_OUTPUT
+/*!
+ * @brief Dumps the chain tree to DOT format.
+ * @param[in] base The base node of the user created tree. This is a parameter
+ * because the base chain does not necessarily hold the base node of the tree
+ * because the base node doesn't have to be part of the IK problem.
+ * @note Doesn't necessarily have to be the base node, it will dump the tree
+ * beginning at this node.
+ * @param[in] chains A vector of base chains to dump.
+ * @param[in] file_name The name of the file to dump to.
+ */
+IK_PRIVATE_API void
+dump_to_dot(const struct ik_node_t* node, const struct vector_t* chains, const char* file_name);
+#endif /* IK_DOT_OUTPUT */
+
+#endif /* IK_BUILDING */
+
 /*!
  * @brief Helper macro for retrieving the node by index.
  * @note Does no error checking at all (e.g. if the index is out of bounds).
@@ -139,21 +158,6 @@ count_chains(const struct vector_t* chains);
     struct ik_node_t* var_name = *(chain_##var_name); {
 
 #define CHAIN_END_EACH VECTOR_END_EACH }
-
-#ifdef IK_DOT_OUTPUT
-/*!
- * @brief Dumps the chain tree to DOT format.
- * @param[in] base The base node of the user created tree. This is a parameter
- * because the base chain does not necessarily hold the base node of the tree
- * because the base node doesn't have to be part of the IK problem.
- * @note Doesn't necessarily have to be the base node, it will dump the tree
- * beginning at this node.
- * @param[in] chains A vector of base chains to dump.
- * @param[in] file_name The name of the file to dump to.
- */
-IK_PRIVATE_API void
-dump_to_dot(const struct ik_node_t* node, const struct vector_t* chains, const char* file_name);
-#endif /* IK_DOT_OUTPUT */
 
 C_END
 

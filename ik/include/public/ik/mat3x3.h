@@ -25,8 +25,12 @@ struct ik_mat3x3_t
     };
 };
 
-IK_PUBLIC_API void
+#if defined(IK_BUILDING)
+
+IK_PRIVATE_API void
 ik_mat3x3_from_quat(ikreal_t m[9], const ikreal_t q[4]);
+
+#endif /* IK_BUILDING */
 
 C_END
 

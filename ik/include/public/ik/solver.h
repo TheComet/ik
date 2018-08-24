@@ -16,7 +16,7 @@
  * the mechanism with which the various solver functions are integrated into
  * the library.
  */
-#define IK_ALGORITHMS \
+#define IK_SOLVER_ALGORITHM_LIST \
     X(ONE_BONE) \
     X(TWO_BONE) \
     X(FABRIK) \
@@ -24,10 +24,10 @@
 
 C_BEGIN
 
-enum ik_algorithm_e
+enum ik_solver_algorithm_e
 {
-#define X(solver) IK_##solver,
-    IK_ALGORITHMS
+#define X(solver) IK_SOLVER_##solver,
+    IK_SOLVER_ALGORITHM_LIST
 #undef X
 };
 
@@ -71,6 +71,8 @@ enum ik_flags_e
     IK_ENABLE_JOINT_ROTATIONS = 0x04
 };
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Allocates a new solver object according to the specified algorithm.
  *
@@ -108,20 +110,20 @@ enum ik_flags_e
  * @param[in] algorithm The algorithm to use. Currently, only FABRIK is
  * supported.
  */
-IK_PUBLIC_API struct ik_solver_t*
-ik_solver_create(enum ik_algorithm_e algorithm);
+IK_PRIVATE_API struct ik_solver_t*
+ik_solver_create(enum ik_solver_algorithm_e algorithm);
 
 /*!
  * @brief Destroys the solver and all nodes/effectors that are part of the
  * solver. Any pointers to tree nodes are invalid after this function returns.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_destroy(struct ik_solver_t* solver);
 
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_construct(struct ik_solver_t* solver);
 
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_destruct(struct ik_solver_t* solver);
 
 /*!
@@ -135,7 +137,7 @@ ik_solver_destruct(struct ik_solver_t* solver);
  * @warning If this functions fails, the internal structures are in an
  * undefined state. You cannot solve the tree in this state.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_rebuild(struct ik_solver_t* solver);
 
 /*!
@@ -151,7 +153,7 @@ ik_solver_rebuild(struct ik_solver_t* solver);
  *
  * @note This function gets called by ik_solver_rebuild_data().
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_update_distances(struct ik_solver_t* solver);
 
 /*!
@@ -161,7 +163,7 @@ ik_solver_update_distances(struct ik_solver_t* solver);
  * @return The return value should be 1 if the result converged. 0 if any of
  * the end effectors didn't converge. -1 if there was an error.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_solver_solve(struct ik_solver_t* solver);
 
 /*!
@@ -175,7 +177,7 @@ ik_solver_solve(struct ik_solver_t* solver);
  * @param[in] tree The root node of a tree you built. Passing NULL will
  * destroy any existing tree the solver owns.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
 
 /*!
@@ -184,14 +186,14 @@ ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
  * tree (e.g. solve or rebuild) will have no effect until a new tree is set.
  * @return If the solver has no tree then NULL is returned.
  */
-IK_PUBLIC_API struct ik_node_t*
+IK_PRIVATE_API struct ik_node_t*
 ik_solver_unlink_tree(struct ik_solver_t* solver);
 
 /*!
  * @brief Iterates all nodes in the internal tree, breadth first, and passes
  * each node to the specified callback function.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
                             ik_solver_iterate_node_cb_func callback);
 
@@ -205,7 +207,7 @@ ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
  * rotations are typically set separately from the rest of the tree (see
  * ik_solver_iterate_base_nodes).
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
                                  ik_solver_iterate_node_cb_func callback);
 
@@ -222,9 +224,11 @@ ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
  * *global* (world) position/rotation into each base node position/rotation.
  * This will correctly position/rotate the solver's chains.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_solver_iterate_base_nodes(struct ik_solver_t* solver,
                              ik_solver_iterate_node_cb_func callback);
+
+#endif /* IK_BUILDING */
 
 #define SOLVER_FOR_EACH_EFFECTOR_NODE(solver_var, effector_var) \
     VECTOR_FOR_EACH(&(solver_var)->effector_nodes_list, struct ik_node_t*, solver_var##effector_var) \

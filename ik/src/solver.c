@@ -23,14 +23,14 @@ calculate_effector_target(const struct chain_t* chain);
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_t*
-ik_solver_create(enum ik_algorithm_e algorithm)
+ik_solver_create(enum ik_solver_algorithm_e algorithm)
 {
     struct ik_solver_t* solver = NULL;
 
     switch (algorithm)
     {
 #define X(algorithm)                                                          \
-        case IK_##algorithm : {                                               \
+        case IK_SOLVER_##algorithm : {                                        \
             solver = MALLOC(ik_solver_##algorithm##_type_size());             \
             if (solver == NULL) {                                             \
                 ik_log_fatal("Failed to allocate solver: ran out of memory"); \
@@ -42,7 +42,7 @@ ik_solver_create(enum ik_algorithm_e algorithm)
             solver->rebuild = ik_solver_##algorithm##_rebuild;                \
             solver->solve = ik_solver_##algorithm##_solve;                    \
         } break;
-        IK_ALGORITHMS
+        IK_SOLVER_ALGORITHM_LIST
 #undef X
         default : {
             ik_log_error("Unknown solver algorithm with enum value %d", algorithm);
@@ -332,7 +332,7 @@ calculate_effector_target(const struct chain_t* chain)
     ik_vec3_add_vec3(effector->_actual_target.f, node->position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
-    if (effector->flags & IK_WEIGHT_NLERP && effector->weight < 1.0)
+    if (effector->flags & IK_EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
         struct ik_vec3_t base_to_effector;

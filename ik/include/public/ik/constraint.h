@@ -11,7 +11,7 @@ struct ik_node_t;
 
 typedef void (*ik_constraint_apply_func)(const struct ik_node_t* node, ikreal_t compensate_rotation[4]);
 
-#define IK_CONSTRAINTS \
+#define IK_CONSTRAINTS_LIST \
     X(STIFF) \
     X(HINGE) \
     X(CONE) \
@@ -19,8 +19,8 @@ typedef void (*ik_constraint_apply_func)(const struct ik_node_t* node, ikreal_t 
 
 enum ik_constraint_type_e
 {
-#define X(type) IK_##type,
-    IK_CONSTRAINTS
+#define X(type) IK_CONSTRAINT_##type,
+    IK_CONSTRAINTS_LIST
 #undef X
 };
 
@@ -47,11 +47,13 @@ struct ik_constraint_t
     };
 };
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
  */
-IK_PUBLIC_API struct ik_constraint_t*
+IK_PRIVATE_API struct ik_constraint_t*
 ik_constraint_create(void);
 
 /*!
@@ -59,13 +61,13 @@ ik_constraint_create(void);
  * on constraints that are attached to nodes. Use ik_node_destroy_constraint()
  * instead.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_constraint_destroy(struct ik_constraint_t* constraint);
 
 /*!
  * @brief Duplicates the specified constraint and returns it.
  */
-IK_PUBLIC_API struct ik_constraint_t*
+IK_PRIVATE_API struct ik_constraint_t*
 ik_constraint_duplicate(const struct ik_constraint_t* constraint);
 
 /*!
@@ -76,14 +78,14 @@ ik_constraint_duplicate(const struct ik_constraint_t* constraint);
  * causes the node to be excluded entirely from the chain tree, and determining
  * this requires a rebuild.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type);
 
 /*!
  * @brief Allows the user to specify a custom callback function for enforcing
  * a constraint.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback);
 
 /*!
@@ -113,7 +115,7 @@ ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply
  * a constraint attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_constraint_attach(struct ik_constraint_t* constraint, struct ik_node_t* node);
 
 /*!
@@ -123,8 +125,10 @@ ik_constraint_attach(struct ik_constraint_t* constraint, struct ik_node_t* node)
  * done with it. You may also attach it to another node.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_constraint_detach(struct ik_constraint_t* constraint);
+
+#endif /* IK_BUILDING */
 
 C_END
 

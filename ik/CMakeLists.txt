@@ -6,14 +6,16 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
     set (IK_MEMORY_DEBUGGING_DEFAULT ON)
+    set (IK_UPDATE_INFO_DEFAULT OFF)
 else ()
     set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
+    set (IK_UPDATE_INFO_DEFAULT ON)
 endif ()
 
-option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
-option (IK_BIFEC "'Build Info For Every Compile' -- If true (default) the updated build number is written to a header, which causes the library to recompile build_info.c. This can get annoying for developers, so disable this if you are annoyed." ON)
-option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 set (IK_LIB_TYPE "SHARED" CACHE STRING "SHARED or STATIC library")
+set (IK_API_NAME "ik" CACHE STRING "This is the name of the symbol that is exported. Also determines the name of the library.")
+option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
+option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
 cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
 option (IK_PIC "Position independent code when building as a static library" ON)
@@ -21,7 +23,9 @@ set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
 set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
+option (IK_UPDATE_INFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${IK_UPDATE_INFO_DEFAULT})
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
+option (IK_VECTOR_64BIT "Allows vector_t to contain more than 2^32 elements, but makes the structure 32 bytes instead of 20 bytes" OFF)
 
 string (REPLACE " " "_" IK_PRECISION_CAPS_AND_NO_SPACES ${IK_PRECISION})
 string (TOUPPER ${IK_PRECISION_CAPS_AND_NO_SPACES} IK_PRECISION_CAPS_AND_NO_SPACES)
@@ -115,35 +119,35 @@ configure_file ("templates/config.h.in"
                 "include/public/ik/config.h")
 
 set (IK_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-configure_file ("templates/build_info.c.in" "src/build_info.c")
+configure_file ("templates/info.c.in" "src/info.c")
 
 ###############################################################################
 # All source file definitions
 ###############################################################################
 
 # Update build info every time the project is compiled
-set (BIFEC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/build_info_for_every_compile.h")
-add_custom_target (ik_bifec_header
+set (UPDATE_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/info_for_every_compile.h")
+add_custom_target (ik_ifec_header
     COMMAND ${CMAKE_COMMAND}
-            -DOUTPUT_FILE=${BIFEC_HEADER}
+            -DOUTPUT_FILE=${UPDATE_INFO_HEADER}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -DIK_BIFEC=${IK_BIFEC}
+            -DIK_UPDATE_INFO=${IK_UPDATE_INFO}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
     COMMENT "Updating build information"
     VERBATIM)
-add_custom_command (OUTPUT ${BIFEC_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_bifec_header)
+add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_ifec_header)
 
 set (IK_HEADERS
     "include/private/ik/backtrace.h"
     "include/private/ik/chain.h"
     "include/private/ik/memory.h"
     "include/public/ik/bstv.h"
-    "include/public/ik/build_info.h"
     "include/public/ik/callbacks.h"
     "include/public/ik/constraint.h"
     "include/public/ik/effector.h"
     "include/public/ik/ik.h"
+    "include/public/ik/info.h"
     "include/public/ik/init.h"
     "include/public/ik/log.h"
     "include/public/ik/mat3x3.h"
@@ -159,7 +163,7 @@ set (IK_HEADERS
     "include/public/ik/vec3.h"
     "include/public/ik/vector.h"
     "templates/config.h.in"
-    "${BIFEC_HEADER}")
+    "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
     "src/bstv.c"
     "src/chain.c"
@@ -187,11 +191,11 @@ set (IK_SOURCES
     "src/solver_ONE_BONE.c"
     "src/solver_TWO_BONE.c"
     "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>"
-    "${CMAKE_CURRENT_BINARY_DIR}/src/build_info.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/info.c"
     $<$<PLATFORM_ID:Linux>:
         "src/platform/linux/backtrace_linux.c"
     >
-    "templates/build_info.c.in")
+    "templates/info.c.in")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
@@ -431,8 +435,12 @@ target_include_directories (ik
 set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
-    OUTPUT_NAME "ik"
+    OUTPUT_NAME ${IK_API_NAME}
     SOVERSION ${PROJECT_VERSION})
+
+if (UNIX)
+    target_link_libraries (ik PRIVATE m)
+endif (UNIX)
 
 if (IK_PYTHON)
     target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
@@ -467,16 +475,20 @@ endif ()
 message (STATUS "------------------------------------------------------------")
 message (STATUS "IK settings")
 message (STATUS " + Configuration: ${CMAKE_BUILD_TYPE}")
-MESSAGE (STATUS " + Benchmarks: ${IK_BENCHMARKS}")
-MESSAGE (STATUS " + DOT Export: ${IK_DOT_EXPORT}")
 message (STATUS " + Library type: ${IK_LIB_TYPE}")
+message (STATUS " + API Name: ${IK_API_NAME}")
+message (STATUS " + Benchmarks: ${IK_BENCHMARKS}")
+message (STATUS " + DOT Export: ${IK_DOT_EXPORT}")
 message (STATUS " + Memory debugging: ${IK_MEMORY_DEBUGGING}")
 message (STATUS " + Memory backtraces: ${IK_MEMORY_BACKTRACE}")
 message (STATUS " + PIC (Position independent code): ${IK_PIC}")
 message (STATUS " + Precision: ${IK_PRECISION}")
-message (STATUS " + Python bindings: ${IK_PYTHON}")
 message (STATUS " + Profiling: ${IK_PROFILING}")
+message (STATUS " + Python bindings: ${IK_PYTHON}")
+message (STATUS " + Python version: ${IK_PYTHON_VERSION}")
+message (STATUS " + Update info every compile: ${IK_UPDATE_INFO}")
 message (STATUS " + Unit Tests: ${IK_TESTS}")
+message (STATUS " + 64-bit vector: ${IK_VECTOR_64BIT}")
 message (STATUS "------------------------------------------------------------")
 
 ###############################################################################
@@ -485,12 +497,13 @@ message (STATUS "------------------------------------------------------------")
 
 install (
     TARGETS ik
-    EXPORT IKConfig
+    EXPORT ikConfig
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install (DIRECTORY "include/public/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/public/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install (EXPORT IKConfig DESTINATION "share/ik/cmake")
-export (TARGETS ik FILE IKConfig.cmake)
+install (EXPORT ikConfig DESTINATION "share/ik/cmake")
+export (TARGETS ik FILE ikConfig.cmake)
+export (PACKAGE ik)

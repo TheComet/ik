@@ -43,9 +43,9 @@ ik_log_init(void)
     g_log->prefix = NULL;
     g_log->timestamps = 1;
 #ifdef DEBUG
-    ik_log_severity(IK_DEBUG);
+    ik_log_severity(IK_LOG_DEVEL);
 #else
-    ik_log_severity(IK_INFO);
+    ik_log_severity(IK_LOG_INFO);
 #endif
 
 #define STRINGIFY(x) #x
@@ -114,7 +114,9 @@ ik_log_prefix(const char* prefix)
 
 /* ------------------------------------------------------------------------- */
 static const char* severities[] = {
-    "[DEBUG]", "[INFO]", "[WARNING]", "[ERROR]", "[FATAL]"
+#define X(arg) "[" #arg "]",
+    IK_LOG_SEVERITY_LIST
+#undef X
 };
 static void
 log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
@@ -157,15 +159,15 @@ log_message(enum ik_log_severity_e severity, const char* fmt, va_list vargs)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_debug(const char* fmt, ...)
+ik_log_devel(const char* fmt, ...)
 {
     va_list vargs;
 
-    if (g_log == NULL || g_log->severity > IK_DEBUG)
+    if (g_log == NULL || g_log->severity > IK_LOG_DEVEL)
         return;
 
     va_start(vargs, fmt);
-    log_message(IK_DEBUG, fmt, vargs);
+    log_message(IK_LOG_DEVEL, fmt, vargs);
     va_end(vargs);
 }
 
@@ -175,11 +177,11 @@ ik_log_info(const char* fmt, ...)
 {
     va_list vargs;
 
-    if (g_log == NULL || g_log->severity > IK_INFO)
+    if (g_log == NULL || g_log->severity > IK_LOG_INFO)
         return;
 
     va_start(vargs, fmt);
-    log_message(IK_INFO, fmt, vargs);
+    log_message(IK_LOG_INFO, fmt, vargs);
     va_end(vargs);
 }
 
@@ -189,11 +191,11 @@ ik_log_warning(const char* fmt, ...)
 {
     va_list vargs;
 
-    if (g_log == NULL || g_log->severity > IK_WARNING)
+    if (g_log == NULL || g_log->severity > IK_LOG_WARNING)
         return;
 
     va_start(vargs, fmt);
-    log_message(IK_WARNING, fmt, vargs);
+    log_message(IK_LOG_WARNING, fmt, vargs);
     va_end(vargs);
 }
 
@@ -203,11 +205,11 @@ ik_log_error(const char* fmt, ...)
 {
     va_list vargs;
 
-    if (g_log == NULL || g_log->severity > IK_ERROR)
+    if (g_log == NULL || g_log->severity > IK_LOG_ERROR)
         return;
 
     va_start(vargs, fmt);
-    log_message(IK_ERROR, fmt, vargs);
+    log_message(IK_LOG_ERROR, fmt, vargs);
     va_end(vargs);
 }
 
@@ -217,11 +219,11 @@ ik_log_fatal(const char* fmt, ...)
 {
     va_list vargs;
 
-    if (g_log == NULL || g_log->severity > IK_FATAL)
+    if (g_log == NULL || g_log->severity > IK_LOG_FATAL)
         return;
 
     va_start(vargs, fmt);
-    log_message(IK_FATAL, fmt, vargs);
+    log_message(IK_LOG_FATAL, fmt, vargs);
     va_end(vargs);
 }
 

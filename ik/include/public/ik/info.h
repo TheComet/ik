@@ -5,29 +5,33 @@
 
 C_BEGIN
 
-IK_PUBLIC_API const char*
+#if defined(IK_BUILDING)
+
+IK_PRIVATE_API const char*
 ik_info_version(void);
 
-IK_PUBLIC_API int
+IK_PRIVATE_API int
 ik_info_build_number(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_host(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_date(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_commit(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_compiler(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_cmake(void);
 
-IK_PUBLIC_API const char*
+IK_PRIVATE_API const char*
 ik_info_all(void);
+
+#endif /* IK_BUILDING */
 
 C_END
 

@@ -90,19 +90,19 @@ ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_ty
     switch (constraint_type)
     {
 
-        case IK_STIFF:
+        case IK_CONSTRAINT_STIFF:
             constraint->apply = apply_stiff;
             break;
 
-        case IK_HINGE:
+        case IK_CONSTRAINT_HINGE:
             constraint->apply = apply_hinge;
             break;
 
-        case IK_CONE:
+        case IK_CONSTRAINT_CONE:
             constraint->apply = apply_cone;
             break;
 
-        case IK_CUSTOM:
+        case IK_CONSTRAINT_CUSTOM:
             ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
             return IK_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
     }
@@ -130,7 +130,7 @@ ik_constraint_detach(struct ik_constraint_t* constraint)
 }
 
 /* ------------------------------------------------------------------------- */
-int
+ikret_t
 ik_constraint_attach(struct ik_constraint_t* constraint, struct ik_node_t* node)
 {
     if (node->constraint != NULL)

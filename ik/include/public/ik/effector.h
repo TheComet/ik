@@ -5,21 +5,25 @@
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
+/*!
+ * WEIGHT_NLERP Causes intermediary weight values to rotate the target around the
+ * chain's base instead of linearly interpolating the target. Can be more
+ * appealing if the solved tree diverges a lot from the original tree
+ * during weight transitions.
+ */
+#define IK_EFFECTOR_FLAGS_LIST \
+    X(WEIGHT_NLERP, 0x01) \
+    X(KEEP_ORIENTATION, 0x02)
+
 C_BEGIN
 
 struct ik_node_t;
 
-enum effector_flags_e
+enum ik_effector_flags_e
 {
-    /*!
-     * @brief Causes intermediary weight values to rotate the target around the
-     * chain's base instead of linearly interpolating the target. Can be more
-     * appealing if the solved tree diverges a lot from the original tree
-     * during weight transitions.
-     */
-    IK_WEIGHT_NLERP      = 0x01,
-
-    IK_KEEP_ORIENTATION  = 0x02
+#define X(arg, value) IK_EFFECTOR_##arg = value,
+    IK_EFFECTOR_FLAGS_LIST
+#undef X
 };
 
 /*!
@@ -89,11 +93,13 @@ struct ik_effector_t
     uint8_t flags;
 };
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Creates a new effector object. It can be attached to any node in the
  * tree using ik_node_attach_effector().
  */
-IK_PUBLIC_API struct ik_effector_t*
+IK_PRIVATE_API struct ik_effector_t*
 ik_effector_create(void);
 
 /*!
@@ -101,13 +107,13 @@ ik_effector_create(void);
  * on effectors that are attached to nodes. Use ik_node_destroy_effector()
  * instead.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_effector_destroy(struct ik_effector_t* effector);
 
 /*!
  * @brief Duplicates the specified effector object and returns it.
  */
-IK_PUBLIC_API struct ik_effector_t*
+IK_PRIVATE_API struct ik_effector_t*
 ik_effector_duplicate(const struct ik_effector_t* effector);
 
 /*!
@@ -118,7 +124,7 @@ ik_effector_duplicate(const struct ik_effector_t* effector);
  * an effector attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
 
 /*!
@@ -128,8 +134,10 @@ ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
  * done with it. You may also attach it to another node.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_effector_detach(struct ik_effector_t* effector);
+
+#endif /* IK_BUILDING */
 
 C_END
 

@@ -10,18 +10,21 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
 
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
 /* ------------------------------------------------------------------------- */
 static void
 module_free(void* x)
 {
     (void)x;
-    ik_deinit();
+    IKAPI.deinit();
 }
 
 /* ------------------------------------------------------------------------- */
 static PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
-    "ik",                    /* Module name */
+    EXPAND_AND_QUOTE(IKAPI), /* Module name */
     NULL,                    /* docstring, may be NULL */
     -1,                      /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables */
     NULL,                    /* module methods */
@@ -63,18 +66,10 @@ add_builtin_types_to_module(PyObject* m)
 static int
 add_constants_to_module(PyObject* m)
 {
-    /* All X macro constants follow the same naming scheme */
-#define X(value) if (PyModule_AddIntConstant(m, #value, IK_##value) != 0) return -1;
-    IK_ALGORITHMS
-    IK_CONSTRAINTS
-#undef X
-
     /* Log constants */
-    if (PyModule_AddIntConstant(m, "DEBUG",   IK_DEBUG) != 0)   return -1;
-    if (PyModule_AddIntConstant(m, "INFO",    IK_INFO) != 0)    return -1;
-    if (PyModule_AddIntConstant(m, "WARNING", IK_WARNING) != 0) return -1;
-    if (PyModule_AddIntConstant(m, "ERROR",   IK_ERROR) != 0)   return -1;
-    if (PyModule_AddIntConstant(m, "FATAL",   IK_FATAL) != 0)   return -1;
+#define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_LOG_##arg) != 0) return -1;
+    IK_LOG_SEVERITY_LIST
+#undef X
 
     return 0;
 }
@@ -107,11 +102,13 @@ add_submodules_to_module(PyObject* m)
 }
 
 /* ------------------------------------------------------------------------- */
-PyMODINIT_FUNC PyInit_ik(void)
+#define PASTER(x, y) x ## y
+#define EVALUATOR(x, y) PASTER(x, y)
+PyMODINIT_FUNC EVALUATOR(PyInit_, IKAPI)(void)
 {
     PyObject* m;
 
-    if (ik_init() != IK_OK)
+    if (IKAPI.init() != IK_OK)
         goto ik_init_failed;
 
     m = PyModule_Create(&ik_module);
@@ -126,6 +123,6 @@ PyMODINIT_FUNC PyInit_ik(void)
     return m;
 
     init_module_failed  : Py_DECREF(m);
-    module_alloc_failed : ik_deinit();
+    module_alloc_failed : IKAPI.deinit();
     ik_init_failed      : return NULL;
 }

@@ -7,6 +7,8 @@
 
 C_BEGIN
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Generates a backtrace.
  * @param[in] size The maximum number of frames to walk.
@@ -15,6 +17,8 @@ C_BEGIN
  */
 IK_PRIVATE_API char**
 get_backtrace(int* size);
+
+#endif /* IK_BUILDING */
 
 C_END
 

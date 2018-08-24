@@ -10,14 +10,14 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_roll_generic(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_GENERIC(ikreal_t q[4], const struct ik_pole_t* pole)
 {
     ik_quat_set_identity(q);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_BLENDER(ikreal_t q[4], const struct ik_pole_t* pole)
 {
     struct ik_vec3_t work, x_axis, z_axis;
     struct ik_node_t* root = pole->node;
@@ -54,7 +54,7 @@ calculate_roll_blender(ikreal_t q[4], const struct ik_pole_t* pole)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_roll_maya(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_MAYA(ikreal_t q[4], const struct ik_pole_t* pole)
 {
     ik_quat_set_identity(q);
 }
@@ -73,7 +73,7 @@ ik_pole_create(void)
     memset(pole, 0, sizeof *pole);
 
     pole->angle = 0.0;
-    pole->calculate_roll = calculate_roll_generic;
+    pole->calculate_roll = calculate_roll_GENERIC;
     ik_vec3_set_zero(pole->position.f);
 
     return pole;
@@ -93,9 +93,9 @@ ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
 {
     switch (type)
     {
-        case IK_GENERIC : pole->calculate_roll = calculate_roll_generic; break;
-        case IK_BLENDER : pole->calculate_roll = calculate_roll_blender; break;
-        case IK_MAYA    : pole->calculate_roll = calculate_roll_maya;    break;
+#define X(arg) case IK_POLE_##arg : pole->calculate_roll = calculate_roll_##arg; break;
+        IK_POLE_TYPE_LIST
+#undef X
     }
 }
 

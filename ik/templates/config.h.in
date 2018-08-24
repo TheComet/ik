@@ -9,6 +9,7 @@
      * Build settings
      * --------------------------------------------------------------------- */
 
+#   define IKAPI ${IK_API_NAME}
     #cmakedefine IK_BENCHMARKS
     #cmakedefine IK_DOT_EXPORT
     #cmakedefine IK_HAVE_STDINT_H
@@ -49,6 +50,22 @@
 #       define C_END
 #   endif
 
+    /* --------------------------------------------------------------
+     * Common include files
+     * --------------------------------------------------------------*/
+
+    #include "ik/retcodes.h"
+
+    #ifdef IK_HAVE_STDINT_H
+        #include <stdint.h>
+    #else
+        #include "ik/pstdint.h"
+    #endif
+
+    /* --------------------------------------------------------------
+     * Types
+     * --------------------------------------------------------------*/
+
     /* The "real" datatype to be used throughout the library */
 typedef ${IK_PRECISION} ikreal_t;
 
@@ -64,16 +81,10 @@ typedef ${IK_PRECISION} ikreal_t;
 #       error Unknown precision. Are you sure you defined IK_PRECISION and IK_PRECISION_CAPS_AND_NO_SPACES?
 #   endif
 
-    /* --------------------------------------------------------------
-     * Common include files
-     * --------------------------------------------------------------*/
-
-    #include "ik/retcodes.h"
-
-    #ifdef IK_HAVE_STDINT_H
-        #include <stdint.h>
-    #else
-        #include "ik/pstdint.h"
-    #endif
+#   ifdef IK_VECTOR_64BIT
+typedef uintptr_t vector_size_t;
+#   else
+typedef uint32_t vector_size_t;
+#   endif
 
 #endif /* IK_CONFIG_H */

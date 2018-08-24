@@ -273,8 +273,8 @@ ik_quat_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v
 }
 
 /* ------------------------------------------------------------------------- */
-void
+int
 ik_quat_print(char* buf, const ikreal_t q[4])
 {
-
+    return 0;
 }

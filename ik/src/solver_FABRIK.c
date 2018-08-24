@@ -458,7 +458,7 @@ calculate_joint_rotations_for_chain(struct chain_t* chain)
      * node to inherit its parent rotation.
      */
     effector_node = chain_get_tip_node(chain);
-    if (effector_node->effector && !(effector_node->effector->flags & IK_KEEP_ORIENTATION))
+    if (effector_node->effector && !(effector_node->effector->flags & IK_EFFECTOR_KEEP_ORIENTATION))
     {
         effector_node->rotation = chain_get_node(chain, 1)->rotation; /* parent node */
     }
@@ -542,7 +542,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(&solver->chain_list, IK_L2G);
+    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_L2G);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -599,7 +599,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
         calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(&solver->chain_list, IK_G2L);
+    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_G2L);
 
     return result;
 }

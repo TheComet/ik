@@ -4,15 +4,20 @@
 #include "ik/config.h"
 #include "ik/vec3.h"
 
+#define IK_POLE_TYPE_LIST \
+    X(GENERIC) \
+    X(BLENDER) /* https://i.stack.imgur.com/lKN6o.jpg */ \
+    X(MAYA)
+
 C_BEGIN
 
 struct ik_node_t;
 
 enum ik_pole_type_e
 {
-    IK_GENERIC = 0,
-    IK_BLENDER,  /* https://i.stack.imgur.com/lKN6o.jpg */
-    IK_MAYA
+#define X(arg) IK_POLE_##arg,
+    IK_POLE_TYPE_LIST
+#undef X
 };
 
 struct ik_pole_t
@@ -27,19 +32,21 @@ struct ik_pole_t
     struct ik_vec3_t position;
 };
 
-IK_PUBLIC_API struct ik_pole_t*
+#if defined(IK_BUILDING)
+
+IK_PRIVATE_API struct ik_pole_t*
 ik_pole_create(void);
 
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_pole_destroy(struct ik_pole_t* pole);
 
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type);
 
 /*!
  * @brief Duplicates the specified pole object and returns it.
  */
-IK_PUBLIC_API struct ik_pole_t*
+IK_PRIVATE_API struct ik_pole_t*
 ik_pole_duplicate(const struct ik_pole_t* pole);
 
 /*!
@@ -50,7 +57,7 @@ ik_pole_duplicate(const struct ik_pole_t* pole);
  * a pole attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_pole_attach(struct ik_pole_t* pole, struct ik_node_t* node);
 
 /*!
@@ -60,8 +67,10 @@ ik_pole_attach(struct ik_pole_t* pole, struct ik_node_t* node);
  * done with it. You may also attach it to another node.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_pole_detach(struct ik_pole_t* pole);
+
+#endif /* IK_BUILDING */
 
 C_END
 

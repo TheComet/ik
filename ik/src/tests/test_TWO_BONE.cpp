@@ -12,12 +12,12 @@ public:
 
     virtual void SetUp()
     {
-        solver = ik_solver_create(IK_TWO_BONE);
+        solver = IKAPI.solver.create(IKAPI.solver.TWO_BONE);
     }
 
     virtual void TearDown()
     {
-        ik_solver_destroy(solver);
+        IKAPI.solver.destroy(solver);
     }
 
 protected:
@@ -41,19 +41,19 @@ TEST_F(NAME, reach_target_1)
      *    \               |
      *     o              o
      */
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* mid = ik_node_create_child(root, 1);
-    ik_node_t* tip = ik_node_create_child(mid, 2);
-    ik_vec3_set(mid->position.f, -3/sqrt(3), 3/sqrt(3), -3/sqrt(3));  /* length 3 */
-    ik_vec3_set(tip->position.f, 0, 3, 0);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* mid = IKAPI.node.create_child(root, 1);
+    ik_node_t* tip = IKAPI.node.create_child(mid, 2);
+    IKAPI.vec3.set(mid->position.f, -3/sqrt(3), 3/sqrt(3), -3/sqrt(3));  /* length 3 */
+    IKAPI.vec3.set(tip->position.f, 0, 3, 0);
 
-    ik_effector_t* eff = ik_effector_create();
-    ik_vec3_set(eff->target_position.f, 3/sqrt(2), 3, 3/sqrt(2));
-    ik_effector_attach(eff, tip);
+    ik_effector_t* eff = IKAPI.effector.create();
+    IKAPI.vec3.set(eff->target_position.f, 3/sqrt(2), 3, 3/sqrt(2));
+    IKAPI.effector.attach(eff, tip);
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
-    ik_solver_solve(solver);
+    ik.solver.set_tree(solver, root);
+    ik.solver.rebuild(solver);
+    ik.solver.solve(solver);
 
     const double error = 1e-15;
 
@@ -69,7 +69,7 @@ TEST_F(NAME, reach_target_1)
     EXPECT_THAT(tip->position.y, DoubleNear(3, error));
     EXPECT_THAT(tip->position.z, DoubleNear(0, error));
 
-    ik_transform_node(solver->tree, IK_L2G);
+    IKAPI.transform.node(solver->tree, IKAPI.transform.L2G);
 
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));
@@ -84,19 +84,19 @@ TEST_F(NAME, reach_target_1)
 
 TEST_F(NAME, unreachable_1)
 {
-    ik_node_t* root = ik_node_create(0);
-    ik_node_t* mid = ik_node_create_child(root, 1);
-    ik_node_t* tip = ik_node_create_child(mid, 2);
-    ik_vec3_set(mid->position.f, 0, 3, 0);
-    ik_vec3_set(tip->position.f, 0, 3, 0);
+    ik_node_t* root = IKAPI.node.create(0);
+    ik_node_t* mid = IKAPI.node.create_child(root, 1);
+    ik_node_t* tip = IKAPI.node.create_child(mid, 2);
+    IKAPI.vec3.set(mid->position.f, 0, 3, 0);
+    IKAPI.vec3.set(tip->position.f, 0, 3, 0);
 
-    ik_effector_t* eff = ik_effector_create();
-    ik_vec3_set(eff->target_position.f, 6.1/sqrt(3), 6.1/sqrt(3), 6.1/sqrt(3));
-    ik_effector_attach(eff, tip);
+    ik_effector_t* eff = IKAPI.effector.create();
+    IKAPI.vec3.set(eff->target_position.f, 6.1/sqrt(3), 6.1/sqrt(3), 6.1/sqrt(3));
+    IKAPI.effector.attach(eff, tip);
 
-    ik_solver_set_tree(solver, root);
-    ik_solver_rebuild(solver);
-    ik_solver_solve(solver);
+    ik.solver.set_tree(solver, root);
+    ik.solver.rebuild(solver);
+    ik.solver.solve(solver);
 
     const double error = 1e-15;
 
@@ -112,7 +112,7 @@ TEST_F(NAME, unreachable_1)
     EXPECT_THAT(tip->position.y, DoubleNear(3, error));
     EXPECT_THAT(tip->position.z, DoubleNear(0, error));
 
-    ik_transform_node(solver->tree, IK_L2G);
+    IKAPI.transform.node(solver->tree, IKAPI.transform.L2G);
 
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));

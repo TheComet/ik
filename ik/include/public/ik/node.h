@@ -99,24 +99,26 @@ struct ik_node_t
     };
 };
 
+#if defined(IK_BUILDING)
+
 /*!
  * @brief Creates a new node and returns it. Each node requires a tree-unique
  * ID, which can be used later to search for nodes in the tree.
  */
-IK_PUBLIC_API struct ik_node_t*
+IK_PRIVATE_API struct ik_node_t*
 ik_node_create(uint32_t guid);
 
 /*!
  * @brief Constructs an already allocated node.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_node_construct(struct ik_node_t* node, uint32_t guid);
 
 /*!
  * @brief Destructs a node, destroying all children in the process, but does
  * not deallocate the node object itself.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_node_destruct(struct ik_node_t* node);
 
 /*!
@@ -124,7 +126,7 @@ ik_node_destruct(struct ik_node_t* node);
  * If the node was part of a tree, then it will be removed from its parents.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_node_destroy(struct ik_node_t* node);
 
 /*!
@@ -132,7 +134,7 @@ ik_node_destroy(struct ik_node_t* node);
  * and returns it. Each node requires a tree-unique ID, which can be used
  * later to search for nodes in the tree.
  */
-IK_PUBLIC_API struct ik_node_t*
+IK_PRIVATE_API struct ik_node_t*
 ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
 
 /*!
@@ -140,7 +142,7 @@ ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
  * ownership of the child node and is responsible for deallocating it.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API ikret_t
+IK_PRIVATE_API ikret_t
 ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
 
 /*!
@@ -149,10 +151,10 @@ ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
  * affiliated with the original tree.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PUBLIC_API void
+IK_PRIVATE_API void
 ik_node_unlink(struct ik_node_t* node);
 
-IK_PUBLIC_API vector_size_t
+IK_PRIVATE_API vector_size_t
 ik_node_child_count(const struct ik_node_t* node);
 
 /*!
@@ -161,18 +163,20 @@ ik_node_child_count(const struct ik_node_t* node);
  * @return Returns NULL if the node was not found, otherwise the node is
  * returned.
  */
-IK_PUBLIC_API struct ik_node_t*
+IK_PRIVATE_API struct ik_node_t*
 ik_node_find_child(const struct ik_node_t* node, uint32_t guid);
 
-IK_PUBLIC_API struct ik_node_t*
+IK_PRIVATE_API struct ik_node_t*
 ik_node_duplicate(const struct ik_node_t* node, int copy_attachments);
 
 /*!
  * @brief Dumps all nodes recursively to DOT format. You can use graphviz (
  * or other compatible tools) to generate a graphic of the tree.
  */
-void
+IK_PRIVATE_API void
 ik_node_dump_to_dot(const struct ik_node_t* node, const char* file_name);
+
+#endif /* IK_BUILDING */
 
 #define NODE_FOR_EACH(node, key, value) \
     BSTV_FOR_EACH(&(node)->children, struct ik_node_t, key, value)
