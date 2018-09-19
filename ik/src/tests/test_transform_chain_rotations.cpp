@@ -12,7 +12,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
 
         /*
          * The following defines a list of 3D rotations that map out a two-arm
@@ -92,7 +92,7 @@ TEST_F(NAME, global_to_local_single_chain)
 
     // Test to see if rotations match the ones we calculated during SetUp()
     const double error = 1e-15;
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -102,8 +102,8 @@ TEST_F(NAME, global_to_local_single_chain)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -112,8 +112,8 @@ TEST_F(NAME, global_to_local_single_chain)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rl[i].w, error)) << "Index: " << i;
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -123,8 +123,8 @@ TEST_F(NAME, global_to_local_single_chain)
     }
 
     // Rotations should remain unchanged if we only transform translations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -153,7 +153,7 @@ TEST_F(NAME, local_to_global_single_chain)
 
     // Test to see if rotations match the ones we calculated during SetUp()
     const double error = 1e-15;
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -163,8 +163,8 @@ TEST_F(NAME, local_to_global_single_chain)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -173,8 +173,8 @@ TEST_F(NAME, local_to_global_single_chain)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rg[i].w, error)) << "Index: " << i;
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -184,8 +184,8 @@ TEST_F(NAME, local_to_global_single_chain)
     }
 
     // Rotations should remain unchanged if we only transform translations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -219,7 +219,7 @@ TEST_F(NAME, global_to_local_two_arms)
 
     // Test to see if rotations match the ones we calculated during SetUp()
     const double error = 1e-15;
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -229,8 +229,8 @@ TEST_F(NAME, global_to_local_two_arms)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -239,8 +239,8 @@ TEST_F(NAME, global_to_local_two_arms)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rl[i].w, error)) << "Index: " << i;
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;
@@ -250,8 +250,8 @@ TEST_F(NAME, global_to_local_two_arms)
     }
 
     // Rotations should remain unchanged if we only transform translations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -285,7 +285,7 @@ TEST_F(NAME, local_to_global_two_arms)
 
     // Test to see if rotations match the ones we calculated during SetUp()
     const double error = 1e-15;
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -295,8 +295,8 @@ TEST_F(NAME, local_to_global_two_arms)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -305,8 +305,8 @@ TEST_F(NAME, local_to_global_two_arms)
         EXPECT_THAT(n[i]->rotation.w, DoubleNear(rg[i].w, error)) << "Index: " << i;
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rg[i].x, error)) << "Index: " << i;
@@ -316,8 +316,8 @@ TEST_F(NAME, local_to_global_two_arms)
     }
 
     // Rotations should remain unchanged if we only transform translations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->rotation.x, DoubleNear(rl[i].x, error)) << "Index: " << i;

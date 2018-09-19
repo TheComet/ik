@@ -5,12 +5,18 @@
 #include "ik/log.h"
 #include "ik/pole.h"
 #include "ik/solver.h"
+#include "ik/solverdef.h"
 #include "ik/solver_ONE_BONE.h"
 #include "ik/solver_TWO_BONE.h"
 #include "ik/solver_FABRIK.h"
 #include "ik/solver_MSS.h"
 #include <assert.h>
 #include <string.h>
+
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 static int
 recursively_get_all_effector_nodes(struct ik_node_t* node, struct vector_t* effector_nodes_list);
@@ -22,25 +28,23 @@ static void
 calculate_effector_target(const struct chain_t* chain);
 
 /* ------------------------------------------------------------------------- */
-struct ik_solver_t*
-ik_solver_create(enum ik_solver_algorithm_e algorithm)
+ikret_t
+ik_solver_create(struct ik_solver_t** solver, enum ik_solver_algorithm_e algorithm)
 {
-    struct ik_solver_t* solver = NULL;
-
     switch (algorithm)
     {
 #define X(algorithm)                                                          \
         case IK_SOLVER_##algorithm : {                                        \
-            solver = MALLOC(ik_solver_##algorithm##_type_size());             \
-            if (solver == NULL) {                                             \
+            *solver = MALLOC(ik_solver_##algorithm##_type_size());            \
+            if (*solver == NULL) {                                            \
                 ik_log_fatal("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(solver, 0, ik_solver_##algorithm##_type_size());           \
-            solver->construct = ik_solver_##algorithm##_construct;            \
-            solver->destruct = ik_solver_##algorithm##_destruct;              \
-            solver->rebuild = ik_solver_##algorithm##_rebuild;                \
-            solver->solve = ik_solver_##algorithm##_solve;                    \
+            memset(*solver, 0, ik_solver_##algorithm##_type_size());          \
+            (*solver)->construct = ik_solver_##algorithm##_construct;         \
+            (*solver)->destruct = ik_solver_##algorithm##_destruct;           \
+            (*solver)->rebuild = ik_solver_##algorithm##_rebuild;             \
+            (*solver)->solve = ik_solver_##algorithm##_solve;                 \
         } break;
         IK_SOLVER_ALGORITHM_LIST
 #undef X
@@ -50,13 +54,13 @@ ik_solver_create(enum ik_solver_algorithm_e algorithm)
         } break;
     }
 
-    if (ik_solver_construct(solver) != IK_OK)
+    if (ik_solver_construct(*solver) != IK_OK)
         goto construct_solver_failed;
 
-    return solver;
+    return IK_OK;
 
-    construct_solver_failed : FREE(solver);
-    alloc_solver_failed     : return NULL;
+    construct_solver_failed : FREE(*solver);
+    alloc_solver_failed     : return IK_ERR_OUT_OF_MEMORY;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -73,7 +77,7 @@ ik_solver_construct(struct ik_solver_t* solver)
 {
     solver->max_iterations = 20;
     solver->tolerance = 1e-2;
-    solver->flags = IK_SOLVER_JOINT_ROTATIONS;
+    solver->features = IK_SOLVER_JOINT_ROTATIONS;
     vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
     vector_construct(&solver->chain_list, sizeof(struct chain_t));
 
@@ -107,7 +111,7 @@ ik_solver_rebuild(struct ik_solver_t* solver)
     if (solver->tree == NULL)
     {
         ik_log_error("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
-        return IK_SOLVER_HAS_NO_TREE;
+        return IK_ERR_SOLVER_HAS_NO_TREE;
     }
 
     /*
@@ -182,6 +186,13 @@ ik_solver_solve(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
+struct ik_node_t*
+ik_solver_get_tree(const struct ik_solver_t* solver)
+{
+    return solver->tree;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root)
 {
@@ -208,6 +219,50 @@ ik_solver_unlink_tree(struct ik_solver_t* solver)
     vector_clear(&solver->effector_nodes_list);
 
     return root;
+}
+
+/* ------------------------------------------------------------------------- */
+uint32_t
+ik_solver_get_max_iterations(const struct ik_solver_t* solver)
+{
+    return solver->max_iterations;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_set_max_iterations(struct ik_solver_t* solver, uint32_t max_iterations)
+{
+    solver->max_iterations = max_iterations;
+}
+
+/* ------------------------------------------------------------------------- */
+ikreal_t
+ik_solver_get_tolerance(const struct ik_solver_t* solver)
+{
+    return solver->tolerance;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_set_tolerance(struct ik_solver_t* solver, ikreal_t tolerance)
+{
+    solver->tolerance = tolerance;
+}
+
+/* ------------------------------------------------------------------------- */
+uint8_t
+ik_solver_get_features(const struct ik_solver_t* solver)
+{
+    return solver->features;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_set_features(struct ik_solver_t* solver, uint8_t features, int enabled)
+{
+    solver->features &= ~features;
+    if (enabled)
+        solver->features |= features;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -326,10 +381,10 @@ calculate_effector_target(const struct chain_t* chain)
     struct ik_effector_t* effector = node->effector;
 
     /* lerp using effector weight to get actual target position */
-    effector->_actual_target = effector->target_position;
-    ik_vec3_sub_vec3(effector->_actual_target.f, node->position.f);
-    ik_vec3_mul_scalar(effector->_actual_target.f, effector->weight);
-    ik_vec3_add_vec3(effector->_actual_target.f, node->position.f);
+    effector->actual_target = effector->target_position;
+    ik_vec3_sub_vec3(effector->actual_target.f, node->position.f);
+    ik_vec3_mul_scalar(effector->actual_target.f, effector->weight);
+    ik_vec3_add_vec3(effector->actual_target.f, node->position.f);
 
     /* Fancy algorithm using nlerp, makes transitions look more natural */
     if (effector->flags & IK_EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
@@ -351,9 +406,9 @@ calculate_effector_target(const struct chain_t* chain)
         distance_to_target += ik_vec3_length(base_to_effector.f) * (1.0 - effector->weight);
 
         /* nlerp the target position by pinning it to the base node */
-        ik_vec3_sub_vec3(effector->_actual_target.f, base_node->position.f);
-        ik_vec3_normalize(effector->_actual_target.f);
-        ik_vec3_mul_scalar(effector->_actual_target.f, distance_to_target);
-        ik_vec3_add_vec3(effector->_actual_target.f, base_node->position.f);
+        ik_vec3_sub_vec3(effector->actual_target.f, base_node->position.f);
+        ik_vec3_normalize(effector->actual_target.f);
+        ik_vec3_mul_scalar(effector->actual_target.f, distance_to_target);
+        ik_vec3_add_vec3(effector->actual_target.f, base_node->position.f);
     }
 }

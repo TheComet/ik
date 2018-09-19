@@ -83,12 +83,12 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
 
     /* don't insert reserved hashes */
     if (hash == BSTV_INVALID_HASH)
-        return IK_HASH_RESERVED;
+        return IK_ERR_HASH_RESERVED;
 
     /* lookup location in bstv to insert */
     lower_bound = bstv_find_lower_bound(bstv, hash);
     if (lower_bound && lower_bound->hash == hash)
-        return IK_HASH_EXISTS;
+        return IK_ERR_HASH_EXISTS;
 
     /* either push back or insert, depending on whether there is already data
      * in the bstv */
@@ -99,7 +99,7 @@ bstv_insert(struct bstv_t* bstv, uint32_t hash, void* value)
                           lower_bound - (bstv_hash_value_t*)bstv->vector.data);
 
     if (!emplaced_data)
-        return IK_RAN_OUT_OF_MEMORY;
+        return IK_ERR_OUT_OF_MEMORY;
 
     memset(emplaced_data, 0, sizeof *emplaced_data);
     emplaced_data->hash = hash;
@@ -179,7 +179,7 @@ bstv_hash_exists(struct bstv_t* bstv, uint32_t hash)
     data = bstv_find_lower_bound(bstv, hash);
     if (data && data->hash == hash)
         return IK_OK;
-    return IK_HASH_NOT_FOUND;
+    return IK_ERR_HASH_NOT_FOUND;
 }
 
 /* ------------------------------------------------------------------------- */

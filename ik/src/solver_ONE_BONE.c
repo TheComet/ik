@@ -3,9 +3,15 @@
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/vec3.h"
+#include "ik/solverdef.h"
 #include "ik/solver_ONE_BONE.h"
 #include <stddef.h>
 #include <assert.h>
+
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 /* ------------------------------------------------------------------------- */
 uintptr_t

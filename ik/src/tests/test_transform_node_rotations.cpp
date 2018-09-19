@@ -12,7 +12,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
 
         /*
          * The following defines a list of 3D rotations that map out a two-arm

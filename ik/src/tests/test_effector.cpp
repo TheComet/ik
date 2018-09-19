@@ -10,7 +10,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver_ = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver_, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown() override
@@ -122,7 +122,7 @@ TEST_F(NAME, attach_two_effectors_to_same_node)
     ik_effector_t* eff2 = IKAPI.effector.create();
 
     EXPECT_THAT(IKAPI.effector.attach(eff1, n), Eq(IK_OK));
-    EXPECT_THAT(IKAPI.effector.attach(eff2, n), Eq(IK_ALREADY_HAS_ATTACHMENT));
+    EXPECT_THAT(IKAPI.effector.attach(eff2, n), Eq(IK_ERR_ALREADY_HAS_ATTACHMENT));
     EXPECT_THAT(n->effector, Eq(eff1));
     EXPECT_THAT(eff1->node, Eq(n));
 

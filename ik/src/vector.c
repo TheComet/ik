@@ -127,7 +127,7 @@ vector_push(struct vector_t* vector, const void* data)
 
     emplaced = vector_push_emplace(vector);
     if (!emplaced)
-        return IK_RAN_OUT_OF_MEMORY;
+        return IK_ERR_OUT_OF_MEMORY;
     memcpy(emplaced, data, vector->element_size);
     return IK_OK;
 }
@@ -143,7 +143,7 @@ vector_push_vector(struct vector_t* vector, struct vector_t* source_vector)
 
     /* make sure element sizes are equal */
     if (vector->element_size != source_vector->element_size)
-        return IK_VECTOR_HAS_DIFFERENT_ELEMENT_SIZE;
+        return IK_ERR_VECTOR_HAS_DIFFERENT_ELEMENT_SIZE;
 
     /* make sure there's enough space in the target vector */
     if (vector->count + source_vector->count > vector->capacity)
@@ -232,7 +232,7 @@ vector_insert(struct vector_t* vector, uint32_t index, void* data)
 
     emplaced = vector_insert_emplace(vector, index);
     if (!emplaced)
-        return IK_RAN_OUT_OF_MEMORY;
+        return IK_ERR_OUT_OF_MEMORY;
     memcpy(emplaced, data, vector->element_size);
     return IK_OK;
 }
@@ -320,7 +320,7 @@ vector_expand(struct vector_t *vector,
         new_count = (new_count == 0 ? 2 : new_count);
         vector->data = MALLOC(new_count * vector->element_size);
         if (!vector->data)
-            return IK_RAN_OUT_OF_MEMORY;
+            return IK_ERR_OUT_OF_MEMORY;
         vector->capacity = new_count;
         return IK_OK;
     }
@@ -329,7 +329,7 @@ vector_expand(struct vector_t *vector,
     old_data = vector->data;
     new_data = MALLOC(new_count * vector->element_size);
     if (!new_data)
-        return IK_RAN_OUT_OF_MEMORY;
+        return IK_ERR_OUT_OF_MEMORY;
 
     /* if (no insertion index is required, copy all data to new memory */
     if (insertion_index == VECTOR_ERROR || insertion_index >= new_count)

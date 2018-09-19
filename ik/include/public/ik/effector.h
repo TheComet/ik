@@ -59,7 +59,7 @@ struct ik_effector_t
      * 1.0. This value is updated right after calling solve() and before the
      * solving algorithm begins.
      */
-    struct ik_vec3_t _actual_target;
+    struct ik_vec3_t actual_target;
 
     /*!
      * @brief Specifies how much influence the solver has on the chain of
@@ -87,7 +87,7 @@ struct ik_effector_t
     uint16_t chain_length;
 
     /*!
-     * @brief Various behavioural settings. Check the enum effector_flags_e for
+     * @brief Various behavioral settings. Check the enum effector_flags_e for
      * more information.
      */
     uint8_t flags;

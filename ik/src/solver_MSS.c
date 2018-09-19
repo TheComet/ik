@@ -1,6 +1,12 @@
 #include "ik/ik.h"
+#include "ik/solverdef.h"
 #include "ik/solver_MSS.h"
 #include <math.h>
+
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 /* ------------------------------------------------------------------------- */
 uintptr_t

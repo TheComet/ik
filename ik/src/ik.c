@@ -85,8 +85,15 @@ struct ik_api_t IKAPI = {
         ik_solver_rebuild,
         ik_solver_update_distances,
         ik_solver_solve,
+        ik_solver_get_tree,
         ik_solver_set_tree,
         ik_solver_unlink_tree,
+        ik_solver_get_max_iterations,
+        ik_solver_set_max_iterations,
+        ik_solver_get_tolerance,
+        ik_solver_set_tolerance,
+        ik_solver_get_features,
+        ik_solver_set_features,
         ik_solver_iterate_all_nodes,
         ik_solver_iterate_affected_nodes,
         ik_solver_iterate_base_nodes,
@@ -94,7 +101,7 @@ struct ik_api_t IKAPI = {
         IK_SOLVER_ALGORITHM_LIST
 #undef X
 #define X(arg, value) IK_SOLVER_##arg,
-        IK_SOLVER_FLAGS_LIST
+        IK_SOLVER_FEATURES_LIST
 #undef X
     },
     {

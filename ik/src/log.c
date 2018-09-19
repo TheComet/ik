@@ -35,7 +35,7 @@ ik_log_init(void)
     g_log = (log_t*)MALLOC(sizeof *g_log);
     if (g_log == NULL)
     {
-        result = IK_RAN_OUT_OF_MEMORY;
+        result = IK_ERR_OUT_OF_MEMORY;
         goto alloc_log_failed;
     }
 

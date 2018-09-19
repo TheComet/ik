@@ -148,7 +148,7 @@ mark_involved_nodes(struct bstv_t* involved_nodes,
                 if (bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
                 {
                     ik_log_fatal("Ran out of memory while marking involved nodes");
-                    return IK_RAN_OUT_OF_MEMORY;
+                    return IK_ERR_OUT_OF_MEMORY;
                 }
             }
             else
@@ -228,7 +228,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                     if (child_chain == NULL)
                     {
                         ik_log_fatal("Failed to create base chain: Ran out of memory");
-                        return IK_RAN_OUT_OF_MEMORY;
+                        return IK_ERR_OUT_OF_MEMORY;
                     }
                     chain_construct(child_chain);
                 }
@@ -242,7 +242,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                     if (child_chain == NULL)
                     {
                         ik_log_fatal("Failed to create child chain: Ran out of memory");
-                        return IK_RAN_OUT_OF_MEMORY;
+                        return IK_ERR_OUT_OF_MEMORY;
                     }
                     chain_construct(child_chain);
                 }
@@ -255,12 +255,12 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                     if (chain_add_node(child_chain, node) != 0)
                     {
                         ik_log_fatal("Failed to insert node into chain: Ran out of memory");
-                        return IK_RAN_OUT_OF_MEMORY;
+                        return IK_ERR_OUT_OF_MEMORY;
                     }
                 if (chain_add_node(child_chain, node_base) != 0)
                 {
                     ik_log_fatal("Failed to insert node into chain: Ran out of memory");
-                    return IK_RAN_OUT_OF_MEMORY;
+                    return IK_ERR_OUT_OF_MEMORY;
                 }
 
                 /*

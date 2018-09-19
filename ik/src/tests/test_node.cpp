@@ -10,7 +10,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver_ = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver_, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown() override
@@ -67,7 +67,7 @@ TEST_F(NAME, error_if_child_nodes_have_same_guid)
     ik_node_t* n2 = IKAPI.node.create_child(n1, 3);
     ik_node_t* n3 = IKAPI.node.create(3);
     // Test both add_child and create_child
-    EXPECT_THAT(IKAPI.node.add_child(n1, n3), Eq(IK_HASH_EXISTS));
+    EXPECT_THAT(IKAPI.node.add_child(n1, n3), Eq(IK_ERR_HASH_EXISTS));
     EXPECT_THAT(IKAPI.node.create_child(n1, 3), IsNull());
     IKAPI.node.destroy(n1);
     IKAPI.node.destroy(n3);

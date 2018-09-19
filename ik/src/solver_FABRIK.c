@@ -5,6 +5,7 @@
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/quat.h"
+#include "ik/solverdef.h"
 #include "ik/solver_FABRIK.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
@@ -12,6 +13,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 struct position_direction_t
 {
@@ -58,7 +64,7 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain)
     {
         struct ik_node_t* effector_node = chain_get_node(chain, 0);
         struct ik_effector_t* effector = effector_node->effector;
-        target.position = effector->_actual_target;
+        target.position = effector->actual_target;
 
         /* TODO This "global direction" could be made configurable if needed */
         target.direction.x = 0.0;
@@ -141,7 +147,7 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     if (average_count == 0)
     {
         struct ik_effector_t* effector = chain_get_node(chain, 0)->effector;
-        target_position = effector->_actual_target;
+        target_position = effector->actual_target;
     }
     else
     {
@@ -203,7 +209,7 @@ solve_chain_forwards(struct chain_t* chain)
     {
         struct ik_node_t* effector_node = chain_get_node(chain, 0);
         struct ik_effector_t* effector = effector_node->effector;
-        target_position = effector->_actual_target;
+        target_position = effector->actual_target;
     }
     else
     {
@@ -542,7 +548,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
     ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_L2G);
+    ik_transform_chain_list(solver, IK_TRANSFORM_L2G);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -550,7 +556,7 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
      * global space (doesn't work in local as far as I can see). Store the
      * positions and locations before solving for later.
      */
-    if (solver->flags & IK_SOLVER_JOINT_ROTATIONS)
+    if (solver->features & IK_SOLVER_JOINT_ROTATIONS)
         store_initial_transform(&solver->chain_list);
 
     while (iteration-- > 0)
@@ -582,12 +588,12 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
             base_node = chain_get_node(chain, idx);
 
-            if (solver->flags & IK_SOLVER_TARGET_ROTATIONS)
+            if (solver->features & IK_SOLVER_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
 
-            if (solver->flags & IK_SOLVER_CONSTRAINTS)
+            if (solver->features & IK_SOLVER_CONSTRAINTS)
                 solve_chain_backwards_with_constraints(chain, base_node->position, base_node->rotation, base_node->position);
             else
                 solve_chain_backwards(chain, base_node->position);
@@ -595,11 +601,11 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
     }
 
-    if (solver->flags & IK_SOLVER_JOINT_ROTATIONS)
+    if (solver->features & IK_SOLVER_JOINT_ROTATIONS)
         calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_G2L);
+    ik_transform_chain_list(solver, IK_TRANSFORM_G2L);
 
     return result;
 }

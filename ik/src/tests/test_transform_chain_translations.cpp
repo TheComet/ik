@@ -10,7 +10,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
 
         /*
          * The following lists 3D coordinates that map out a two-arm tree
@@ -78,7 +78,7 @@ TEST_F(NAME, global_to_local_single_chain)
     IKAPI.solver.rebuild(solver);
 
     // Test to see if transform produces the expected local positions
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -87,8 +87,8 @@ TEST_F(NAME, global_to_local_single_chain)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -96,8 +96,8 @@ TEST_F(NAME, global_to_local_single_chain)
         EXPECT_THAT(n[i]->position.z, DoubleEq(tl[i].z));
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -106,8 +106,8 @@ TEST_F(NAME, global_to_local_single_chain)
     }
 
     // Translations should remain unchanged if we only transform rotations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -134,7 +134,7 @@ TEST_F(NAME, local_to_global_single_chain)
     IKAPI.solver.rebuild(solver);
 
     // Test to see if transform produces the expected local positions
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -143,8 +143,8 @@ TEST_F(NAME, local_to_global_single_chain)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -152,8 +152,8 @@ TEST_F(NAME, local_to_global_single_chain)
         EXPECT_THAT(n[i]->position.z, DoubleEq(tg[i].z));
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -162,8 +162,8 @@ TEST_F(NAME, local_to_global_single_chain)
     }
 
     // Translations should remain unchanged if we only transform rotations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 4; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -195,7 +195,7 @@ TEST_F(NAME, global_to_local_two_arms)
     IKAPI.solver.rebuild(solver);
 
     // Test to see if transform produces the expected local positions
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -204,8 +204,8 @@ TEST_F(NAME, global_to_local_two_arms)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -213,8 +213,8 @@ TEST_F(NAME, global_to_local_two_arms)
         EXPECT_THAT(n[i]->position.z, DoubleEq(tl[i].z));
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));
@@ -223,8 +223,8 @@ TEST_F(NAME, global_to_local_two_arms)
     }
 
     // Translations should remain unchanged if we only transform rotations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -256,7 +256,7 @@ TEST_F(NAME, local_to_global_two_arms)
     IKAPI.solver.rebuild(solver);
 
     // Test to see if transform produces the expected local positions
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -265,8 +265,8 @@ TEST_F(NAME, local_to_global_two_arms)
     }
 
     // Repeat test but with different flags
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -274,8 +274,8 @@ TEST_F(NAME, local_to_global_two_arms)
         EXPECT_THAT(n[i]->position.z, DoubleEq(tg[i].z));
     }
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tg[i].x));
@@ -284,8 +284,8 @@ TEST_F(NAME, local_to_global_two_arms)
     }
 
     // Translations should remain unchanged if we only transform rotations
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L | IKAPI.transform.TRANSLATIONS | IKAPI.transform.ROTATIONS);
+    ik_transform_chain_list(solver, IKAPI.transform.L2G | IKAPI.transform.ROTATIONS);
     for (int i = 0; i != 7; ++i)
     {
         EXPECT_THAT(n[i]->position.x, DoubleEq(tl[i].x));

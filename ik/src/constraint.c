@@ -104,7 +104,7 @@ ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_ty
 
         case IK_CONSTRAINT_CUSTOM:
             ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
-            return IK_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
+            return IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
     }
 
     constraint->type = constraint_type;

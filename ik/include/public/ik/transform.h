@@ -11,6 +11,7 @@
 
 C_BEGIN
 
+struct ik_solver_t;
 struct vector_t;
 struct ik_node_t;
 struct chain_t;
@@ -31,7 +32,7 @@ IK_PRIVATE_API void
 ik_transform_chain(struct chain_t* chain, uint8_t mode);
 
 IK_PRIVATE_API void
-ik_transform_chain_list(const struct vector_t* chain_list, uint8_t mode);
+ik_transform_chain_list(const struct ik_solver_t* solver, uint8_t mode);
 
 #endif /* IK_BUILDING */
 

@@ -1,6 +1,13 @@
 #include "gmock/gmock.h"
 #include "ik/ik.h"
 #include "ik/chain.h"
+#include "ik/solverdef.h"
+
+/* Need access to solver->chain_list */
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 #define NAME chain
 
@@ -13,7 +20,7 @@ public:
 
     virtual void SetUp()
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown()

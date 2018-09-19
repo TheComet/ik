@@ -114,15 +114,22 @@ struct ik_pole_api_t
 
 struct ik_solver_api_t
 {
-    struct ik_solver_t* (*create)                (enum ik_solver_algorithm_e);
+    ikret_t             (*create)                (struct ik_solver_t**, enum ik_solver_algorithm_e);
     void                (*destroy)               (struct ik_solver_t*);
     ikret_t             (*construct)             (struct ik_solver_t*);
     void                (*destruct)              (struct ik_solver_t*);
     ikret_t             (*rebuild)               (struct ik_solver_t*);
     void                (*update_distances)      (struct ik_solver_t*);
     ikret_t             (*solve)                 (struct ik_solver_t*);
+    struct ik_node_t*   (*get_tree)              (const struct ik_solver_t*);
     void                (*set_tree)              (struct ik_solver_t*, struct ik_node_t*);
     struct ik_node_t*   (*unlink_tree)           (struct ik_solver_t*);
+    uint32_t            (*get_max_iterations)    (const struct ik_solver_t*);
+    void                (*set_max_iterations)    (struct ik_solver_t*, uint32_t);
+    ikreal_t            (*get_tolerance)         (const struct ik_solver_t*);
+    void                (*set_tolerance)         (struct ik_solver_t*, ikreal_t);
+    uint8_t             (*get_features)          (const struct ik_solver_t*);
+    void                (*set_features)          (struct ik_solver_t*, uint8_t, int);
     void                (*iterate_all_nodes)     (struct ik_solver_t*, void (*)(struct ik_node_t*));
     void                (*iterate_affected_nodes)(struct ik_solver_t*, void (*)(struct ik_node_t*));
     void                (*iterate_base_nodes)    (struct ik_solver_t*, void (*)(struct ik_node_t*));
@@ -131,7 +138,7 @@ struct ik_solver_api_t
     IK_SOLVER_ALGORITHM_LIST
 #undef X
 #define X(arg, value) enum ik_solver_flags_e arg;
-    IK_SOLVER_FLAGS_LIST
+    IK_SOLVER_FEATURES_LIST
 #undef X
 };
 

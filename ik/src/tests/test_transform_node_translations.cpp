@@ -10,7 +10,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
 
         /*
          * The following lists 3D coordinates that map out a two-arm tree

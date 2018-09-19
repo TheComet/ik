@@ -14,7 +14,7 @@ public:
 
     virtual void SetUp()
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown()
@@ -123,7 +123,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right)
     ik.solver.rebuild(solver);
     ik.solver.solve(solver);
 
-    const double error = solver->tolerance;
+    const double error = IKAPI.solver.get_tolerance(solver);
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));
     EXPECT_THAT(root->position.z, DoubleNear(0, error));
@@ -177,7 +177,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_rotations)
     ik.solver.rebuild(solver);
     ik.solver.solve(solver);
 
-    const double error = solver->tolerance;
+    const double error = IKAPI.solver.get_tolerance(solver);
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));
     EXPECT_THAT(root->position.z, DoubleNear(0, error));
@@ -233,7 +233,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_translations)
     IKAPI.quat.set_axis_angle(expected_root.f, 0, 0, 1, -45*pi/180);
     IKAPI.quat.set_axis_angle(expected_mid.f, 0, 0, 1, 45*pi/180);
 
-    const double error = solver->tolerance;
+    const double error = IKAPI.solver.get_tolerance(solver);
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));
     EXPECT_THAT(root->position.z, DoubleNear(0, error));

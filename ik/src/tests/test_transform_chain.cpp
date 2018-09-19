@@ -12,7 +12,7 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        solver = IKAPI.solver.create(IKAPI.solver.FABRIK);
+        IKAPI.solver.create(&solver, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown() override
@@ -42,7 +42,7 @@ TEST_F(NAME, rotations_cause_vector_translations)
     IKAPI.solver.set_tree(solver, n1);
     IKAPI.solver.rebuild(solver);
 
-    ik_transform_chain_list(&solver->chain_list, IKAPI.transform.G2L);
+    ik_transform_chain_list(solver, IKAPI.transform.G2L);
 
     const double error = 1e-15;
     EXPECT_THAT(n1->position.x, DoubleNear(1, error));

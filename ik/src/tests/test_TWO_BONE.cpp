@@ -12,7 +12,7 @@ public:
 
     virtual void SetUp()
     {
-        solver = IKAPI.solver.create(IKAPI.solver.TWO_BONE);
+        IKAPI.solver.create(&solver, IKAPI.solver.TWO_BONE);
     }
 
     virtual void TearDown()
@@ -69,7 +69,7 @@ TEST_F(NAME, reach_target_1)
     EXPECT_THAT(tip->position.y, DoubleNear(3, error));
     EXPECT_THAT(tip->position.z, DoubleNear(0, error));
 
-    IKAPI.transform.node(solver->tree, IKAPI.transform.L2G);
+    IKAPI.transform.node(IKAPI.solver.get_tree(solver), IKAPI.transform.L2G);
 
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));
@@ -112,7 +112,7 @@ TEST_F(NAME, unreachable_1)
     EXPECT_THAT(tip->position.y, DoubleNear(3, error));
     EXPECT_THAT(tip->position.z, DoubleNear(0, error));
 
-    IKAPI.transform.node(solver->tree, IKAPI.transform.L2G);
+    IKAPI.transform.node(IKAPI.solver.get_tree(solver), IKAPI.transform.L2G);
 
     EXPECT_THAT(root->position.x, DoubleNear(0, error));
     EXPECT_THAT(root->position.y, DoubleNear(0, error));

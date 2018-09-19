@@ -43,7 +43,7 @@ ik_effector_duplicate(const struct ik_effector_t* effector)
     new_effector->node            = NULL;
     new_effector->target_position = effector->target_position;
     new_effector->target_rotation = effector->target_rotation;
-    new_effector->_actual_target  = effector->_actual_target;
+    new_effector->actual_target  = effector->actual_target;
     new_effector->weight          = effector->weight;
     new_effector->rotation_weight = effector->rotation_weight;
     new_effector->rotation_decay  = effector->rotation_decay;
@@ -64,7 +64,7 @@ ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node)
             "already has an effector attached to it. The new effector will not "
             "be attached!"
         );
-        return IK_ALREADY_HAS_ATTACHMENT;
+        return IK_ERR_ALREADY_HAS_ATTACHMENT;
     }
 
     /* effector may be attached to another node */

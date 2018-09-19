@@ -11,6 +11,6 @@ ik_tests_run(int* argc, char** argv)
     // no need for calling testing::InitGoogleTest() separately.
     testing::InitGoogleMock(argc, argv);
     if (RUN_ALL_TESTS() != 0)
-        return IK_UNIT_TESTS_FAILED;
+        return IK_ERR_UNIT_TESTS_FAILED;
     return IK_OK;
 }

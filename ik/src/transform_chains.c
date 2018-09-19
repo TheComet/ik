@@ -3,11 +3,18 @@
 #include "ik/effector.h"
 #include "ik/node.h"
 #include "ik/quat.h"
+#include "ik/solverdef.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 #include <string.h>
+
+/* Need the solver structure for ik_transform_chain_list */
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 /*
  * In all of the following algorithms, we iterate the nodes in a chain starting
@@ -133,8 +140,8 @@ global_to_local_recursive(const struct chain_t* chain)
 static void
 eff_local_to_global(struct ik_effector_t* eff, const struct ik_node_t* node)
 {
-    ik_vec3_nrotate(eff->_actual_target.f, node->rotation.f);
-    ik_vec3_add_vec3(eff->_actual_target.f, node->position.f);
+    ik_vec3_nrotate(eff->actual_target.f, node->rotation.f);
+    ik_vec3_add_vec3(eff->actual_target.f, node->position.f);
     ik_quat_mul_quat(eff->target_rotation.f, node->rotation.f);
 
     if (node->parent)
@@ -147,8 +154,8 @@ eff_global_to_local(struct ik_effector_t* eff, const struct ik_node_t* node)
         eff_global_to_local(eff, node->parent);
 
     ik_quat_nmul_quat(eff->target_rotation.f, node->rotation.f);
-    ik_vec3_sub_vec3(eff->_actual_target.f, node->position.f);
-    ik_vec3_rotate(eff->_actual_target.f, node->rotation.f);
+    ik_vec3_sub_vec3(eff->actual_target.f, node->position.f);
+    ik_vec3_rotate(eff->actual_target.f, node->rotation.f);
 }
 static void
 eff_all_local_to_global(const struct ik_node_t* node_before_base, const struct chain_t* chain)
@@ -191,9 +198,9 @@ static void (*eff_transform_table[2])(const struct ik_node_t*, const struct chai
 
 /* ------------------------------------------------------------------------- */
 void
-ik_transform_chain_list(const struct vector_t* chain_list, uint8_t flags)
+ik_transform_chain_list(const struct ik_solver_t* solver, uint8_t flags)
 {
-    VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
+    VECTOR_FOR_EACH(&solver->chain_list, struct chain_t, chain)
         ik_transform_chain(chain, flags);
     VECTOR_END_EACH
 }

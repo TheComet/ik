@@ -2,12 +2,18 @@
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
+#include "ik/solverdef.h"
 #include "ik/solver_TWO_BONE.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
+
+struct ik_solver_t
+{
+    SOLVER_HEAD
+};
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
@@ -58,7 +64,7 @@ int
 ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
 {
     /* Tree is in local space, we need global positions */
-    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
+    ik_transform_chain_list(solver, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
 
     SOLVER_FOR_EACH_CHAIN(solver, chain)
         struct ik_node_t* node_tip;
@@ -148,7 +154,7 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
     SOLVER_END_EACH
 
     /* Transform back again */
-    ik_transform_chain_list(&solver->chain_list, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
+    ik_transform_chain_list(solver, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
 
     return 0;
 }

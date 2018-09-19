@@ -52,7 +52,7 @@ static PyObject*
 Solver_getmax_iterations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    return PyLong_FromLong(self->solver->max_iterations);
+    return PyLong_FromLong(IKAPI.solver.get_max_iterations(self->solver));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -73,7 +73,7 @@ Solver_setmax_iterations(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Maximum iterations needs to be a positive integer");
         return -1;
     }
-    self->solver->max_iterations = max_iterations;
+    IKAPI.solver.set_max_iterations(self->solver, max_iterations);
     return 0;
 }
 
@@ -82,7 +82,7 @@ static PyObject*
 Solver_gettolerance(ik_Solver* self, void* closure)
 {
     (void)closure;
-    return PyFloat_FromDouble(self->solver->tolerance);
+    return PyFloat_FromDouble(IKAPI.solver.get_tolerance(self->solver));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -103,7 +103,7 @@ Solver_settolerance(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Tolerance needs to be a positive value (or zero)");
         return -1;
     }
-    self->solver->tolerance = tolerance;
+    IKAPI.solver.set_tolerance(self->solver, tolerance);
     return 0;
 }
 
@@ -112,7 +112,7 @@ static PyObject*
 Solver_getenable_constraints(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_SOLVER_CONSTRAINTS)
+    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_CONSTRAINTS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -127,9 +127,7 @@ Solver_setenable_constraints(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_SOLVER_CONSTRAINTS;
-    if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_SOLVER_CONSTRAINTS;
+    IKAPI.solver.set_features(self->solver, IK_SOLVER_CONSTRAINTS, PyObject_IsTrue(value));
     return 0;
 }
 
@@ -138,7 +136,7 @@ static PyObject*
 Solver_getenable_target_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_SOLVER_TARGET_ROTATIONS)
+    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_TARGET_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -153,9 +151,7 @@ Solver_setenable_target_rotations(ik_Solver* self, PyObject* value, void* closur
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_SOLVER_TARGET_ROTATIONS;
-    if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_SOLVER_TARGET_ROTATIONS;
+    IKAPI.solver.set_features(self->solver, IK_SOLVER_TARGET_ROTATIONS, PyObject_IsTrue(value));
     return 0;
 }
 
@@ -164,7 +160,7 @@ static PyObject*
 Solver_getenable_joint_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (self->solver->flags & IK_SOLVER_JOINT_ROTATIONS)
+    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_JOINT_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -179,9 +175,7 @@ Solver_setenable_joint_rotations(ik_Solver* self, PyObject* value, void* closure
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    self->solver->flags &= ~IK_SOLVER_JOINT_ROTATIONS;
-    if (PyObject_IsTrue(value))
-        self->solver->flags |= IK_SOLVER_JOINT_ROTATIONS;
+    IKAPI.solver.set_features(self->solver, IK_SOLVER_JOINT_ROTATIONS, PyObject_IsTrue(value));
     return 0;
 }
 

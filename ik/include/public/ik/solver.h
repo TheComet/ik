@@ -22,14 +22,17 @@
     X(FABRIK) \
     X(MSS)
 
-#define IK_SOLVER_FLAGS_LIST \
-    X(CONSTRAINTS, 0x01) \
+#define IK_SOLVER_FEATURES_LIST \
+    X(CONSTRAINTS,      0x01) \
     X(TARGET_ROTATIONS, 0x02) \
-    X(JOINT_ROTATIONS, 0x04)
+    X(JOINT_ROTATIONS,  0x04) \
+    X(ALL,              0xFF)
 
 C_BEGIN
 
+struct ik_solver_t;
 struct ik_node_t;
+
 typedef void(*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
 
 enum ik_solver_algorithm_e
@@ -42,31 +45,8 @@ enum ik_solver_algorithm_e
 enum ik_solver_flags_e
 {
 #define X(arg, value) IK_SOLVER_##arg = value,
-    IK_SOLVER_FLAGS_LIST
+    IK_SOLVER_FEATURES_LIST
 #undef X
-};
-
-/*!
- * @brief This is a base for all solvers.
- */
-struct ik_solver_t
-{
-    struct ik_node_t*                        tree;
-
-    /* Derived interface */
-    ikret_t (*construct)(struct ik_solver_t* solver);
-    void    (*destruct)(struct ik_solver_t* solver);
-    ikret_t (*rebuild)(struct ik_solver_t* solver);
-    ikret_t (*solve)(struct ik_solver_t* solver);
-
-    /* list of effector_t* references (not owned by us) */
-    struct vector_t                          effector_nodes_list;
-    /* list of chain_t objects (allocated in-place, i.e. ik_solver_t owns them) */
-    struct vector_t                          chain_list;
-
-    int32_t                                  max_iterations;
-    ikreal_t                                 tolerance;
-    uint8_t                                  flags;
 };
 
 #if defined(IK_BUILDING)
@@ -108,8 +88,8 @@ struct ik_solver_t
  * @param[in] algorithm The algorithm to use. Currently, only FABRIK is
  * supported.
  */
-IK_PRIVATE_API struct ik_solver_t*
-ik_solver_create(enum ik_solver_algorithm_e algorithm);
+IK_PRIVATE_API ikret_t
+ik_solver_create(struct ik_solver_t** solver, enum ik_solver_algorithm_e algorithm);
 
 /*!
  * @brief Destroys the solver and all nodes/effectors that are part of the
@@ -164,16 +144,17 @@ ik_solver_update_distances(struct ik_solver_t* solver);
 IK_PRIVATE_API ikret_t
 ik_solver_solve(struct ik_solver_t* solver);
 
+IK_PRIVATE_API struct ik_node_t*
+ik_solver_get_tree(const struct ik_solver_t* solver);
+
 /*!
  * @brief Sets the tree to solve. The solver takes ownership of the tree, so
- * destroying the solver will destroy all nodes in the tree. You may also
- * pass NULL. If the solver already has a tree, then said tree will be
- * destroyed.
+ * destroying the solver will also destroy all nodes.
  * @note You will have to call ik_solver_rebuild_data() before being able
  * to solve it.
  * @param[in] solver The solver object.
- * @param[in] tree The root node of a tree you built. Passing NULL will
- * destroy any existing tree the solver owns.
+ * @param[in] tree The root node of a tree you wish to have solved. Any
+ * existing tree is destroyed. Passing NULL destroys the existing tree.
  */
 IK_PRIVATE_API void
 ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
@@ -186,6 +167,24 @@ ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
  */
 IK_PRIVATE_API struct ik_node_t*
 ik_solver_unlink_tree(struct ik_solver_t* solver);
+
+IK_PRIVATE_API uint32_t
+ik_solver_get_max_iterations(const struct ik_solver_t* solver);
+
+IK_PRIVATE_API void
+ik_solver_set_max_iterations(struct ik_solver_t* solver, uint32_t max_iterations);
+
+IK_PRIVATE_API ikreal_t
+ik_solver_get_tolerance(const struct ik_solver_t* solver);
+
+IK_PRIVATE_API void
+ik_solver_set_tolerance(struct ik_solver_t* solver, ikreal_t tolerance);
+
+IK_PRIVATE_API uint8_t
+ik_solver_get_features(const struct ik_solver_t* solver);
+
+IK_PRIVATE_API void
+ik_solver_set_features(struct ik_solver_t* solver, uint8_t features, int enabled);
 
 /*!
  * @brief Iterates all nodes in the internal tree, breadth first, and passes
