@@ -53,7 +53,7 @@ struct ik_constraint_t
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
  */
-IK_PRIVATE_API struct ik_constraint_t*
+IK_PRIVATE_API struct ik_constraint_t
 ik_constraint_create(void);
 
 /*!

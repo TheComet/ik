@@ -300,8 +300,9 @@ if (IK_PYTHON)
             /EHa /MTd /W4 /WX /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
-            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer -flto>
+            -Wall -Wextra -Werror -pedantic -pedantic-errors
+            -Wno-missing-field-initializers -Wshadow -flto
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
@@ -399,8 +400,8 @@ if (IK_BENCHMARKS)
             /MTd /D_CRT_SECURE_NO_DEPRECATE
         >
         PRIVATE $<$<C_COMPILER_ID:GNU>:
-            -Wno-unused-result
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer -flto>
+            -Wno-unused-result -flto
+            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PRIVATE $<$<C_COMPILER_ID:Clang>:
             -Wno-unused-result

@@ -42,7 +42,7 @@ struct ik_node_t
      * }
      * ```
      */
-    void* user_data;
+    const void* user_data;
 
     /*!
      * @brief If this node is an end effector, this will point to the end
@@ -58,7 +58,6 @@ struct ik_node_t
 
     struct ik_node_t* parent;
     struct bstv_t children;
-    uint32_t guid;
 
     union
     {
@@ -74,45 +73,37 @@ struct ik_node_t
         ikreal_t transform[7];
     };
 
-
     ikreal_t rotation_weight;
     ikreal_t dist_to_parent;
-
-    union {
-        struct {
-            union {
-                struct {
-                    /*
-                    * WARNING: HAS to be in this order -- there's some hacking going on
-                    * in transform.c which relies on the order of ikreal_t's in transform[7].
-                    */
-                    struct ik_quat_t initial_rotation;
-                    struct ik_vec3_t initial_position;
-                };
-                ikreal_t initial_transform[7];
-            };
-        } FABRIK;
-
-        struct {
-            ikreal_t mass;
-        } MSS;
-    };
+    ikreal_t mass;
 };
 
 #if defined(IK_BUILDING)
 
+IK_PRIVATE_API const void*
+ik_guid(void);
+
 /*!
- * @brief Creates a new node and returns it. Each node requires a tree-unique
- * ID, which can be used later to search for nodes in the tree.
+ * @brief Creates a new node and returns it. Each node requires a unique
+ * identifier.
+ * @param[out] node If successful, the new node is written to this parameter.
+ * @param[in] cpp_object_or_uid The value set here is the value that will be
+ * passed to the ik_node_read_callback() and ik_node_write_callback() functions.
+ * If you are using this library with an existing scene graph, then you can
+ * specify the pointer to the corresponding C++ node for this parameter.
+ * It can also be a random integer value. As long as it is globally unique.
+ * You may use ik_guid() to generate a random integer if you don't care.
  */
-IK_PRIVATE_API struct ik_node_t*
-ik_node_create(uint32_t guid);
+IK_PRIVATE_API ikret_t
+ik_node_create(struct ik_node_t** node,
+               const void* cpp_object_or_uid);
 
 /*!
  * @brief Constructs an already allocated node.
  */
 IK_PRIVATE_API ikret_t
-ik_node_construct(struct ik_node_t* node, uint32_t guid);
+ik_node_construct(struct ik_node_t* node,
+                  const void* cpp_object_or_uid);
 
 /*!
  * @brief Destructs a node, destroying all children in the process, but does
@@ -122,8 +113,8 @@ IK_PRIVATE_API void
 ik_node_destruct(struct ik_node_t* node);
 
 /*!
- * @brief Destructs and frees the node, destroying all children in the process.
- * If the node was part of a tree, then it will be removed from its parents.
+ * @brief Destructs and frees the specified node. All children will be
+ * transferred to the parent node.
  * @note You will need to rebuild the solver's tree before solving.
  */
 IK_PRIVATE_API void
@@ -131,11 +122,13 @@ ik_node_destroy(struct ik_node_t* node);
 
 /*!
  * @brief Creates a new node, attaches it as a child to the specified node,
- * and returns it. Each node requires a tree-unique ID, which can be used
- * later to search for nodes in the tree.
+ * and returns it. Each node requires a unique identifier, which can be used
+ * later to search for nodes in the tree or to store user data for later access.
  */
-IK_PRIVATE_API struct ik_node_t*
-ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
+IK_PRIVATE_API ikret_t
+ik_node_create_child(struct ik_node_t** child,
+                     struct ik_node_t* parent,
+                     const void* cpp_object_or_uid);
 
 /*!
  * @brief Attaches a node as a child to another node. The parent node gains
@@ -143,7 +136,8 @@ ik_node_create_child(struct ik_node_t* node, uint32_t child_guid);
  * @note You will need to rebuild the solver's tree before solving.
  */
 IK_PRIVATE_API ikret_t
-ik_node_add_child(struct ik_node_t* node, struct ik_node_t* child);
+ik_node_link(struct ik_node_t* parent,
+             struct ik_node_t* child);
 
 /*!
  * @brief Unlinks a node from the tree, without destroying anything. All
@@ -164,17 +158,16 @@ ik_node_child_count(const struct ik_node_t* node);
  * returned.
  */
 IK_PRIVATE_API struct ik_node_t*
-ik_node_find_child(const struct ik_node_t* node, uint32_t guid);
-
-IK_PRIVATE_API struct ik_node_t*
-ik_node_duplicate(const struct ik_node_t* node, int copy_attachments);
+ik_node_find_child(const struct ik_node_t* node,
+                   const void* cpp_object_or_uid);
 
 /*!
  * @brief Dumps all nodes recursively to DOT format. You can use graphviz (
  * or other compatible tools) to generate a graphic of the tree.
  */
 IK_PRIVATE_API void
-ik_node_dump_to_dot(const struct ik_node_t* node, const char* file_name);
+ik_node_dump_to_dot(const struct ik_node_t* node,
+                    const char* file_name);
 
 #endif /* IK_BUILDING */
 

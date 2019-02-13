@@ -20,9 +20,8 @@ C_BEGIN
     /* list of chain_t objects (allocated in-place, i.e. ik_solver_t owns them) */\
     struct vector_t      chain_list;                                          \
                                                                               \
-    struct ik_node_t*    tree;                                                \
     ikreal_t             tolerance;                                           \
-    int32_t              max_iterations;                                      \
+    uint16_t             max_iterations;                                      \
     uint8_t              features;
 
 C_END

@@ -19,9 +19,9 @@ C_BEGIN
 
 struct vector_t
 {
+    uint8_t* data;               /* pointer to the contiguous section of memory */
     vector_size_t capacity;      /* how many elements actually fit into the allocated space */
     vector_size_t count;         /* number of elements inserted */
-    uint8_t* data;               /* pointer to the contiguous section of memory */
     vector_size_t element_size;  /* how large one element is in bytes */
 };
 
