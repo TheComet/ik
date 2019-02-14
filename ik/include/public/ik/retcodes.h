@@ -8,6 +8,7 @@ extern "C" {
 
 typedef enum ikret_t
 {
+    IK_KEY_EXISTS = 2,
     IK_RESULT_CONVERGED = 1,
     IK_OK = 0,
     IK_ERR_OUT_OF_MEMORY = -1,
@@ -19,7 +20,9 @@ typedef enum ikret_t
     IK_ERR_SOLVER_HAS_NO_TREE = -7,
     IK_ERR_UNIT_TESTS_FAILED = -8,
     IK_ERR_BUILT_WITHOUT_TESTS = -9,
-    IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT = -10
+    IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT = -10,
+    IK_ERR_NODE_NOT_FOUND = -11,
+    IK_ERR_INVALID_HASH = -12,
 } ikret_t;
 
 #ifdef __cplusplus

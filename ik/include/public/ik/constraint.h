@@ -53,8 +53,8 @@ struct ik_constraint_t
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
  */
-IK_PRIVATE_API struct ik_constraint_t
-ik_constraint_create(void);
+IK_PRIVATE_API ikret_t
+ik_constraint_create(struct ik_constraint_t** constraint);
 
 /*!
  * @brief Destroys and frees a constraint object. This should **NOT** be called
@@ -67,8 +67,9 @@ ik_constraint_destroy(struct ik_constraint_t* constraint);
 /*!
  * @brief Duplicates the specified constraint and returns it.
  */
-IK_PRIVATE_API struct ik_constraint_t*
-ik_constraint_duplicate(const struct ik_constraint_t* constraint);
+IK_PRIVATE_API ikret_t
+ik_constraint_duplicate(struct ik_constraint_t** dst,
+                        const struct ik_constraint_t* src);
 
 /*!
  * @brief Sets the type of constraint to enforce.

@@ -24,22 +24,23 @@ protected:
 
 TEST_F(NAME, create_sets_proper_guid)
 {
-    ik_node_t* n = IKAPI.node.create(3);
-    EXPECT_THAT(n->guid, Eq(3));
+    ik_node_t* n;
+    IKAPI.node.create(&n, IKAPI.to_ptr(3));
+    EXPECT_THAT(IKAPI.node.get_uid(n), Eq(3));
     IKAPI.node.destroy(n);
-    n = IKAPI.node.create(56);
-    EXPECT_THAT(n->guid, Eq(56));
+    IKAPI.node.create(&n, IKAPI.to_ptr(56));
+    EXPECT_THAT(IKAPI.node.get_uid(n), Eq(56));
     IKAPI.node.destroy(n);
 }
 
 TEST_F(NAME, construct_sets_proper_guid)
 {
     ik_node_t n;
-    IKAPI.node.construct(&n, 5);
-    EXPECT_THAT(n.guid, Eq(5));
+    IKAPI.node.construct(&n, IKAPI.to_ptr(5));
+    EXPECT_THAT(IKAPI.node.get_uid(&n), Eq(5));
     IKAPI.node.destruct(&n);
-    IKAPI.node.construct(&n, 54);
-    EXPECT_THAT(n.guid, Eq(54));
+    IKAPI.node.construct(&n, IKAPI.to_ptr(54));
+    EXPECT_THAT(IKAPI.node.get_uid(&n), Eq(54));
     IKAPI.node.destruct(&n);
 }
 

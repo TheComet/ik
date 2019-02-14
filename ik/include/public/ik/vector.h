@@ -119,7 +119,7 @@ vector_push(struct vector_t* vector, const void* data);
  * warning and use with caution.
  */
 IK_PRIVATE_API void*
-vector_push_emplace(struct vector_t* vector);
+vector_emplace(struct vector_t* vector);
 
 /*!
  * @brief Copies the contents of another vector and pushes it into the vector.

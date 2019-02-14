@@ -1,8 +1,30 @@
 #include "ik/ik.h"
 
+static uintptr_t g_guid = 0;
+static uintptr_t
+ik_guid(void)
+{
+    return g_guid++;
+}
+
+static uintptr_t
+ik_to_uid(const void* p)
+{
+    return (uintptr_t)p;
+}
+
+static const void*
+ik_to_ptr(uintptr_t uid)
+{
+    return (const void*)uid;
+}
+
 struct ik_api_t IKAPI = {
     ik_init,
     ik_deinit,
+    ik_guid,
+    ik_to_uid,
+    ik_to_ptr,
     {
         ik_constraint_create,
         ik_constraint_destroy,
@@ -59,12 +81,27 @@ struct ik_api_t IKAPI = {
         ik_node_construct,
         ik_node_destruct,
         ik_node_destroy,
+        ik_node_destruct_recursive,
+        ik_node_destroy_recursive,
         ik_node_create_child,
-        ik_node_add_child,
+        ik_node_link,
         ik_node_unlink,
         ik_node_child_count,
         ik_node_find_child,
-        ik_node_duplicate
+        ik_node_set_position,
+        ik_node_set_rotation,
+        ik_node_set_rotation_weight,
+        ik_node_set_mass,
+        ik_node_get_position,
+        ik_node_get_rotation,
+        ik_node_get_rotation_weight,
+        ik_node_get_mass,
+        ik_node_get_distance_to_parent,
+        ik_node_get_user_data,
+        ik_node_get_uid,
+        ik_node_get_effector,
+        ik_node_get_constraint,
+        ik_node_get_pole
     },
     {
         ik_pole_create,

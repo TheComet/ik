@@ -1,5 +1,5 @@
 #include "ik/memory.h"
-#include "ik/bstv.h"
+#include "ik/hashmap.h"
 #include "ik/backtrace.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,11 +12,11 @@
 static uintptr_t g_allocations = 0;
 static uintptr_t d_deg_allocations = 0;
 static uintptr_t g_ignore_bstv_malloc = 0;
-static struct bstv_t report;
+static struct hashmap_t report;
 
 typedef struct report_info_t
 {
-    uintptr_t location;
+    void* location;
     uintptr_t size;
 #   ifdef IK_MEMORY_BACKTRACE
     int backtrace_size;
@@ -37,8 +37,8 @@ ik_memory_init(void)
      * would be wrong in the case of MALLOC() never being called.
      */
     g_ignore_bstv_malloc = 1;
-        bstv_construct(&report);
-        bstv_insert(&report, 0, NULL); bstv_erase(&report, 0);
+        hashmap_construct(&report, sizeof(void*), sizeof(report_info_t));
+        hashmap_insert(&report, NULL, NULL); hashmap_erase(&report, NULL);
     g_ignore_bstv_malloc = 0;
 }
 
@@ -76,7 +76,7 @@ malloc_wrapper(intptr_t size)
             }
 
             /* record the location and size of the allocation */
-            info->location = (uintptr_t)p;
+            info->location = p;
             info->size = size;
 
             /* if (enabled, generate a backtrace so we know where memory leaks
@@ -87,7 +87,7 @@ malloc_wrapper(intptr_t size)
 #   endif
 
             /* insert into bstv */
-            if (bstv_insert(&report, (uintptr_t)p, info) == 1)
+            if (hashmap_insert(&report, p, info) == 1)
             {
                 fprintf(stderr,
                 "[memory] WARNING: Hash collision occurred when inserting\n"
@@ -147,7 +147,7 @@ free_wrapper(void* ptr)
     /* find matching allocation and remove from bstv */
     if (!g_ignore_bstv_malloc)
     {
-        report_info_t* info = (report_info_t*)bstv_erase(&report, (uintptr_t)ptr);
+        report_info_t* info = (report_info_t*)hashmap_erase(&report, ptr);
         if (info)
         {
 #   ifdef IK_MEMORY_BACKTRACE
@@ -204,9 +204,9 @@ ik_memory_deinit(void)
     printf("=========================================\n");
 
     /* report details on any g_allocations that were not de-allocated */
-    if (report.vector.count != 0)
+    if (hashmap_count(&report) != 0)
     {
-        BSTV_FOR_EACH(&report, report_info_t, key, info)
+        HASHMAP_FOR_EACH(&report, void, report_info_t, key, info)
 
             printf("  un-freed memory at %p, size %p\n", (void*)info->location, (void*)info->size);
             mutated_string_and_hex_dump((void*)info->location, info->size);
@@ -223,7 +223,7 @@ ik_memory_deinit(void)
 #   endif
             free(info);
 
-        BSTV_END_EACH
+        HASHMAP_END_EACH
 
         printf("=========================================\n");
     }
@@ -237,7 +237,7 @@ ik_memory_deinit(void)
 
     ++g_allocations; /* this is the single allocation still held by the report vector */
     g_ignore_bstv_malloc = 1;
-    bstv_clear_free(&report);
+    hashmap_destruct(&report);
 
     return leaks;
 }

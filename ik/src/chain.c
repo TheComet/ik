@@ -1,4 +1,4 @@
-#include "ik/bstv.h"
+#include "ik/btree.h"
 #include "ik/chain.h"
 #include "ik/memory.h"
 #include "ik/vector.h"
@@ -8,6 +8,8 @@
 #include "ik/vec3.h"
 #include <assert.h>
 #include <stdio.h>
+
+#if 0
 
 enum node_marking_e
 {
@@ -68,7 +70,7 @@ chain_clear_free(struct chain_t* chain)
 struct chain_t*
 chain_create_child(struct chain_t* chain)
 {
-    return vector_push_emplace(&chain->children);
+    return vector_emplace(&chain->children);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -100,7 +102,7 @@ count_chains(const struct vector_t* chains)
 
 /* ------------------------------------------------------------------------- */
 static ikret_t
-mark_involved_nodes(struct bstv_t* involved_nodes,
+mark_involved_nodes(struct hashmap_t* involved_nodes,
                     const struct vector_t* effector_nodes_list)
 {
     /*
@@ -122,18 +124,12 @@ mark_involved_nodes(struct bstv_t* involved_nodes,
         chain_length_counter = node->effector->chain_length == 0 ? -1 : (int)node->effector->chain_length;
 
         /*
+         * Walk up chain (starting at effector node and ending if we run out of
+         * nodes, or the chain length counter reaches 0.
+         *
          * Mark nodes that are at the base of the chain differently, so the
          * chains can be split correctly later. Section markings will overwrite
-         * break markings.
-         *
-         * Additionally, there is a special constraint (IK_CONSTRAINT_STIFF)
-         * that restricts all rotations of a node. If this constraint is
-         * imposed on a particular node, mark it differently as well so the
-         * surrounding nodes can be combined into a single bone properly later.
-         *
-         * NOTE: The node->constraint field specifies constraints for
-         * the *parent* node, not for the current node. However, we will be
-         * marking the *current* node, not the parent node.
+         * split markings.
          */
         for (; node != NULL; node = node->parent)
         {
@@ -224,7 +220,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                 if (chain_current == NULL) /* First chain in the tree? */
                 {
                     /* Insert and initialize a base chain in the list. */
-                    child_chain = vector_push_emplace(chain_list);
+                    child_chain = vector_emplace(chain_list);
                     if (child_chain == NULL)
                     {
                         ik_log_fatal("Failed to create base chain: Ran out of memory");
@@ -369,6 +365,7 @@ update_distances(const struct vector_t* chains)
         calculate_segment_lengths_in_island(chain);
     VECTOR_END_EACH
 }
+#endif
 
 /* ------------------------------------------------------------------------- */
 #ifdef IK_DOT_OUTPUT

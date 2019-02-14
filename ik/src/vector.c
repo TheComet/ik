@@ -102,7 +102,7 @@ vector_resize(struct vector_t* vector, uint32_t size)
 
 /* ------------------------------------------------------------------------- */
 void*
-vector_push_emplace(struct vector_t* vector)
+vector_emplace(struct vector_t* vector)
 {
     void* data;
 
@@ -125,7 +125,7 @@ vector_push(struct vector_t* vector, const void* data)
     assert(vector);
     assert(data);
 
-    emplaced = vector_push_emplace(vector);
+    emplaced = vector_emplace(vector);
     if (!emplaced)
         return IK_ERR_OUT_OF_MEMORY;
     memcpy(emplaced, data, vector->element_size);

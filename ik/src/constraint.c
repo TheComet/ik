@@ -1,7 +1,7 @@
 #include "ik/memory.h"
 #include "ik/constraint.h"
 #include "ik/log.h"
-#include "ik/node.h"
+#include "ik/node_data.h"
 #include "ik/quat.h"
 #include <string.h>
 #include <assert.h>
@@ -12,14 +12,14 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_dummy(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
+apply_dummy(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 {
     ik_quat_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_stiff(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
+apply_stiff(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 {
     ik_quat_copy(compensate_rotation, node->rotation.f);
     ik_quat_conj(compensate_rotation);
@@ -28,14 +28,14 @@ apply_stiff(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_hinge(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
+apply_hinge(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 {
     ik_quat_set_identity(compensate_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_cone(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
+apply_cone(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 {
     ik_quat_set_identity(compensate_rotation);
 }
@@ -45,20 +45,20 @@ apply_cone(const struct ik_node_t* node, ikreal_t compensate_rotation[4])
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
-struct ik_constraint_t*
-ik_constraint_create()
+ikret_t
+ik_constraint_create(struct ik_constraint_t** constraint)
 {
-    struct ik_constraint_t* constraint = MALLOC(sizeof *constraint);
-    if (constraint == NULL)
+    *constraint = MALLOC(sizeof **constraint);
+    if (*constraint == NULL)
     {
         ik_log_fatal("Failed to allocate constraint: Out of memory");
-        return NULL;
+        return IK_ERR_OUT_OF_MEMORY;
     }
 
-    memset(constraint, 0, sizeof *constraint);
-    ik_constraint_set_custom(constraint, apply_dummy);
+    memset(constraint, 0, sizeof **constraint);
+    ik_constraint_set_custom(*constraint, apply_dummy);
 
-    return constraint;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -70,22 +70,24 @@ ik_constraint_destroy(struct ik_constraint_t* constraint)
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_constraint_t*
-ik_constraint_duplicate(const struct ik_constraint_t* constraint)
+ikret_t
+ik_constraint_duplicate(struct ik_constraint_t** dst,
+                        const struct ik_constraint_t* src)
 {
-    struct ik_constraint_t* new_constraint = ik_constraint_create();
-    if (new_constraint == NULL)
-        return NULL;
+    ikret_t status;
+    if ((status = ik_constraint_create(dst)) != IK_OK)
+        return status;
 
-    memcpy(new_constraint, constraint, sizeof *constraint);
-    new_constraint->node = NULL;
+    memcpy(*dst, src, sizeof *src);
+    (*dst)->node = NULL;
 
-    return new_constraint;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type)
+ik_constraint_set_type(struct ik_constraint_t* constraint,
+                       enum ik_constraint_type_e constraint_type)
 {
     switch (constraint_type)
     {
