@@ -14,7 +14,7 @@ C_BEGIN
 
 #define IK_DECREF(o) do {                               \
         assert(o->refcount->refs > 0);                  \
-        if (--(o->refcount->refs))                      \
+        if (--(o->refcount->refs) == 0)                 \
             o->destroy(o);                              \
     } while(0)
 
@@ -37,11 +37,11 @@ struct ik_refcounted_t
 };
 
 IK_PRIVATE_API ikret_t
-ik_refcounted_create(struct ik_refcounted_t* refcounted,
-                     ik_destroy_func destroy);
+ik_refcounted_init(struct ik_refcounted_t* refcounted,
+                   ik_destroy_func destroy);
 
 IK_PRIVATE_API void
-ik_refcounted_destroy(struct ik_refcounted_t* refcounted);
+ik_refcounted_deinit(struct ik_refcounted_t* refcounted);
 
 C_END
 

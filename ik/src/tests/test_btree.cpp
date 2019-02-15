@@ -24,7 +24,7 @@ TEST(NAME, init_sets_correct_values)
 
 TEST(NAME, create_initialises_btree)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     ASSERT_THAT(btree->vector.capacity, Eq(0u));
     ASSERT_THAT(btree->vector.count, Eq(0u));
     ASSERT_THAT(btree->vector.data, IsNull());
@@ -34,7 +34,7 @@ TEST(NAME, create_initialises_btree)
 
 TEST(NAME, insertion_forwards)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 0, &a);
@@ -54,7 +54,7 @@ TEST(NAME, insertion_forwards)
 
 TEST(NAME, insertion_backwards)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 4, &a);
@@ -74,7 +74,7 @@ TEST(NAME, insertion_backwards)
 
 TEST(NAME, insertion_random)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 26, &a);
@@ -94,7 +94,7 @@ TEST(NAME, insertion_random)
 
 TEST(NAME, clear_keeps_underlying_vector)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a = 53;
     btree_insert(btree, 0, &a);
@@ -112,7 +112,7 @@ TEST(NAME, clear_keeps_underlying_vector)
 
 TEST(NAME, clear_free_deletes_underlying_vector)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=53;
     btree_insert(btree, 0, &a);
@@ -130,7 +130,7 @@ TEST(NAME, clear_free_deletes_underlying_vector)
 
 TEST(NAME, count_returns_correct_number)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=53;
     btree_insert(btree, 0, &a);
@@ -144,7 +144,7 @@ TEST(NAME, count_returns_correct_number)
 
 TEST(NAME, erase_elements)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 0, &a);
@@ -188,7 +188,7 @@ TEST(NAME, erase_elements)
 
 TEST(NAME, reinsertion_forwards)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 0, &a);
@@ -216,7 +216,7 @@ TEST(NAME, reinsertion_forwards)
 
 TEST(NAME, reinsertion_backwards)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 4, &a);
@@ -244,7 +244,7 @@ TEST(NAME, reinsertion_backwards)
 
 TEST(NAME, reinsertion_random)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18, d=27, e=84;
     btree_insert(btree, 26, &a);
@@ -272,7 +272,7 @@ TEST(NAME, reinsertion_random)
 
 TEST(NAME, inserting_duplicate_hashes_doesnt_replace_existing_elements)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=56, b=45, c=18;
     btree_insert(btree, 5, &a);
@@ -292,7 +292,7 @@ TEST(NAME, inserting_duplicate_hashes_doesnt_replace_existing_elements)
 TEST(NAME, generating_hashes_do_not_conflict_with_existing_ascending_hashes)
 {
     intptr_t hash;
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     btree_insert(btree, 0, NULL);
     btree_insert(btree, 1, NULL);
     btree_insert(btree, 2, NULL);
@@ -310,7 +310,7 @@ TEST(NAME, generating_hashes_do_not_conflict_with_existing_ascending_hashes)
 TEST(NAME, generating_hashes_do_not_conflict_with_existing_descending_hashes)
 {
     intptr_t hash;
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     btree_insert(btree, 5, NULL);
     btree_insert(btree, 3, NULL);
     btree_insert(btree, 2, NULL);
@@ -328,7 +328,7 @@ TEST(NAME, generating_hashes_do_not_conflict_with_existing_descending_hashes)
 TEST(NAME, generating_hashes_do_not_conflict_with_existing_random_hashes)
 {
     intptr_t hash;
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     btree_insert(btree, 2387, NULL);
     btree_insert(btree, 28, NULL);
     btree_insert(btree, 358, NULL);
@@ -345,7 +345,7 @@ TEST(NAME, generating_hashes_do_not_conflict_with_existing_random_hashes)
 
 TEST(NAME, find_element)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     int a = 6;
     btree_insert(btree, 2387, NULL);
     btree_insert(btree, 28, &a);
@@ -360,7 +360,7 @@ TEST(NAME, find_element)
 
 TEST(NAME, set_value)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     int a = 6;
     btree_insert(btree, 2387, NULL);
     btree_insert(btree, 28, NULL);
@@ -377,7 +377,7 @@ TEST(NAME, set_value)
 
 TEST(NAME, get_any_element)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     int a = 6;
 
     EXPECT_THAT(btree_get_any_element(btree), IsNull());
@@ -391,7 +391,7 @@ TEST(NAME, get_any_element)
 
 TEST(NAME, hash_exists)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     EXPECT_THAT(btree_hash_exists(btree, 29), Eq(-1));
     btree_insert(btree, 29, NULL);
@@ -405,7 +405,7 @@ TEST(NAME, hash_exists)
 
 TEST(NAME, erase_element)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     int a = 6;
 
     EXPECT_THAT(btree_erase_element(btree, &a), IsNull());
@@ -418,7 +418,7 @@ TEST(NAME, erase_element)
 
 TEST(NAME, iterate_with_no_items)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
     {
         int counter = 0;
         BTREE_FOR_EACH(btree, int, hash, value)
@@ -431,7 +431,7 @@ TEST(NAME, iterate_with_no_items)
 
 TEST(NAME, iterate_5_random_items)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=79579, b=235, c=347, d=124, e=457;
     btree_insert(btree, 243, &a);
@@ -460,7 +460,7 @@ TEST(NAME, iterate_5_random_items)
 
 TEST(NAME, iterate_5_null_items)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     btree_insert(btree, 243, NULL);
     btree_insert(btree, 256, NULL);
@@ -488,7 +488,7 @@ TEST(NAME, iterate_5_null_items)
 
 TEST(NAME, erase_in_for_loop)
 {
-    struct btree_t* btree = btree_create();
+    struct btree_t* btree; btree_create(&btree);
 
     int a=79579, b=235, c=347, d=124, e=457;
     btree_insert(btree, 243, &a);

@@ -17,6 +17,7 @@
 #   ifdef IK_MEMORY_DEBUGGING
         #cmakedefine IK_MEMORY_BACKTRACE
 #   endif
+    #cmakedefine IK_HASHMAP_STATS
 #   define IK_PRECISION_${IK_PRECISION_CAPS_AND_NO_SPACES}
     #cmakedefine IK_PIC
     #cmakedefine IK_PROFILING

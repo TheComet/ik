@@ -78,7 +78,7 @@ TEST_F(NAME, insert_same_key_twice_only_works_once)
 {
     float f = 5.6f;
     EXPECT_THAT(hashmap_insert(hm, KEY1, &f), Eq(IK_OK));
-    EXPECT_THAT(hashmap_insert(hm, KEY1, &f), Eq(WS_KEY_EXISTS));
+    EXPECT_THAT(hashmap_insert(hm, KEY1, &f), Eq(IK_HASH_EXISTS));
     EXPECT_THAT(hashmap_count(hm), Eq(1));
 }
 
@@ -176,7 +176,7 @@ TEST_F(NAME, hash_collision_insert_at_tombstone_with_existing_key)
     EXPECT_THAT(hashmap_count(hm), Eq(2));
     EXPECT_THAT(*(float*)hashmap_erase(hm, KEY1), FloatEq(a)); // creates tombstone
     EXPECT_THAT(hashmap_count(hm), Eq(1));
-    EXPECT_THAT(hashmap_insert(hm, KEY2, &a), Eq(WS_KEY_EXISTS));
+    EXPECT_THAT(hashmap_insert(hm, KEY2, &a), Eq(IK_HASH_EXISTS));
     EXPECT_THAT(hashmap_count(hm), Eq(1));
 }
 

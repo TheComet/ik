@@ -16,7 +16,8 @@ node_data_destruct(struct ik_node_data_t* node_data)
 static void
 node_data_destroy(struct ik_node_data_t* node_data)
 {
-    FREE(node_data):
+    ik_refcounted_deinit((struct ik_refcounted_t*)node_data);
+    FREE(node_data);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -50,12 +51,15 @@ ikret_t
 ik_node_data_construct(struct ik_node_data_t* node_data, const void* user_data)
 {
     ikret_t status;
-    if ((status = ik_refcounted_create(
+
+    memset(node_data, 0, sizeof *node_data);
+
+    /* node_data is a refcounted type so it can be safely casted to
+     * ik_refcount_t. This initializes the refcount */
+    if ((status = ik_refcounted_init(
             (struct ik_refcounted_t*)node_data,
             (ik_destroy_func)node_data_destruct)) != IK_OK)
         return status;
-
-    memset(node_data, 0, sizeof *node_data);
 
     node_data->user_data = user_data;
     node_data->rotation_weight = 0.0;

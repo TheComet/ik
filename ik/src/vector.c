@@ -28,19 +28,18 @@ vector_expand(struct vector_t *vector,
 /* ----------------------------------------------------------------------------
  * Exported functions
  * ------------------------------------------------------------------------- */
-struct vector_t*
-vector_create(const uint32_t element_size)
+ikret_t
+vector_create(struct vector_t** vector, const vector_size_t element_size)
 {
-    struct vector_t* vector;
-    if (!(vector = MALLOC(sizeof *vector)))
-        return NULL;
-    vector_construct(vector, element_size);
-    return vector;
+    if (!(*vector = MALLOC(sizeof **vector)))
+        return IK_ERR_OUT_OF_MEMORY;
+    vector_construct(*vector, element_size);
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-vector_construct(struct vector_t* vector, const uint32_t element_size)
+vector_construct(struct vector_t* vector, const vector_size_t element_size)
 {
     assert(vector);
     memset(vector, 0, sizeof *vector);

@@ -6,8 +6,8 @@
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_refcounted_create(struct ik_refcounted_t* refcounted,
-                     ik_destroy_func destroy)
+ik_refcounted_init(struct ik_refcounted_t* refcounted,
+                   ik_destroy_func destroy)
 {
     refcounted->destroy = destroy;
     refcounted->refcount = MALLOC(sizeof *(refcounted->refcount));
@@ -24,8 +24,8 @@ ik_refcounted_create(struct ik_refcounted_t* refcounted,
 
 /* ------------------------------------------------------------------------- */
 void
-ik_refcounted_destroy(struct ik_refcounted_t* refcounted)
+ik_refcounted_deinit(struct ik_refcounted_t* refcounted)
 {
     assert(refcounted->refcount->refs == 0);
-    FREE(refcounted);
+    FREE(refcounted->refcount);
 }

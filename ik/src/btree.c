@@ -90,7 +90,7 @@ btree_insert(struct btree_t* btree, hash32_t hash, void* value)
     /* lookup location in btree to insert */
     lower_bound = btree_find_lower_bound(btree, hash);
     if (lower_bound && lower_bound->hash == hash)
-        return IK_KEY_EXISTS;
+        return IK_HASH_EXISTS;
 
     /* either push back or insert, depending on whether there is already data
      * in the btree */

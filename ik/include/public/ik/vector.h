@@ -33,8 +33,8 @@ struct vector_t
  * the vector to store. Typically one would pass sizeof(my_data_type).
  * @return Returns the newly created vector object.
  */
-IK_PRIVATE_API struct vector_t*
-vector_create(const uint32_t element_size);
+IK_PRIVATE_API ikret_t
+vector_create(struct vector_t** vector, const vector_size_t element_size);
 
 /*!
  * @brief Initializes an existing vector object.
@@ -46,7 +46,7 @@ vector_create(const uint32_t element_size);
  */
 IK_PRIVATE_API void
 vector_construct(struct vector_t* vector,
-                 const uint32_t element_size);
+                 const vector_size_t element_size);
 
 /*!
  * @brief Destroys an existing vector object and frees all memory allocated by

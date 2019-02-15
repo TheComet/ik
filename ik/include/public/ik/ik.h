@@ -229,17 +229,17 @@ struct ik_api_t
     uintptr_t (*to_uid)(const void* p);
     const void* (*to_ptr)(uintptr_t uid);
 
-    struct ik_constraint_api_t constraint;
-    struct ik_effector_api_t   effector;
+    //struct ik_constraint_api_t constraint;
+    //struct ik_effector_api_t   effector;
     struct ik_info_api_t       info;
     struct ik_log_api_t        log;
     struct ik_mat3x3_api_t     mat3x3;
     struct ik_node_api_t       node;
-    struct ik_pole_api_t       pole;
-    struct ik_solver_api_t     solver;
+    //struct ik_pole_api_t       pole;
+    //struct ik_solver_api_t     solver;
     struct ik_quat_api_t       quat;
     struct ik_tests_api_t      tests;
-    struct ik_transform_api_t  transform;
+    //struct ik_transform_api_t  transform;
     struct ik_vec3_api_t       vec3;
 };
 

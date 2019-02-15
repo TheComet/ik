@@ -25,7 +25,7 @@ struct ik_api_t IKAPI = {
     ik_guid,
     ik_to_uid,
     ik_to_ptr,
-    {
+    /*{
         ik_constraint_create,
         ik_constraint_destroy,
         ik_constraint_duplicate,
@@ -46,7 +46,7 @@ struct ik_api_t IKAPI = {
 #define X(arg, value) value,
         IK_EFFECTOR_FLAGS_LIST
 #undef X
-    },
+    },*/
     {
         ik_info_author,
         ik_info_version,
@@ -102,7 +102,7 @@ struct ik_api_t IKAPI = {
         ik_node_get_effector,
         ik_node_get_constraint,
         ik_node_get_pole
-    },
+    },/*
     {
         ik_pole_create,
         ik_pole_destroy,
@@ -140,7 +140,7 @@ struct ik_api_t IKAPI = {
 #define X(arg, value) IK_SOLVER_##arg,
         IK_SOLVER_FEATURES_LIST
 #undef X
-    },
+    },*/
     {
         ik_quat_copy,
         ik_quat_set,
@@ -166,13 +166,13 @@ struct ik_api_t IKAPI = {
     },
     {
         ik_tests_run
-    },
+    },/*
     {
         ik_transform_node,
 #define X(arg, value) value,
         IK_TRANSFORM_MODE_LIST
 #undef X
-    },
+    },*/
     {
         ik_vec3_copy,
         ik_vec3_set,

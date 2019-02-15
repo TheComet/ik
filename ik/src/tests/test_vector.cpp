@@ -23,7 +23,7 @@ TEST(NAME, init)
 
 TEST(NAME, create_initialises_vector)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     ASSERT_EQ(0u, vec->capacity);
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(NULL, vec->data);
@@ -33,7 +33,7 @@ TEST(NAME, create_initialises_vector)
 
 TEST(NAME, push_increments_count_and_causes_realloc_by_factor_2)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     int x = 9;
 
     vector_push(vec, &x);
@@ -53,7 +53,7 @@ TEST(NAME, push_increments_count_and_causes_realloc_by_factor_2)
 
 TEST(NAME, clear_keeps_buffer_and_resets_count)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     int x = 9;
     vector_push(vec, &x);
     vector_clear(vec);
@@ -65,7 +65,7 @@ TEST(NAME, clear_keeps_buffer_and_resets_count)
 
 TEST(NAME, clear_free_deletes_buffer_and_resets_count)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     int x = 9;
     vector_push(vec, &x);
     vector_clear_free(vec);
@@ -77,7 +77,7 @@ TEST(NAME, clear_free_deletes_buffer_and_resets_count)
 
 TEST(NAME, push_emplace_increments_count_and_causes_realloc_by_factor_2)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     vector_emplace(vec);
     ASSERT_EQ(2u, vec->capacity);
     ASSERT_EQ(1u, vec->count);
@@ -92,7 +92,7 @@ TEST(NAME, push_emplace_increments_count_and_causes_realloc_by_factor_2)
 
 TEST(NAME, pop_returns_pushed_values)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     int x;
     x = 3; vector_push(vec, &x);
     x = 2; vector_push(vec, &x);
@@ -112,7 +112,7 @@ TEST(NAME, pop_returns_pushed_values)
 
 TEST(NAME, pop_returns_push_emplaced_values)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -131,7 +131,7 @@ TEST(NAME, pop_returns_push_emplaced_values)
 
 TEST(NAME, pop_empty_vector)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 21;
     vector_pop(vec);
     ASSERT_EQ(NULL, vector_pop(vec));
@@ -143,7 +143,7 @@ TEST(NAME, pop_empty_vector)
 
 TEST(NAME, pop_clear_freed_vector)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     ASSERT_EQ(NULL, vector_pop(vec));
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(0u, vec->capacity);
@@ -153,7 +153,7 @@ TEST(NAME, pop_clear_freed_vector)
 
 TEST(NAME, get_element_random_access)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -167,7 +167,7 @@ TEST(NAME, get_element_random_access)
 
 TEST(NAME, popping_preserves_existing_elements)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -183,7 +183,7 @@ TEST(NAME, popping_preserves_existing_elements)
 
 TEST(NAME, erasing_by_index_preserves_existing_elements)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -203,7 +203,7 @@ TEST(NAME, erasing_by_index_preserves_existing_elements)
 
 TEST(NAME, erasing_by_element_preserves_existing_elements)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -223,7 +223,7 @@ TEST(NAME, erasing_by_element_preserves_existing_elements)
 
 TEST(NAME, get_invalid_index)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     ASSERT_EQ(NULL, vector_get_element(vec, 1));
     *(int*)vector_emplace(vec) = 53;
     ASSERT_EQ(NULL, vector_get_element(vec, 1));
@@ -232,7 +232,7 @@ TEST(NAME, get_invalid_index)
 
 TEST(NAME, erase_invalid_index)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     vector_erase_index(vec, 1);
     vector_erase_index(vec, 0);
     *(int*)vector_emplace(vec) = 53;
@@ -244,7 +244,7 @@ TEST(NAME, erase_invalid_index)
 
 TEST(NAME, inserting_preserves_existing_elements)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -302,7 +302,7 @@ TEST(NAME, inserting_preserves_existing_elements)
 
 TEST(NAME, insert_emplacing_preserves_existing_elements)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     *(int*)vector_emplace(vec) = 53;
     *(int*)vector_emplace(vec) = 24;
     *(int*)vector_emplace(vec) = 73;
@@ -356,7 +356,7 @@ TEST(NAME, insert_emplacing_preserves_existing_elements)
 
 TEST(NAME, resizing_larger_than_capacity_reallocates_and_updates_size)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
 
     int* old_ptr = (int*)vector_emplace(vec);
     *old_ptr = 42;
@@ -372,7 +372,7 @@ TEST(NAME, resizing_larger_than_capacity_reallocates_and_updates_size)
 
 TEST(NAME, resizing_smaller_than_capacity_updates_size_but_not_capacity)
 {
-    struct vector_t* vec = vector_create(sizeof(int));
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
     vector_emplace(vec);
     vector_resize(vec, 64);
 

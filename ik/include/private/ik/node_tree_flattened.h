@@ -9,13 +9,11 @@ C_BEGIN
 struct ik_node_data_t;
 struct ik_node_t;
 
-struct ik_node_tree_flattened_t
+struct ik_ntf_t
 {
-    IK_REFCOUNTED(struct ik_node_tree_flattened_t)
-
     /*
      * Contiguous array of all node_data_t. All node_data refcounts point to
-     * this structure's refcount, because in a sense, all nodes own each
+     * the first node's refounct, because in a sense, all nodes own each
      * other's memory (i.e. all node_data instances must be deleted before the
      * congiguous block of memory can be freed).
      */
@@ -31,9 +29,14 @@ struct ik_node_tree_flattened_t
     }* indices;
 };
 
-IK_PRIVATE_API ikret_t
-ik_node_tree_flattened_create(struct ik_node_tree_flattened_t** ntf,
-                              struct ik_node_t* root);
+IK_PRIVATE_API IK_WARN_UNUSED ikret_t
+ik_ntf_create(struct ik_ntf_t** ntf);
+
+IK_PRIVATE_API void
+ik_ntf_construct(struct ik_ntf_t* ntf);
+
+IK_PRIVATE_API IK_WARN_UNUSED ikret_t
+ik_ntf_from_nodes(struct ik_ntf_t* ntf, const struct ik_node_t* root);
 
 C_END
 

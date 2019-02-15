@@ -8,6 +8,88 @@
 #define KEY(hm, pos)   ((void*)((uint8_t*)hm->storage + (sizeof(hash32_t) + hm->key_size) * pos + sizeof(hash32_t)))
 #define VALUE(hm, pos) ((void*)((uint8_t*)hm->storage + (sizeof(hash32_t) + hm->key_size) * hm->table_count + hm->value_size * pos))
 
+#ifdef IK_HASHMAP_STATS
+#   include <stdio.h>
+#   define STATS_INIT(hm) \
+            hm->stats.total_insertions = 0; \
+            hm->stats.total_deletions = 0; \
+            hm->stats.total_tombstones = 0; \
+            hm->stats.total_tombstone_reuses = 0; \
+            hm->stats.total_rehashes = 0; \
+            hm->stats.total_insertion_probes = 0; \
+            hm->stats.total_deletion_probes = 0; \
+            hm->stats.max_slots_used = 0; \
+            hm->stats.max_slots_tombstoned = 0; \
+            hm->stats.current_tombstone_count = 0
+
+#   define STATS_INSERTION_PROBE(hm) \
+            hm->stats.total_insertion_probes++
+
+#   define STATS_DELETION_PROBE(hm) \
+            hm->stats.total_deletion_probes++
+
+#   define STATS_INSERTED_IN_UNUSED(hm) do { \
+            hm->stats.total_insertions++; \
+            if (hm->slots_used > hm->stats.max_slots_used) \
+                hm->stats.max_slots_used = hm->slots_used; \
+            } while (0)
+
+#   define STATS_INSERTED_IN_TOMBSTONE(hm) do { \
+            hm->stats.total_tombstone_reuses++; \
+            hm->stats.total_insertions++; \
+            if (hm->slots_used > hm->stats.max_slots_used) \
+                hm->stats.max_slots_used = hm->slots_used; \
+            } while (0)
+
+#   define STATS_DELETED(hm) do { \
+            hm->stats.total_deletions++; \
+            hm->stats.total_tombstones++; \
+            hm->stats.current_tombstone_count++; \
+            if (hm->stats.current_tombstone_count > hm->stats.max_slots_tombstoned) \
+                hm->stats.max_slots_tombstoned = hm->stats.current_tombstone_count; \
+            } while (0)
+
+#   define STATS_REHASH(hm) do { \
+            hm->stats.total_rehashes++; \
+            hm->stats.current_tombstone_count = 0; \
+            } while (0)
+
+#   define STATS_REPORT(hm) do { \
+            fprintf(stderr, \
+                    "[hashmap stats] key size: %d, value size: %d\n" \
+                    "  total insertions:        %lu\n" \
+                    "  total deletions:         %lu\n" \
+                    "  total tombstones:        %lu\n" \
+                    "  total tombestone reuses: %lu\n" \
+                    "  total rehashes:          %lu\n" \
+                    "  total insertion probes:  %lu\n" \
+                    "  total deletion probes:   %lu\n" \
+                    "  max slots used:          %lu\n" \
+                    "  max slots tombstoned:    %lu\n" \
+                    , hm->key_size \
+                    , hm->value_size \
+                    , hm->stats.total_insertions \
+                    , hm->stats.total_deletions \
+                    , hm->stats.total_tombstones \
+                    , hm->stats.total_tombstone_reuses \
+                    , hm->stats.total_rehashes \
+                    , hm->stats.total_insertion_probes \
+                    , hm->stats.total_deletion_probes \
+                    , hm->stats.max_slots_used \
+                    , hm->stats.max_slots_tombstoned); \
+            } while (0)
+
+#else
+#   define STATS_INIT(hm)
+#   define STATS_INSERTION_PROBE(hm)
+#   define STATS_DELETION_PROBE(hm)
+#   define STATS_INSERTED_IN_UNUSED(hm)
+#   define STATS_INSERTED_IN_TOMBSTONE(hm)
+#   define STATS_DELETED(hm)
+#   define STATS_REHASH(hm)
+#   define STATS_REPORT(hm)
+#endif
+
 /* ------------------------------------------------------------------------- */
 /*
  * Need to account for the possibility that our hash function will produce
@@ -18,7 +100,7 @@ static hash32_t
 hash_wrapper(const struct hashmap_t* hm, const void* data, hash32_t len)
 {
     hash32_t hash = hm->hash(data, len);
-    if (hash == HM_SLOT_UNUSED || hash == HM_SLOT_TOMBSTONE || hash == HM_SLOT_INVALID)
+    if (hash == HM_SLOT_UNUSED || hash == HM_SLOT_RIP || hash == HM_SLOT_INVALID)
         return 2;
     return hash;
 }
@@ -44,6 +126,8 @@ resize_rehash(struct hashmap_t* hm, hash32_t new_table_count)
     struct hashmap_t new_hm;
     hash32_t i;
 
+    STATS_REHASH(hm);
+
     memcpy(&new_hm, hm, sizeof(struct hashmap_t));
     new_hm.table_count = new_table_count;
     new_hm.slots_used = 0;
@@ -53,7 +137,7 @@ resize_rehash(struct hashmap_t* hm, hash32_t new_table_count)
 
     for (i = 0; i != hm->table_count; ++i)
     {
-        if (SLOT(hm, i) == HM_SLOT_UNUSED || SLOT(hm, i) == HM_SLOT_TOMBSTONE)
+        if (SLOT(hm, i) == HM_SLOT_UNUSED || SLOT(hm, i) == HM_SLOT_RIP)
             continue;
         if (hashmap_insert(&new_hm, KEY(hm, i), VALUE(hm, i)) != IK_OK)
         {
@@ -94,6 +178,8 @@ hashmap_construct(struct hashmap_t* hm, hash32_t key_size, hash32_t value_size)
     if (hm->storage == NULL)
         return IK_ERR_OUT_OF_MEMORY;
 
+    STATS_INIT(hm);
+
     return IK_OK;
 }
 
@@ -101,6 +187,7 @@ hashmap_construct(struct hashmap_t* hm, hash32_t key_size, hash32_t value_size)
 void
 hashmap_destruct(struct hashmap_t* hm)
 {
+    STATS_REPORT(hm);
     FREE(hm->storage);
 }
 
@@ -119,7 +206,7 @@ hashmap_insert(struct hashmap_t* hm, const void* key, const void* value)
     hash32_t hash, pos, i, last_tombstone;
 
     /* NOTE: Rehashing may change table count, make sure to compute hash after this */
-    if (hm->slots_used * 10 / hm->table_count >= 7)
+    if (hm->slots_used * 100 / hm->table_count >= HM_REHASH_AT_PERCENT)
         if (resize_rehash(hm, hm->table_count*2) != 0)
             return IK_ERR_OUT_OF_MEMORY;
 
@@ -137,10 +224,10 @@ hashmap_insert(struct hashmap_t* hm, const void* key, const void* value)
         if (SLOT(hm, pos) == hash)
         {
             if (memcmp(KEY(hm, pos), key, hm->key_size) == 0)
-                return IK_KEY_EXISTS;
+                return IK_HASH_EXISTS;
         }
         else
-            if (SLOT(hm, pos) == HM_SLOT_TOMBSTONE)
+            if (SLOT(hm, pos) == HM_SLOT_RIP)
                 last_tombstone = pos;
 
         /* Quadratic probing following p(K,i)=(i^2+i)/2. If the hash table
@@ -148,10 +235,19 @@ hashmap_insert(struct hashmap_t* hm, const void* key, const void* value)
         i++;
         pos += i;
         pos = pos % hm->table_count;
+        STATS_INSERTION_PROBE(hm);
     }
 
+    /* It's safe to insert new values at the end of a probing sequence */
     if (last_tombstone != HM_SLOT_INVALID)
+    {
         pos = last_tombstone;
+        STATS_INSERTED_IN_TOMBSTONE(hm);
+    }
+    else
+    {
+        STATS_INSERTED_IN_UNUSED(hm);
+    }
 
     /* Store hash, key and value */
     SLOT(hm, pos) = hash;
@@ -190,11 +286,13 @@ hashmap_erase(struct hashmap_t* hm, const void* key)
         i++;
         pos += i;
         pos = pos % hm->table_count;
+        STATS_DELETION_PROBE(hm);
     }
 
     hm->slots_used--;
+    STATS_DELETED(hm);
 
-    SLOT(hm, pos) = HM_SLOT_TOMBSTONE;
+    SLOT(hm, pos) = HM_SLOT_RIP;
     return VALUE(hm, pos);
 }
 

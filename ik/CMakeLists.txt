@@ -5,25 +5,26 @@ include (CMakeDependentOption)
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
-    set (IK_MEMORY_DEBUGGING_DEFAULT ON)
-    set (IK_UPDATE_INFO_DEFAULT OFF)
+    set (DEBUG_FEATURE ON)
+    set (RELEASE_FEATURE OFF)
 else ()
-    set (IK_MEMORY_DEBUGGING_DEFAULT OFF)
-    set (IK_UPDATE_INFO_DEFAULT ON)
+    set (DEBUG_FEATURE OFF)
+    set (RELEASE_FEATURE ON)
 endif ()
 
 set (IK_LIB_TYPE "SHARED" CACHE STRING "SHARED or STATIC library")
 set (IK_API_NAME "ik" CACHE STRING "This is the name of the symbol that is exported. Also determines the name of the library.")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
-option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${IK_MEMORY_DEBUGGING_DEFAULT})
+option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${DEBUG_FEATURE})
 cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
+option (IK_HASHMAP_STATS "Record statistics on the use of hashmaps" OFF)
 option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
 set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
-option (IK_UPDATE_INFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${IK_UPDATE_INFO_DEFAULT})
+option (IK_UPDATE_INFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 option (IK_VECTOR_64BIT "Allows vector_t to contain more than 2^32 elements, but makes the structure 32 bytes instead of 20 bytes" OFF)
 
@@ -154,9 +155,11 @@ set (IK_HEADERS
     "include/public/ik/log.h"
     "include/public/ik/mat3x3.h"
     "include/public/ik/node.h"
+    "include/private/ik/node_data.h"
     "include/public/ik/pole.h"
     "include/public/ik/pstdint.h"
     "include/public/ik/quat.h"
+    "include/private/ik/refcounted.h"
     "include/public/ik/retcodes.h"
     "include/public/ik/solver.h"
     "include/public/ik/tests.h"
@@ -172,14 +175,19 @@ set (IK_SOURCES
     "src/callbacks.c"
     #"src/constraint.c"
     #"src/effector.c"
-    #"src/ik.c"
+    "src/hash.c"
+    "src/hashmap.c"
+    "src/ik.c"
     "src/init.c"
     "src/log.c"
     "src/mat3x3.c"
     "src/memory.c"
     "src/node.c"
+    "src/node_data.c"
+    "src/node_tree_flattened.c"
     #"src/pole.c"
     "src/quat.c"
+    "src/refcounted.c"
     "src/retcodes.c"
     #"src/solver.c"
     #"src/solver_FABRIK.c"
