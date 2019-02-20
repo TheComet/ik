@@ -13,11 +13,11 @@ struct ik_node_t;
 struct ik_ntf_index_data_t
 {
     /* In-order indices */
-    int pre;
-    int pre_child_count;
+    uint32_t pre;
+    uint32_t pre_child_count;
     /* Pre-order indices */
-    int post;
-    int post_child_count;
+    uint32_t post;
+    uint32_t post_child_count;
 };
 
 struct ik_ntf_t
@@ -32,7 +32,7 @@ struct ik_ntf_t
 
     struct ik_ntf_index_data_t* indices;
 
-    int node_count;
+    uint32_t node_count;
     ikreal_t* scratch_buffer;
 };
 

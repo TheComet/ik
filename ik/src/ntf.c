@@ -131,12 +131,12 @@ split_into_subtrees(struct vector_t* tree_list,
 
 /* ------------------------------------------------------------------------- */
 static void
-count_marked_nodes_in_subtree(uintptr_t* total_count,
-                              uintptr_t* max_children,
+count_marked_nodes_in_subtree(uint32_t* total_count,
+                              uint32_t* max_children,
                               const struct ik_node_t* node,
                               const struct btree_t* marked_nodes)
 {
-    uintptr_t child_count = 0;
+    uint32_t child_count = 0;
     NODE_FOR_EACH(node, uid, child)
         enum mark_e* marking =
             (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(child));
@@ -161,12 +161,12 @@ count_marked_nodes_in_subtree(uintptr_t* total_count,
 /* ------------------------------------------------------------------------- */
 static void
 calculate_indices_recursive(struct ik_ntf_t* ntf,
-                            int* pre_counter,
-                            int* post_counter,
+                            uint32_t* pre_counter,
+                            uint32_t* post_counter,
                             const struct ik_node_t* node,
                             const struct btree_t* marked_nodes)
 {
-    int marked_child_node_count;
+    uint32_t marked_child_node_count;
 
     marked_child_node_count = 0;
     NODE_FOR_EACH(node, uid, child)
@@ -176,7 +176,7 @@ calculate_indices_recursive(struct ik_ntf_t* ntf,
             marked_child_node_count++;
     NODE_END_EACH
 
-    ntf->indices[*pre_counter].pre = (int)(node->node_data - ntf->node_data);
+    ntf->indices[*pre_counter].pre = (uint32_t)(node->node_data - ntf->node_data);
     ntf->indices[*pre_counter].pre_child_count = marked_child_node_count;
     (*pre_counter)++;
 
@@ -191,7 +191,7 @@ calculate_indices_recursive(struct ik_ntf_t* ntf,
                                         marked_nodes);
     NODE_END_EACH
 
-    ntf->indices[*post_counter].post = (int)(node->node_data - ntf->node_data);
+    ntf->indices[*post_counter].post = (uint32_t)(node->node_data - ntf->node_data);
     ntf->indices[*post_counter].post_child_count = marked_child_node_count;
     (*post_counter)++;
 }
@@ -200,8 +200,8 @@ calculate_indices(struct ik_ntf_t* ntf,
                   const struct ik_node_t* subtree_root,
                   const struct btree_t* marked_nodes)
 {
-    int pre_counter = 0;
-    int post_counter = 0;
+    uint32_t pre_counter = 0;
+    uint32_t post_counter = 0;
     calculate_indices_recursive(ntf,
                                 &pre_counter,
                                 &post_counter,
@@ -240,7 +240,6 @@ copy_marked_nodes_into_ntf_recursive(struct ik_node_data_t** buffer_dest,
      */
     node->node_data->refcount = buffer_refcount;
     IK_INCREF(node->node_data);
-
 
     NODE_FOR_EACH(node, uid, child)
         copy_marked_nodes_into_ntf_recursive(buffer_dest, child, buffer_refcount, marked_nodes);
@@ -354,22 +353,22 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
                  const struct btree_t* marked_nodes)
 {
     ikret_t status;
-    uintptr_t node_count;
-    uintptr_t max_children;
+    uint32_t max_children;
     assert(ntf);
     assert(subtree_root);
     assert(marked_nodes);
 
     memset(ntf, 0, sizeof *ntf);
 
-    count_marked_nodes_in_subtree(&node_count, &max_children, subtree_root, marked_nodes);
-    ntf->node_data = MALLOC(sizeof(struct ik_node_data_t) * node_count);
+    count_marked_nodes_in_subtree(&ntf->node_count, &max_children, subtree_root, marked_nodes);
+
+    ntf->node_data = MALLOC(sizeof(struct ik_node_data_t) * ntf->node_count);
     if (ntf->node_data == NULL)
     {
         ik_log_fatal("Failed to allocate NTF: Ran out of memory");
         FAIL(IK_ERR_OUT_OF_MEMORY, alloc_nodes_buffer_failed);
     }
-    ntf->indices = MALLOC(sizeof(struct ik_ntf_index_data_t) * node_count);
+    ntf->indices = MALLOC(sizeof(struct ik_ntf_index_data_t) * ntf->node_count);
     if (ntf->indices == NULL)
     {
         ik_log_fatal("Failed to allocate NTF index data: Ran out of memory");
@@ -380,8 +379,6 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
         ik_log_fatal("Failed to allocate scratch buffer: Ran out of memory");
         FAIL(IK_ERR_OUT_OF_MEMORY, alloc_scratch_buffer_failed);
     }
-
-    ntf->node_count = node_count;
 
     if ((status = copy_marked_nodes_into_ntf(ntf, subtree_root, marked_nodes)) != IK_OK)
         FAIL(status, copy_nodes_failed);
