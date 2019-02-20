@@ -168,6 +168,10 @@ calculate_indices_recursive(struct ik_ntf_t* ntf,
 {
     uint32_t marked_child_node_count;
 
+    /*
+     * Count the child nodes that are marked. Have to do this before recursing
+     * into the children, because doing that would update *pre_counter.
+     */
     marked_child_node_count = 0;
     NODE_FOR_EACH(node, uid, child)
         enum mark_e* marking =
@@ -176,10 +180,12 @@ calculate_indices_recursive(struct ik_ntf_t* ntf,
             marked_child_node_count++;
     NODE_END_EACH
 
+    /* Set "pre-order" indices */
     ntf->indices[*pre_counter].pre = (uint32_t)(node->node_data - ntf->node_data);
     ntf->indices[*pre_counter].pre_child_count = marked_child_node_count;
     (*pre_counter)++;
 
+    /* Recurse into children */
     NODE_FOR_EACH(node, uid, child)
         enum mark_e* marking =
                 (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(child));
@@ -191,6 +197,7 @@ calculate_indices_recursive(struct ik_ntf_t* ntf,
                                         marked_nodes);
     NODE_END_EACH
 
+    /* Set "post-order" indices */
     ntf->indices[*post_counter].post = (uint32_t)(node->node_data - ntf->node_data);
     ntf->indices[*post_counter].post_child_count = marked_child_node_count;
     (*post_counter)++;
@@ -213,7 +220,7 @@ calculate_indices(struct ik_ntf_t* ntf,
 static void
 copy_marked_nodes_into_ntf_recursive(struct ik_node_data_t** buffer_dest,
                                      struct ik_node_t* node,
-                                     struct ik_refcount_t* buffer_refcount,
+                                     struct ik_refcount_t* shared_array_refcount,
                                      const struct btree_t* marked_nodes)
 {
     /* Only copy nodes that are marked as MARK_SECTION */
@@ -238,11 +245,11 @@ copy_marked_nodes_into_ntf_recursive(struct ik_node_data_t** buffer_dest,
      * The refcount of the copied data is invalidated. We must point it to the
      * buffer's refcount and incref it appropriately.
      */
-    node->node_data->refcount = buffer_refcount;
+    node->node_data->refcount = shared_array_refcount;
     IK_INCREF(node->node_data);
 
     NODE_FOR_EACH(node, uid, child)
-        copy_marked_nodes_into_ntf_recursive(buffer_dest, child, buffer_refcount, marked_nodes);
+        copy_marked_nodes_into_ntf_recursive(buffer_dest, child, shared_array_refcount, marked_nodes);
     NODE_END_EACH
 }
 static ikret_t
@@ -255,15 +262,14 @@ copy_marked_nodes_into_ntf(struct ik_ntf_t* ntf,
     struct ik_refcount_t* buffer_refcount;
 
     /*
-     * Each ik_node_t points to a ik_node_data_t structure, which is refcounted.
-     * After memcpy'ing the node data, we have to give the copied data its own
-     * refcount (otherwise it will be using the refcount of the original data).
+     * Each ik_node_t references a ik_node_data_t instance (which is refcounted).
+     * After memcpy'ing this node_data instance, we have to give the copied data
+     * its own refcount (otherwise it will be using the refcount of the original data).
      *
      * We also have to point the ik_node_t to the copied node data and
-     * decrement the refcount of the original node data appropriately.
-     *
-     * This way, the user of the library can edit node properties even after
-     * the node tree was optimized.
+     * decrement the refcount of the original node data appropriately. This way,
+     * the user of the library can continue to edit node properties without
+     * knowing the data was moved to a new memory location.
      */
     memcpy(ntf->node_data, subtree_root->node_data, sizeof(struct ik_node_data_t));
     if ((status = ik_refcount_create(
@@ -362,28 +368,45 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
 
     count_marked_nodes_in_subtree(&ntf->node_count, &max_children, subtree_root, marked_nodes);
 
+    /* Contiguous array for holding all ik_node_data_t instances of all nodes */
     ntf->node_data = MALLOC(sizeof(struct ik_node_data_t) * ntf->node_count);
     if (ntf->node_data == NULL)
     {
         ik_log_fatal("Failed to allocate NTF: Ran out of memory");
         FAIL(IK_ERR_OUT_OF_MEMORY, alloc_nodes_buffer_failed);
     }
+
+    /*
+     * Index data to allow iterating the tree in pre- and post-order after it
+     * was flattened.
+     */
     ntf->indices = MALLOC(sizeof(struct ik_ntf_index_data_t) * ntf->node_count);
     if (ntf->indices == NULL)
     {
         ik_log_fatal("Failed to allocate NTF index data: Ran out of memory");
         FAIL(IK_ERR_OUT_OF_MEMORY, alloc_index_buffer_failed);
     }
+
+    /*
+     * The solver needs a small stack to push/pop transformations as it
+     * iterates the tree.
+     * TODO: Add support for alloca(). If the stack is small enough and the
+     * platform supports alloca(), leave this as NULL.
+     */
     if ((ntf->scratch_buffer = MALLOC(sizeof(union ik_transform_t) * max_children)) == NULL)
     {
         ik_log_fatal("Failed to allocate scratch buffer: Ran out of memory");
         FAIL(IK_ERR_OUT_OF_MEMORY, alloc_scratch_buffer_failed);
     }
 
+    /* Actual flattening of the tree happens here */
     if ((status = copy_marked_nodes_into_ntf(ntf, subtree_root, marked_nodes)) != IK_OK)
         FAIL(status, copy_nodes_failed);
 
-    /* Reference node data in case all ik_node_t instances are destroyed */
+    /*
+     * The NTF structure needs to hold a reference to the node data in case all
+     * ik_node_t instances are destroyed.
+     */
     IK_INCREF(ntf->node_data);
 
     return IK_OK;
@@ -398,7 +421,8 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
 void
 ik_ntf_destruct(struct ik_ntf_t* ntf)
 {
-    FREE(ntf->scratch_buffer);
+    if (ntf->scratch_buffer)
+        FREE(ntf->scratch_buffer);
     FREE(ntf->indices);
     IK_DECREF(ntf->node_data);
 }
@@ -418,7 +442,7 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
 {
     ikret_t status;
     struct vector_t effector_nodes;
-    struct vector_t tree_list;
+    struct vector_t subtree_list;
     struct btree_t marked_nodes;
 
     /* Create list of all nodes that have effectors attached */
@@ -441,18 +465,21 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
      * tree, splitting it into a list of "sub-trees" which must be solved
      * "in-order" (LNR).
      */
-    vector_construct(&tree_list, sizeof(struct ik_node_t*));
-    if ((status = split_into_subtrees(&tree_list, root, &marked_nodes)) != IK_OK)
+    vector_construct(&subtree_list, sizeof(struct ik_node_t*));
+    if ((status = split_into_subtrees(&subtree_list, root, &marked_nodes)) != IK_OK)
         FAIL(status, split_into_islands_failed);
 
+    /*
+     * Go through each subtree and flatten it.
+     */
     if ((status = vector_create(ntf_list, sizeof(struct ik_ntf_t))) != IK_OK)
         FAIL(status, ntf_list_create_vector_failed);
-    VECTOR_FOR_EACH(&tree_list, struct ik_node_t*, node)
+    VECTOR_FOR_EACH(&subtree_list, struct ik_node_t*, node)
         if ((status = process_subtree(*ntf_list, *node, &marked_nodes)) != IK_OK)
             FAIL(status, process_subtrees_failed);
     VECTOR_END_EACH
 
-    vector_clear_free(&tree_list);
+    vector_clear_free(&subtree_list);
     btree_clear_free(&marked_nodes);
     vector_clear_free(&effector_nodes);
 
@@ -460,7 +487,7 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
 
     process_subtrees_failed        : vector_destroy(*ntf_list);
     ntf_list_create_vector_failed  :
-    split_into_islands_failed      : vector_clear_free(&tree_list);
+    split_into_islands_failed      : vector_clear_free(&subtree_list);
     mark_nodes_failed              : btree_clear_free(&marked_nodes);
     find_effectors_failed          : vector_clear_free(&effector_nodes);
     return status;
