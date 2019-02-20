@@ -1,23 +1,16 @@
 #include "ik/log.h"
 #include "ik/memory.h"
 #include "ik/node_data.h"
+#include "ik/effector.h"
 #include <assert.h>
 #include <string.h>
 
-#define FAIL(label, code) do { status = code; goto label; } while(0)
-
-
-static void
-node_data_destruct(struct ik_node_data_t* node_data)
-{
-    /* Don't need to free anything within the structure */
-}
+#define FAIL(code, label) do { status = code; goto label; } while(0)
 
 static void
-node_data_destroy(struct ik_node_data_t* node_data)
+destruct_node_data(struct ik_node_data_t* node_data)
 {
-    ik_refcounted_deinit((struct ik_refcounted_t*)node_data);
-    FREE(node_data);
+    IK_XDECREF(node_data->effector);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -31,14 +24,23 @@ ik_node_data_create(struct ik_node_data_t** node_data, const void* user_data)
     if (*node_data == NULL)
     {
         ik_log_fatal("Failed to allocate node_data: Ran out of memory");
-        FAIL(malloc_failed, IK_ERR_OUT_OF_MEMORY);
+        FAIL(IK_ERR_OUT_OF_MEMORY, malloc_failed);
     }
 
-    if ((status = ik_node_data_construct(*node_data, user_data)) != IK_OK)
-        FAIL(construct_failed, status);
+    memset(*node_data, 0, sizeof **node_data);
 
-    /* Since we malloc'd, we must also tell the refcounted object to free */
-    (*node_data)->destroy = node_data_destroy;
+    /* node_data is a refcounted type so it can be safely casted to
+     * ik_refcount_t. This initializes the refcount */
+    if ((status = ik_refcount_create(&(*node_data)->refcount,
+            (ik_destruct_func)destruct_node_data, 1)) != IK_OK)
+        FAIL(status, construct_failed);
+
+    (*node_data)->user_data = user_data;
+    (*node_data)->rotation_weight = 0.0;
+    (*node_data)->dist_to_parent = 0.0;
+    (*node_data)->mass = 0.0;
+    ik_quat_set_identity((*node_data)->transform.t.rotation.f);
+    ik_vec3_set_zero((*node_data)->transform.t.position.f);
 
     return IK_OK;
 
@@ -47,26 +49,17 @@ ik_node_data_create(struct ik_node_data_t** node_data, const void* user_data)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_node_data_construct(struct ik_node_data_t* node_data, const void* user_data)
+void
+ik_node_data_destroy(struct ik_node_data_t* node_data)
 {
-    ikret_t status;
+    IK_DECREF(node_data);
+}
 
-    memset(node_data, 0, sizeof *node_data);
-
-    /* node_data is a refcounted type so it can be safely casted to
-     * ik_refcount_t. This initializes the refcount */
-    if ((status = ik_refcounted_init(
-            (struct ik_refcounted_t*)node_data,
-            (ik_destroy_func)node_data_destruct)) != IK_OK)
-        return status;
-
-    node_data->user_data = user_data;
-    node_data->rotation_weight = 0.0;
-    node_data->dist_to_parent = 0.0;
-    node_data->mass = 0.0;
-    ik_quat_set_identity(node_data->rotation.f);
-    ik_vec3_set_zero(node_data->position.f);
-
-    return IK_OK;
+/* ------------------------------------------------------------------------- */
+void
+ik_node_data_ref_members(struct ik_node_data_t* node_data)
+{
+    IK_XINCREF(node_data->effector);
+    /*IK_XINCREF(node_data->constraint);*/
+    /*IK_XINCREF(node_data->pole);*/
 }

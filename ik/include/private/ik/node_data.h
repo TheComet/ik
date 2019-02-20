@@ -2,7 +2,8 @@
 #define IK_NODE_DATA_H
 
 #include "ik/config.h"
-#include "ik/refcounted.h"
+#include "ik/refcount.h"
+#include "ik/transform.h"
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
@@ -24,9 +25,9 @@ struct ik_node_data_t
      * the target position/rotation of the effector by writing to
      * node->effector->target_position or node->effector->target_rotation.
      */
-    struct ik_effector_t*   effector;
-    struct ik_constraint_t* constraint;
-    struct ik_pole_t*       pole;
+    struct ik_effector_t*    effector;
+    struct ik_constraint_t*  constraint;
+    struct ik_pole_t*        pole;
 
     ikreal_t dist_to_parent;
 
@@ -57,19 +58,7 @@ struct ik_node_data_t
      */
     const void* user_data;
 
-    union
-    {
-        struct
-        {
-            /*
-             * WARNING: HAS to be in this order -- there's some hacking going on
-             * in transform.c which relies on the order of ikreal_t's in transform[7].
-             */
-            struct ik_quat_t rotation;
-            struct ik_vec3_t position;
-        };
-        ikreal_t transform[7];
-    };
+    union ik_transform_t transform;
 
     ikreal_t rotation_weight;
     ikreal_t mass;
@@ -78,8 +67,11 @@ struct ik_node_data_t
 IK_PRIVATE_API ikret_t
 ik_node_data_create(struct ik_node_data_t** node_data, const void* user_data);
 
-IK_PRIVATE_API ikret_t
-ik_node_data_construct(struct ik_node_data_t* node_data, const void* user_data);
+IK_PRIVATE_API void
+ik_node_data_destroy(struct ik_node_data_t* node_data);
+
+IK_PRIVATE_API void
+ik_node_data_ref_members(struct ik_node_data_t* node_data);
 
 C_END
 

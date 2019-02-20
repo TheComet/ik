@@ -171,7 +171,7 @@ ik_vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
-    struct ik_vec3_t tmp;
+    union ik_vec3_t tmp;
     ikreal_t dot_qv = ik_vec3_dot(q, v);
     ikreal_t dot_qq = ik_vec3_dot(q, q);
     ik_vec3_copy(tmp.f, v);
@@ -193,7 +193,7 @@ ik_vec3_nrotate(ikreal_t v[3], const ikreal_t q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
-    struct ik_vec3_t tmp;
+    union ik_vec3_t tmp;
     ikreal_t dot_qv = -ik_vec3_dot(q, v);
     ikreal_t dot_qq = ik_vec3_dot(q, q);
     ik_vec3_copy(tmp.f, v);
@@ -230,7 +230,7 @@ ik_vec3_project_from_vec3_normalized(ikreal_t v1[3], const ikreal_t v2[3])
 void
 ik_vec3_project_onto_plane(ikreal_t v[3], const ikreal_t x[3], const ikreal_t y[3])
 {
-    struct ik_vec3_t n;
+    union ik_vec3_t n;
     ik_vec3_copy(n.f, x);
     ik_vec3_cross(n.f, y);              /* plane normal */
     ik_vec3_project_from_vec3(n.f, v);  /* project vector onto normal */

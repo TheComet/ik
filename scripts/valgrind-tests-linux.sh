@@ -1,5 +1,5 @@
 #!/bin/sh
-cd build/bin || echo "Error: Please run this script from the project's root directory as ./scripts/valgrind-tests-linux.sh"
+cd build/ik || echo "Error: Please run this script from the project's root directory as ./scripts/valgrind-tests-linux.sh"
 
 echo "Started valgrind..."
 valgrind --num-callers=50 \
@@ -8,5 +8,5 @@ valgrind --num-callers=50 \
 	--track-origins=yes \
 	--time-stamp=yes \
 	--suppressions=../../scripts/valgrind-suppressions.supp \
-	./iktests 2>&1 | tee ../../tests.grind
+	./ik_tests 2>&1 | tee ../../tests.grind
 cd .. && cd ..

@@ -90,7 +90,7 @@ malloc_wrapper(intptr_t size)
 void
 free_wrapper(void* ptr)
 {
-    /* find matching allocation and remove from bstv */
+    /* find matching allocation and remove from hashmap */
     if (!g_ignore_hm_malloc)
     {
         report_info_t* info = (report_info_t*)hashmap_erase(&report, &ptr);

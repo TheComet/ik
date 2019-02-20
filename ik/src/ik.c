@@ -36,17 +36,12 @@ struct ik_api_t IKAPI = {
 #define X(arg) IK_CONSTRAINT_##arg,
         IK_CONSTRAINTS_LIST
 #undef X
-    },
+    },*/
     {
-        ik_effector_create,
-        ik_effector_destroy,
-        ik_effector_duplicate,
-        ik_effector_attach,
-        ik_effector_detach,
 #define X(arg, value) value,
         IK_EFFECTOR_FLAGS_LIST
 #undef X
-    },*/
+    },
     {
         ik_info_author,
         ik_info_version,
@@ -88,6 +83,7 @@ struct ik_api_t IKAPI = {
         ik_node_unlink,
         ik_node_child_count,
         ik_node_find_child,
+        ik_node_create_effetor,
         ik_node_set_position,
         ik_node_set_rotation,
         ik_node_set_rotation_weight,

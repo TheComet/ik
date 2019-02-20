@@ -18,11 +18,11 @@ TEST(NAME, from_quat_1)
     ikreal_t ey[3] = {0, 1, 0};
     ikreal_t ez[3] = {0, 0, 1};
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ex[i], DoubleEq(ex[i]));
+        EXPECT_THAT(m.e.x[i], DoubleEq(ex[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ey[i], DoubleEq(ey[i]));
+        EXPECT_THAT(m.e.y[i], DoubleEq(ey[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ez[i], DoubleEq(ez[i]));
+        EXPECT_THAT(m.e.z[i], DoubleEq(ez[i]));
 }
 
 TEST(NAME, from_quat_2)
@@ -36,11 +36,11 @@ TEST(NAME, from_quat_2)
     ikreal_t ey[3] = {0, 1, 0};
     ikreal_t ez[3] = {-1/sqrt(2), 0, 1/sqrt(2)};
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ex[i], DoubleEq(ex[i]));
+        EXPECT_THAT(m.e.x[i], DoubleEq(ex[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ey[i], DoubleEq(ey[i]));
+        EXPECT_THAT(m.e.y[i], DoubleEq(ey[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ez[i], DoubleEq(ez[i]));
+        EXPECT_THAT(m.e.z[i], DoubleEq(ez[i]));
 }
 
 TEST(NAME, from_quat_3)
@@ -54,11 +54,11 @@ TEST(NAME, from_quat_3)
     ikreal_t ey[3] = {0, 1/sqrt(2), -1/sqrt(2)};
     ikreal_t ez[3] = {0, 1/sqrt(2), 1/sqrt(2)};
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ex[i], DoubleEq(ex[i]));
+        EXPECT_THAT(m.e.x[i], DoubleEq(ex[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ey[i], DoubleEq(ey[i]));
+        EXPECT_THAT(m.e.y[i], DoubleEq(ey[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ez[i], DoubleEq(ez[i]));
+        EXPECT_THAT(m.e.z[i], DoubleEq(ez[i]));
 }
 
 TEST(NAME, from_quat_4)
@@ -72,9 +72,9 @@ TEST(NAME, from_quat_4)
     ikreal_t ey[3] = {1/sqrt(2), 1/sqrt(2), 0};
     ikreal_t ez[3] = {0, 0, 1};
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ex[i], DoubleEq(ex[i]));
+        EXPECT_THAT(m.e.x[i], DoubleEq(ex[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ey[i], DoubleEq(ey[i]));
+        EXPECT_THAT(m.e.y[i], DoubleEq(ey[i]));
     for (int i = 0; i != 3; ++i)
-        EXPECT_THAT(m.ez[i], DoubleEq(ez[i]));
+        EXPECT_THAT(m.e.z[i], DoubleEq(ez[i]));
 }

@@ -15,6 +15,7 @@ endif ()
 set (IK_LIB_TYPE "SHARED" CACHE STRING "SHARED or STATIC library")
 set (IK_API_NAME "ik" CACHE STRING "This is the name of the symbol that is exported. Also determines the name of the library.")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
+option (IK_BUILDINFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${DEBUG_FEATURE})
 cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
@@ -24,7 +25,6 @@ set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
 set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
-option (IK_UPDATE_INFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 option (IK_VECTOR_64BIT "Allows vector_t to contain more than 2^32 elements, but makes the structure 32 bytes instead of 20 bytes" OFF)
 
@@ -133,7 +133,7 @@ add_custom_target (ik_ifec_header
             -DOUTPUT_FILE=${UPDATE_INFO_HEADER}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -DIK_UPDATE_INFO=${IK_UPDATE_INFO}
+            -DIK_BUILDINFO=${IK_BUILDINFO}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
     COMMENT "Updating build information"
     VERBATIM)
@@ -155,11 +155,12 @@ set (IK_HEADERS
     "include/public/ik/log.h"
     "include/public/ik/mat3x3.h"
     "include/public/ik/node.h"
+    "include/private/ik/ntf.h"
     "include/private/ik/node_data.h"
     "include/public/ik/pole.h"
     "include/public/ik/pstdint.h"
     "include/public/ik/quat.h"
-    "include/private/ik/refcounted.h"
+    "include/public/ik/refcount.h"
     "include/public/ik/retcodes.h"
     "include/public/ik/solver.h"
     "include/public/ik/tests.h"
@@ -174,7 +175,7 @@ set (IK_SOURCES
     #"src/chain.c"
     "src/callbacks.c"
     #"src/constraint.c"
-    #"src/effector.c"
+    "src/effector.c"
     "src/hash.c"
     "src/hashmap.c"
     "src/ik.c"
@@ -184,10 +185,10 @@ set (IK_SOURCES
     "src/memory.c"
     "src/node.c"
     "src/node_data.c"
-    "src/node_tree_flattened.c"
+    "src/ntf.c"
     #"src/pole.c"
     "src/quat.c"
-    "src/refcounted.c"
+    "src/refcount.c"
     "src/retcodes.c"
     #"src/solver.c"
     #"src/solver_FABRIK.c"
@@ -237,6 +238,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_hashmap.cpp"
     "src/tests/test_mat3x3.cpp"
     "src/tests/test_node.cpp"
+    "src/tests/test_ntf.cpp"
     "src/tests/test_quat.cpp"
    # "src/tests/test_transform_chain.cpp"
    # "src/tests/test_transform_chain_rotations.cpp"
@@ -261,7 +263,7 @@ add_library (ik_obj OBJECT
     ${IK_SOURCES})
 set_target_properties (ik_obj
     PROPERTIES
-        C_STANDARD 11
+        C_STANDARD 90
         POSITION_INDEPENDENT_CODE ${IK_PIC})
 target_include_directories (ik_obj
     PRIVATE
@@ -277,7 +279,7 @@ target_compile_options (ik_obj
         /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
         -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math -flto
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
@@ -298,7 +300,9 @@ if (IK_PYTHON)
         ${IK_PYTHON_SOURCES}
         ${IK_PYTHON_HEADERS})
     set_target_properties (ik_python_obj
-        PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
+        PROPERTIES
+            C_STANDARD 90
+            POSITION_INDEPENDENT_CODE ${IK_PIC})
     target_include_directories (ik_python_obj
         PRIVATE
             ${CMAKE_CURRENT_BINARY_DIR}/include/public
@@ -489,15 +493,16 @@ message (STATUS " + Configuration: ${CMAKE_BUILD_TYPE}")
 message (STATUS " + Library type: ${IK_LIB_TYPE}")
 message (STATUS " + API Name: ${IK_API_NAME}")
 message (STATUS " + Benchmarks: ${IK_BENCHMARKS}")
+message (STATUS " + Buildinfo: ${IK_BUILDINFO}")
 message (STATUS " + DOT Export: ${IK_DOT_EXPORT}")
 message (STATUS " + Memory debugging: ${IK_MEMORY_DEBUGGING}")
 message (STATUS " + Memory backtraces: ${IK_MEMORY_BACKTRACE}")
+message (STATUS " + Hashmap statistics: ${IK_HASHMAP_STATS}")
 message (STATUS " + PIC (Position independent code): ${IK_PIC}")
 message (STATUS " + Precision: ${IK_PRECISION}")
 message (STATUS " + Profiling: ${IK_PROFILING}")
 message (STATUS " + Python bindings: ${IK_PYTHON}")
 message (STATUS " + Python version: ${IK_PYTHON_VERSION}")
-message (STATUS " + Update info every compile: ${IK_UPDATE_INFO}")
 message (STATUS " + Unit Tests: ${IK_TESTS}")
 message (STATUS " + 64-bit vector: ${IK_VECTOR_64BIT}")
 message (STATUS "------------------------------------------------------------")

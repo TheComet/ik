@@ -17,6 +17,8 @@ enum ik_log_severity_e
 #define X(arg) IK_LOG_##arg,
     IK_LOG_SEVERITY_LIST
 #undef X
+
+    IK_LOG_SEVERITY_COUNT
 };
 
 #if defined(IK_BUILDING)

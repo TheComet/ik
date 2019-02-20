@@ -2,6 +2,8 @@
 #define IK_TRANSFORM_H
 
 #include "ik/config.h"
+#include "ik/quat.h"
+#include "ik/vec3.h"
 
 #define IK_TRANSFORM_MODE_LIST \
     X(G2L, 0x00) \
@@ -16,11 +18,28 @@ struct vector_t;
 struct ik_node_t;
 struct chain_t;
 
+
 enum ik_transform_mode_e
 {
 #define X(arg, value) IK_TRANSFORM_##arg = value,
     IK_TRANSFORM_MODE_LIST
 #undef X
+
+    IK_TRANSFORM_MODE_COUNT
+};
+
+union ik_transform_t
+{
+    struct
+    {
+        /*
+         * WARNING: HAS to be in this order -- there's some hacking going on
+         * in transform.c which relies on the order of ikreal_t's in transform[7].
+         */
+        union ik_quat_t rotation;
+        union ik_vec3_t position;
+    } t;
+    ikreal_t f[7];
 };
 
 #if defined(IK_BUILDING)

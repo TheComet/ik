@@ -22,6 +22,8 @@ enum ik_constraint_type_e
 #define X(type) IK_CONSTRAINT_##type,
     IK_CONSTRAINTS_LIST
 #undef X
+
+    IK_CONSTRAINT_TYPES_COUNT
 };
 
 struct ik_constraint_t
@@ -32,19 +34,19 @@ struct ik_constraint_t
 
     union {
         struct {
-            struct ik_quat_t angle;
+            union ik_quat_t angle;
         } stiff;
         struct {
-            struct ik_vec3_t axis;
+            union ik_vec3_t axis;
             ikreal_t min_angle;
             ikreal_t max_angle;
         } hinge;
         struct {
-            struct ik_vec3_t center;
+            union ik_vec3_t center;
             ikreal_t max_angle;
         } cone;
         ikreal_t custom[5];
-    };
+    } data;
 };
 
 #if defined(IK_BUILDING)

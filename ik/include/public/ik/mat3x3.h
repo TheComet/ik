@@ -5,24 +5,21 @@
 
 C_BEGIN
 
-struct ik_mat3x3_t
-{
-    union {
-        /*! Access individual elements */
-        struct {
-            ikreal_t m00, m01, m02;
-            ikreal_t m10, m11, m12;
-            ikreal_t m20, m21, m22;
-        };
-        /*! Access basis vectors */
-        struct {
-            ikreal_t ex[3];
-            ikreal_t ey[3];
-            ikreal_t ez[3];
-        };
-        /*! Access as contiguous array */
-        ikreal_t f[9];
-    };
+union ik_mat3x3_t {
+    /*! Access individual elements */
+    struct {
+        ikreal_t m00, m01, m02;
+        ikreal_t m10, m11, m12;
+        ikreal_t m20, m21, m22;
+    } m;
+    /*! Access basis vectors */
+    struct {
+        ikreal_t x[3];
+        ikreal_t y[3];
+        ikreal_t z[3];
+    } e;
+    /*! Access as contiguous array */
+    ikreal_t f[9];
 };
 
 #if defined(IK_BUILDING)

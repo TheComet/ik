@@ -40,6 +40,8 @@ enum ik_solver_algorithm_e
 #define X(solver) IK_SOLVER_##solver,
     IK_SOLVER_ALGORITHM_LIST
 #undef X
+
+    IK_SOLVER_ALGORITHMS_COUNT
 };
 
 enum ik_solver_flags_e
@@ -47,6 +49,8 @@ enum ik_solver_flags_e
 #define X(arg, value) IK_SOLVER_##arg = value,
     IK_SOLVER_FEATURES_LIST
 #undef X
+
+    IK_SOLVER_FEATURES_COUNT
 };
 
 #if defined(IK_BUILDING)

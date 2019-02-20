@@ -7,20 +7,21 @@
 #define IK_VERSION "${IK_VERSION}." EXPAND_AND_QUOTE(IK_BUILD_NUMBER)
 #define IK_CMAKE_CONFIG \
     "    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \\\n" \
-    "    -DIK_LIB_TYPE=${IK_LIB_TYPE} \\\n" \
     "    -DCMAKE_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\" \\\n" \
     "    -DCMAKE_PREFIX_PATH=\"${CMAKE_PREFIX_PATH}\" \\\n" \
     "    -DIK_API_NAME=\"${IK_API_NAME}\" \\\n" \
     "    -DIK_BENCHMARKS=${IK_BENCHMARKS} \\\n" \
+    "    -DIK_BUILDINFO=${IK_BUILDINFO} \\\n" \
     "    -DIK_DOT_EXPORT=${IK_DOT_EXPORT} \\\n" \
+    "    -DIK_LIB_TYPE=${IK_LIB_TYPE} \\\n" \
     "    -DIK_MEMORY_DEBUGGING=${IK_MEMORY_DEBUGGING} \\\n" \
     "    -DIK_MEMORY_BACKTRACE=${IK_MEMORY_BACKTRACE} \\\n" \
+    "    -DIK_HASHMAP_STATS=${IK_HASHMAP_STATS} \\\n" \
     "    -DIK_PIC=${IK_PIC} \\\n" \
     "    -DIK_PRECISION=${IK_PRECISION} \\\n" \
     "    -DIK_PROFILING=${IK_PROFILING} \\\n" \
     "    -DIK_PYTHON=${IK_PYTHON} \\\n" \
     "    -DIK_PYTHON_VERSION=${IK_PYTHON_VERSION} \\\n" \
-    "    -DIK_UPDATE_INFO=${IK_BIFEC} \\\n" \
     "    -DIK_TESTS=${IK_TESTS} \\\n" \
     "    -DIK_VECTOR_64BIT=${IK_VECTOR_64BIT}"
 #define IK_AUTHOR \

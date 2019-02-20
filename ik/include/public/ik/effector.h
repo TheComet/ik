@@ -2,6 +2,7 @@
 #define EFFECTOR_H
 
 #include "ik/config.h"
+#include "ik/refcount.h"
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
@@ -18,12 +19,15 @@
 C_BEGIN
 
 struct ik_node_t;
+struct ik_node_data_t;
 
 enum ik_effector_flags_e
 {
 #define X(arg, value) IK_EFFECTOR_##arg = value,
     IK_EFFECTOR_FLAGS_LIST
 #undef X
+
+    IK_EFFECTOR_FLAGS_COUNT
 };
 
 /*!
@@ -35,7 +39,9 @@ enum ik_effector_flags_e
  */
 struct ik_effector_t
 {
-    struct ik_node_t* node;
+    IK_REFCOUNTED(struct ik_effector_t)
+
+    struct ik_node_data_t* node_data;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -43,7 +49,7 @@ struct ik_effector_t
      * position where the node it is attached to should head for.
      * @note Default value is (0, 0, 0).
      */
-    struct ik_vec3_t target_position;
+    union ik_vec3_t target_position;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -51,7 +57,7 @@ struct ik_effector_t
      * rotation where the node it is attached to should head for.
      * @note Default value is the identity quaternion.
      */
-    struct ik_quat_t target_rotation;
+    union ik_quat_t target_rotation;
 
     /*!
      * Used internally to hold the actual target position/rotation, which will
@@ -59,7 +65,7 @@ struct ik_effector_t
      * 1.0. This value is updated right after calling solve() and before the
      * solving algorithm begins.
      */
-    struct ik_vec3_t actual_target;
+    union ik_vec3_t actual_target;
 
     /*!
      * @brief Specifies how much influence the solver has on the chain of
@@ -99,8 +105,8 @@ struct ik_effector_t
  * @brief Creates a new effector object. It can be attached to any node in the
  * tree using ik_node_attach_effector().
  */
-IK_PRIVATE_API struct ik_effector_t*
-ik_effector_create(void);
+IK_PRIVATE_API IK_WARN_UNUSED ikret_t
+ik_effector_create(struct ik_effector_t** effector);
 
 /*!
  * @brief Destroys and frees an effector object. This should **NOT** be called
@@ -109,12 +115,6 @@ ik_effector_create(void);
  */
 IK_PRIVATE_API void
 ik_effector_destroy(struct ik_effector_t* effector);
-
-/*!
- * @brief Duplicates the specified effector object and returns it.
- */
-IK_PRIVATE_API struct ik_effector_t*
-ik_effector_duplicate(const struct ik_effector_t* effector);
 
 /*!
  * @brief Attaches an effector object to the node. The node gains ownership
@@ -126,16 +126,6 @@ ik_effector_duplicate(const struct ik_effector_t* effector);
  */
 IK_PRIVATE_API ikret_t
 ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
-
-/*!
- * @brief Removes effector from the node it is attached to, if it exists.
- * The field node->effector  is set to NULL.
- * @note You regain ownership of the object and must destroy it manually when
- * done with it. You may also attach it to another node.
- * @note You will need to rebuild the solver's tree before solving.
- */
-IK_PRIVATE_API void
-ik_effector_detach(struct ik_effector_t* effector);
 
 #endif /* IK_BUILDING */
 

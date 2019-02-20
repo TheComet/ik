@@ -12,6 +12,10 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define FAIL(errcode, label) do { \
+        status = errcode; goto label; \
+    } while (0)
+
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_node_create(struct ik_node_t** node,
@@ -222,17 +226,45 @@ ik_node_find_child(struct ik_node_t** found,
 }
 
 /* ------------------------------------------------------------------------- */
+ikret_t
+ik_node_create_effetor(struct ik_effector_t** eff, struct ik_node_t* node)
+{
+    ikret_t status;
+
+    if (node->node_data->effector != NULL)
+        return IK_ERR_ALREADY_HAS_ATTACHMENT;
+
+    if ((status = ik_effector_create(&node->node_data->effector)) != IK_OK)
+        return status;
+
+    *eff = node->node_data->effector;
+
+    return IK_OK;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_node_destroy_effector(struct ik_node_t* node)
+{
+    if (node->node_data->effector == NULL)
+        return;
+
+    IK_DECREF(node->node_data->effector);
+    node->node_data->effector = NULL;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_node_set_position(struct ik_node_t* node, const ikreal_t position[3])
 {
-    ik_vec3_copy(node->node_data->position.f, position);
+    ik_vec3_copy(node->node_data->transform.t.position.f, position);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_node_set_rotation(struct ik_node_t* node, const ikreal_t rotation[4])
 {
-    ik_quat_copy(node->node_data->rotation.f, rotation);
+    ik_quat_copy(node->node_data->transform.t.rotation.f, rotation);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -257,14 +289,14 @@ ik_node_set_mass(struct ik_node_t* node, ikreal_t mass)
 const ikreal_t*
 ik_node_get_position(const struct ik_node_t* node)
 {
-    return node->node_data->position.f;
+    return node->node_data->transform.t.position.f;
 }
 
 /* ------------------------------------------------------------------------- */
 const ikreal_t*
 ik_node_get_rotation(const struct ik_node_t* node)
 {
-    return node->node_data->rotation.f;
+    return node->node_data->transform.t.rotation.f;
 }
 
 /* ------------------------------------------------------------------------- */

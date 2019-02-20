@@ -18,6 +18,8 @@ enum ik_pole_type_e
 #define X(arg) IK_POLE_##arg,
     IK_POLE_TYPE_LIST
 #undef X
+
+    IK_POLE_TYPE_COUNT
 };
 
 struct ik_pole_t
@@ -29,7 +31,7 @@ struct ik_pole_t
 
     /* public stuff */
     ikreal_t angle;
-    struct ik_vec3_t position;
+    union ik_vec3_t position;
 };
 
 #if defined(IK_BUILDING)

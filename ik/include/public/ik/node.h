@@ -110,6 +110,31 @@ ik_node_find_child(struct ik_node_t** child,
                    const struct ik_node_t* node,
                    const void* user_data);
 
+/*!
+ * @brief Creates and attaches a new effector to the specified node.
+ * @param[out] eff If the function succeeds, a pointer to the new effector
+ * object is written to this parameter.
+ * @note ik_effector_t is refcounted. The pointer returned is a borrowed
+ * reference, i.e. the refcount is not incremented. If you wish to use the
+ * effector elsewhere and are unsure if the node will outlive the effector, you
+ * should IK_INCREF the effector.
+ * @param[in] node The node to create the effector on.
+ * @return Returns IK_OK if the effector is successfully created. If the node
+ * already has an effector, then IK_ERR_ALREADY_HAS_ATTACHMENT is returned. If
+ * there is not enough memory to allocate the effector, then IK_ERR_OUT_OF_MEMORY
+ * is returned.
+ */
+IK_PRIVATE_API ikret_t
+ik_node_create_effetor(struct ik_effector_t** eff, struct ik_node_t* node);
+
+/*!
+ * @brief Unrefs the effector and detaches it from the specified node.
+ * @param[in] node Node to remove effector from. If the node doesn't have an
+ * effector attached, this function does nothing.
+ */
+IK_PRIVATE_API void
+ik_node_destroy_effector(struct ik_node_t* node);
+
 IK_PRIVATE_API void
 ik_node_set_position(struct ik_node_t* node, const ikreal_t position[3]);
 IK_PRIVATE_API void

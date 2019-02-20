@@ -5,16 +5,14 @@
 
 C_BEGIN
 
-struct ik_vec3_t
+union ik_vec3_t
 {
-    union {
-        struct {
-            ikreal_t x;
-            ikreal_t y;
-            ikreal_t z;
-        };
-        ikreal_t f[3];
-    };
+    struct {
+        ikreal_t x;
+        ikreal_t y;
+        ikreal_t z;
+    } v;
+    ikreal_t f[3];
 };
 
 #if defined(IK_BUILDING)

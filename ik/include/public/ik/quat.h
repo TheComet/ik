@@ -6,22 +6,19 @@
 
 C_BEGIN
 
-struct ik_quat_t
+union ik_quat_t
 {
-    union
-    {
-        struct {
-            ikreal_t x;
-            ikreal_t y;
-            ikreal_t z;
-            ikreal_t w;
-        };
-        struct {
-            struct ik_vec3_t v;
-            ikreal_t _w;
-        };
-        ikreal_t f[4];
-    };
+    struct {
+        ikreal_t x;
+        ikreal_t y;
+        ikreal_t z;
+        ikreal_t w;
+    } q;
+    struct {
+        union ik_vec3_t v;
+        ikreal_t _w;
+    } v;
+    ikreal_t f[4];
 };
 
 #if defined(IK_BUILDING)
