@@ -227,30 +227,98 @@ ik_node_find_child(struct ik_node_t** found,
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_node_create_effetor(struct ik_effector_t** eff, struct ik_node_t* node)
+ik_node_create_effector(struct ik_effector_t** eff, struct ik_node_t* node)
 {
     ikret_t status;
+    if ((status = ik_effector_create(eff)) != IK_OK)
+        return status;
 
+    return ik_node_attach_effector(node, *eff);
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* eff)
+{
     if (node->node_data->effector != NULL)
         return IK_ERR_ALREADY_HAS_ATTACHMENT;
 
-    if ((status = ik_effector_create(&node->node_data->effector)) != IK_OK)
-        return status;
-
-    *eff = node->node_data->effector;
-
+    node->node_data->effector = eff;  /* Steal reference */
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_node_destroy_effector(struct ik_node_t* node)
+ik_node_release_effector(struct ik_node_t* node)
 {
-    if (node->node_data->effector == NULL)
-        return;
+    IK_XDECREF(ik_node_take_effector(node));
+}
 
-    IK_DECREF(node->node_data->effector);
+/* ------------------------------------------------------------------------- */
+struct ik_effector_t*
+ik_node_take_effector(struct ik_node_t* node)
+{
+    struct ik_effector_t* eff;
+    if ((eff = node->node_data->effector) == NULL)
+        return NULL;
+
     node->node_data->effector = NULL;
+    return eff;
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_effector_t*
+ik_node_get_effector(const struct ik_node_t* node)
+{
+    return node->node_data->effector;
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_node_create_constraint(struct ik_constraint_t** constraint, struct ik_node_t* node)
+{
+    ikret_t status;
+    if ((status = ik_constraint_create(constraint)) != IK_OK)
+        return status;
+
+    return ik_node_attach_constraint(node, *constraint);
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_node_attach_constraint(struct ik_node_t* node, struct ik_constraint_t* constraint)
+{
+    if (node->node_data->constraint != NULL)
+        return IK_ERR_ALREADY_HAS_ATTACHMENT;
+
+    node->node_data->constraint = constraint;  /* Steal reference */
+    return IK_OK;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_node_release_constraint(struct ik_node_t* node)
+{
+    IK_XDECREF(ik_node_take_constraint(node));
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_constraint_t*
+ik_node_take_constraint(struct ik_node_t* node)
+{
+    struct ik_constraint_t* constraint;
+    if ((constraint = node->node_data->constraint) == NULL)
+        return NULL;
+
+    node->node_data->constraint = NULL;
+    return constraint;
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_constraint_t*
+ik_node_get_constraint(const struct ik_node_t* node)
+{
+    return node->node_data->constraint;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -261,10 +329,24 @@ ik_node_set_position(struct ik_node_t* node, const ikreal_t position[3])
 }
 
 /* ------------------------------------------------------------------------- */
+const ikreal_t*
+ik_node_get_position(const struct ik_node_t* node)
+{
+    return node->node_data->transform.t.position.f;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_node_set_rotation(struct ik_node_t* node, const ikreal_t rotation[4])
 {
     ik_quat_copy(node->node_data->transform.t.rotation.f, rotation);
+}
+
+/* ------------------------------------------------------------------------- */
+const ikreal_t*
+ik_node_get_rotation(const struct ik_node_t* node)
+{
+    return node->node_data->transform.t.rotation.f;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -277,33 +359,18 @@ ik_node_set_rotation_weight(struct ik_node_t* node, ikreal_t rotation_weight)
 }
 
 /* ------------------------------------------------------------------------- */
+ikreal_t
+ik_node_get_rotation_weight(const struct ik_node_t* node)
+{
+    return node->node_data->rotation_weight;
+}
+
+/* ------------------------------------------------------------------------- */
 void
 ik_node_set_mass(struct ik_node_t* node, ikreal_t mass)
 {
     if (mass < 0.0) mass = 0.0;
     node->node_data->mass = mass;
-}
-
-/* ------------------------------------------------------------------------- */
-
-const ikreal_t*
-ik_node_get_position(const struct ik_node_t* node)
-{
-    return node->node_data->transform.t.position.f;
-}
-
-/* ------------------------------------------------------------------------- */
-const ikreal_t*
-ik_node_get_rotation(const struct ik_node_t* node)
-{
-    return node->node_data->transform.t.rotation.f;
-}
-
-/* ------------------------------------------------------------------------- */
-ikreal_t
-ik_node_get_rotation_weight(const struct ik_node_t* node)
-{
-    return node->node_data->rotation_weight;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -314,7 +381,6 @@ ik_node_get_mass(const struct ik_node_t* node)
 }
 
 /* ------------------------------------------------------------------------- */
-
 ikreal_t
 ik_node_get_distance_to_parent(const struct ik_node_t* node)
 {
@@ -333,25 +399,4 @@ uintptr_t
 ik_node_get_uid(const struct ik_node_t* node)
 {
     return (uintptr_t)ik_node_get_user_data(node);
-}
-
-/* ------------------------------------------------------------------------- */
-const struct ik_effector_t*
-ik_node_get_effector(const struct ik_node_t* node)
-{
-    return node->node_data->effector;
-}
-
-/* ------------------------------------------------------------------------- */
-const struct ik_constraint_t*
-ik_node_get_constraint(const struct ik_node_t* node)
-{
-    return node->node_data->constraint;
-}
-
-/* ------------------------------------------------------------------------- */
-const struct ik_pole_t*
-ik_node_get_pole(const struct ik_node_t* node)
-{
-    return node->node_data->pole;
 }

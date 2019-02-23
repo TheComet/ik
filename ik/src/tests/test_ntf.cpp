@@ -61,9 +61,9 @@ public:
 
 TEST_F(NAME, no_action_if_tree_has_no_effectors)
 {
-    vector_t* ntf_list;
     ik_node_t* tree = tree_without_effectors();
-    EXPECT_THAT(ik_ntf_list_from_nodes(&ntf_list, tree), IK_ERR_NO_EFFECTORS_FOUND);
+    vector_t* ntf_list;
+    EXPECT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_ERR_NO_EFFECTORS_FOUND);
     IKAPI.node.destroy_recursive(tree);
 }
 
@@ -72,7 +72,7 @@ TEST_F(NAME, check_refcounts_are_correct)
     vector_t* ntf_list;
     ik_node_t* tree = tree_with_two_effectors();
 
-    ASSERT_THAT(ik_ntf_list_from_nodes(&ntf_list, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_OK);
     ASSERT_THAT(vector_count(ntf_list), Eq(1));
 
     ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(ntf_list, 0);
@@ -92,9 +92,9 @@ TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
     vector_t* ntf_list3;
     ik_node_t* tree = tree_with_two_effectors();
 
-    ASSERT_THAT(ik_ntf_list_from_nodes(&ntf_list1, tree), IK_OK);
-    ASSERT_THAT(ik_ntf_list_from_nodes(&ntf_list2, tree), IK_OK);
-    ASSERT_THAT(ik_ntf_list_from_nodes(&ntf_list3, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list1, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list2, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list3, tree), IK_OK);
 
     ik_ntf_t* ntf1 = (ik_ntf_t*)vector_get_element(ntf_list1, 0);
     ik_ntf_t* ntf2 = (ik_ntf_t*)vector_get_element(ntf_list2, 0);
@@ -119,7 +119,7 @@ TEST_F(NAME, check_indices_are_correct)
 {
     vector_t* ntf_list;
     ik_node_t* tree = tree_with_two_effectors();
-    ASSERT_THAT(ik_ntf_list_from_nodes(&ntf_list, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_OK);
     ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(ntf_list, 0);
 
     /*

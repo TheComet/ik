@@ -83,21 +83,36 @@ struct ik_api_t IKAPI = {
         ik_node_unlink,
         ik_node_child_count,
         ik_node_find_child,
-        ik_node_create_effetor,
+
+        ik_node_create_effector,
+        ik_node_attach_effector,
+        ik_node_release_effector,
+        ik_node_take_effector,
+        ik_node_get_effector,
+
+        ik_node_create_constraint,
+        ik_node_attach_constraint,
+        ik_node_release_constraint,
+        ik_node_take_constraint,
+        ik_node_get_constraint,
+/*
+        ik_node_create_pole,
+        ik_node_attach_pole,
+        ik_node_release_pole,
+        ik_node_take_pole,
+        ik_node_get_pole,*/
+
         ik_node_set_position,
-        ik_node_set_rotation,
-        ik_node_set_rotation_weight,
-        ik_node_set_mass,
         ik_node_get_position,
+        ik_node_set_rotation,
         ik_node_get_rotation,
+        ik_node_set_rotation_weight,
         ik_node_get_rotation_weight,
+        ik_node_set_mass,
         ik_node_get_mass,
         ik_node_get_distance_to_parent,
         ik_node_get_user_data,
-        ik_node_get_uid,
-        ik_node_get_effector,
-        ik_node_get_constraint,
-        ik_node_get_pole
+        ik_node_get_uid
     },/*
     {
         ik_pole_create,

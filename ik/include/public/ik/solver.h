@@ -33,7 +33,9 @@ C_BEGIN
 struct ik_solver_t;
 struct ik_node_t;
 
-typedef void(*ik_solver_iterate_node_cb_func)(struct ik_node_t*);
+typedef void(*ik_solver_solution_func)(void* user_data,
+                                       const ikreal_t position[3],
+                                       const ikreal_t rotation[4]);
 
 enum ik_solver_algorithm_e
 {
@@ -44,7 +46,7 @@ enum ik_solver_algorithm_e
     IK_SOLVER_ALGORITHMS_COUNT
 };
 
-enum ik_solver_flags_e
+enum ik_solver_features_e
 {
 #define X(arg, value) IK_SOLVER_##arg = value,
     IK_SOLVER_FEATURES_LIST
@@ -120,7 +122,7 @@ ik_solver_destruct(struct ik_solver_t* solver);
  * undefined state. You cannot solve the tree in this state.
  */
 IK_PRIVATE_API ikret_t
-ik_solver_rebuild(struct ik_solver_t* solver);
+ik_solver_prepare(struct ik_solver_t* solver, struct ik_node_t* tree);
 
 /*!
  * @brief Computes the distances between the nodes and stores them in
@@ -133,101 +135,42 @@ ik_solver_rebuild(struct ik_solver_t* solver);
  * has translational motions. In this case, you will have to recalculate the
  * segment lengths every time node positions change.
  *
- * @note This function gets called by ik_solver_rebuild_data().
+ * @note This function gets called by ik_solver_prepare().
  */
 IK_PRIVATE_API void
-ik_solver_update_distances(struct ik_solver_t* solver);
+ik_solver_calculate_distances(struct ik_solver_t* solver);
 
 /*!
  * @brief Solves the IK problem. The node solutions will be provided via a
- * callback function, which can be registered to the solver by assigning it to
- * solver->apply_result.
- * @return The return value should be 1 if the result converged. 0 if any of
- * the end effectors didn't converge. -1 if there was an error.
+ * callback function, see ik_solver_iterate_solution().
+ * @return Returns the number of effectors that reached their target. If no
+ * targets were reached, 0 is returned (doesn't mean the solver failed, just
+ * that all targets are out of reach).
  */
-IK_PRIVATE_API ikret_t
+IK_PRIVATE_API uint32_t
 ik_solver_solve(struct ik_solver_t* solver);
 
-IK_PRIVATE_API struct ik_node_t*
-ik_solver_get_tree(const struct ik_solver_t* solver);
-
-/*!
- * @brief Sets the tree to solve. The solver takes ownership of the tree, so
- * destroying the solver will also destroy all nodes.
- * @note You will have to call ik_solver_rebuild_data() before being able
- * to solve it.
- * @param[in] solver The solver object.
- * @param[in] tree The root node of a tree you wish to have solved. Any
- * existing tree is destroyed. Passing NULL destroys the existing tree.
- */
 IK_PRIVATE_API void
-ik_solver_set_tree(struct ik_solver_t* solver, struct ik_node_t* root);
+ik_solver_iterate_solution(const struct ik_solver_t* solver,
+                           ik_solver_solution_func callback);
 
-/*!
- * @brief The solver releases any references to a previously set tree and
- * returns the root node of said tree. Any proceeding calls that involve the
- * tree (e.g. solve or rebuild) will have no effect until a new tree is set.
- * @return If the solver has no tree then NULL is returned.
- */
-IK_PRIVATE_API struct ik_node_t*
-ik_solver_unlink_tree(struct ik_solver_t* solver);
-
-IK_PRIVATE_API uint32_t
+IK_PRIVATE_API uint16_t
 ik_solver_get_max_iterations(const struct ik_solver_t* solver);
-
-IK_PRIVATE_API void
-ik_solver_set_max_iterations(struct ik_solver_t* solver, uint32_t max_iterations);
-
 IK_PRIVATE_API ikreal_t
 ik_solver_get_tolerance(const struct ik_solver_t* solver);
+IK_PRIVATE_API uint16_t
+ik_solver_get_features(const struct ik_solver_t* solver);
+IK_PRIVATE_API uint8_t
+ik_solver_is_feature_enabled(const struct ik_solver_t* solver, enum ik_solver_features_e feature);
 
+IK_PRIVATE_API void
+ik_solver_set_max_iterations(struct ik_solver_t* solver, uint16_t max_iterations);
 IK_PRIVATE_API void
 ik_solver_set_tolerance(struct ik_solver_t* solver, ikreal_t tolerance);
-
-IK_PRIVATE_API uint8_t
-ik_solver_get_features(const struct ik_solver_t* solver);
-
 IK_PRIVATE_API void
-ik_solver_set_features(struct ik_solver_t* solver, uint8_t features, int enabled);
-
-/*!
- * @brief Iterates all nodes in the internal tree, breadth first, and passes
- * each node to the specified callback function.
- */
+ik_solver_enable_features(struct ik_solver_t* solver, uint16_t features);
 IK_PRIVATE_API void
-ik_solver_iterate_all_nodes(struct ik_solver_t* solver,
-                            ik_solver_iterate_node_cb_func callback);
-
-/*!
- * @brief Iterates just the nodes that are being affected by the solver,
- * *EXCLUDING* the island base nodes.
- *
- * @note Requires a rebuild before this data is valid.
- *
- * The reason for excluding island base nodes is because their positions and
- * rotations are typically set separately from the rest of the tree (see
- * ik_solver_iterate_base_nodes).
- */
-IK_PRIVATE_API void
-ik_solver_iterate_affected_nodes(struct ik_solver_t* solver,
-                                 ik_solver_iterate_node_cb_func callback);
-
-/*!
- * @brief Iterates all nodes that mark the beginning of a subtree.
- *
- * In a lot of cases, the scene graph of a user library is only partially
- * replicated for solving. Because of this, the base nodes of all of the chains
- * in the tree won't be affected by a potential parent node if it is moved or
- * rotated, since the ik library doesn't know about any parent nodes -- It
- * believes the base nodes ARE the parent-most nodes in the tree.
- *
- * To overcome this, you can iterate all of these base nodes and copy the
- * *global* (world) position/rotation into each base node position/rotation.
- * This will correctly position/rotate the solver's chains.
- */
-IK_PRIVATE_API void
-ik_solver_iterate_base_nodes(struct ik_solver_t* solver,
-                             ik_solver_iterate_node_cb_func callback);
+ik_solver_disable_features(struct ik_solver_t* solver, uint16_t features);
 
 #endif /* IK_BUILDING */
 

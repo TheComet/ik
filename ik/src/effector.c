@@ -16,6 +16,7 @@
 static void
 destruct_effector(struct ik_effector_t* effector)
 {
+    /* No data is managed by constraint */
 }
 
 /* ------------------------------------------------------------------------- */

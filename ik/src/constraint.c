@@ -6,6 +6,11 @@
 #include <string.h>
 #include <assert.h>
 
+#define FAIL(errcode, label) do { \
+        status = errcode; \
+        goto label; \
+    } while (0)
+
 /* ------------------------------------------------------------------------- */
 /* Constraint implementations */
 /* ------------------------------------------------------------------------- */
@@ -21,9 +26,9 @@ apply_dummy(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 static void
 apply_stiff(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 {
-    ik_quat_copy(compensate_rotation, node->rotation.f);
+    ik_quat_copy(compensate_rotation, node->transform.t.rotation.f);
     ik_quat_conj(compensate_rotation);
-    ik_quat_mul_quat(compensate_rotation, node->constraint->stiff.angle.f);
+    ik_quat_mul_quat(compensate_rotation, node->constraint->data.stiff.angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -44,44 +49,44 @@ apply_cone(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
 /* Constraint API */
 /* ------------------------------------------------------------------------- */
 
+static void
+destruct_constraint(struct ik_constraint_t* constraint)
+{
+    /* No data is managed by constraint */
+}
+
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_constraint_create(struct ik_constraint_t** constraint)
 {
+    ikret_t status;
+
     *constraint = MALLOC(sizeof **constraint);
     if (*constraint == NULL)
     {
         ik_log_fatal("Failed to allocate constraint: Out of memory");
-        return IK_ERR_OUT_OF_MEMORY;
+        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_constraint_failed);
     }
 
-    memset(constraint, 0, sizeof **constraint);
+    memset(*constraint, 0, sizeof **constraint);
+
+    if ((status = ik_refcount_create(&(*constraint)->refcount,
+                  (ik_destruct_func)destruct_constraint, 1)) != IK_OK)
+        FAIL(status, init_refcount_failed);
+
     ik_constraint_set_custom(*constraint, apply_dummy);
 
     return IK_OK;
+
+    init_refcount_failed    : FREE(*constraint);
+    alloc_constraint_failed : return status;
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_constraint_destroy(struct ik_constraint_t* constraint)
 {
-    ik_constraint_detach(constraint);
-    FREE(constraint);
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_constraint_duplicate(struct ik_constraint_t** dst,
-                        const struct ik_constraint_t* src)
-{
-    ikret_t status;
-    if ((status = ik_constraint_create(dst)) != IK_OK)
-        return status;
-
-    memcpy(*dst, src, sizeof *src);
-    (*dst)->node = NULL;
-
-    return IK_OK;
+    IK_DECREF(constraint);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -107,6 +112,8 @@ ik_constraint_set_type(struct ik_constraint_t* constraint,
         case IK_CONSTRAINT_CUSTOM:
             ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
             return IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
+
+        case IK_CONSTRAINT_TYPES_COUNT : break;
     }
 
     constraint->type = constraint_type;
@@ -118,38 +125,4 @@ void
 ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback)
 {
     constraint->apply = callback;
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_constraint_detach(struct ik_constraint_t* constraint)
-{
-    if (constraint->node == NULL)
-        return;
-
-    constraint->node->constraint = NULL;
-    constraint->node = NULL;
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_constraint_attach(struct ik_constraint_t* constraint, struct ik_node_t* node)
-{
-    if (node->constraint != NULL)
-    {
-        ik_log_error(
-            "You are trying to attach a constraint to a node that "
-            "already has a constraint attached to it. The new constraint will "
-            "not be attached!"
-        );
-        return -1;
-    }
-
-    /* constraint may be attached to another node */
-    ik_constraint_detach(constraint);
-
-    constraint->node = node;
-    node->constraint = constraint;
-
-    return 0;
 }

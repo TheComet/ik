@@ -53,7 +53,13 @@ IK_PRIVATE_API void
 ik_ntf_destroy(struct ik_ntf_t* ntf);
 
 IK_PRIVATE_API IK_WARN_UNUSED ikret_t
-ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root);
+ik_ntf_list_fill_new(struct vector_t** ntf_list, struct ik_node_t* root);
+
+IK_PRIVATE_API IK_WARN_UNUSED ikret_t
+ik_ntf_list_fill(struct vector_t* ntf_list, struct ik_node_t* root);
+
+IK_PRIVATE_API void
+ik_ntf_list_clear(struct vector_t* ntf_list);
 
 IK_PRIVATE_API void
 ik_ntf_list_destroy(struct vector_t* ntf_list);

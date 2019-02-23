@@ -435,10 +435,26 @@ ik_ntf_destroy(struct ik_ntf_t* ntf)
     FREE(ntf);
 }
 
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_ntf_list_fill_new(struct vector_t** ntf_list, struct ik_node_t* root)
+{
+    ikret_t status;
+    if ((status = vector_create(ntf_list, sizeof(struct ik_ntf_t))) != IK_OK)
+        return status;
+
+    if ((status = ik_ntf_list_fill(*ntf_list, root)) != IK_OK)
+    {
+        vector_destroy(*ntf_list);
+        return status;
+    }
+
+    return IK_OK;
+}
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
+ik_ntf_list_fill(struct vector_t* ntf_list, struct ik_node_t* root)
 {
     ikret_t status;
     struct vector_t effector_nodes;
@@ -472,10 +488,8 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
     /*
      * Go through each subtree and flatten it.
      */
-    if ((status = vector_create(ntf_list, sizeof(struct ik_ntf_t))) != IK_OK)
-        FAIL(status, ntf_list_create_vector_failed);
     VECTOR_FOR_EACH(&subtree_list, struct ik_node_t*, node)
-        if ((status = process_subtree(*ntf_list, *node, &marked_nodes)) != IK_OK)
+        if ((status = process_subtree(ntf_list, *node, &marked_nodes)) != IK_OK)
             FAIL(status, process_subtrees_failed);
     VECTOR_END_EACH
 
@@ -485,8 +499,7 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
 
     return IK_OK;
 
-    process_subtrees_failed        : vector_destroy(*ntf_list);
-    ntf_list_create_vector_failed  :
+    process_subtrees_failed        : vector_clear_free(ntf_list);
     split_into_islands_failed      : vector_clear_free(&subtree_list);
     mark_nodes_failed              : btree_clear_free(&marked_nodes);
     find_effectors_failed          : vector_clear_free(&effector_nodes);
@@ -495,10 +508,18 @@ ik_ntf_list_from_nodes(struct vector_t** ntf_list, struct ik_node_t* root)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_ntf_list_destroy(struct vector_t* ntf_list)
+ik_ntf_list_clear(struct vector_t* ntf_list)
 {
     VECTOR_FOR_EACH(ntf_list, struct ik_ntf_t, ntf)
         ik_ntf_destruct(ntf);
     VECTOR_END_EACH
+    vector_clear_free(ntf_list);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_ntf_list_destroy(struct vector_t* ntf_list)
+{
+    ik_ntf_list_clear(ntf_list);
     vector_destroy(ntf_list);
 }

@@ -1,11 +1,13 @@
 #include "ik/chain.h"
 #include "ik/effector.h"
+#include "ik/log.h"
 #include "ik/memory.h"
 #include "ik/node.h"
-#include "ik/log.h"
+#include "ik/node_data.h"
+#include "ik/ntf.h"
 #include "ik/pole.h"
 #include "ik/solver.h"
-#include "ik/solverdef.h"
+#include "ik/solver_head.h"
 #include "ik/solver_ONE_BONE.h"
 #include "ik/solver_TWO_BONE.h"
 #include "ik/solver_FABRIK.h"
@@ -18,14 +20,11 @@ struct ik_solver_t
     SOLVER_HEAD
 };
 
-static int
-recursively_get_all_effector_nodes(struct ik_node_t* node, struct vector_t* effector_nodes_list);
+static void
+determine_pole_target_tips(struct ik_ntf_t* ntf);
 
 static void
-determine_pole_target_tips(struct chain_t* chain);
-
-static void
-calculate_effector_target(const struct chain_t* chain);
+calculate_local_effector_target(const struct ik_node_data_t* chain);
 
 /* ------------------------------------------------------------------------- */
 ikret_t
@@ -40,10 +39,10 @@ ik_solver_create(struct ik_solver_t** solver, enum ik_solver_algorithm_e algorit
                 ik_log_fatal("Failed to allocate solver: ran out of memory"); \
                 goto alloc_solver_failed;                                     \
             }                                                                 \
-            memset(*solver, 0, ik_solver_##algorithm##_type_size());          \
+            memset(*solver, 0, sizeof(ik_solver_##algorithm##_t));            \
             (*solver)->construct = ik_solver_##algorithm##_construct;         \
             (*solver)->destruct = ik_solver_##algorithm##_destruct;           \
-            (*solver)->rebuild = ik_solver_##algorithm##_rebuild;             \
+            (*solver)->prepare = ik_solver_##algorithm##_prepare;             \
             (*solver)->solve = ik_solver_##algorithm##_solve;                 \
         } break;
         IK_SOLVER_ALGORITHM_LIST
@@ -78,8 +77,7 @@ ik_solver_construct(struct ik_solver_t* solver)
     solver->max_iterations = 20;
     solver->tolerance = 1e-2;
     solver->features = IK_SOLVER_JOINT_ROTATIONS;
-    vector_construct(&solver->effector_nodes_list, sizeof(struct ik_node_t*));
-    vector_construct(&solver->chain_list, sizeof(struct chain_t));
+    ik_ntf_list_construct(&solver->ntf_list);
 
     return solver->construct(solver);
 }
@@ -89,57 +87,18 @@ void
 ik_solver_destruct(struct ik_solver_t* solver)
 {
     solver->destruct(solver);
-
-    if (solver->tree)
-        ik_node_destroy(solver->tree);
-
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
-        chain_destruct(chain);
-    SOLVER_END_EACH
-    vector_clear_free(&solver->chain_list);
-
-    vector_clear_free(&solver->effector_nodes_list);
+    ik_ntf_list_clear(&solver->ntf_list);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_rebuild(struct ik_solver_t* solver)
+ik_solver_prepare(struct ik_solver_t* solver, struct ik_node_t* node)
 {
     ikret_t result;
 
-    /* If the solver has no tree, then there's nothing to do */
-    if (solver->tree == NULL)
-    {
-        ik_log_error("No tree to work with. Did you forget to set the tree with ik_solver_set_tree()?");
-        return IK_ERR_SOLVER_HAS_NO_TREE;
-    }
-
-    /*
-     * Traverse the entire tree and generate a list of the effectors. This
-     * makes the process of building the chain list for FABRIK much easier.
-     */
-    ik_log_info("Rebuilding effector nodes list");
-    vector_clear(&solver->effector_nodes_list);
-    if ((result = recursively_get_all_effector_nodes(
-            solver->tree,
-            &solver->effector_nodes_list)) != IK_OK)
-    {
-        ik_log_fatal("Ran out of memory while building the effector nodes list");
-        return result;
-    }
-
-    /* now build the chain tree */
-    if ((result = chain_tree_rebuild(
-            &solver->chain_list,
-            solver->tree,
-            &solver->effector_nodes_list)) != IK_OK)
-    {
-        return result;
-    }
-
     /* Pole targets need to know what their tip nodes are */
-    VECTOR_FOR_EACH(&solver->chain_list, struct chain_t, chain)
-        determine_pole_target_tips(chain);
+    VECTOR_FOR_EACH(&solver->ntf_list, struct ik_ntf_t, ntf)
+        determine_pole_target_tips(ntf);
     VECTOR_END_EACH
 
     update_distances(&solver->chain_list);
@@ -162,7 +121,7 @@ update_actual_effector_targets_for_chain_tree(const struct chain_t* chain)
     struct ik_node_t* effector_node = chain_get_node(chain, 0);
     if (effector_node->effector != NULL)
     {
-        calculate_effector_target(chain);
+        calculate_local_effector_target(chain);
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
@@ -178,7 +137,7 @@ update_actual_effector_targets(const struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
+uint32_t
 ik_solver_solve(struct ik_solver_t* solver)
 {
     update_actual_effector_targets(solver);
@@ -267,93 +226,10 @@ ik_solver_set_features(struct ik_solver_t* solver, uint8_t features, int enabled
 
 /* ------------------------------------------------------------------------- */
 static void
-ik_solver_iterate_all_nodes_recursive(struct ik_node_t* node,
-                                      ik_solver_iterate_node_cb_func callback)
+determine_pole_target_tips(struct ik_ntf_t* ntf)
 {
-    callback(node);
-
-    NODE_FOR_EACH(node, guid, child)
-        ik_solver_iterate_all_nodes_recursive(child, callback);
-    NODE_END_EACH
-}
-void
-ik_solver_iterate_all_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
-{
-    if (solver->tree == NULL)
-    {
-        ik_log_warning("Tried iterating the tree, but no tree was set");
-        return;
-    }
-
-    ik_solver_iterate_all_nodes_recursive(solver->tree, callback);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-iterate_affected_nodes_recursive(struct chain_t* chain,
-                                 ik_solver_iterate_node_cb_func callback)
-{
-    /*
-     * Iterate the chain tree breadth first. Note that we exclude the base node
-     * in each chain, because otherwise the same node would be passed to the
-     * callback multiple times. The base node is shared by the parent chain's
-     * effector as well as with other chains in the same depth.
-     */
-    int idx = chain_length(chain) - 1;
-    assert(idx > 0); /* chains must have at least 2 nodes in them */
-    while (idx--)
-    {
-        callback(chain_get_node(chain, idx));
-    }
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        iterate_affected_nodes_recursive(child, callback);
-    CHAIN_END_EACH
-}
-void
-ik_solver_iterate_affected_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
-{
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
-        int base_idx = chain_length(chain) - 1;
-        assert(base_idx > 0);
-        callback(chain_get_node(chain, base_idx));
-
-        iterate_affected_nodes_recursive(chain, callback);
-    SOLVER_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_solver_iterate_base_nodes(struct ik_solver_t* solver, ik_solver_iterate_node_cb_func callback)
-{
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
-        assert(chain_length(chain) >= 2); /* chains should have at least 2 nodes */
-        callback(chain_get_base_node(chain));
-    SOLVER_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
-static int
-recursively_get_all_effector_nodes(struct ik_node_t* node, struct vector_t* effector_nodes_list)
-{
-    if (node->effector != NULL)
-        if (vector_push(effector_nodes_list, &node) < 0)
-            return -1;
-
-    NODE_FOR_EACH(node, guid, child)
-        if (recursively_get_all_effector_nodes(child, effector_nodes_list) < 0)
-            return -1;
-    NODE_END_EACH
-
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-determine_pole_target_tips(struct chain_t* chain)
-{
-    int idx;
-    struct ik_node_t* last_tip_node;
+    uint32_t last_tip_node = 0;
+    uint32_t nodes_left = ntf->node_count;
 
     CHAIN_FOR_EACH_CHILD(chain, child)
         determine_pole_target_tips(child);
@@ -374,7 +250,7 @@ determine_pole_target_tips(struct chain_t* chain)
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_effector_target(const struct chain_t* chain)
+calculate_local_effector_target(const struct ik_node_data_t* chain)
 {
     /* Extract effector node and get its effector object */
     struct ik_node_t* node = chain_get_node(chain, 0);

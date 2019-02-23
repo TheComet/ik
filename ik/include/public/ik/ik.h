@@ -21,13 +21,13 @@ C_BEGIN
 
 struct ik_constraint_api_t
 {
-    ikret_t                 (*create)    (struct ik_constraint_t**);
-    void                    (*destroy)   (struct ik_constraint_t*);
-    ikret_t                 (*duplicate) (struct ik_constraint_t**, const struct ik_constraint_t*);
-    ikret_t                 (*set_type)  (struct ik_constraint_t*, enum ik_constraint_type_e);
-    void                    (*set_custom)(struct ik_constraint_t*, void (*)(const struct ik_node_t*, ikreal_t[4]));
-    ikret_t                 (*attach)    (struct ik_constraint_t*, struct ik_node_t*);
-    void                    (*detach)    (struct ik_constraint_t*);
+    ikret_t (*create)    (struct ik_constraint_t**);
+    void    (*destroy)   (struct ik_constraint_t*);
+    ikret_t (*duplicate) (struct ik_constraint_t**, const struct ik_constraint_t*);
+    ikret_t (*set_type)  (struct ik_constraint_t*, enum ik_constraint_type_e);
+    void    (*set_custom)(struct ik_constraint_t*, void (*)(const struct ik_node_t*, ikreal_t[4]));
+    ikret_t (*attach)    (struct ik_constraint_t*, struct ik_node_t*);
+    void    (*detach)    (struct ik_constraint_t*);
 
 #define X(arg) enum ik_constraint_type_e arg;
     IK_CONSTRAINTS_LIST
@@ -79,32 +79,48 @@ struct ik_mat3x3_api_t
 
 struct ik_node_api_t
 {
-    ikret_t                      (*create)                 (struct ik_node_t**, const void*);
-    ikret_t                      (*construct)              (struct ik_node_t*, const void*);
-    void                         (*destruct)               (struct ik_node_t*);
-    void                         (*destroy)                (struct ik_node_t*);
-    void                         (*destruct_recursive)     (struct ik_node_t*);
-    void                         (*destroy_recursive)      (struct ik_node_t*);
-    ikret_t                      (*create_child)           (struct ik_node_t**, struct ik_node_t*, const void*);
-    ikret_t                      (*link)                   (struct ik_node_t*, struct ik_node_t*);
-    void                         (*unlink)                 (struct ik_node_t*);
-    vector_size_t                (*child_count)            (const struct ik_node_t*);
-    ikret_t                      (*find_child)             (struct ik_node_t**, const struct ik_node_t*, const void*);
-    ikret_t                      (*create_effector)        (struct ik_effector_t**, struct ik_node_t*);
-    void                         (*set_position)           (struct ik_node_t*, const ikreal_t[3]);
-    void                         (*set_rotation)           (struct ik_node_t*, const ikreal_t[4]);
-    void                         (*set_rotation_weight)    (struct ik_node_t*, const ikreal_t);
-    void                         (*set_mass)               (struct ik_node_t*, const ikreal_t);
-    const ikreal_t*              (*get_position)           (const struct ik_node_t*);
-    const ikreal_t*              (*get_rotation)           (const struct ik_node_t*);
-    ikreal_t                     (*get_rotation_weight)    (const struct ik_node_t*);
-    ikreal_t                     (*get_mass)               (const struct ik_node_t*);
-    ikreal_t                     (*get_distance_to_parent) (const struct ik_node_t*);
-    const void*                  (*get_user_data)          (const struct ik_node_t*);
-    uintptr_t                    (*get_uid)                (const struct ik_node_t*);
-    const struct ik_effector_t * (*get_effector)           (const struct ik_node_t*);
-    const struct ik_constraint_t*(*get_constraint)         (const struct ik_node_t*);
-    const struct ik_pole_t*      (*get_pole)               (const struct ik_node_t*);
+    ikret_t                 (*create)                 (struct ik_node_t**, const void*);
+    ikret_t                 (*construct)              (struct ik_node_t*, const void*);
+    void                    (*destruct)               (struct ik_node_t*);
+    void                    (*destroy)                (struct ik_node_t*);
+    void                    (*destruct_recursive)     (struct ik_node_t*);
+    void                    (*destroy_recursive)      (struct ik_node_t*);
+    ikret_t                 (*create_child)           (struct ik_node_t**, struct ik_node_t*, const void*);
+    ikret_t                 (*link)                   (struct ik_node_t*, struct ik_node_t*);
+    void                    (*unlink)                 (struct ik_node_t*);
+    vector_size_t           (*child_count)            (const struct ik_node_t*);
+    ikret_t                 (*find_child)             (struct ik_node_t**, const struct ik_node_t*, const void*);
+
+    ikret_t                 (*create_effector)        (struct ik_effector_t**, struct ik_node_t*);
+    ikret_t                 (*attach_effector)        (struct ik_node_t*, struct ik_effector_t*);
+    void                    (*release_effector)       (struct ik_node_t*);
+    struct ik_effector_t*   (*take_effector)          (struct ik_node_t*);
+    struct ik_effector_t*   (*get_effector)           (const struct ik_node_t*);
+
+    ikret_t                 (*create_constraint)      (struct ik_constraint_t**, struct ik_node_t*);
+    ikret_t                 (*attach_constraint)      (struct ik_node_t*, struct ik_constraint_t*);
+    void                    (*release_constraint)     (struct ik_node_t*);
+    struct ik_constraint_t* (*take_constraint)        (struct ik_node_t*);
+    struct ik_constraint_t* (*get_constraint)         (const struct ik_node_t*);
+/*
+    ikret_t                 (*create_pole)            (struct ik_pole_t**, struct ik_node_t*);
+    ikret_t                 (*attach_pole)            (struct ik_node_t*, struct ik_pole_t*);
+    void                    (*release_pole)           (struct ik_node_t*);
+    struct ik_pole_t*       (*take_pole)              (struct ik_node_t*);
+    struct ik_pole_t*       (*get_pole)               (const struct ik_node_t*);*/
+
+    void                    (*set_position)           (struct ik_node_t*, const ikreal_t[3]);
+    const ikreal_t*         (*get_position)           (const struct ik_node_t*);
+    void                    (*set_rotation)           (struct ik_node_t*, const ikreal_t[4]);
+    const ikreal_t*         (*get_rotation)           (const struct ik_node_t*);
+    void                    (*set_rotation_weight)    (struct ik_node_t*, const ikreal_t);
+    ikreal_t                (*get_rotation_weight)    (const struct ik_node_t*);
+    void                    (*set_mass)               (struct ik_node_t*, const ikreal_t);
+    ikreal_t                (*get_mass)               (const struct ik_node_t*);
+
+    ikreal_t                (*get_distance_to_parent) (const struct ik_node_t*);
+    const void*             (*get_user_data)          (const struct ik_node_t*);
+    uintptr_t               (*get_uid)                (const struct ik_node_t*);
 };
 
 struct ik_pole_api_t
@@ -146,7 +162,7 @@ struct ik_solver_api_t
 #define X(arg) enum ik_solver_algorithm_e arg;
     IK_SOLVER_ALGORITHM_LIST
 #undef X
-#define X(arg, value) enum ik_solver_flags_e arg;
+#define X(arg, value) enum ik_solver_features_e arg;
     IK_SOLVER_FEATURES_LIST
 #undef X
 };

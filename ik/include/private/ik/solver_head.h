@@ -12,17 +12,16 @@ C_BEGIN
     /* Derived interface */                                                   \
     ikret_t (*construct)(struct ik_solver_t* solver);                         \
     void    (*destruct)(struct ik_solver_t* solver);                          \
-    ikret_t (*rebuild)(struct ik_solver_t* solver);                           \
+    ikret_t (*prepare)(struct ik_solver_t* solver);                           \
     ikret_t (*solve)(struct ik_solver_t* solver);                             \
+    uint8_t* stack_buffer;                                                    \
                                                                               \
-    /* list of effector_t* references (not owned by us) */                    \
-    struct vector_t      effector_nodes_list;                                 \
-    /* list of chain_t objects (allocated in-place, i.e. ik_solver_t owns them) */\
-    struct vector_t      chain_list;                                          \
+    /* list of ik_ntf_t objects  */                                           \
+    struct vector_t      ntf_list;                                            \
                                                                               \
     ikreal_t             tolerance;                                           \
     uint16_t             max_iterations;                                      \
-    uint8_t              features;
+    uint16_t             features;
 
 C_END
 

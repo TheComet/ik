@@ -116,17 +116,6 @@ ik_effector_create(struct ik_effector_t** effector);
 IK_PRIVATE_API void
 ik_effector_destroy(struct ik_effector_t* effector);
 
-/*!
- * @brief Attaches an effector object to the node. The node gains ownership
- * of the effector and is responsible for its deallocation. If the node
- * already owns an effector, then it is first destroyed.
- * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
- * an effector attached. IK_OK if otherwise.
- * @note You will need to rebuild the solver's tree before solving.
- */
-IK_PRIVATE_API ikret_t
-ik_effector_attach(struct ik_effector_t* effector, struct ik_node_t* node);
-
 #endif /* IK_BUILDING */
 
 C_END

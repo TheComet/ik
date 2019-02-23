@@ -7,6 +7,9 @@
 C_BEGIN
 
 struct ik_node_data_t;
+struct ik_effector_t;
+struct ik_constraint_t;
+struct ik_pole_t;
 
 /*!
  * @brief Base structure used to build the tree structure to be solved.
@@ -125,7 +128,10 @@ ik_node_find_child(struct ik_node_t** child,
  * is returned.
  */
 IK_PRIVATE_API ikret_t
-ik_node_create_effetor(struct ik_effector_t** eff, struct ik_node_t* node);
+ik_node_create_effector(struct ik_effector_t** effector, struct ik_node_t* node);
+
+IK_PRIVATE_API ikret_t
+ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* effector);
 
 /*!
  * @brief Unrefs the effector and detaches it from the specified node.
@@ -133,23 +139,87 @@ ik_node_create_effetor(struct ik_effector_t** eff, struct ik_node_t* node);
  * effector attached, this function does nothing.
  */
 IK_PRIVATE_API void
-ik_node_destroy_effector(struct ik_node_t* node);
+ik_node_release_effector(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_effector_t*
+ik_node_take_effector(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_effector_t*
+ik_node_get_effector(const struct ik_node_t* node);
+
+IK_PRIVATE_API ikret_t
+ik_node_create_constraint(struct ik_constraint_t** effector,
+                          struct ik_node_t* node);
+
+/*!
+ * @brief The constraint is attached to the specified node.
+ *
+ * @note Constraints are a bit strange in how they are stored. They don't apply
+ * to single nodes, rather, they apply to entire segments (edges connecting
+ * nodes). This is not apparent in a single chain of nodes, but becomes apparent
+ * if you consider a tree structure.
+ *
+ *    A   C
+ *     \ /
+ *      B
+ *      |
+ *      D
+ *
+ * If you wanted to constrain the rotation of D, then you would add a
+ * constraint to node B. If you wanted to constraint the rotation of the
+ * segment B-A then you would add a constraint to node A.
+ *
+ * @param[in] constraint The constraint object. The node gains ownership of
+ * the constraint and is responsible for its deallocation. If the node already
+ * owns a constraint, then the new constraint is ignored and an error code is
+ * returned.
+ * @param[in] node The child of the node you wish to constrain.
+ * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
+ * a constraint attached. IK_OK if otherwise.
+ * @note You will need to rebuild the solver's tree before solving.
+ */
+IK_PRIVATE_API ikret_t
+ik_node_attach_constraint(struct ik_node_t* node,
+                          struct ik_constraint_t* constraint);
+
+IK_PRIVATE_API void
+ik_node_release_constraint(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_constraint_t*
+ik_node_take_constraint(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_constraint_t*
+ik_node_get_constraint(const struct ik_node_t* node);
+
+IK_PRIVATE_API ikret_t
+ik_node_create_pole(struct ik_pole_t** effector, struct ik_node_t* node);
+
+IK_PRIVATE_API ikret_t
+ik_node_attach_pole(struct ik_node_t* node, struct ik_pole_t* pole);
+
+IK_PRIVATE_API void
+ik_node_release_pole(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_pole_t*
+ik_node_take_pole(struct ik_node_t* node);
+
+IK_PRIVATE_API struct ik_pole_t*
+ik_node_get_pole(const struct ik_node_t* node);
 
 IK_PRIVATE_API void
 ik_node_set_position(struct ik_node_t* node, const ikreal_t position[3]);
-IK_PRIVATE_API void
-ik_node_set_rotation(struct ik_node_t* node, const ikreal_t rotation[4]);
-IK_PRIVATE_API void
-ik_node_set_rotation_weight(struct ik_node_t* node, ikreal_t rotation_weight);
-IK_PRIVATE_API void
-ik_node_set_mass(struct ik_node_t* node, ikreal_t mass);
-
 IK_PRIVATE_API const ikreal_t*
 ik_node_get_position(const struct ik_node_t* node);
+IK_PRIVATE_API void
+ik_node_set_rotation(struct ik_node_t* node, const ikreal_t rotation[4]);
 IK_PRIVATE_API const ikreal_t*
 ik_node_get_rotation(const struct ik_node_t* node);
+IK_PRIVATE_API void
+ik_node_set_rotation_weight(struct ik_node_t* node, ikreal_t rotation_weight);
 IK_PRIVATE_API ikreal_t
 ik_node_get_rotation_weight(const struct ik_node_t* node);
+IK_PRIVATE_API void
+ik_node_set_mass(struct ik_node_t* node, ikreal_t mass);
 IK_PRIVATE_API ikreal_t
 ik_node_get_mass(const struct ik_node_t* node);
 
@@ -159,12 +229,6 @@ IK_PRIVATE_API const void*
 ik_node_get_user_data(const struct ik_node_t* node);
 IK_PRIVATE_API uintptr_t
 ik_node_get_uid(const struct ik_node_t* node);
-IK_PRIVATE_API const struct ik_effector_t*
-ik_node_get_effector(const struct ik_node_t* node);
-IK_PRIVATE_API const struct ik_constraint_t*
-ik_node_get_constraint(const struct ik_node_t* node);
-IK_PRIVATE_API const struct ik_pole_t*
-ik_node_get_pole(const struct ik_node_t* node);
 
 #define NODE_FOR_EACH(node, key, value) \
     BTREE_FOR_EACH(&(node)->children, struct ik_node_t, key, value)
