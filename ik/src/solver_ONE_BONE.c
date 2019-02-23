@@ -1,16 +1,16 @@
-#include "ik/chain.h"
 #include "ik/effector.h"
+#include "ik/ntf.h"
 #include "ik/log.h"
-#include "ik/node.h"
-#include "ik/vec3.h"
-#include "ik/solverdef.h"
+#include "ik/node_data.h"
+#include "ik/solver_head.h"
 #include "ik/solver_ONE_BONE.h"
+#include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 
 struct ik_solver_t
 {
-    SOLVER_HEAD
+    IK_SOLVER_HEAD
 };
 
 /* ------------------------------------------------------------------------- */
@@ -34,49 +34,60 @@ ik_solver_ONE_BONE_destruct(struct ik_solver_t* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-int
-ik_solver_ONE_BONE_rebuild(struct ik_solver_t* solver)
+ikret_t
+ik_solver_ONE_BONE_prepare(struct ik_solver_t* solver)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
      */
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
-        if (chain_length(chain) != 2) /* 2 nodes = 1 bone */
+    NTF_FOR_EACH(&solver->ntf_list, ntf)
+        uint32_t i = ntf->node_count;
+        while (i--)
+        {
+            if (ntf->indices[i].post_child_count > 1)
+            {
+                ik_log_error("Your tree has child chains. This solver does not support multiple end effectors. You will need to switch to another algorithm (e.g. FABRIK)");
+                return IK_ERR_GENERIC;
+            }
+        }
+
+        if (ntf->node_count != 2) /* 2 nodes = 1 bone */
         {
             ik_log_error("Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver algorithm?");
-            return -1;
+            return IK_ERR_GENERIC;
         }
-        if (chain_length(chain) > 0)
-        {
-            ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
-            return -1;
-        }
-    SOLVER_END_EACH
+    NTF_END_EACH
 
-    return 0;
+    return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 int
 ik_solver_ONE_BONE_solve(struct ik_solver_t* solver)
 {
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
-        struct ik_node_t* node_tip;
-        struct ik_node_t* node_base;
+    NTF_FOR_EACH(&solver->ntf_list, ntf)
+        struct ik_node_data_t* tip;
+        struct ik_node_data_t* base;
+        ikreal_t* tip_pos;
+        ikreal_t* base_pos;
+        ikreal_t* target_pos;
 
-        assert(chain_length(chain) > 1);
-        node_tip  = chain_get_node(chain, 0);
-        node_base = chain_get_node(chain, 1);
+        assert(ntf->node_count == 2);
+        tip  = NTF_GET_PRE(ntf, 0);
+        base = NTF_GET_PRE(ntf, 1);
 
-        assert(node_tip->effector != NULL);
-        node_tip->position = node_tip->effector->target_position;
+        assert(tip->effector != NULL);
+        tip_pos = tip->transform.t.position.f;
+        base_pos = base->transform.t.position.f;
+        target_pos = tip->effector->target_position.f;
 
-        ik_vec3_sub_vec3(node_tip->position.f, node_base->position.f);
-        ik_vec3_normalize(node_tip->position.f);
-        ik_vec3_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
-        ik_vec3_add_vec3(node_tip->position.f, node_base->position.f);
-    SOLVER_END_EACH
+        ik_vec3_copy(tip_pos, target_pos);
+        ik_vec3_sub_vec3(tip_pos, base_pos);
+        ik_vec3_normalize(tip_pos);
+        ik_vec3_mul_scalar(tip_pos, tip->dist_to_parent);
+        ik_vec3_add_vec3(tip_pos, base_pos);
+    NTF_END_EACH
 
     return 0;
 }

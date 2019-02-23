@@ -8,9 +8,12 @@
 
 C_BEGIN
 
+struct ik_constraint_t;
 struct ik_node_data_t;
 
-typedef void (*ik_constraint_apply_func)(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4]);
+typedef void (*ik_constraint_apply_func)(ikreal_t delta_rotation[4],
+                                         const ikreal_t current_rotation[4],
+                                         struct ik_constraint_t* constraint);
 
 #define IK_CONSTRAINTS_LIST \
     X(STIFF) \
@@ -31,6 +34,9 @@ struct ik_constraint_t
 {
     IK_REFCOUNTED(struct ik_constraint_t)
 
+    /*!
+     *
+     */
     ik_constraint_apply_func apply;
     enum ik_constraint_type_e type;
 

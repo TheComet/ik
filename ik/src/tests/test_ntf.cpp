@@ -62,54 +62,60 @@ public:
 TEST_F(NAME, no_action_if_tree_has_no_effectors)
 {
     ik_node_t* tree = tree_without_effectors();
-    vector_t* ntf_list;
-    EXPECT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_ERR_NO_EFFECTORS_FOUND);
+    vector_t ntf_list;
+    ik_ntf_list_construct(&ntf_list);
+    EXPECT_THAT(ik_ntf_list_fill(&ntf_list, tree), IK_ERR_NO_EFFECTORS_FOUND);
     IKAPI.node.destroy_recursive(tree);
 }
 
 TEST_F(NAME, check_refcounts_are_correct)
 {
-    vector_t* ntf_list;
+    vector_t ntf_list;
     ik_node_t* tree = tree_with_two_effectors();
 
-    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_OK);
-    ASSERT_THAT(vector_count(ntf_list), Eq(1));
+    ik_ntf_list_construct(&ntf_list);
+    ASSERT_THAT(ik_ntf_list_fill(&ntf_list, tree), IK_OK);
+    ASSERT_THAT(vector_count(&ntf_list), Eq(1));
 
-    ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(ntf_list, 0);
+    ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(&ntf_list, 0);
     EXPECT_THAT(ntf->node_count, Eq(10));  /* There are 10 nodes in the tree */
     EXPECT_THAT(ntf->node_data->refcount->refs, Eq(11));  /* Each node should hold a reference, plus the ntf structure itself should hold a reference */
     EXPECT_THAT(ntf->node_data, Eq(tree->node_data));
 
     IKAPI.node.destroy_recursive(tree);
     EXPECT_THAT(ntf->node_data->refcount->refs, Eq(1));  /* ntf structure should still hold a reference */
-    ik_ntf_list_destroy(ntf_list);
+    ik_ntf_list_clear(&ntf_list);
 }
 
 TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
 {
-    vector_t* ntf_list1;
-    vector_t* ntf_list2;
-    vector_t* ntf_list3;
+    vector_t ntf_list1;
+    vector_t ntf_list2;
+    vector_t ntf_list3;
     ik_node_t* tree = tree_with_two_effectors();
 
-    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list1, tree), IK_OK);
-    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list2, tree), IK_OK);
-    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list3, tree), IK_OK);
+    ik_ntf_list_construct(&ntf_list1);
+    ik_ntf_list_construct(&ntf_list2);
+    ik_ntf_list_construct(&ntf_list3);
 
-    ik_ntf_t* ntf1 = (ik_ntf_t*)vector_get_element(ntf_list1, 0);
-    ik_ntf_t* ntf2 = (ik_ntf_t*)vector_get_element(ntf_list2, 0);
-    ik_ntf_t* ntf3 = (ik_ntf_t*)vector_get_element(ntf_list3, 0);
+    ASSERT_THAT(ik_ntf_list_fill(&ntf_list1, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill(&ntf_list2, tree), IK_OK);
+    ASSERT_THAT(ik_ntf_list_fill(&ntf_list3, tree), IK_OK);
+
+    ik_ntf_t* ntf1 = (ik_ntf_t*)vector_get_element(&ntf_list1, 0);
+    ik_ntf_t* ntf2 = (ik_ntf_t*)vector_get_element(&ntf_list2, 0);
+    ik_ntf_t* ntf3 = (ik_ntf_t*)vector_get_element(&ntf_list3, 0);
 
     EXPECT_THAT(ntf1->node_data, Ne(tree->node_data));
     EXPECT_THAT(ntf2->node_data, Ne(tree->node_data));
     EXPECT_THAT(ntf3->node_data, Eq(tree->node_data));
 
     EXPECT_THAT(tree->node_data->refcount->refs, Eq(11));
-    ik_ntf_list_destroy(ntf_list1);
+    ik_ntf_list_clear(&ntf_list1);
     EXPECT_THAT(tree->node_data->refcount->refs, Eq(11));
-    ik_ntf_list_destroy(ntf_list2);
+    ik_ntf_list_clear(&ntf_list2);
     EXPECT_THAT(tree->node_data->refcount->refs, Eq(11));
-    ik_ntf_list_destroy(ntf_list3);
+    ik_ntf_list_clear(&ntf_list3);
     EXPECT_THAT(tree->node_data->refcount->refs, Eq(10));
 
     IKAPI.node.destroy_recursive(tree);
@@ -117,10 +123,12 @@ TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
 
 TEST_F(NAME, check_indices_are_correct)
 {
-    vector_t* ntf_list;
+    vector_t ntf_list;
     ik_node_t* tree = tree_with_two_effectors();
-    ASSERT_THAT(ik_ntf_list_fill_new(&ntf_list, tree), IK_OK);
-    ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(ntf_list, 0);
+
+    ik_ntf_list_construct(&ntf_list);
+    ASSERT_THAT(ik_ntf_list_fill(&ntf_list, tree), IK_OK);
+    ik_ntf_t* ntf = (ik_ntf_t*)vector_get_element(&ntf_list, 0);
 
     /*
      * Nodes are layed out in memory contiguously with the following
@@ -185,5 +193,5 @@ TEST_F(NAME, check_indices_are_correct)
     EXPECT_THAT(ntf->indices[9].post_child_count, Eq(1));
 
     IKAPI.node.destroy_recursive(tree);
-    ik_ntf_list_destroy(ntf_list);
+    ik_ntf_list_clear(&ntf_list);
 }

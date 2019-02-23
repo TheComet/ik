@@ -3,6 +3,7 @@
 
 #include "ik/config.h"
 #include "ik/vector.h"
+#include "ik/solver_head.h"
 
 /*!
  * @brief Only the algorithms listed here are actually enabled.
@@ -17,10 +18,11 @@
  * the library.
  */
 #define IK_SOLVER_ALGORITHM_LIST \
-    X(ONE_BONE) \
+    X(ONE_BONE)
+    /*
     X(TWO_BONE) \
     X(FABRIK) \
-    X(MSS)
+    X(MSS)*/
 
 #define IK_SOLVER_FEATURES_LIST \
     X(CONSTRAINTS,      0x01) \
@@ -33,7 +35,7 @@ C_BEGIN
 struct ik_solver_t;
 struct ik_node_t;
 
-typedef void(*ik_solver_solution_func)(void* user_data,
+typedef void(*ik_solver_callback_func)(void* user_data,
                                        const ikreal_t position[3],
                                        const ikreal_t rotation[4]);
 
@@ -138,7 +140,7 @@ ik_solver_prepare(struct ik_solver_t* solver, struct ik_node_t* tree);
  * @note This function gets called by ik_solver_prepare().
  */
 IK_PRIVATE_API void
-ik_solver_calculate_distances(struct ik_solver_t* solver);
+ik_solver_update_translations(struct ik_solver_t* solver);
 
 /*!
  * @brief Solves the IK problem. The node solutions will be provided via a
@@ -151,26 +153,27 @@ IK_PRIVATE_API uint32_t
 ik_solver_solve(struct ik_solver_t* solver);
 
 IK_PRIVATE_API void
-ik_solver_iterate_solution(const struct ik_solver_t* solver,
-                           ik_solver_solution_func callback);
+ik_solver_iterate_nodes(const struct ik_solver_t* solver,
+                           ik_solver_callback_func callback);
 
 IK_PRIVATE_API uint16_t
 ik_solver_get_max_iterations(const struct ik_solver_t* solver);
-IK_PRIVATE_API ikreal_t
-ik_solver_get_tolerance(const struct ik_solver_t* solver);
-IK_PRIVATE_API uint16_t
-ik_solver_get_features(const struct ik_solver_t* solver);
-IK_PRIVATE_API uint8_t
-ik_solver_is_feature_enabled(const struct ik_solver_t* solver, enum ik_solver_features_e feature);
-
 IK_PRIVATE_API void
 ik_solver_set_max_iterations(struct ik_solver_t* solver, uint16_t max_iterations);
+IK_PRIVATE_API ikreal_t
+ik_solver_get_tolerance(const struct ik_solver_t* solver);
 IK_PRIVATE_API void
 ik_solver_set_tolerance(struct ik_solver_t* solver, ikreal_t tolerance);
+
+IK_PRIVATE_API uint16_t
+ik_solver_get_features(const struct ik_solver_t* solver);
 IK_PRIVATE_API void
 ik_solver_enable_features(struct ik_solver_t* solver, uint16_t features);
 IK_PRIVATE_API void
 ik_solver_disable_features(struct ik_solver_t* solver, uint16_t features);
+IK_PRIVATE_API uint8_t
+ik_solver_is_feature_enabled(const struct ik_solver_t* solver, enum ik_solver_features_e feature);
+
 
 #endif /* IK_BUILDING */
 

@@ -42,8 +42,8 @@ struct ik_pole_t
 
 #if defined(IK_BUILDING)
 
-IK_PRIVATE_API struct ik_pole_t*
-ik_pole_create(void);
+IK_PRIVATE_API ikret_t
+ik_pole_create(struct ik_pole_t** pole);
 
 IK_PRIVATE_API void
 ik_pole_destroy(struct ik_pole_t* pole);

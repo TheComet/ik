@@ -23,11 +23,8 @@ struct ik_constraint_api_t
 {
     ikret_t (*create)    (struct ik_constraint_t**);
     void    (*destroy)   (struct ik_constraint_t*);
-    ikret_t (*duplicate) (struct ik_constraint_t**, const struct ik_constraint_t*);
     ikret_t (*set_type)  (struct ik_constraint_t*, enum ik_constraint_type_e);
     void    (*set_custom)(struct ik_constraint_t*, void (*)(const struct ik_node_t*, ikreal_t[4]));
-    ikret_t (*attach)    (struct ik_constraint_t*, struct ik_node_t*);
-    void    (*detach)    (struct ik_constraint_t*);
 
 #define X(arg) enum ik_constraint_type_e arg;
     IK_CONSTRAINTS_LIST
@@ -36,8 +33,8 @@ struct ik_constraint_api_t
 
 struct ik_effector_api_t
 {
-#define X(arg, value) enum ik_effector_flags_e arg;
-    IK_EFFECTOR_FLAGS_LIST
+#define X(arg, value) enum ik_effector_features_e arg;
+    IK_EFFECTOR_FEATURES_LIST
 #undef X
 };
 
@@ -143,21 +140,18 @@ struct ik_solver_api_t
     void                (*destroy)               (struct ik_solver_t*);
     ikret_t             (*construct)             (struct ik_solver_t*);
     void                (*destruct)              (struct ik_solver_t*);
-    ikret_t             (*rebuild)               (struct ik_solver_t*);
-    void                (*update_distances)      (struct ik_solver_t*);
-    ikret_t             (*solve)                 (struct ik_solver_t*);
-    struct ik_node_t*   (*get_tree)              (const struct ik_solver_t*);
-    void                (*set_tree)              (struct ik_solver_t*, struct ik_node_t*);
-    struct ik_node_t*   (*unlink_tree)           (struct ik_solver_t*);
-    uint32_t            (*get_max_iterations)    (const struct ik_solver_t*);
-    void                (*set_max_iterations)    (struct ik_solver_t*, uint32_t);
+    ikret_t             (*prepare)               (struct ik_solver_t*, struct ik_node_t*);
+    void                (*update_translations)   (struct ik_solver_t*);
+    uint32_t            (*solve)                 (struct ik_solver_t*);
+    void                (*iterate_nodes)         (const struct ik_solver_t*, ik_solver_callback_func);
+    uint16_t            (*get_max_iterations)    (const struct ik_solver_t*);
+    void                (*set_max_iterations)    (struct ik_solver_t*, uint16_t);
     ikreal_t            (*get_tolerance)         (const struct ik_solver_t*);
     void                (*set_tolerance)         (struct ik_solver_t*, ikreal_t);
-    uint8_t             (*get_features)          (const struct ik_solver_t*);
-    void                (*set_features)          (struct ik_solver_t*, uint8_t, int);
-    void                (*iterate_all_nodes)     (struct ik_solver_t*, void (*)(struct ik_node_t*));
-    void                (*iterate_affected_nodes)(struct ik_solver_t*, void (*)(struct ik_node_t*));
-    void                (*iterate_base_nodes)    (struct ik_solver_t*, void (*)(struct ik_node_t*));
+    uint16_t            (*get_features)          (const struct ik_solver_t*);
+    void                (*enable_features)       (struct ik_solver_t*, uint16_t);
+    void                (*disable_features)      (struct ik_solver_t*, uint16_t);
+    uint8_t             (*is_feature_enabled)    (const struct ik_solver_t*, enum ik_solver_features_e);
 
 #define X(arg) enum ik_solver_algorithm_e arg;
     IK_SOLVER_ALGORITHM_LIST
@@ -247,7 +241,7 @@ struct ik_api_t
     struct ik_mat3x3_api_t     mat3x3;
     struct ik_node_api_t       node;
     /*struct ik_pole_api_t       pole;*/
-    /*struct ik_solver_api_t     solver;*/
+    struct ik_solver_api_t     solver;
     struct ik_quat_api_t       quat;
     struct ik_tests_api_t      tests;
     /*struct ik_transform_api_t  transform;*/

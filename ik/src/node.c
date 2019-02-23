@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define FAIL(errcode, label) do { \
+#define IK_FAIL(errcode, label) do { \
         status = errcode; goto label; \
     } while (0)
 

@@ -51,6 +51,11 @@
 #       define C_END
 #   endif
 
+#   define IK_FAIL(errcode, label) do { \
+        status = errcode; \
+        goto label; \
+    } while (0)
+
     /* --------------------------------------------------------------
      * Common include files
      * --------------------------------------------------------------*/

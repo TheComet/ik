@@ -6,43 +6,46 @@
 #include <string.h>
 #include <assert.h>
 
-#define FAIL(errcode, label) do { \
-        status = errcode; \
-        goto label; \
-    } while (0)
-
 /* ------------------------------------------------------------------------- */
 /* Constraint implementations */
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_dummy(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
+apply_dummy(ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4],
+            struct ik_constraint_t* constraint)
 {
-    ik_quat_set_identity(compensate_rotation);
+    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_stiff(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
+apply_stiff(ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4],
+            struct ik_constraint_t* constraint)
 {
-    ik_quat_copy(compensate_rotation, node->transform.t.rotation.f);
-    ik_quat_conj(compensate_rotation);
-    ik_quat_mul_quat(compensate_rotation, node->constraint->data.stiff.angle.f);
+    ik_quat_copy(delta_rotation, current_rotation);
+    ik_quat_conj(delta_rotation);
+    ik_quat_mul_quat(delta_rotation, constraint->data.stiff.angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_hinge(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
+apply_hinge(ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4],
+            struct ik_constraint_t* constraint)
 {
-    ik_quat_set_identity(compensate_rotation);
+    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_cone(const struct ik_node_data_t* node, ikreal_t compensate_rotation[4])
+apply_cone(ikreal_t delta_rotation[4],
+           const ikreal_t current_rotation[4],
+           struct ik_constraint_t* constraint)
 {
-    ik_quat_set_identity(compensate_rotation);
+    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -65,14 +68,14 @@ ik_constraint_create(struct ik_constraint_t** constraint)
     if (*constraint == NULL)
     {
         ik_log_fatal("Failed to allocate constraint: Out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_constraint_failed);
+        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_constraint_failed);
     }
 
     memset(*constraint, 0, sizeof **constraint);
 
     if ((status = ik_refcount_create(&(*constraint)->refcount,
                   (ik_destruct_func)destruct_constraint, 1)) != IK_OK)
-        FAIL(status, init_refcount_failed);
+        IK_FAIL(status, init_refcount_failed);
 
     ik_constraint_set_custom(*constraint, apply_dummy);
 
@@ -92,9 +95,9 @@ ik_constraint_destroy(struct ik_constraint_t* constraint)
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_constraint_set_type(struct ik_constraint_t* constraint,
-                       enum ik_constraint_type_e constraint_type)
+                       enum ik_constraint_type_e type)
 {
-    switch (constraint_type)
+    switch (type)
     {
 
         case IK_CONSTRAINT_STIFF:
@@ -113,10 +116,12 @@ ik_constraint_set_type(struct ik_constraint_t* constraint,
             ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
             return IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
 
-        case IK_CONSTRAINT_TYPES_COUNT : break;
+        default:
+            ik_log_warning("ik_constraint_set_type(): Unknown type %d, ignoring...", type);
+            break;
     }
 
-    constraint->type = constraint_type;
+    constraint->type = type;
     return IK_OK;
 }
 

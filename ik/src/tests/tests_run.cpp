@@ -1,4 +1,5 @@
 #include "ik/tests.h"
+#include "ik/retcodes.h"
 #include <gmock/gmock.h>
 #include <stdio.h>
 

@@ -18,7 +18,7 @@ IK_PRIVATE_API void
 ik_solver_ONE_BONE_destruct(struct ik_solver_t* solver);
 
 IK_PRIVATE_API ikret_t
-ik_solver_ONE_BONE_rebuild(struct ik_solver_t* solver);
+ik_solver_ONE_BONE_prepare(struct ik_solver_t* solver);
 
 IK_PRIVATE_API ikret_t
 ik_solver_ONE_BONE_solve(struct ik_solver_t* solver);

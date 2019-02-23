@@ -39,7 +39,7 @@ struct ik_api_t IKAPI = {
     },*/
     {
 #define X(arg, value) value,
-        IK_EFFECTOR_FLAGS_LIST
+        IK_EFFECTOR_FEATURES_LIST
 #undef X
     },
     {
@@ -124,34 +124,31 @@ struct ik_api_t IKAPI = {
 #define X(arg) IK_POLE_##arg,
         IK_POLE_TYPE_LIST
 #undef X
-    },
+    },*/
     {
         ik_solver_create,
         ik_solver_destroy,
         ik_solver_construct,
         ik_solver_destruct,
-        ik_solver_rebuild,
-        ik_solver_update_distances,
+        ik_solver_prepare,
+        ik_solver_update_translations,
         ik_solver_solve,
-        ik_solver_get_tree,
-        ik_solver_set_tree,
-        ik_solver_unlink_tree,
+        ik_solver_iterate_nodes,
         ik_solver_get_max_iterations,
         ik_solver_set_max_iterations,
         ik_solver_get_tolerance,
         ik_solver_set_tolerance,
         ik_solver_get_features,
-        ik_solver_set_features,
-        ik_solver_iterate_all_nodes,
-        ik_solver_iterate_affected_nodes,
-        ik_solver_iterate_base_nodes,
+        ik_solver_enable_features,
+        ik_solver_disable_features,
+        ik_solver_is_feature_enabled,
 #define X(arg) IK_SOLVER_##arg,
         IK_SOLVER_ALGORITHM_LIST
 #undef X
 #define X(arg, value) IK_SOLVER_##arg,
         IK_SOLVER_FEATURES_LIST
 #undef X
-    },*/
+    },
     {
         ik_quat_copy,
         ik_quat_set,

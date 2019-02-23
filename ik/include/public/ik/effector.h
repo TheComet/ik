@@ -12,7 +12,7 @@
  * appealing if the solved tree diverges a lot from the original tree
  * during weight transitions.
  */
-#define IK_EFFECTOR_FLAGS_LIST \
+#define IK_EFFECTOR_FEATURES_LIST \
     X(WEIGHT_NLERP, 0x01) \
     X(KEEP_ORIENTATION, 0x02)
 
@@ -21,10 +21,10 @@ C_BEGIN
 struct ik_node_t;
 struct ik_node_data_t;
 
-enum ik_effector_flags_e
+enum ik_effector_features_e
 {
 #define X(arg, value) IK_EFFECTOR_##arg = value,
-    IK_EFFECTOR_FLAGS_LIST
+    IK_EFFECTOR_FEATURES_LIST
 #undef X
 
     IK_EFFECTOR_FLAGS_COUNT
@@ -40,8 +40,6 @@ enum ik_effector_flags_e
 struct ik_effector_t
 {
     IK_REFCOUNTED(struct ik_effector_t)
-
-    struct ik_node_data_t* node_data;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -96,7 +94,7 @@ struct ik_effector_t
      * @brief Various behavioral settings. Check the enum effector_flags_e for
      * more information.
      */
-    uint8_t flags;
+    uint16_t features;
 };
 
 #if defined(IK_BUILDING)
@@ -115,6 +113,55 @@ ik_effector_create(struct ik_effector_t** effector);
  */
 IK_PRIVATE_API void
 ik_effector_destroy(struct ik_effector_t* effector);
+
+IK_PRIVATE_API void
+ik_effector_set_target_position(struct ik_effector_t* eff, const ikreal_t pos[3]);
+
+IK_PRIVATE_API const ikreal_t*
+ik_effector_get_target_position(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_set_target_rotation(struct ik_effector_t* eff, const ikreal_t rot[4]);
+
+IK_PRIVATE_API const ikreal_t*
+ik_effector_get_target_rotation(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_set_weight(struct ik_effector_t* eff, ikreal_t weight);
+
+IK_PRIVATE_API ikreal_t
+ik_effector_get_weight(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_set_rotation_weight(struct ik_effector_t* eff, ikreal_t weight);
+
+IK_PRIVATE_API ikreal_t
+ik_effector_get_rotation_weight(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_set_rotation_weight_decay(struct ik_effector_t* eff, ikreal_t decay);
+
+IK_PRIVATE_API ikreal_t
+ik_effector_get_rotation_weight_decay(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_set_chain_length(struct ik_effector_t* eff, uint16_t length);
+
+IK_PRIVATE_API uint16_t
+ik_effector_get_chain_length(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API void
+ik_effector_enable_features(struct ik_effector_t* eff, uint8_t features);
+
+IK_PRIVATE_API void
+ik_effector_disable_features(struct ik_effector_t* eff, uint8_t features);
+
+IK_PRIVATE_API uint8_t
+ik_effector_get_features(const struct ik_effector_t* eff);
+
+IK_PRIVATE_API uint8_t
+ik_effector_is_feature_enabled(const struct ik_effector_t* eff,
+                               enum ik_effector_features_e feature);
 
 #endif /* IK_BUILDING */
 

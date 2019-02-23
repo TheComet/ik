@@ -12,6 +12,11 @@
 #   define FREE   free
 #endif
 
+#define XFREE(p) do { \
+        if (p) \
+            FREE(p); \
+    } while(0)
+
 C_BEGIN
 
 #if defined(IK_BUILDING)

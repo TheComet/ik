@@ -10,8 +10,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define FAIL(errcode, label) do { status = errcode; goto label; } while(0)
-
 enum mark_e
 {
     MARK_NONE,
@@ -313,11 +311,11 @@ process_subtree(struct vector_t* ntf_list,
     if (ntf == NULL)
     {
         ik_log_fatal("Failed to emplace new flattened tree structure: Ran out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, emplace_failed);
+        IK_FAIL(IK_ERR_OUT_OF_MEMORY, emplace_failed);
     }
 
     if ((status = ik_ntf_construct(ntf, subtree_root, marked_nodes)) != IK_OK)
-        FAIL(status, ntf_construct_failed);
+        IK_FAIL(status, ntf_construct_failed);
 
     return IK_OK;
 
@@ -340,11 +338,11 @@ ik_ntf_create(struct ik_ntf_t** ntf,
     if (*ntf == NULL)
     {
         ik_log_fatal("Failed to allocate NTF: Ran out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_ntf_failed);
+        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_ntf_failed);
     }
 
     if ((status = ik_ntf_construct(*ntf, subtree_root, marked_nodes)) != IK_OK)
-        FAIL(status, construct_ntf_failed);
+        IK_FAIL(status, construct_ntf_failed);
 
     return IK_OK;
 
@@ -373,7 +371,7 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
     if (ntf->node_data == NULL)
     {
         ik_log_fatal("Failed to allocate NTF: Ran out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_nodes_buffer_failed);
+        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_nodes_buffer_failed);
     }
 
     /*
@@ -384,24 +382,12 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
     if (ntf->indices == NULL)
     {
         ik_log_fatal("Failed to allocate NTF index data: Ran out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_index_buffer_failed);
-    }
-
-    /*
-     * The solver needs a small stack to push/pop transformations as it
-     * iterates the tree.
-     * TODO: Add support for alloca(). If the stack is small enough and the
-     * platform supports alloca(), leave this as NULL.
-     */
-    if ((ntf->scratch_buffer = MALLOC(sizeof(union ik_transform_t) * max_children)) == NULL)
-    {
-        ik_log_fatal("Failed to allocate scratch buffer: Ran out of memory");
-        FAIL(IK_ERR_OUT_OF_MEMORY, alloc_scratch_buffer_failed);
+        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_index_buffer_failed);
     }
 
     /* Actual flattening of the tree happens here */
     if ((status = copy_marked_nodes_into_ntf(ntf, subtree_root, marked_nodes)) != IK_OK)
-        FAIL(status, copy_nodes_failed);
+        IK_FAIL(status, copy_nodes_failed);
 
     /*
      * The NTF structure needs to hold a reference to the node data in case all
@@ -411,18 +397,15 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
 
     return IK_OK;
 
-    copy_nodes_failed           : FREE(ntf->scratch_buffer);
-    alloc_scratch_buffer_failed : FREE(ntf->indices);
-    alloc_index_buffer_failed   : FREE(ntf->node_data);
-    alloc_nodes_buffer_failed   : return status;
+    copy_nodes_failed         : FREE(ntf->indices);
+    alloc_index_buffer_failed : FREE(ntf->node_data);
+    alloc_nodes_buffer_failed : return status;
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_ntf_destruct(struct ik_ntf_t* ntf)
 {
-    if (ntf->scratch_buffer)
-        FREE(ntf->scratch_buffer);
     FREE(ntf->indices);
     IK_DECREF(ntf->node_data);
 }
@@ -436,20 +419,33 @@ ik_ntf_destroy(struct ik_ntf_t* ntf)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_ntf_list_fill_new(struct vector_t** ntf_list, struct ik_node_t* root)
+uint32_t
+ik_ntf_find_highest_child_count(const struct ik_ntf_t* ntf)
 {
-    ikret_t status;
-    if ((status = vector_create(ntf_list, sizeof(struct ik_ntf_t))) != IK_OK)
-        return status;
+    uint32_t max_children = 0;
+    uint32_t i = ntf->node_count;
 
-    if ((status = ik_ntf_list_fill(*ntf_list, root)) != IK_OK)
-    {
-        vector_destroy(*ntf_list);
-        return status;
-    }
+    /* Can use pre or post child count, doesn't matter. They contain the same
+     * values just in different orders */
+    while (i--)
+        if (max_children < ntf->indices[i].post_child_count)
+            max_children = ntf->indices[i].post_child_count;
 
-    return IK_OK;
+    return max_children;
+}
+
+/* ------------------------------------------------------------------------- */
+ikret_t
+ik_ntf_list_create(struct vector_t** ntf_list)
+{
+    return vector_create(ntf_list, sizeof(struct ik_ntf_t));
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_ntf_list_construct(struct vector_t* ntf_list)
+{
+    vector_construct(ntf_list, sizeof(struct ik_ntf_t));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -464,17 +460,17 @@ ik_ntf_list_fill(struct vector_t* ntf_list, struct ik_node_t* root)
     /* Create list of all nodes that have effectors attached */
     vector_construct(&effector_nodes, sizeof(struct ik_node_t*));
     if ((status = find_all_effector_nodes(&effector_nodes, root)) != IK_OK)
-        FAIL(status, find_effectors_failed);
+        IK_FAIL(status, find_effectors_failed);
     if (vector_count(&effector_nodes) == 0)
     {
         ik_log_warning("No effectors were found in the tree. Not building flattened tree structure.");
-        FAIL(IK_ERR_NO_EFFECTORS_FOUND, find_effectors_failed);
+        IK_FAIL(IK_ERR_NO_EFFECTORS_FOUND, find_effectors_failed);
     }
 
     /* Mark all nodes that the solver can reach */
     btree_construct(&marked_nodes);
     if ((status = mark_nodes(&marked_nodes, &effector_nodes)) != IK_OK)
-        FAIL(status, mark_nodes_failed);
+        IK_FAIL(status, mark_nodes_failed);
 
     /*
      * It's possible that chain length limits end up isolating parts of the
@@ -483,14 +479,14 @@ ik_ntf_list_fill(struct vector_t* ntf_list, struct ik_node_t* root)
      */
     vector_construct(&subtree_list, sizeof(struct ik_node_t*));
     if ((status = split_into_subtrees(&subtree_list, root, &marked_nodes)) != IK_OK)
-        FAIL(status, split_into_islands_failed);
+        IK_FAIL(status, split_into_islands_failed);
 
     /*
      * Go through each subtree and flatten it.
      */
     VECTOR_FOR_EACH(&subtree_list, struct ik_node_t*, node)
         if ((status = process_subtree(ntf_list, *node, &marked_nodes)) != IK_OK)
-            FAIL(status, process_subtrees_failed);
+            IK_FAIL(status, process_subtrees_failed);
     VECTOR_END_EACH
 
     vector_clear_free(&subtree_list);
