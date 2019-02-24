@@ -64,36 +64,3 @@ struct NAME : public Test
 
     ik_algorithm_t* algorithm;
 };
-
-TEST_F(NAME, stack_buffer_is_NULL_for_empty_tree)
-{
-    ik_node_t* tree = tree_with_no_effectors();
-
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-    IKAPI.algorithm.prepare(algorithm, tree);
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-
-    IKAPI.node.destroy_recursive(tree);
-}
-
-TEST_F(NAME, stack_buffer_is_NULL_for_single_chain)
-{
-    ik_node_t* tree = tree_with_one_effector();
-
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-    IKAPI.algorithm.prepare(algorithm, tree);
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-
-    IKAPI.node.destroy_recursive(tree);
-}
-
-TEST_F(NAME, stack_buffer_is_valid_for_two_children)
-{
-    ik_node_t* tree = tree_with_two_effectors();
-
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-    IKAPI.algorithm.prepare(algorithm, tree);
-    EXPECT_THAT(algorithm->stack_buffer, IsNull());
-
-    IKAPI.node.destroy_recursive(tree);
-}

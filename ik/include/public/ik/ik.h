@@ -163,7 +163,7 @@ struct ik_algorithm_api_t
     void                (*disable_features)      (struct ik_algorithm_t*, uint16_t);
     uint8_t             (*is_feature_enabled)    (const struct ik_algorithm_t*, enum ik_algorithm_features_e);
 
-#define X(arg) enum ik_algorithm_type arg;
+#define X(upper, lower) enum ik_algorithm_type upper;
     IK_ALGORITHM_LIST
 #undef X
 #define X(arg, value) enum ik_algorithm_features_e arg;

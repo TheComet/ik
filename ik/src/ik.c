@@ -151,7 +151,7 @@ struct ik_api_t IKAPI = {
         ik_algorithm_typenable_features,
         ik_algorithm_disable_features,
         ik_algorithm_is_feature_enabled,
-#define X(arg) IK_ALGORITHM_##arg,
+#define X(upper, lower) IK_ALGORITHM_##upper,
         IK_ALGORITHM_LIST
 #undef X
 #define X(arg, value) IK_ALGORITHM_##arg,

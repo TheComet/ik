@@ -18,11 +18,11 @@
  * the library.
  */
 #define IK_ALGORITHM_LIST \
-    X(ONE_BONE)
+    X(ONE_BONE, b1)
     /*
-    X(TWO_BONE) \
-    X(FABRIK) \
-    X(MSS)*/
+    X(TWO_BONE, b2) \
+    X(FABRIK, fabrik) \
+    X(MSS, mss)*/
 
 #define IK_ALGORITHM_FEATURES_LIST \
     X(CONSTRAINTS,      0x01) \
@@ -35,12 +35,12 @@ C_BEGIN
 struct ik_node_t;
 
 typedef void(*ik_algorithm_callback_func)(void* user_data,
-                                       const ikreal_t position[3],
-                                       const ikreal_t rotation[4]);
+                                          const ikreal_t position[3],
+                                          const ikreal_t rotation[4]);
 
 enum ik_algorithm_type
 {
-#define X(algorithm) IK_ALGORITHM_##algorithm,
+#define X(upper, lower) IK_ALGORITHM_##upper,
     IK_ALGORITHM_LIST
 #undef X
 

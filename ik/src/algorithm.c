@@ -5,10 +5,10 @@
 #include "ik/algorithm.h"
 #include "ik/algorithm_prepare.h"
 #include "ik/algorithm_update.h"
-#include "ik/algorithm_ONE_BONE.h"
-#include "ik/algorithm_TWO_BONE.h"
-#include "ik/algorithm_FABRIK.h"
-#include "ik/algorithm_MSS.h"
+#include "ik/algorithm_b1.h"
+#include "ik/algorithm_b2.h"
+#include "ik/algorithm_fabrik.h"
+#include "ik/algorithm_mss.h"
 #include <assert.h>
 #include <string.h>
 
@@ -18,18 +18,18 @@ ik_algorithm_create(struct ik_algorithm_t** algorithm, enum ik_algorithm_type ty
 {
     switch (type)
     {
-#define X(algo_type)                                                          \
-        case IK_ALGORITHM_##algo_type : {                                     \
-            *algorithm = MALLOC(ik_algorithm_##algo_type##_type_size());      \
+#define X(upper, lower)                                                       \
+        case IK_ALGORITHM_##upper : {                                         \
+            *algorithm = MALLOC(ik_algorithm_##lower##_type_size());          \
             if (*algorithm == NULL) {                                         \
                 ik_log_fatal("Failed to allocate algorithm: ran out of memory"); \
                 goto alloc_algorithm_failed;                                  \
             }                                                                 \
-            memset(*algorithm, 0, ik_algorithm_##algo_type##_type_size());    \
-            (*algorithm)->construct = ik_algorithm_##algo_type##_construct;   \
-            (*algorithm)->destruct = ik_algorithm_##algo_type##_destruct;     \
-            (*algorithm)->prepare = ik_algorithm_##algo_type##_prepare;       \
-            (*algorithm)->solve = ik_algorithm_##algo_type##_solve;           \
+            memset(*algorithm, 0, ik_algorithm_##lower##_type_size());        \
+            (*algorithm)->construct = (ik_algorithm_construct_func) ik_algorithm_##lower##_construct; \
+            (*algorithm)->destruct  = (ik_algorithm_destruct_func)  ik_algorithm_##lower##_destruct; \
+            (*algorithm)->prepare   = (ik_algorithm_prepare_func)   ik_algorithm_##lower##_prepare; \
+            (*algorithm)->solve     = (ik_algorithm_solve_func)     ik_algorithm_##lower##_solve; \
         } break;
         IK_ALGORITHM_LIST
 #undef X

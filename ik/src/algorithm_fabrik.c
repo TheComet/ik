@@ -1,11 +1,9 @@
 #include "ik/btree.h"
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/memory.h"
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/quat.h"
-#include "ik/algorithmdef.h"
 #include "ik/algorithm_FABRIK.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
@@ -13,11 +11,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-
-struct ik_algorithm_t
-{
-    ALGORITHM_HEAD
-};
 
 struct position_direction_t
 {
@@ -512,7 +505,7 @@ store_initial_transform(const struct vector_t* chain_list)
 uintptr_t
 ik_algorithm_FABRIK_type_size(void)
 {
-    return sizeof(struct ik_algorithm_t);
+    return sizeof(struct ik_algorithm_FABRIK_t);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -536,6 +529,30 @@ ik_algorithm_FABRIK_destruct(struct ik_algorithm_t* algorithm)
 ikret_t
 ik_algorithm_FABRIK_rebuild(struct ik_algorithm_t* algorithm)
 {
+    uint32_t max_children;
+
+    /*
+     * The algorithm needs a small stack to push/pop transformations as it
+     * iterates the tree.
+     * TODO: Add support for alloca(). If the stack is small enough and the
+     * platform supports alloca(), leave this as NULL.
+     */
+
+    XFREE(algorithm->stack_buffer);
+    algorithm->stack_buffer = NULL;
+
+    /* Simple trees don't have more than 1 child */
+    max_children = ik_ntf_find_highest_child_count(algorithm->ntf);
+    if (max_children <= 1)
+        return IK_OK;
+
+    algorithm->stack_buffer = MALLOC(sizeof(union ik_transform_t) * max_children);
+    if (algorithm->stack_buffer == NULL)
+    {
+        ik_log_fatal("Failed to allocate algorithm stack: Ran out of memory");
+        return IK_ERR_OUT_OF_MEMORY;
+    }
+
     return IK_OK;
 }
 

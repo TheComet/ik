@@ -6,6 +6,12 @@
 
 C_BEGIN
 
+struct ik_algorithm_t;
+typedef ikret_t (*ik_algorithm_construct_func)(struct ik_algorithm_t*);
+typedef void    (*ik_algorithm_destruct_func) (struct ik_algorithm_t*);
+typedef ikret_t (*ik_algorithm_prepare_func)  (struct ik_algorithm_t*);
+typedef ikret_t (*ik_algorithm_solve_func)    (struct ik_algorithm_t*);
+
 /*!
  * @brief This is a base for all algorithms.
  */
@@ -13,15 +19,10 @@ C_BEGIN
     IK_ATTACHMENT_HEAD                                                        \
                                                                               \
     /* Derived interface */                                                   \
-    ikret_t (*construct)(struct ik_algorithm_t* algorithm);                   \
-    void    (*destruct)(struct ik_algorithm_t* algorithm);                    \
-    ikret_t (*prepare)(struct ik_algorithm_t* algorithm);                     \
-    ikret_t (*solve)(struct ik_algorithm_t* algorithm);                       \
-                                                                              \
-    /* Used to push/pop transformations as the trees are iterated. This is    \
-     * allocated in prepare() if alloca() is not supported, or if the stack   \
-     * is larger than IK_MAX_STACK_ALLOC. */                                  \
-    uint8_t* stack_buffer;                                                    \
+    ik_algorithm_construct_func    construct;                                 \
+    ik_algorithm_destruct_func     destruct;                                  \
+    ik_algorithm_prepare_func      prepare;                                   \
+    ik_algorithm_solve_func        solve;                                     \
                                                                               \
     /* Weak ref to tree structure this algo is responsible for solving  */    \
     struct ik_ntf_t* ntf;                                                     \

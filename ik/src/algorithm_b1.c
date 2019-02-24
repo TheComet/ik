@@ -3,34 +3,34 @@
 #include "ik/log.h"
 #include "ik/node_data.h"
 #include "ik/algorithm_head.h"
-#include "ik/algorithm_ONE_BONE.h"
+#include "ik/algorithm_b1.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_algorithm_ONE_BONE_type_size(void)
+ik_algorithm_b1_type_size(void)
 {
-    return sizeof(struct ik_algorithm_t);
+    return sizeof(struct ik_algorithm_b1_t);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_algorithm_ONE_BONE_construct(struct ik_algorithm_t* algorithm)
+ik_algorithm_b1_construct(struct ik_algorithm_b1_t* algorithm)
 {
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_algorithm_ONE_BONE_destruct(struct ik_algorithm_t* algorithm)
+ik_algorithm_b1_destruct(struct ik_algorithm_b1_t* algorithm)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_ONE_BONE_prepare(struct ik_algorithm_t* algorithm)
+ik_algorithm_b1_prepare(struct ik_algorithm_b1_t* algorithm)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
@@ -57,7 +57,7 @@ ik_algorithm_ONE_BONE_prepare(struct ik_algorithm_t* algorithm)
 
 /* ------------------------------------------------------------------------- */
 int
-ik_algorithm_ONE_BONE_solve(struct ik_algorithm_t* algorithm)
+ik_algorithm_b1_solve(struct ik_algorithm_b1_t* algorithm)
 {
     struct ik_node_data_t* tip;
     struct ik_node_data_t* base;
