@@ -24,7 +24,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     PyObject* constraint_name;
     PyObject* result;
 
-    /* We require the solver to know which derived constraint object to create,
+    /* We require the algorithm to know which derived constraint object to create,
      * and we need a string identifying the type of the constraint */
     if (!PyArg_ParseTuple(args, "O!U", &ik_SolverType, &pySolver, &constraint_name))
         return NULL;

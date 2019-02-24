@@ -1,4 +1,5 @@
-#include "ik/solver_update.h"
+#include "ik/algorithm.h"
+#include "ik/algorithm_update.h"
 #include "ik/effector.h"
 #include "ik/node_data.h"
 #include "ik/ntf.h"
@@ -43,22 +44,20 @@ update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
     }
 }
 void
-ik_solver_update_effector_targets(struct vector_t* ntf_list)
+ik_algorithm_update_effector_targets(struct ik_algorithm_t* algorithm)
 {
-    NTF_FOR_EACH(ntf_list, ntf)
-        uint32_t i;
-        for (i = 0; i != ntf->node_count; ++i)
+    uint32_t i;
+    for (i = 0; i != algorithm->ntf->node_count; ++i)
+    {
+        if (NTF_POST_CHILD_COUNT(algorithm->ntf, i) == 0)
         {
-            if (NTF_POST_CHILD_COUNT(ntf, i) == 0)
-            {
-                update(NTF_POST_NODE(ntf, i), NTF_POST_BASE(ntf, i));
-            }
+            update(NTF_POST_NODE(algorithm->ntf, i), NTF_POST_BASE(algorithm->ntf, i));
         }
-    NTF_END_EACH
+    }
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_update_node_distances(struct vector_t* ntf_list)
+ik_algorithm_update_node_distances(struct ik_algorithm_t* algorithm)
 {
 }

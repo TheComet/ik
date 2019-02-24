@@ -2,71 +2,71 @@
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
-#include "ik/solverdef.h"
-#include "ik/solver_TWO_BONE.h"
+#include "ik/algorithmdef.h"
+#include "ik/algorithm_TWO_BONE.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
 
-struct ik_solver_t
+struct ik_algorithm_t
 {
-    SOLVER_HEAD
+    ALGORITHM_HEAD
 };
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_solver_TWO_BONE_type_size(void)
+ik_algorithm_TWO_BONE_type_size(void)
 {
-    return sizeof(struct ik_solver_t);
+    return sizeof(struct ik_algorithm_t);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_TWO_BONE_construct(struct ik_solver_t* solver)
+ik_algorithm_TWO_BONE_construct(struct ik_algorithm_t* algorithm)
 {
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_TWO_BONE_destruct(struct ik_solver_t* solver)
+ik_algorithm_TWO_BONE_destruct(struct ik_algorithm_t* algorithm)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver)
+ik_algorithm_TWO_BONE_rebuild(struct ik_algorithm_t* algorithm)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
      */
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
+    ALGORITHM_FOR_EACH_CHAIN(algorithm, chain)
         if (chain_length(chain) != 3) /* 3 nodes = 2 bones */
         {
-            ik_log_error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver algorithm?");
+            ik_log_error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct algorithm algorithm?");
             return -1;
         }
         if (chain_length(chain) > 0)
         {
-            ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
+            ik_log_error("Your tree has child chains. This algorithm does not support arbitrary trees. You will need to switch to another algorithm (e.g. FABRIK)");
             return -1;
         }
-    SOLVER_END_EACH
+    ALGORITHM_END_EACH
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
+ik_algorithm_TWO_BONE_solve(struct ik_algorithm_t* algorithm)
 {
     /* Tree is in local space, we need global positions */
-    ik_transform_chain_list(solver, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
+    ik_transform_chain_list(algorithm, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
 
-    SOLVER_FOR_EACH_CHAIN(solver, chain)
+    ALGORITHM_FOR_EACH_CHAIN(algorithm, chain)
         struct ik_node_t* node_tip;
         struct ik_node_t* node_mid;
         struct ik_node_t* node_base;
@@ -151,10 +151,10 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
             ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
             ik_vec3_add_vec3(node_tip->position.f, node_mid->position.f);
         }
-    SOLVER_END_EACH
+    ALGORITHM_END_EACH
 
     /* Transform back again */
-    ik_transform_chain_list(solver, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
+    ik_transform_chain_list(algorithm, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
 
     return 0;
 }

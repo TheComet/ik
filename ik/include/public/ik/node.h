@@ -52,7 +52,7 @@ ik_node_destruct(struct ik_node_t* node);
 /*!
  * @brief Destructs and frees the specified node. All children will be
  * transferred to the parent node.
- * @note You will need to rebuild the solver's tree before solving.
+ * @note You will need to rebuild the algorithm's tree before solving.
  */
 IK_PRIVATE_API void
 ik_node_destroy(struct ik_node_t* node);
@@ -67,7 +67,7 @@ ik_node_destruct_recursive(struct ik_node_t* node);
 /*!
  * @brief Destructs and frees the specified node. All children will be
  * transferred to the parent node.
- * @note You will need to rebuild the solver's tree before solving.
+ * @note You will need to rebuild the algorithm's tree before solving.
  */
 IK_PRIVATE_API void
 ik_node_destroy_recursive(struct ik_node_t* node);
@@ -85,7 +85,7 @@ ik_node_create_child(struct ik_node_t** child,
 /*!
  * @brief Attaches a node as a child to another node. The parent node gains
  * ownership of the child node and is responsible for deallocating it.
- * @note You will need to rebuild the solver's tree before solving.
+ * @note You will need to rebuild the algorithm's tree before solving.
  */
 IK_PRIVATE_API ikret_t
 ik_node_link(struct ik_node_t* parent,
@@ -95,7 +95,7 @@ ik_node_link(struct ik_node_t* parent,
  * @brief Unlinks a node from the tree, without destroying anything. All
  * children of the unlinked node remain in tact and will no longer be
  * affiliated with the original tree.
- * @note You will need to rebuild the solver's tree before solving.
+ * @note You will need to rebuild the algorithm's tree before solving.
  */
 IK_PRIVATE_API void
 ik_node_unlink(struct ik_node_t* node);
@@ -175,7 +175,7 @@ ik_node_find_child(struct ik_node_t** child,
  * @param[in] node The child of the node you wish to constrain.
  * @return Returns IK_ALREADY_HAS_ATTACHMENT if the target node already has
  * a constraint attached. IK_OK if otherwise.
- * @note You will need to rebuild the solver's tree before solving.
+ * @note You will need to rebuild the algorithm's tree before solving.
  */
 
 IK_PRIVATE_API void

@@ -7,8 +7,8 @@
 static void
 Solver_dealloc(ik_Solver* self)
 {
-    if (self->solver)
-        IKAPI.solver.destroy(self->solver);
+    if (self->algorithm)
+        IKAPI.algorithm.destroy(self->algorithm);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -17,25 +17,25 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     (void)kwds;
     ik_Solver* self;
-    const char* solverName;
+    const char* algorithmName;
 
-    if (!PyArg_ParseTuple(args, "s", &solverName))
+    if (!PyArg_ParseTuple(args, "s", &algorithmName))
         return NULL;
 
     self = (ik_Solver*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
 
-    /*self->solver = IKAPI.solver.create(solverName);*/
-    if (self->solver == NULL)
+    /*self->algorithm = IKAPI.algorithm.create(algorithmName);*/
+    if (self->algorithm == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to create requested solver!");
-        goto create_solver_failed;
+        PyErr_SetString(PyExc_RuntimeError, "Failed to create requested algorithm!");
+        goto create_algorithm_failed;
     }
 
     return (PyObject*)self;
 
-    create_solver_failed : Py_DECREF(self);
+    create_algorithm_failed : Py_DECREF(self);
     alloc_self_failed    : return NULL;
 }
 
@@ -52,7 +52,7 @@ static PyObject*
 Solver_getmax_iterations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    return PyLong_FromLong(IKAPI.solver.get_max_iterations(self->solver));
+    return PyLong_FromLong(IKAPI.algorithm.get_max_iterations(self->algorithm));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -73,7 +73,7 @@ Solver_setmax_iterations(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Maximum iterations needs to be a positive integer");
         return -1;
     }
-    IKAPI.solver.set_max_iterations(self->solver, max_iterations);
+    IKAPI.algorithm.set_max_iterations(self->algorithm, max_iterations);
     return 0;
 }
 
@@ -82,7 +82,7 @@ static PyObject*
 Solver_gettolerance(ik_Solver* self, void* closure)
 {
     (void)closure;
-    return PyFloat_FromDouble(IKAPI.solver.get_tolerance(self->solver));
+    return PyFloat_FromDouble(IKAPI.algorithm.get_tolerance(self->algorithm));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -103,7 +103,7 @@ Solver_settolerance(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Tolerance needs to be a positive value (or zero)");
         return -1;
     }
-    IKAPI.solver.set_tolerance(self->solver, tolerance);
+    IKAPI.algorithm.set_tolerance(self->algorithm, tolerance);
     return 0;
 }
 
@@ -112,7 +112,7 @@ static PyObject*
 Solver_getenable_constraints(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_CONSTRAINTS)
+    if (IKAPI.algorithm.get_features(self->algorithm) & IK_ALGORITHM_CONSTRAINTS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -127,7 +127,7 @@ Solver_setenable_constraints(ik_Solver* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    IKAPI.solver.set_features(self->solver, IK_SOLVER_CONSTRAINTS, PyObject_IsTrue(value));
+    IKAPI.algorithm.set_features(self->algorithm, IK_ALGORITHM_CONSTRAINTS, PyObject_IsTrue(value));
     return 0;
 }
 
@@ -136,7 +136,7 @@ static PyObject*
 Solver_getenable_target_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_TARGET_ROTATIONS)
+    if (IKAPI.algorithm.get_features(self->algorithm) & IK_ALGORITHM_TARGET_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -151,7 +151,7 @@ Solver_setenable_target_rotations(ik_Solver* self, PyObject* value, void* closur
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    IKAPI.solver.set_features(self->solver, IK_SOLVER_TARGET_ROTATIONS, PyObject_IsTrue(value));
+    IKAPI.algorithm.set_features(self->algorithm, IK_ALGORITHM_TARGET_ROTATIONS, PyObject_IsTrue(value));
     return 0;
 }
 
@@ -160,7 +160,7 @@ static PyObject*
 Solver_getenable_joint_rotations(ik_Solver* self, void* closure)
 {
     (void)closure;
-    if (IKAPI.solver.get_features(self->solver) & IK_SOLVER_JOINT_ROTATIONS)
+    if (IKAPI.algorithm.get_features(self->algorithm) & IK_ALGORITHM_JOINT_ROTATIONS)
         Py_RETURN_TRUE;
     Py_RETURN_FALSE;
 }
@@ -175,7 +175,7 @@ Solver_setenable_joint_rotations(ik_Solver* self, PyObject* value, void* closure
         PyErr_SetString(PyExc_TypeError, "Expected a bool");
         return -1;
     }
-    IKAPI.solver.set_features(self->solver, IK_SOLVER_JOINT_ROTATIONS, PyObject_IsTrue(value));
+    IKAPI.algorithm.set_features(self->algorithm, IK_ALGORITHM_JOINT_ROTATIONS, PyObject_IsTrue(value));
     return 0;
 }
 
@@ -197,7 +197,7 @@ Solver_settree(ik_Solver* self, PyObject* value, void* closure)
 
     if (value == Py_None)
     {
-        IKAPI.solver.unlink_tree(self->solver);
+        IKAPI.algorithm.unlink_tree(self->algorithm);
         Py_DECREF(self->tree);
         self->tree = NULL;
     }
@@ -219,12 +219,12 @@ Solver_settree(ik_Solver* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Solver_getsetters[] = {
-    {"max_iterations",          (getter)Solver_getmax_iterations,          (setter)Solver_setmax_iterations, "Maximum solver iterations"},
+    {"max_iterations",          (getter)Solver_getmax_iterations,          (setter)Solver_setmax_iterations, "Maximum algorithm iterations"},
     {"tolerance",               (getter)Solver_gettolerance,               (setter)Solver_settolerance, "Solver tolerance"},
     {"enable_constraints",      (getter)Solver_getenable_constraints,      (setter)Solver_setenable_constraints, "Enable or disable constraint support"},
     {"enable_target_rotations", (getter)Solver_getenable_target_rotations, (setter)Solver_setenable_target_rotations, "Enable or disable target rotation support"},
     {"enable_joint_rotations",  (getter)Solver_getenable_joint_rotations,  (setter)Solver_setenable_joint_rotations, "Enable or disable joint rotation support"},
-    {"tree",                    (getter)Solver_gettree,                    (setter)Solver_settree, "The solver's tree"},
+    {"tree",                    (getter)Solver_gettree,                    (setter)Solver_settree, "The algorithm's tree"},
     {NULL}
 };
 
@@ -233,7 +233,7 @@ static PyObject*
 Solver_rebuild_data(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    if (IKAPI.solver.rebuild(self->solver) != IK_OK)
+    if (IKAPI.algorithm.rebuild(self->algorithm) != IK_OK)
         Py_RETURN_FALSE;
     Py_RETURN_TRUE;
 }
@@ -243,7 +243,7 @@ static PyObject*
 Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    IKAPI.solver.update_distances(self->solver);
+    IKAPI.algorithm.update_distances(self->algorithm);
     Py_RETURN_NONE;
 }
 
@@ -252,7 +252,7 @@ static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ikret_t ret = IKAPI.solver.solve(self->solver);
+    ikret_t ret = IKAPI.algorithm.solve(self->algorithm);
     if (ret < 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "solve() returned an error code");
@@ -265,9 +265,9 @@ Solver_solve(ik_Solver* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Solver_methods[] = {
-    {"rebuild_data",              (PyCFunction)Solver_rebuild_data,              METH_NOARGS, "Rebuilds internal structures in the solver"},
+    {"rebuild_data",              (PyCFunction)Solver_rebuild_data,              METH_NOARGS, "Rebuilds internal structures in the algorithm"},
     {"calculate_segment_lengths", (PyCFunction)Solver_calculate_segment_lengths, METH_NOARGS, "Updates calculated segment lenghts"},
-    {"solve",                     (PyCFunction)Solver_solve,                     METH_NOARGS, "Executes the solver"},
+    {"solve",                     (PyCFunction)Solver_solve,                     METH_NOARGS, "Executes the algorithm"},
     {NULL}
 };
 

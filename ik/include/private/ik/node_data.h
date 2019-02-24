@@ -13,7 +13,7 @@ C_BEGIN
 struct ik_constraint_t;
 struct ik_effector_t;
 struct ik_pole_t;
-struct ik_solver_t;
+struct ik_algorithm_t;
 
 struct ik_node_data_t
 {
@@ -42,7 +42,7 @@ struct ik_node_data_t
      * // A node in your scene graph
      * MyNode* node = GetMyNode();
      *
-     * ik_solver_t* solver = ik_solver_create(SOLVER_FABRIK);
+     * ik_algorithm_t* algorithm = ik_algorithm_create(ALGORITHM_FABRIK);
      * ik_node_t* ikNode = ik_node_create(node->GetID());
      * ikNode->user_data = node; // Store pointer to your own node object
      *

@@ -559,7 +559,7 @@ ik_ntf_list_fill(struct vector_t* ntf_list, struct ik_node_t* root)
         IK_FAIL(IK_ERR_NO_EFFECTORS_FOUND, find_effectors_failed);
     }
 
-    /* Mark all nodes that the solver can reach */
+    /* Mark all nodes that the algorithm can reach */
     btree_construct(&marked_nodes);
     if ((status = mark_nodes(&marked_nodes, &effector_nodes)) != IK_OK)
         IK_FAIL(status, mark_nodes_failed);

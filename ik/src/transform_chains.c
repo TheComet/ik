@@ -2,17 +2,17 @@
 #include "ik/effector.h"
 #include "ik/node.h"
 #include "ik/quat.h"
-#include "ik/solverdef.h"
+#include "ik/algorithmdef.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 #include <string.h>
 
-/* Need the solver structure for ik_transform_chain_list */
-struct ik_solver_t
+/* Need the algorithm structure for ik_transform_chain_list */
+struct ik_algorithm_t
 {
-    SOLVER_HEAD
+    ALGORITHM_HEAD
 };
 
 /*
@@ -197,9 +197,9 @@ static void (*eff_transform_table[2])(const struct ik_node_t*, const struct chai
 
 /* ------------------------------------------------------------------------- */
 void
-ik_transform_chain_list(const struct ik_solver_t* solver, uint8_t flags)
+ik_transform_chain_list(const struct ik_algorithm_t* algorithm, uint8_t flags)
 {
-    VECTOR_FOR_EACH(&solver->chain_list, struct chain_t, chain)
+    VECTOR_FOR_EACH(&algorithm->chain_list, struct chain_t, chain)
         ik_transform_chain(chain, flags);
     VECTOR_END_EACH
 }

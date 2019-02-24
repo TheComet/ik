@@ -161,10 +161,10 @@ set (IK_HEADERS
     "include/public/ik/quat.h"
     "include/public/ik/refcount.h"
     "include/public/ik/retcodes.h"
-    "include/public/ik/solver.h"
-    "include/public/ik/solver_head.h"
-    "include/private/ik/solver_prepare.h"
-    "include/private/ik/solver_update.h"
+    "include/public/ik/algorithm.h"
+    "include/public/ik/algorithm_head.h"
+    "include/private/ik/algorithm_prepare.h"
+    "include/private/ik/algorithm_update.h"
     "include/public/ik/tests.h"
     "include/public/ik/transform.h"
     "include/public/ik/util.h"
@@ -192,13 +192,13 @@ set (IK_SOURCES
     "src/quat.c"
     "src/refcount.c"
     "src/retcodes.c"
-    "src/solver.c"
-    "src/solver_prepare.c"
-    "src/solver_update.c"
-    "src/solver_ONE_BONE.c"
-    #"src/solver_TWO_BONE.c"
-    #"src/solver_FABRIK.c"
-    #"src/solver_MSS.c"
+    "src/algorithm.c"
+    "src/algorithm_prepare.c"
+    "src/algorithm_update.c"
+    "src/algorithm_ONE_BONE.c"
+    #"src/algorithm_TWO_BONE.c"
+    #"src/algorithm_FABRIK.c"
+    #"src/algorithm_MSS.c"
     #"src/transform_chains.c"
     #"src/transform_node.c"
     #"src/util.c"
@@ -213,11 +213,11 @@ set (IK_SOURCES
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
+    "include/python/ik/python/ik_type_Algorithm.h"
     "include/python/ik/python/ik_type_Constraint.h"
     "include/python/ik/python/ik_type_Node.h"
     "include/python/ik/python/ik_type_Pole.h"
     "include/python/ik/python/ik_type_Quat.h"
-    "include/python/ik/python/ik_type_Solver.h"
     "include/python/ik/python/ik_type_Vec3.h")
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
@@ -245,9 +245,9 @@ set (IK_TESTS_SOURCES
     "src/tests/test_ntf.cpp"
     "src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
-    "src/tests/test_solver.cpp"
-    "src/tests/test_solver_prepare.cpp"
-    "src/tests/test_solver_update.cpp"
+    "src/tests/test_algorithm.cpp"
+    "src/tests/test_algorithm_prepare.cpp"
+    "src/tests/test_algorithm_update.cpp"
    # "src/tests/test_transform_chain.cpp"
    # "src/tests/test_transform_chain_rotations.cpp"
    # "src/tests/test_transform_chain_translations.cpp"
@@ -259,8 +259,8 @@ set (IK_TESTS_SOURCES
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
 set (IK_BENCHMARK_SOURCES
-    "src/benchmarks/bench_FABRIK_solver.cpp"
-    "src/benchmarks/bench_solve.cpp")
+    "src/benchmarks/bench_FABRIK_algorithm.cpp"
+    "src/benchmarks/bench_algorithm.cpp")
 
 ###############################################################################
 # Main library

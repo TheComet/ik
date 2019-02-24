@@ -11,7 +11,7 @@
     X(CONSTRAINT, constraint) \
     X(EFFECTOR, effector) \
     X(POLE, pole) \
-    X(SOLVER, solver)
+    X(ALGORITHM, algorithm)
 
 C_BEGIN
 

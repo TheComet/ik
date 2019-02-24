@@ -7,7 +7,7 @@
 #include "ik/node.h"
 #include "ik/pole.h"
 #include "ik/quat.h"
-#include "ik/solver.h"
+#include "ik/algorithm.h"
 #include "ik/vec3.h"
 #include <string.h>
 #include <assert.h>
@@ -251,8 +251,8 @@ ik_node_create_attachment(struct ik_attachment_t** a,
                 return status;
         }
 
-        case IK_ATTACHMENT_SOLVER : {
-            ik_log_error("Solvers can't be created through ik_node_create_attachment(): They need additional arguments. Use ik_solver_create() and ik_node_attach()");
+        case IK_ATTACHMENT_ALGORITHM : {
+            ik_log_error("Solvers can't be created through ik_node_create_attachment(): They need additional arguments. Use ik_algorithm_create() and ik_node_attach()");
             return IK_ERR_GENERIC;
         }
 

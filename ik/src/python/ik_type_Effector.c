@@ -24,7 +24,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     ik_Effector* self;
     ik_Solver* pySolver;
 
-    /* We require the solver to know which derived effector object to create */
+    /* We require the algorithm to know which derived effector object to create */
     if (!PyArg_ParseTuple(args, "O!", &ik_SolverType, &pySolver))
         return NULL;
 

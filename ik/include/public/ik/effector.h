@@ -34,7 +34,7 @@ enum ik_effector_features_e
  * @brief Specifies how a chain of nodes should be solved. The effector can
  * be attached to any node in a tree using ik_node_attach_effector(). The
  * effector specifies the target position and rotation of that node, as well
- * as how much influence the solver has on the tree (weight) and how many
+ * as how much influence the algorithm has on the tree (weight) and how many
  * child nodes are affected (chain_length).
  */
 struct ik_effector_t
@@ -66,14 +66,14 @@ struct ik_effector_t
     union ik_vec3_t actual_target;
 
     /*!
-     * @brief Specifies how much influence the solver has on the chain of
-     * nodes. A value of 0.0 will cause the solver to completely ignore the
-     * chain, while a value of 1.0 will cause the solver to try to place the
+     * @brief Specifies how much influence the algorithm has on the chain of
+     * nodes. A value of 0.0 will cause the algorithm to completely ignore the
+     * chain, while a value of 1.0 will cause the algorithm to try to place the
      * target node directly at target_position/target_rotation.
      *
-     * This is useful for blending the solver in and out. For instance, if you
+     * This is useful for blending the algorithm in and out. For instance, if you
      * wanted to ground the legs of an animated character, you would want the
-     * solver to do nothing during the time when the foot is in the air
+     * algorithm to do nothing during the time when the foot is in the air
      * (weight=0.0) and be fully active when the foot is on the ground
      * (weight=1.0).
      */
@@ -85,8 +85,8 @@ struct ik_effector_t
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of
      * 0 means all of the parents, including the base node.
-     * @note Changing the chain length requires the solver tree to be rebuilt
-     * with ik_solver_rebuild_tree().
+     * @note Changing the chain length requires the algorithm tree to be rebuilt
+     * with ik_algorithm_rebuild_tree().
      */
     uint16_t chain_length;
 

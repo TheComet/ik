@@ -1,9 +1,9 @@
 #include <gmock/gmock.h>
 #include "ik/ik.h"
-#include "ik/solver_prepare.h"
+#include "ik/algorithm_prepare.h"
 #include "ik/node.h"
 
-#define NAME solver_prepare
+#define NAME algorithm_prepare
 
 using namespace testing;
 
@@ -11,12 +11,12 @@ struct NAME : public Test
 {
     void SetUp() override
     {
-        IKAPI.solver.create(&solver, IKAPI.solver.ONE_BONE);
+        IKAPI.algorithm.create(&algorithm, IKAPI.algorithm.ONE_BONE);
     }
 
     void TearDown() override
     {
-        IKAPI.solver.destroy(solver);
+        IKAPI.algorithm.destroy(algorithm);
     }
 
     ik_node_t* tree_with_no_effectors()
@@ -62,16 +62,16 @@ struct NAME : public Test
         return tree;
     }
 
-    ik_solver_t* solver;
+    ik_algorithm_t* algorithm;
 };
 
 TEST_F(NAME, stack_buffer_is_NULL_for_empty_tree)
 {
     ik_node_t* tree = tree_with_no_effectors();
 
-    EXPECT_THAT(solver->stack_buffer, IsNull());
-    IKAPI.solver.prepare(solver, tree);
-    EXPECT_THAT(solver->stack_buffer, IsNull());
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
+    IKAPI.algorithm.prepare(algorithm, tree);
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
 
     IKAPI.node.destroy_recursive(tree);
 }
@@ -80,9 +80,9 @@ TEST_F(NAME, stack_buffer_is_NULL_for_single_chain)
 {
     ik_node_t* tree = tree_with_one_effector();
 
-    EXPECT_THAT(solver->stack_buffer, IsNull());
-    IKAPI.solver.prepare(solver, tree);
-    EXPECT_THAT(solver->stack_buffer, IsNull());
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
+    IKAPI.algorithm.prepare(algorithm, tree);
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
 
     IKAPI.node.destroy_recursive(tree);
 }
@@ -91,9 +91,9 @@ TEST_F(NAME, stack_buffer_is_valid_for_two_children)
 {
     ik_node_t* tree = tree_with_two_effectors();
 
-    EXPECT_THAT(solver->stack_buffer, IsNull());
-    IKAPI.solver.prepare(solver, tree);
-    EXPECT_THAT(solver->stack_buffer, IsNull());
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
+    IKAPI.algorithm.prepare(algorithm, tree);
+    EXPECT_THAT(algorithm->stack_buffer, IsNull());
 
     IKAPI.node.destroy_recursive(tree);
 }

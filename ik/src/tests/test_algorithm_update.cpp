@@ -1,5 +1,5 @@
 #include <gmock/gmock.h>
-#include "ik/solver_update.h"
+#include "ik/algorithm_update.h"
 
 #define NAME solver_update
 

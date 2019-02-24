@@ -5,8 +5,8 @@
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/quat.h"
-#include "ik/solverdef.h"
-#include "ik/solver_FABRIK.h"
+#include "ik/algorithmdef.h"
+#include "ik/algorithm_FABRIK.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
@@ -14,9 +14,9 @@
 #include <stdio.h>
 #include <math.h>
 
-struct ik_solver_t
+struct ik_algorithm_t
 {
-    SOLVER_HEAD
+    ALGORITHM_HEAD
 };
 
 struct position_direction_t
@@ -510,45 +510,45 @@ store_initial_transform(const struct vector_t* chain_list)
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_solver_FABRIK_type_size(void)
+ik_algorithm_FABRIK_type_size(void)
 {
-    return sizeof(struct ik_solver_t);
+    return sizeof(struct ik_algorithm_t);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_FABRIK_construct(struct ik_solver_t* solver)
+ik_algorithm_FABRIK_construct(struct ik_algorithm_t* algorithm)
 {
     /* typical default values */
-    solver->max_iterations = 20;
-    solver->tolerance = 1e-3;
+    algorithm->max_iterations = 20;
+    algorithm->tolerance = 1e-3;
 
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_FABRIK_destruct(struct ik_solver_t* solver)
+ik_algorithm_FABRIK_destruct(struct ik_algorithm_t* algorithm)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_FABRIK_rebuild(struct ik_solver_t* solver)
+ik_algorithm_FABRIK_rebuild(struct ik_algorithm_t* algorithm)
 {
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_FABRIK_solve(struct ik_solver_t* solver)
+ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
 {
     ikret_t result = IK_OK;
-    int iteration = solver->max_iterations;
-    ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
+    int iteration = algorithm->max_iterations;
+    ikreal_t tolerance_squared = algorithm->tolerance * algorithm->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(solver, IK_TRANSFORM_L2G);
+    ik_transform_chain_list(algorithm, IK_TRANSFORM_L2G);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -556,25 +556,25 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
      * global space (doesn't work in local as far as I can see). Store the
      * positions and locations before solving for later.
      */
-    if (solver->features & IK_SOLVER_JOINT_ROTATIONS)
-        store_initial_transform(&solver->chain_list);
+    if (algorithm->features & IK_ALGORITHM_JOINT_ROTATIONS)
+        store_initial_transform(&algorithm->chain_list);
 
     while (iteration-- > 0)
     {
         /* Check if all effectors are within range */
-        SOLVER_FOR_EACH_EFFECTOR_NODE(solver, node)
+        ALGORITHM_FOR_EACH_EFFECTOR_NODE(algorithm, node)
             struct ik_vec3_t diff = node->position;
             ik_vec3_sub_vec3(diff.f, node->effector->target_position.f);
             if (ik_vec3_length_squared(diff.f) > tolerance_squared)
             {
                 goto hasnt_converged;
             }
-        SOLVER_END_EACH
+        ALGORITHM_END_EACH
         result = IK_RESULT_CONVERGED;
         break;
         hasnt_converged:
 
-        SOLVER_FOR_EACH_CHAIN(solver, chain)
+        ALGORITHM_FOR_EACH_CHAIN(algorithm, chain)
             struct  ik_node_t* base_node;
             int idx;
 
@@ -588,24 +588,24 @@ ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 
             base_node = chain_get_node(chain, idx);
 
-            if (solver->features & IK_SOLVER_TARGET_ROTATIONS)
+            if (algorithm->features & IK_ALGORITHM_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
 
-            if (solver->features & IK_SOLVER_CONSTRAINTS)
+            if (algorithm->features & IK_ALGORITHM_CONSTRAINTS)
                 solve_chain_backwards_with_constraints(chain, base_node->position, base_node->rotation, base_node->position);
             else
                 solve_chain_backwards(chain, base_node->position);
-        SOLVER_END_EACH
+        ALGORITHM_END_EACH
 
     }
 
-    if (solver->features & IK_SOLVER_JOINT_ROTATIONS)
-        calculate_joint_rotations(&solver->chain_list);
+    if (algorithm->features & IK_ALGORITHM_JOINT_ROTATIONS)
+        calculate_joint_rotations(&algorithm->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(solver, IK_TRANSFORM_G2L);
+    ik_transform_chain_list(algorithm, IK_TRANSFORM_G2L);
 
     return result;
 }

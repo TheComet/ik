@@ -135,27 +135,27 @@ struct ik_api_t IKAPI = {
 #undef X
     },*/
     {
-        ik_solver_create,
-        ik_solver_destroy,
-        ik_solver_construct,
-        ik_solver_destruct,
-        ik_solver_prepare,
-        ik_solver_update_translations,
-        ik_solver_solve,
-        ik_solver_iterate_nodes,
-        ik_solver_get_max_iterations,
-        ik_solver_set_max_iterations,
-        ik_solver_get_tolerance,
-        ik_solver_set_tolerance,
-        ik_solver_get_features,
-        ik_solver_enable_features,
-        ik_solver_disable_features,
-        ik_solver_is_feature_enabled,
-#define X(arg) IK_SOLVER_##arg,
-        IK_SOLVER_ALGORITHM_LIST
+        ik_algorithm_create,
+        ik_algorithm_destroy,
+        ik_algorithm_construct,
+        ik_algorithm_destruct,
+        ik_algorithm_prepare,
+        ik_algorithm_update_translations,
+        ik_algorithm_solve,
+        ik_algorithm_iterate_nodes,
+        ik_algorithm_get_max_iterations,
+        ik_algorithm_set_max_iterations,
+        ik_algorithm_get_tolerance,
+        ik_algorithm_set_tolerance,
+        ik_algorithm_get_features,
+        ik_algorithm_typenable_features,
+        ik_algorithm_disable_features,
+        ik_algorithm_is_feature_enabled,
+#define X(arg) IK_ALGORITHM_##arg,
+        IK_ALGORITHM_LIST
 #undef X
-#define X(arg, value) IK_SOLVER_##arg,
-        IK_SOLVER_FEATURES_LIST
+#define X(arg, value) IK_ALGORITHM_##arg,
+        IK_ALGORITHM_FEATURES_LIST
 #undef X
     },
     {

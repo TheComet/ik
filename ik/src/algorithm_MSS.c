@@ -1,36 +1,36 @@
 #include "ik/ik.h"
-#include "ik/solverdef.h"
-#include "ik/solver_MSS.h"
+#include "ik/algorithmdef.h"
+#include "ik/algorithm_MSS.h"
 #include <math.h>
 
-struct ik_solver_t
+struct ik_algorithm_t
 {
-    SOLVER_HEAD
+    ALGORITHM_HEAD
 };
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_solver_MSS_type_size(void)
+ik_algorithm_MSS_type_size(void)
 {
-    return sizeof(struct ik_solver_t);
+    return sizeof(struct ik_algorithm_t);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_MSS_construct(struct ik_solver_t* solver)
+ik_algorithm_MSS_construct(struct ik_algorithm_t* algorithm)
 {
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_MSS_destruct(struct ik_solver_t* solver)
+ik_algorithm_MSS_destruct(struct ik_algorithm_t* algorithm)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_MSS_rebuild(struct ik_solver_t* solver)
+ik_algorithm_MSS_rebuild(struct ik_algorithm_t* algorithm)
 {
     return IK_OK;
 }
@@ -38,7 +38,7 @@ ik_solver_MSS_rebuild(struct ik_solver_t* solver)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_solver_MSS_solve(struct ik_solver_t* solver)
+ik_algorithm_MSS_solve(struct ik_algorithm_t* algorithm)
 {
     return IK_OK;
 }
