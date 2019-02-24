@@ -1,4 +1,3 @@
-#include "ik/chain.h"
 #include "ik/log.h"
 #include "ik/memory.h"
 #include "ik/ntf.h"
@@ -12,11 +11,6 @@
 #include "ik/solver_MSS.h"
 #include <assert.h>
 #include <string.h>
-
-struct ik_solver_t
-{
-    IK_SOLVER_HEAD
-};
 
 /* ------------------------------------------------------------------------- */
 ikret_t
@@ -69,7 +63,6 @@ ik_solver_construct(struct ik_solver_t* solver)
     solver->max_iterations = 20;
     solver->tolerance = 1e-2;
     solver->features = IK_SOLVER_JOINT_ROTATIONS;
-    vector_construct(&solver->effector_chains, sizeof(struct ik_chain_t));
     ik_ntf_list_construct(&solver->ntf_list);
 
     return solver->construct(solver);
@@ -93,9 +86,6 @@ ik_solver_prepare(struct ik_solver_t* solver, struct ik_node_t* node)
         return status;
 
     if ((status = ik_solver_prepare_stack_buffer(solver)) != IK_OK)
-        return status;
-
-    if ((status = ik_solver_prepare_effector_chains(solver)) != IK_OK)
         return status;
 
     ik_solver_prepare_pole_targets(solver);

@@ -3,6 +3,7 @@
 
 #include "ik/config.h"
 
+#include "ik/attachment.h"
 #include "ik/constraint.h"
 #include "ik/effector.h"
 #include "ik/info.h"
@@ -33,6 +34,24 @@ struct ik_constraint_api_t
 
 struct ik_effector_api_t
 {
+    ikret_t         (*create)(struct ik_effector_t**);
+    void            (*destroy)(struct ik_effector_t*);
+    void            (*set_target_position)(struct ik_effector_t*, const ikreal_t[3]);
+    const ikreal_t* (*get_target_position)(const struct ik_effector_t*);
+    void            (*set_target_rotation)(struct ik_effector_t*, const ikreal_t[4]);
+    const ikreal_t* (*get_target_rotation)(const struct ik_effector_t*);
+    void            (*set_weight)(struct ik_effector_t*, ikreal_t);
+    ikreal_t        (*get_weight)(const struct ik_effector_t*);
+    void            (*set_rotation_weight)(struct ik_effector_t*, ikreal_t);
+    ikreal_t        (*get_rotation_weight)(const struct ik_effector_t*);
+    void            (*set_rotation_weight_decay)(struct ik_effector_t*, ikreal_t);
+    ikreal_t        (*get_rotation_weight_decay)(const struct ik_effector_t*);
+    void            (*set_chain_length)(struct ik_effector_t*, uint16_t);
+    uint16_t        (*get_chain_length)(const struct ik_effector_t*);
+    void            (*enable_features)(struct ik_effector_t*, uint8_t features);
+    void            (*disable_features)(struct ik_effector_t*, uint8_t features);
+    uint8_t         (*get_features)(const struct ik_effector_t*);
+    uint8_t         (*is_feature_enabled)(const struct ik_effector_t*, enum ik_effector_features_e);
 #define X(arg, value) enum ik_effector_features_e arg;
     IK_EFFECTOR_FEATURES_LIST
 #undef X
@@ -88,23 +107,14 @@ struct ik_node_api_t
     vector_size_t           (*child_count)            (const struct ik_node_t*);
     ikret_t                 (*find_child)             (struct ik_node_t**, const struct ik_node_t*, const void*);
 
-    ikret_t                 (*create_effector)        (struct ik_effector_t**, struct ik_node_t*);
-    ikret_t                 (*attach_effector)        (struct ik_node_t*, struct ik_effector_t*);
-    void                    (*release_effector)       (struct ik_node_t*);
-    struct ik_effector_t*   (*take_effector)          (struct ik_node_t*);
-    struct ik_effector_t*   (*get_effector)           (const struct ik_node_t*);
-
-    ikret_t                 (*create_constraint)      (struct ik_constraint_t**, struct ik_node_t*);
-    ikret_t                 (*attach_constraint)      (struct ik_node_t*, struct ik_constraint_t*);
-    void                    (*release_constraint)     (struct ik_node_t*);
-    struct ik_constraint_t* (*take_constraint)        (struct ik_node_t*);
-    struct ik_constraint_t* (*get_constraint)         (const struct ik_node_t*);
-/*
-    ikret_t                 (*create_pole)            (struct ik_pole_t**, struct ik_node_t*);
-    ikret_t                 (*attach_pole)            (struct ik_node_t*, struct ik_pole_t*);
-    void                    (*release_pole)           (struct ik_node_t*);
-    struct ik_pole_t*       (*take_pole)              (struct ik_node_t*);
-    struct ik_pole_t*       (*get_pole)               (const struct ik_node_t*);*/
+#define X(upper, lower) \
+    ikret_t                 (*create_##lower)         (struct ik_##lower##_t**, struct ik_node_t*); \
+    ikret_t                 (*attach_##lower)         (struct ik_node_t*, struct ik_##lower##_t*); \
+    void                    (*release_##lower)        (struct ik_node_t*); \
+    struct ik_##lower##_t*  (*take_##lower)           (struct ik_node_t*); \
+    struct ik_##lower##_t*  (*get_##lower)            (const struct ik_node_t*);
+    IK_ATTACHMENT_LIST
+#undef X
 
     void                    (*set_position)           (struct ik_node_t*, const ikreal_t[3]);
     const ikreal_t*         (*get_position)           (const struct ik_node_t*);

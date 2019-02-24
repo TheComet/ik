@@ -8,11 +8,6 @@
 #include <stddef.h>
 #include <assert.h>
 
-struct ik_solver_t
-{
-    IK_SOLVER_HEAD
-};
-
 /* ------------------------------------------------------------------------- */
 uintptr_t
 ik_solver_ONE_BONE_type_size(void)
@@ -45,7 +40,7 @@ ik_solver_ONE_BONE_prepare(struct ik_solver_t* solver)
         uint32_t i = ntf->node_count;
         while (i--)
         {
-            if (ntf->indices[i].post_child_count > 1)
+            if (NTF_POST_CHILD_COUNT(ntf, i) > 1)
             {
                 ik_log_error("Your tree has child chains. This solver does not support multiple end effectors. You will need to switch to another algorithm (e.g. FABRIK)");
                 return IK_ERR_GENERIC;
@@ -69,18 +64,20 @@ ik_solver_ONE_BONE_solve(struct ik_solver_t* solver)
     NTF_FOR_EACH(&solver->ntf_list, ntf)
         struct ik_node_data_t* tip;
         struct ik_node_data_t* base;
+        struct ik_effector_t* eff;
         ikreal_t* tip_pos;
         ikreal_t* base_pos;
         ikreal_t* target_pos;
 
         assert(ntf->node_count == 2);
-        tip  = NTF_GET_PRE(ntf, 0);
-        base = NTF_GET_PRE(ntf, 1);
+        tip  = NTF_PRE_NODE(ntf, 0);
+        base = NTF_PRE_NODE(ntf, 1);
+        eff = (struct ik_effector_t*)tip->attachment[IK_ATTACHMENT_EFFECTOR];
 
-        assert(tip->effector != NULL);
-        tip_pos = tip->transform.t.position.f;
-        base_pos = base->transform.t.position.f;
-        target_pos = tip->effector->target_position.f;
+        assert(tip->attachment[IK_ATTACHMENT_EFFECTOR] != NULL);
+        tip_pos    = tip->transform.t.position.f;
+        base_pos   = base->transform.t.position.f;
+        target_pos = eff->target_position.f;
 
         ik_vec3_copy(tip_pos, target_pos);
         ik_vec3_sub_vec3(tip_pos, base_pos);

@@ -2,7 +2,7 @@
 #define EFFECTOR_H
 
 #include "ik/config.h"
-#include "ik/refcount.h"
+#include "ik/attachment.h"
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
@@ -39,7 +39,7 @@ enum ik_effector_features_e
  */
 struct ik_effector_t
 {
-    IK_REFCOUNTED(struct ik_effector_t)
+    IK_ATTACHMENT_HEAD
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have

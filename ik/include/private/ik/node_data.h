@@ -2,6 +2,7 @@
 #define IK_NODE_DATA_H
 
 #include "ik/config.h"
+#include "ik/attachment.h"
 #include "ik/refcount.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
@@ -9,13 +10,14 @@
 
 C_BEGIN
 
-struct ik_effector_t;
 struct ik_constraint_t;
+struct ik_effector_t;
 struct ik_pole_t;
+struct ik_solver_t;
 
 struct ik_node_data_t
 {
-    IK_REFCOUNTED(struct ik_node_data_t)
+    IK_REFCOUNT_HEAD
 
     /*!
      * @brief If this node is an end effector, this will point to the end
@@ -25,11 +27,7 @@ struct ik_node_data_t
      * the target position/rotation of the effector by writing to
      * node->effector->target_position or node->effector->target_rotation.
      */
-    struct ik_effector_t*    effector;
-    struct ik_constraint_t*  constraint;
-    struct ik_pole_t*        pole;
-
-    ikreal_t dist_to_parent;
+    struct ik_attachment_t* attachment[IK_ATTACHMENT_COUNT];
 
     /*!
      * @brief Allows the user of this library to store custom data per node
@@ -60,6 +58,7 @@ struct ik_node_data_t
 
     union ik_transform_t transform;
 
+    ikreal_t dist_to_parent;
     ikreal_t rotation_weight;
     ikreal_t mass;
 };

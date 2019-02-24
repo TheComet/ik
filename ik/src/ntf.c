@@ -14,9 +14,102 @@ enum mark_e
 {
     MARK_NONE,
     MARK_SECTION,
-    MARK_BASE,
-    MARK_STIFF
+    MARK_SPLIT
 };
+
+/* ------------------------------------------------------------------------- */
+static uint8_t
+node_is_marked_as(const struct ik_node_t* node,
+                  enum mark_e marked_as,
+                  const struct btree_t* marked_nodes)
+{
+    enum mark_e* marking =
+        (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node));
+
+    return (marking != NULL && *marking == marked_as);
+}
+
+/* ------------------------------------------------------------------------- */
+static uint32_t
+count_children_marked(const struct ik_node_t* node,
+                      const struct btree_t* marked_nodes)
+{
+    uint32_t count = 0;
+    NODE_FOR_EACH(node, uid, child)
+        if (btree_find_ptr(marked_nodes, ik_node_get_uid(node)))
+            count++;
+    NODE_END_EACH
+
+    return count;
+}
+
+/* ------------------------------------------------------------------------- */
+static uint8_t
+any_child_is_marked_as(const struct ik_node_t* node,
+                       enum mark_e marked_as,
+                       const struct btree_t* marked_nodes)
+{
+    NODE_FOR_EACH(node, uid, child)
+        if (node_is_marked_as(child, marked_as, marked_nodes))
+            return 1;
+    NODE_END_EACH
+    return 0;
+}
+
+static uint8_t
+any_child_has_effector(const struct ik_node_t* node)
+{
+    NODE_FOR_EACH(node, uid, child)
+        if (child->node_data->attachment[IK_ATTACHMENT_EFFECTOR] != NULL)
+            return 1;
+    NODE_END_EACH
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static uint32_t
+count_nodes_part_of_subtree_recursive(uint32_t* total_count,
+                                      uint32_t* max_children,
+                                      uint8_t split_counter,
+                                      const struct ik_node_t* node,
+                                      const struct btree_t* marked_nodes)
+{
+    uint32_t child_count;
+    enum mark_e* marking;
+
+    if (split_counter == 0)
+        return 0;
+    if ((marking = (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node))) == NULL)
+        return 0;
+    if (*marking == MARK_SPLIT)
+        split_counter--;
+
+    child_count = 0;
+    NODE_FOR_EACH(node, uid, child)
+        child_count += count_nodes_part_of_subtree_recursive(
+            total_count, max_children, split_counter, child, marked_nodes);
+    NODE_END_EACH
+
+    if (*max_children < child_count)
+        *max_children = child_count;
+
+    (*total_count)++;
+    return 1;
+}
+
+/* ------------------------------------------------------------------------- */
+uint32_t
+count_nodes_part_of_subtree(uint32_t* max_children,
+                            const struct ik_node_t* subtree_root,
+                            const struct btree_t* marked_nodes)
+{
+    uint32_t total_count = 0;
+    *max_children = 0;
+
+    count_nodes_part_of_subtree_recursive(&total_count, max_children, 2, subtree_root, marked_nodes);
+
+    return total_count;
+}
 
 /* ------------------------------------------------------------------------- */
 static ikret_t
@@ -53,27 +146,29 @@ mark_nodes(struct btree_t* marked, struct vector_t* effector_nodes)
         /*
          * Set up chain length counter. If the chain length is 0 then it is
          * infinitely long. Set the counter to -1 in this case to skip the
-         * escape condition.
+         * escape condition. A chain length of 1 means it affects 1 *bone*, but
+         * we are traversing nodes where 2 nodes is one bone. Therefore, we must
+         * add 1 to the chain length.
          */
         assert(effector != NULL);
         chain_length_counter = effector->chain_length == 0 ?
-                -1 : (int)effector->chain_length;
+                -1 : (int)effector->chain_length + 1;
 
         /*
          * Walk up chain (starting at effector node and ending if we run out of
          * nodes, or the chain length counter reaches 0). Mark every node in
          * the chain as MARK_SECTION. If we get to the last node in the chain,
-         * mark it as MARK_BASE only if the node is unmarked. This means that
-         * nodes marked as MARK_BASE will be overwritten with MARK_SECTION if
+         * mark it as MARK_SPLIT only if the node is unmarked. This means that
+         * nodes marked as MARK_SPLIT will be overwritten with MARK_SECTION if
          * necessary.
          */
         for (; node != NULL && chain_length_counter != 0;
              node = node->parent, chain_length_counter--)
         {
-            /* Is this the last node in the chain? If so, select MARK_BASE */
+            /* Is this the last node in the chain? If so, select MARK_SPLIT */
             enum mark_e new_mark =
-                    (chain_length_counter == 0 || node->parent == NULL)
-                    ? MARK_BASE : MARK_SECTION;
+                    (chain_length_counter == 1 || node->parent == NULL)
+                    ? MARK_SPLIT : MARK_SECTION;
 
             enum mark_e* current_marking = (enum mark_e*)btree_find_ptr(marked, ik_node_get_uid(node));
             if (current_marking != NULL)  /* node already marked? */
@@ -91,10 +186,17 @@ mark_nodes(struct btree_t* marked, struct vector_t* effector_nodes)
                     return status;
                 }
             }
-
-            if (chain_length_counter-- == 0)
-                break;
         }
+    VECTOR_END_EACH
+
+    /*
+     * Mark all effector nodes MARK_SPLIT to cover the case when effectors are
+     * attached mid-tree. The tree is easier to split this way.
+     */
+    VECTOR_FOR_EACH(effector_nodes, struct ik_node_t*, p_effector_node)
+        struct ik_node_t* node = *p_effector_node;
+        enum mark_e* marking = (enum mark_e*)btree_find_ptr(marked, ik_node_get_uid(node));
+        *marking = MARK_SPLIT;
     VECTOR_END_EACH
 
     return IK_OK;
@@ -107,15 +209,17 @@ split_into_subtrees(struct vector_t* tree_list,
                     const struct btree_t* marked_nodes)
 {
     /*
-     * Any node marked MARK_BASE is the root node of an isolated tree.
+     * Any node marked MARK_SPLIT could be the root node of an isolated tree.
+     * We need to check if it has any marked children before it can be
+     * considered as one.
      */
-    enum mark_e* marking = (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node));
-    if (marking != NULL && *marking == MARK_BASE)
-    {
-        ikret_t status;
-        if ((status = vector_push(tree_list, &node)) != IK_OK)
-            return status;
-    }
+    if (node_is_marked_as(node, MARK_SPLIT, marked_nodes))
+        if (any_child_is_marked_as(node, MARK_SECTION, marked_nodes) || any_child_has_effector(node))
+        {
+            ikret_t status;
+            if ((status = vector_push(tree_list, &node)) != IK_OK)
+                return status;
+        }
 
     /* Recurse into children */
     NODE_FOR_EACH(node, uid, child)
@@ -129,74 +233,56 @@ split_into_subtrees(struct vector_t* tree_list,
 
 /* ------------------------------------------------------------------------- */
 static void
-count_marked_nodes_in_subtree(uint32_t* total_count,
-                              uint32_t* max_children,
-                              const struct ik_node_t* node,
-                              const struct btree_t* marked_nodes)
-{
-    uint32_t child_count = 0;
-    NODE_FOR_EACH(node, uid, child)
-        enum mark_e* marking =
-            (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(child));
-        if (marking != NULL && *marking == MARK_SECTION)
-        {
-            child_count++;
-            (*total_count)++;
-            count_marked_nodes_in_subtree(total_count, max_children, child, marked_nodes);
-        }
-    NODE_END_EACH
-
-    if (*max_children < child_count)
-        *max_children = child_count;
-}
-#define count_marked_nodes_in_subtree(total_count, max_children, node, marked_nodes) do { \
-        *total_count = 0; \
-        *max_children = 0; \
-        count_marked_nodes_in_subtree(total_count, max_children, node, marked_nodes); \
-        (*total_count)++; /* account for root node */ \
-    } while (0)
-
-/* ------------------------------------------------------------------------- */
-static void
 calculate_indices_recursive(struct ik_ntf_t* ntf,
                             uint32_t* pre_counter,
                             uint32_t* post_counter,
+                            uint8_t split_counter,
                             const struct ik_node_t* node,
+                            const struct ik_node_t* base,
                             const struct btree_t* marked_nodes)
 {
     uint32_t marked_child_node_count;
+    const struct ik_node_t* new_base;
+    enum mark_e* marking;
+
+    if (split_counter == 0)
+        return;
+    if ((marking = (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node))) == NULL)
+        return;
+    if (*marking == MARK_SPLIT)
+        split_counter--;
 
     /*
      * Count the child nodes that are marked. Have to do this before recursing
      * into the children, because doing that would update *pre_counter.
      */
-    marked_child_node_count = 0;
-    NODE_FOR_EACH(node, uid, child)
-        enum mark_e* marking =
-                (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(child));
-        if (marking != NULL && *marking == MARK_SECTION)
-            marked_child_node_count++;
-    NODE_END_EACH
+    marked_child_node_count = count_children_marked(node, marked_nodes);
 
     /* Set "pre-order" indices */
-    ntf->indices[*pre_counter].pre = (uint32_t)(node->node_data - ntf->node_data);
+    ntf->indices[*pre_counter].pre_node = (uint32_t)(node->node_data - ntf->node_data);
+    ntf->indices[*pre_counter].pre_base = (uint32_t)(base->node_data - ntf->node_data);
     ntf->indices[*pre_counter].pre_child_count = marked_child_node_count;
     (*pre_counter)++;
 
+    /* A node with more than one marked child is the new base node */
+    new_base = base;
+    if (marked_child_node_count > 1)
+        new_base = node;
+
     /* Recurse into children */
     NODE_FOR_EACH(node, uid, child)
-        enum mark_e* marking =
-                (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(child));
-        if (marking != NULL && *marking == MARK_SECTION)
-            calculate_indices_recursive(ntf,
-                                        pre_counter,
-                                        post_counter,
-                                        child,
-                                        marked_nodes);
+        calculate_indices_recursive(ntf,
+                                    pre_counter,
+                                    post_counter,
+                                    split_counter,
+                                    child,
+                                    new_base,
+                                    marked_nodes);
     NODE_END_EACH
 
     /* Set "post-order" indices */
-    ntf->indices[*post_counter].post = (uint32_t)(node->node_data - ntf->node_data);
+    ntf->indices[*post_counter].post_node = (uint32_t)(node->node_data - ntf->node_data);
+    ntf->indices[*post_counter].post_base = (uint32_t)(base->node_data - ntf->node_data);
     ntf->indices[*post_counter].post_child_count = marked_child_node_count;
     (*post_counter)++;
 }
@@ -210,6 +296,8 @@ calculate_indices(struct ik_ntf_t* ntf,
     calculate_indices_recursive(ntf,
                                 &pre_counter,
                                 &post_counter,
+                                2,
+                                subtree_root,
                                 subtree_root,
                                 marked_nodes);
 }
@@ -219,13 +307,17 @@ static void
 copy_marked_nodes_into_ntf_recursive(struct ik_node_data_t** buffer_dest,
                                      struct ik_node_t* node,
                                      struct ik_refcount_t* shared_array_refcount,
+                                     uint8_t split_counter,
                                      const struct btree_t* marked_nodes)
 {
-    /* Only copy nodes that are marked as MARK_SECTION */
-    enum mark_e* marking =
-            (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node));
-    if (marking == NULL || *marking != MARK_SECTION)
+    enum mark_e* marking;
+
+    if (split_counter == 0)
         return;
+    if ((marking = (enum mark_e*)btree_find_ptr(marked_nodes, ik_node_get_uid(node))) == NULL)
+        return;
+    if (*marking == MARK_SPLIT)
+        split_counter--;
 
     /*
      * Each ik_node_t points to a ik_node_data_t structure, which is refcounted.
@@ -247,7 +339,7 @@ copy_marked_nodes_into_ntf_recursive(struct ik_node_data_t** buffer_dest,
     IK_INCREF(node->node_data);
 
     NODE_FOR_EACH(node, uid, child)
-        copy_marked_nodes_into_ntf_recursive(buffer_dest, child, shared_array_refcount, marked_nodes);
+        copy_marked_nodes_into_ntf_recursive(buffer_dest, child, shared_array_refcount, split_counter, marked_nodes);
     NODE_END_EACH
 }
 static ikret_t
@@ -288,7 +380,7 @@ copy_marked_nodes_into_ntf(struct ik_ntf_t* ntf,
     buffer_dest = ntf->node_data + 1;
     buffer_refcount = subtree_root->node_data->refcount;
     NODE_FOR_EACH(subtree_root, uid, child)
-        copy_marked_nodes_into_ntf_recursive(&buffer_dest, child, buffer_refcount, marked_nodes);
+        copy_marked_nodes_into_ntf_recursive(&buffer_dest, child, buffer_refcount, 1, marked_nodes);
     NODE_END_EACH
 
     /* Can do a buffer overrun check */
@@ -364,7 +456,7 @@ ik_ntf_construct(struct ik_ntf_t* ntf,
 
     memset(ntf, 0, sizeof *ntf);
 
-    count_marked_nodes_in_subtree(&ntf->node_count, &max_children, subtree_root, marked_nodes);
+    ntf->node_count = count_nodes_part_of_subtree(&max_children, subtree_root, marked_nodes);
 
     /* Contiguous array for holding all ik_node_data_t instances of all nodes */
     ntf->node_data = MALLOC(sizeof(struct ik_node_data_t) * ntf->node_count);

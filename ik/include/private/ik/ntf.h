@@ -12,12 +12,12 @@ struct ik_node_t;
 
 struct ik_ntf_index_data_t
 {
-    /* In-order indices */
-    uint32_t pre;
-    uint32_t pre_child_count;
-    /* Pre-order indices */
-    uint32_t post;
-    uint32_t post_child_count;
+    uint32_t pre_node;         /* Index to current pre-order node */
+    uint32_t post_node;        /* Index to current post-order node */
+    uint32_t pre_base;         /* Index to current pre-order node's direct base node */
+    uint32_t post_base;        /* Index to current post-order node's direct base node */
+    uint16_t pre_child_count;  /* Current pre-order node's child count */
+    uint16_t post_child_count; /* Current post-order node's child count */
 };
 
 struct ik_ntf_t
@@ -69,11 +69,23 @@ ik_ntf_list_clear(struct vector_t* ntf_list);
 IK_PRIVATE_API void
 ik_ntf_list_destroy(struct vector_t* ntf_list);
 
-#define NTF_GET_PRE(ntf, index) \
-    (&(ntf)->node_data[(ntf)->indices[index].pre])
+#define NTF_PRE_NODE(ntf, index) \
+    (&(ntf)->node_data[(ntf)->indices[index].pre_node])
 
-#define NTF_GET_POST(ntf, index) \
-    (&(ntf)->node_data[(ntf)->indices[index].pre])
+#define NTF_POST_NODE(ntf, index) \
+    (&(ntf)->node_data[(ntf)->indices[index].post_node])
+
+#define NTF_PRE_BASE(ntf, index) \
+    (&(ntf)->node_data[(ntf)->indices[index].pre_base])
+
+#define NTF_POST_BASE(ntf, index) \
+    (&(ntf)->node_data[(ntf)->indices[index].post_node])
+
+#define NTF_PRE_CHILD_COUNT(ntf, index) \
+    ((ntf)->indices[i].pre_child_count)
+
+#define NTF_POST_CHILD_COUNT(ntf, index) \
+    ((ntf)->indices[i].post_child_count)
 
 #define NTF_FOR_EACH(ntf_list, ntf) \
     VECTOR_FOR_EACH(ntf_list, struct ik_ntf_t, ntf)

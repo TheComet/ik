@@ -1,17 +1,16 @@
 #include "ik/solver_update.h"
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/node_data.h"
+#include "ik/ntf.h"
 #include "ik/vec3.h"
 #include "ik/vector.h"
 
 /* ------------------------------------------------------------------------- */
 static void
-update_effector_target(struct ik_chain_t* chain)
+update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
 {
-    struct ik_node_data_t* tip = chain->effector_node;
-    struct ik_node_data_t* base = chain->base_node;
-    struct ik_effector_t* effector = chain->effector_node->effector;
+    struct ik_effector_t* effector =
+        (struct ik_effector_t*)tip->attachment[IK_ATTACHMENT_EFFECTOR];
 
     /* lerp using effector weight to get actual target position */
     effector->actual_target = effector->target_position;
@@ -43,14 +42,19 @@ update_effector_target(struct ik_chain_t* chain)
         ik_vec3_add_vec3(effector->actual_target.f, base->transform.t.position.f);
     }
 }
-
-/* ------------------------------------------------------------------------- */
 void
-ik_solver_update_effector_targets(struct vector_t* effector_chains)
+ik_solver_update_effector_targets(struct vector_t* ntf_list)
 {
-    VECTOR_FOR_EACH(effector_chains, struct ik_chain_t, chain)
-        update_effector_target(chain);
-    VECTOR_END_EACH
+    NTF_FOR_EACH(ntf_list, ntf)
+        uint32_t i;
+        for (i = 0; i != ntf->node_count; ++i)
+        {
+            if (NTF_POST_CHILD_COUNT(ntf, i) == 0)
+            {
+                update(NTF_POST_NODE(ntf, i), NTF_POST_BASE(ntf, i));
+            }
+        }
+    NTF_END_EACH
 }
 
 /* ------------------------------------------------------------------------- */

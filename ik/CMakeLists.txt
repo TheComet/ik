@@ -141,7 +141,6 @@ add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURREN
 
 set (IK_HEADERS
     "include/private/ik/backtrace.h"
-    "include/private/ik/chain.h"
     "include/private/ik/memory.h"
     "include/public/ik/btree.h"
     "include/public/ik/callbacks.h"
@@ -174,8 +173,8 @@ set (IK_HEADERS
     "templates/config.h.in"
     "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
+    "src/attachment.c"
     "src/btree.c"
-    #"src/chain.c"
     "src/callbacks.c"
     "src/constraint.c"
     "src/effector.c"

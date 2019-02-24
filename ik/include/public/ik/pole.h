@@ -2,7 +2,7 @@
 #define IK_POLE_H
 
 #include "ik/config.h"
-#include "ik/refcount.h"
+#include "ik/attachment.h"
 #include "ik/vec3.h"
 
 #define IK_POLE_TYPE_LIST \
@@ -28,7 +28,7 @@ enum ik_pole_type_e
  */
 struct ik_pole_t
 {
-    IK_REFCOUNTED(struct ik_pole_t)
+    IK_ATTACHMENT_HEAD
 
     /* private stuff */
     void (*calculate_roll)(ikreal_t q[4], const struct ik_pole_t* pole);

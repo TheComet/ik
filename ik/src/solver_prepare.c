@@ -1,4 +1,3 @@
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/memory.h"
@@ -10,11 +9,6 @@
 #include "ik/vector.h"
 #include <stddef.h>
 #include <assert.h>
-
-struct ik_solver_t
-{
-    IK_SOLVER_HEAD
-};
 
 /* ------------------------------------------------------------------------- */
 ikret_t
@@ -46,38 +40,6 @@ ik_solver_prepare_stack_buffer(struct ik_solver_t* solver)
         ik_log_fatal("Failed to allocate solver stack: Ran out of memory");
         return IK_ERR_OUT_OF_MEMORY;
     }
-
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_prepare_effector_chains(struct ik_solver_t* solver)
-{
-    ikret_t status;
-    vector_clear_free(&solver->effector_chains);
-
-    NTF_FOR_EACH(&solver->ntf_list, ntf)
-        uint32_t i = ntf->node_count;
-        struct ik_chain_t chain = {0};
-        while (i--)
-        {
-            /* Found an effector node */
-            if (ntf->indices[i].post_child_count == 0)
-                chain.effector_node = &ntf->node_data[ntf->indices[i].post];
-
-            if (ntf->indices[i].post_child_count > 1)
-            {
-                chain.base_node = &ntf->node_data[ntf->indices[i].post];
-                assert(chain.effector_node != NULL);
-                assert(chain.effector_node->effector != NULL);
-                if ((status = vector_push(&solver->effector_chains, &chain)) != IK_OK)
-                    return status;
-
-                chain.effector_node = NULL;  /* To trip assert() if the ntf is somehow wrong */
-            }
-        }
-    NTF_END_EACH
 
     return IK_OK;
 }

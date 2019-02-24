@@ -32,7 +32,6 @@
 
 C_BEGIN
 
-struct ik_solver_t;
 struct ik_node_t;
 
 typedef void(*ik_solver_callback_func)(void* user_data,
@@ -55,6 +54,11 @@ enum ik_solver_features_e
 #undef X
 
     IK_SOLVER_FEATURES_COUNT
+};
+
+struct ik_solver_t
+{
+    IK_SOLVER_HEAD
 };
 
 #if defined(IK_BUILDING)

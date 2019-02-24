@@ -7,12 +7,13 @@
 C_BEGIN
 
 struct ik_node_data_t;
-struct ik_effector_t;
-struct ik_constraint_t;
-struct ik_pole_t;
+
+#define X(upper, lower) struct ik_##lower##_t;
+    IK_ATTACHMENT_LIST
+#undef X
 
 /*!
- * @brief Base structure used to build the tree structure to be solved.
+ * @brief Base structure used to build the tree to be solved.
  */
 struct ik_node_t
 {
@@ -127,29 +128,27 @@ ik_node_find_child(struct ik_node_t** child,
  * there is not enough memory to allocate the effector, then IK_ERR_OUT_OF_MEMORY
  * is returned.
  */
-IK_PRIVATE_API ikret_t
-ik_node_create_effector(struct ik_effector_t** effector, struct ik_node_t* node);
 
-IK_PRIVATE_API ikret_t
-ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* effector);
 
-/*!
- * @brief Unrefs the effector and detaches it from the specified node.
- * @param[in] node Node to remove effector from. If the node doesn't have an
- * effector attached, this function does nothing.
- */
-IK_PRIVATE_API void
-ik_node_release_effector(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_effector_t*
-ik_node_take_effector(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_effector_t*
-ik_node_get_effector(const struct ik_node_t* node);
-
-IK_PRIVATE_API ikret_t
-ik_node_create_constraint(struct ik_constraint_t** effector,
-                          struct ik_node_t* node);
+#define X(upper, lower)                                                       \
+        IK_PRIVATE_API IK_WARN_UNUSED ikret_t                                 \
+        ik_node_create_##lower(struct ik_##lower##_t** a,                     \
+                               struct ik_node_t* node);                       \
+                                                                              \
+        IK_PRIVATE_API IK_WARN_UNUSED ikret_t                                 \
+        ik_node_attach_##lower(struct ik_node_t* node,                        \
+                               struct ik_##lower##_t* a);                     \
+                                                                              \
+        IK_PRIVATE_API void                                                   \
+        ik_node_release_##lower(struct ik_node_t* node);                      \
+                                                                              \
+        IK_PRIVATE_API struct ik_##lower##_t*                                 \
+        ik_node_take_##lower(struct ik_node_t* node);                         \
+                                                                              \
+        IK_PRIVATE_API struct ik_##lower##_t*                                 \
+        ik_node_get_##lower(const struct ik_node_t* node);
+    IK_ATTACHMENT_LIST
+#undef X
 
 /*!
  * @brief The constraint is attached to the specified node.
@@ -178,33 +177,6 @@ ik_node_create_constraint(struct ik_constraint_t** effector,
  * a constraint attached. IK_OK if otherwise.
  * @note You will need to rebuild the solver's tree before solving.
  */
-IK_PRIVATE_API ikret_t
-ik_node_attach_constraint(struct ik_node_t* node,
-                          struct ik_constraint_t* constraint);
-
-IK_PRIVATE_API void
-ik_node_release_constraint(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_constraint_t*
-ik_node_take_constraint(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_constraint_t*
-ik_node_get_constraint(const struct ik_node_t* node);
-
-IK_PRIVATE_API ikret_t
-ik_node_create_pole(struct ik_pole_t** effector, struct ik_node_t* node);
-
-IK_PRIVATE_API ikret_t
-ik_node_attach_pole(struct ik_node_t* node, struct ik_pole_t* pole);
-
-IK_PRIVATE_API void
-ik_node_release_pole(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_pole_t*
-ik_node_take_pole(struct ik_node_t* node);
-
-IK_PRIVATE_API struct ik_pole_t*
-ik_node_get_pole(const struct ik_node_t* node);
 
 IK_PRIVATE_API void
 ik_node_set_position(struct ik_node_t* node, const ikreal_t position[3]);

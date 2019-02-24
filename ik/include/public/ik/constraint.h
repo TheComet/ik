@@ -2,7 +2,7 @@
 #define IK_CONSTRAINT_H
 
 #include "ik/config.h"
-#include "ik/refcount.h"
+#include "ik/attachment.h"
 #include "ik/vec3.h"
 #include "ik/quat.h"
 
@@ -32,7 +32,7 @@ enum ik_constraint_type_e
 
 struct ik_constraint_t
 {
-    IK_REFCOUNTED(struct ik_constraint_t)
+    IK_ATTACHMENT_HEAD
 
     /*!
      *

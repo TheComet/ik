@@ -2,6 +2,7 @@
 #define IK_TYPES_H
 
 #include "ik/config.h"
+#include "ik/attachment.h"
 
 C_BEGIN
 
@@ -9,6 +10,8 @@ C_BEGIN
  * @brief This is a base for all solvers.
  */
 #define IK_SOLVER_HEAD                                                        \
+    IK_ATTACHMENT_HEAD                                                        \
+                                                                              \
     /* Derived interface */                                                   \
     ikret_t (*construct)(struct ik_solver_t* solver);                         \
     void    (*destruct)(struct ik_solver_t* solver);                          \

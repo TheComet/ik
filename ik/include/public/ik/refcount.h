@@ -5,7 +5,7 @@
 
 C_BEGIN
 
-#define IK_REFCOUNTED(Type)                                 \
+#define IK_REFCOUNT_HEAD                                    \
         struct ik_refcount_t* refcount;
 
 #define IK_INCREF(o)                                        \
@@ -38,9 +38,12 @@ typedef void (*ik_destruct_func)(void*);
 
 struct ik_refcount_t
 {
+    /* Handler for freeing data managed by the refcounted object */
     ik_destruct_func destruct;
-    uint32_t refs;
-    uint32_t array_length;
+    /* Reference count */
+    uint32_t         refs;
+    /* Number of contiguous objects pointing to this refcount */
+    uint32_t         array_length;
 };
 
 IK_PRIVATE_API ikret_t

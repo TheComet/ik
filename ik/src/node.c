@@ -7,6 +7,7 @@
 #include "ik/node.h"
 #include "ik/pole.h"
 #include "ik/quat.h"
+#include "ik/solver.h"
 #include "ik/vec3.h"
 #include <string.h>
 #include <assert.h>
@@ -226,100 +227,92 @@ ik_node_find_child(struct ik_node_t** found,
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_node_create_effector(struct ik_effector_t** eff, struct ik_node_t* node)
+static ikret_t
+ik_node_create_attachment(struct ik_attachment_t** a,
+                          struct ik_node_t* node,
+                          enum ik_attachment_type_e type)
 {
     ikret_t status;
-    if ((status = ik_effector_create(eff)) != IK_OK)
-        return status;
 
-    return ik_node_attach_effector(node, *eff);
-}
+    switch (type)
+    {
+        case IK_ATTACHMENT_CONSTRAINT : {
+            if ((status = ik_constraint_create((struct ik_constraint_t**)a)) != IK_OK)
+                return status;
+        } break;
 
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_node_attach_effector(struct ik_node_t* node, struct ik_effector_t* eff)
-{
-    if (node->node_data->effector != NULL)
-        return IK_ERR_ALREADY_HAS_ATTACHMENT;
+        case IK_ATTACHMENT_EFFECTOR : {
+            if ((status = ik_effector_create((struct ik_effector_t**)a)) != IK_OK)
+                return status;
+        }
 
-    node->node_data->effector = eff;  /* Steal reference */
+        case IK_ATTACHMENT_POLE : {
+            if ((status = ik_pole_create((struct ik_pole_t**)a)) != IK_OK)
+                return status;
+        }
+
+        case IK_ATTACHMENT_SOLVER : {
+            ik_log_error("Solvers can't be created through ik_node_create_attachment(): They need additional arguments. Use ik_solver_create() and ik_node_attach()");
+            return IK_ERR_GENERIC;
+        }
+
+        case IK_ATTACHMENT_COUNT : break;
+    }
+
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_node_release_effector(struct ik_node_t* node)
-{
-    IK_XDECREF(ik_node_take_effector(node));
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_effector_t*
-ik_node_take_effector(struct ik_node_t* node)
-{
-    struct ik_effector_t* eff;
-    if ((eff = node->node_data->effector) == NULL)
-        return NULL;
-
-    node->node_data->effector = NULL;
-    return eff;
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_effector_t*
-ik_node_get_effector(const struct ik_node_t* node)
-{
-    return node->node_data->effector;
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_node_create_constraint(struct ik_constraint_t** constraint, struct ik_node_t* node)
-{
-    ikret_t status;
-    if ((status = ik_constraint_create(constraint)) != IK_OK)
-        return status;
-
-    return ik_node_attach_constraint(node, *constraint);
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_node_attach_constraint(struct ik_node_t* node, struct ik_constraint_t* constraint)
-{
-    if (node->node_data->constraint != NULL)
-        return IK_ERR_ALREADY_HAS_ATTACHMENT;
-
-    node->node_data->constraint = constraint;  /* Steal reference */
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_node_release_constraint(struct ik_node_t* node)
-{
-    IK_XDECREF(ik_node_take_constraint(node));
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_constraint_t*
-ik_node_take_constraint(struct ik_node_t* node)
-{
-    struct ik_constraint_t* constraint;
-    if ((constraint = node->node_data->constraint) == NULL)
-        return NULL;
-
-    node->node_data->constraint = NULL;
-    return constraint;
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_constraint_t*
-ik_node_get_constraint(const struct ik_node_t* node)
-{
-    return node->node_data->constraint;
-}
+#define X(upper, lower) \
+        ikret_t \
+        ik_node_create_##lower(struct ik_##lower##_t** a, struct ik_node_t* node) \
+        { \
+            ikret_t status; \
+            if ((status = ik_node_create_attachment((struct ik_attachment_t**)a, node, IK_ATTACHMENT_##upper)) != IK_OK) \
+                return status; \
+            \
+            if ((status = ik_node_attach_##lower(node, *a)) != IK_OK) \
+            { \
+                IK_DECREF(*a); \
+                return status; \
+            } \
+            \
+            return IK_OK; \
+        } \
+        \
+        ikret_t \
+        ik_node_attach_##lower(struct ik_node_t* node, struct ik_##lower##_t* a) \
+        {\
+            if (node->node_data->attachment[IK_ATTACHMENT_##upper] != NULL) \
+                return IK_ERR_ALREADY_HAS_ATTACHMENT; \
+            \
+            node->node_data->attachment[IK_ATTACHMENT_##upper] = (struct ik_attachment_t*)a; \
+            return IK_OK; \
+        } \
+        \
+        void \
+        ik_node_release_##lower(struct ik_node_t* node) \
+        { \
+            IK_XDECREF(ik_node_take_##lower(node)); \
+        } \
+        \
+        struct ik_##lower##_t* \
+        ik_node_take_##lower(struct ik_node_t* node) \
+        { \
+            struct ik_##lower##_t* a; \
+            \
+            a = (struct ik_##lower##_t*)node->node_data->attachment[IK_ATTACHMENT_##upper]; \
+            node->node_data->attachment[IK_ATTACHMENT_##upper] = NULL; \
+            return a; \
+        } \
+        \
+        struct ik_##lower##_t* \
+        ik_node_get_##lower(const struct ik_node_t* node) \
+        { \
+            return (struct ik_##lower##_t*)node->node_data->attachment[IK_ATTACHMENT_##upper]; \
+        }
+    IK_ATTACHMENT_LIST
+#undef X
 
 /* ------------------------------------------------------------------------- */
 void

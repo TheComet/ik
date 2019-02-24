@@ -11,12 +11,12 @@ struct NAME : public Test
 {
     void SetUp() override
     {
-
+        IKAPI.solver.create(&solver, IKAPI.solver.ONE_BONE);
     }
 
     void TearDown() override
     {
-
+        IKAPI.solver.destroy(solver);
     }
 
     ik_node_t* tree_with_no_effectors()
@@ -61,14 +61,39 @@ struct NAME : public Test
 
         return tree;
     }
+
+    ik_solver_t* solver;
 };
 
 TEST_F(NAME, stack_buffer_is_NULL_for_empty_tree)
 {
     ik_node_t* tree = tree_with_no_effectors();
-    ik_solver_t* solver;
-    IKAPI.solver.create(&solver, IKAPI.solver.ONE_BONE);
+
+    EXPECT_THAT(solver->stack_buffer, IsNull());
     IKAPI.solver.prepare(solver, tree);
+    EXPECT_THAT(solver->stack_buffer, IsNull());
+
     IKAPI.node.destroy_recursive(tree);
-    IKAPI.solver.destroy(solver);
+}
+
+TEST_F(NAME, stack_buffer_is_NULL_for_single_chain)
+{
+    ik_node_t* tree = tree_with_one_effector();
+
+    EXPECT_THAT(solver->stack_buffer, IsNull());
+    IKAPI.solver.prepare(solver, tree);
+    EXPECT_THAT(solver->stack_buffer, IsNull());
+
+    IKAPI.node.destroy_recursive(tree);
+}
+
+TEST_F(NAME, stack_buffer_is_valid_for_two_children)
+{
+    ik_node_t* tree = tree_with_two_effectors();
+
+    EXPECT_THAT(solver->stack_buffer, IsNull());
+    IKAPI.solver.prepare(solver, tree);
+    EXPECT_THAT(solver->stack_buffer, IsNull());
+
+    IKAPI.node.destroy_recursive(tree);
 }

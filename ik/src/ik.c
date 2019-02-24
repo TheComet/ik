@@ -38,6 +38,24 @@ struct ik_api_t IKAPI = {
 #undef X
     },*/
     {
+        ik_effector_create,
+        ik_effector_destroy,
+        ik_effector_set_target_position,
+        ik_effector_get_target_position,
+        ik_effector_set_target_rotation,
+        ik_effector_get_target_rotation,
+        ik_effector_set_weight,
+        ik_effector_get_weight,
+        ik_effector_set_rotation_weight,
+        ik_effector_get_rotation_weight,
+        ik_effector_set_rotation_weight_decay,
+        ik_effector_get_rotation_weight_decay,
+        ik_effector_set_chain_length,
+        ik_effector_get_chain_length,
+        ik_effector_enable_features,
+        ik_effector_disable_features,
+        ik_effector_get_features,
+        ik_effector_is_feature_enabled,
 #define X(arg, value) value,
         IK_EFFECTOR_FEATURES_LIST
 #undef X
@@ -84,23 +102,14 @@ struct ik_api_t IKAPI = {
         ik_node_child_count,
         ik_node_find_child,
 
-        ik_node_create_effector,
-        ik_node_attach_effector,
-        ik_node_release_effector,
-        ik_node_take_effector,
-        ik_node_get_effector,
-
-        ik_node_create_constraint,
-        ik_node_attach_constraint,
-        ik_node_release_constraint,
-        ik_node_take_constraint,
-        ik_node_get_constraint,
-/*
-        ik_node_create_pole,
-        ik_node_attach_pole,
-        ik_node_release_pole,
-        ik_node_take_pole,
-        ik_node_get_pole,*/
+#define X(upper, lower) \
+        ik_node_create_##lower, \
+        ik_node_attach_##lower, \
+        ik_node_release_##lower, \
+        ik_node_take_##lower, \
+        ik_node_get_##lower,
+        IK_ATTACHMENT_LIST
+#undef X
 
         ik_node_set_position,
         ik_node_get_position,

@@ -10,7 +10,10 @@
 static void
 destruct_node_data(struct ik_node_data_t* node_data)
 {
-    IK_XDECREF(node_data->effector);
+#define X(upper, lower) \
+        IK_XDECREF(node_data->attachment[IK_ATTACHMENT_##upper]);
+    IK_ATTACHMENT_LIST
+#undef X
 }
 
 /* ------------------------------------------------------------------------- */
@@ -59,7 +62,8 @@ ik_node_data_destroy(struct ik_node_data_t* node_data)
 void
 ik_node_data_ref_members(struct ik_node_data_t* node_data)
 {
-    IK_XINCREF(node_data->effector);
-    IK_XINCREF(node_data->constraint);
-    IK_XINCREF(node_data->pole);
+#define X(upper, lower) \
+        IK_XINCREF(node_data->attachment[IK_ATTACHMENT_##upper]);
+    IK_ATTACHMENT_LIST
+#undef X
 }
