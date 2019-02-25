@@ -76,7 +76,7 @@ ik_algorithm_destruct(struct ik_algorithm_t* algorithm)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_prepare(struct ik_algorithm_t* algorithm, struct ik_node_t* node)
+ik_algorithm_prepare(struct ik_algorithm_t* algorithm, struct ik_ntf_t* ntf)
 {
     ikret_t status;
 

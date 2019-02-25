@@ -12,10 +12,6 @@
  * ik_algorithm_base_create() to fill in the switch/case with information on how
  * to create each algorithm, but there are also certain expectations on how
  * functions are to be named for each algorithm.
- *
- * @note Read WHAT_ARE_VTABLES.md in the ik root directory to learn more about
- * the mechanism with which the various algorithm functions are integrated into
- * the library.
  */
 #define IK_ALGORITHM_LIST \
     X(ONE_BONE, b1)
@@ -24,19 +20,7 @@
     X(FABRIK, fabrik) \
     X(MSS, mss)*/
 
-#define IK_ALGORITHM_FEATURES_LIST \
-    X(CONSTRAINTS,      0x01) \
-    X(TARGET_ROTATIONS, 0x02) \
-    X(JOINT_ROTATIONS,  0x04) \
-    X(ALL,              0xFF)
-
 C_BEGIN
-
-struct ik_node_t;
-
-typedef void(*ik_algorithm_callback_func)(void* user_data,
-                                          const ikreal_t position[3],
-                                          const ikreal_t rotation[4]);
 
 enum ik_algorithm_type
 {
@@ -44,24 +28,45 @@ enum ik_algorithm_type
     IK_ALGORITHM_LIST
 #undef X
 
-    IK_ALGORITHM_ALGORITHMS_COUNT
+    IK_ALGORITHM_COUNT
 };
 
-enum ik_algorithm_features_e
-{
-#define X(arg, value) IK_ALGORITHM_##arg = value,
-    IK_ALGORITHM_FEATURES_LIST
-#undef X
+struct ik_algorithm_t;
+struct ik_ntf_t;
 
-    IK_ALGORITHM_FEATURES_COUNT
-};
+typedef void(*ik_algorithm_callback_func)(void* user_data,
+                                          const ikreal_t position[3],
+                                          const ikreal_t rotation[4]);
+
+typedef ikret_t (*ik_algorithm_construct_func)(struct ik_algorithm_t*);
+typedef void    (*ik_algorithm_destruct_func) (struct ik_algorithm_t*);
+typedef ikret_t (*ik_algorithm_prepare_func)  (struct ik_algorithm_t*, struct ik_ntf_t*);
+typedef ikret_t (*ik_algorithm_solve_func)    (struct ik_algorithm_t*);
+
+/*!
+ * @brief This is a base for all algorithms.
+ */
+#define IK_ALGORITHM_HEAD                                                     \
+    IK_ATTACHMENT_HEAD                                                        \
+                                                                              \
+    /* Derived interface */                                                   \
+    ik_algorithm_construct_func    construct;                                 \
+    ik_algorithm_destruct_func     destruct;                                  \
+    ik_algorithm_prepare_func      prepare;                                   \
+    ik_algorithm_solve_func        solve;                                     \
+                                                                              \
+    /* Weak ref to tree structure this algo is responsible for solving  */    \
+    struct ik_ntf_t* ntf;                                                     \
+                                                                              \
+    /* Solver parameters shared among all algorithms */                       \
+    ikreal_t             tolerance;                                           \
+    uint16_t             max_iterations;                                      \
+    uint16_t             features;
 
 struct ik_algorithm_t
 {
     IK_ALGORITHM_HEAD
 };
-
-#if defined(IK_BUILDING)
 
 /*!
  * @brief Allocates a new algorithm object according to the specified algorithm.
@@ -128,7 +133,7 @@ ik_algorithm_destruct(struct ik_algorithm_t* algorithm);
  * undefined state. You cannot solve the tree in this state.
  */
 IK_PRIVATE_API ikret_t
-ik_algorithm_prepare(struct ik_algorithm_t* algorithm, struct ik_node_t* tree);
+ik_algorithm_prepare(struct ik_algorithm_t* algorithm, struct ik_ntf_t* ntf);
 
 /*!
  * @brief Computes the distances between the nodes and stores them in
@@ -177,18 +182,6 @@ IK_PRIVATE_API void
 ik_algorithm_disable_features(struct ik_algorithm_t* algorithm, uint16_t features);
 IK_PRIVATE_API uint8_t
 ik_algorithm_is_feature_enabled(const struct ik_algorithm_t* algorithm, enum ik_algorithm_features_e feature);
-
-
-#endif /* IK_BUILDING */
-
-#define ALGORITHM_FOR_EACH_EFFECTOR_NODE(algorithm_var, effector_var) \
-    VECTOR_FOR_EACH(&(algorithm_var)->effector_nodes_list, struct ik_node_t*, algorithm_var##effector_var) \
-    struct ik_node_t* effector_var = *algorithm_var##effector_var; {
-
-#define ALGORITHM_FOR_EACH_CHAIN(algorithm_var, base_chain_var) \
-    VECTOR_FOR_EACH(&(algorithm_var)->chain_list, struct chain_t, base_chain_var) {
-
-#define ALGORITHM_END_EACH VECTOR_END_EACH }
 
 C_END
 
