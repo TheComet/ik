@@ -1,0 +1,3 @@
+[submodule "ik/thirdparty/cstructures"]
+	path = ik/thirdparty/cstructures
+	url = git@github.com:TheComet/cstructures.git
