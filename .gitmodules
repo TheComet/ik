@@ -1,3 +1,12 @@
 [submodule "ik/thirdparty/cstructures"]
 	path = ik/thirdparty/cstructures
 	url = git@github.com:TheComet/cstructures.git
+[submodule "thirdparty/cstructures"]
+	path = thirdparty/cstructures
+	url = git://github.com/thecomet/cstructures.git
+[submodule "thirdparty/googletest"]
+	path = thirdparty/googletest
+	url = git://github.com/google/googletest.git
+[submodule "thirdparty/benchmark"]
+	path = thirdparty/benchmark
+	url = git://github.com/google/benchmark.git
