@@ -9,7 +9,6 @@ static const char KEY1[16] = "KEY1";
 static const char KEY2[16] = "KEY2";
 static const char KEY3[16] = "KEY3";
 static const char KEY4[16] = "KEY4";
-static const char KEY5[16] = "KEY5";
 
 static hash32_t shitty_hash(const void* data, uintptr_t len)
 {
@@ -37,7 +36,7 @@ public:
 
     virtual void TearDown()
     {
-        hashmap_destroy(hm);
+        hashmap_free(hm);
     }
 };
 

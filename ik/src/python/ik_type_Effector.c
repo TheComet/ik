@@ -11,7 +11,7 @@ static void
 Effector_dealloc(ik_Effector* self)
 {
     if (self->effector)
-        IKAPI.effector.destroy(self->effector);
+        IKAPI.effector.free(self->effector);
     Py_DECREF(self->target_position);
     Py_DECREF(self->target_rotation);
 }
@@ -49,7 +49,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     return (PyObject*)self;
 
     alloc_target_rotation_failed : Py_DECREF(self->target_position);
-    alloc_target_position_failed : IKAPI.effector.destroy(self->effector);
+    alloc_target_position_failed : IKAPI.effector.free(self->effector);
     create_effector_failed       : Py_DECREF(self);
     alloc_self_failed            : return NULL;
 }
@@ -60,7 +60,7 @@ Effector_init(ik_Effector* self, PyObject* args, PyObject* kwds)
 {
     if (self->effector == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Effector was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Effector was freeed internally");
         return -1;
     }
 
@@ -76,7 +76,7 @@ Effector_attach(ik_Effector* self, PyObject* pyNode)
 
     if (self->effector == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Effector was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Effector was freeed internally");
         return NULL;
     }
 
@@ -89,7 +89,7 @@ Effector_attach(ik_Effector* self, PyObject* pyNode)
     node = ((ik_Node*)pyNode)->node;
     if (node == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "The node you are trying to attach to was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "The node you are trying to attach to was freeed internally");
         return NULL;
     }
 
@@ -110,7 +110,7 @@ Effector_detach(ik_Effector* self, PyObject* args)
 
     if (self->effector == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Effector was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Effector was freeed internally");
         return NULL;
     }
 
@@ -208,7 +208,7 @@ PyTypeObject ik_EffectorType = {
     "ik.Effector",                               /* tp_name */
     sizeof(ik_Effector),                         /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (destructor)Effector_dealloc,                /* tp_dealloc */
+    (deinitor)Effector_dealloc,                /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */

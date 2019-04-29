@@ -9,7 +9,7 @@ static void
 Constraint_dealloc(ik_Constraint* self)
 {
     if (self->constraint)
-        IKAPI.constraint.destroy(self->constraint);
+        IKAPI.constraint.free(self->constraint);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -45,7 +45,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    set_constraint_type_failed : IKAPI.constraint.destroy(self->constraint);
+    set_constraint_type_failed : IKAPI.constraint.free(self->constraint);
     create_constraint_failed   : Py_DECREF(self);
     alloc_self_failed          : return NULL;
 }
@@ -56,7 +56,7 @@ Constraint_init(ik_Constraint* self, PyObject* args, PyObject* kwds)
 {
     if (self->constraint == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
         return -1;
     }
 
@@ -72,7 +72,7 @@ Constraint_set_type(ik_Constraint* self, PyObject* arg)
 
     if (self->constraint == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
         return NULL;
     }
 
@@ -116,7 +116,7 @@ Constraint_attach(ik_Constraint* self, PyObject* pyNode)
 
     if (self->constraint == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
         return NULL;
     }
 
@@ -129,7 +129,7 @@ Constraint_attach(ik_Constraint* self, PyObject* pyNode)
     node = ((ik_Node*)pyNode)->node;
     if (node == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "The node you are trying to attach to was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "The node you are trying to attach to was freeed internally");
         return NULL;
     }
 
@@ -150,7 +150,7 @@ Constraint_detach(ik_Constraint* self, PyObject* args)
 
     if (self->constraint == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was destroyed internally");
+        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
         return NULL;
     }
 
@@ -173,7 +173,7 @@ PyTypeObject ik_ConstraintType = {
     "ik.Constraint",                               /* tp_name */
     sizeof(ik_Constraint),                         /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (destructor)Constraint_dealloc,                /* tp_dealloc */
+    (deinitor)Constraint_dealloc,                /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */

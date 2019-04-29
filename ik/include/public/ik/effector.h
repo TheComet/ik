@@ -103,63 +103,63 @@ struct ik_effector_t
  * @brief Creates a new effector object. It can be attached to any node in the
  * tree using ik_node_attach_effector().
  */
-IK_PRIVATE_API IK_WARN_UNUSED ikret_t
+IK_PUBLIC_API IKRET
 ik_effector_create(struct ik_effector_t** effector);
 
 /*!
  * @brief Destroys and frees an effector object. This should **NOT** be called
- * on effectors that are attached to nodes. Use ik_node_destroy_effector()
+ * on effectors that are attached to nodes. Use ik_node_free_effector()
  * instead.
  */
-IK_PRIVATE_API void
-ik_effector_destroy(struct ik_effector_t* effector);
+IK_PUBLIC_API void
+ik_effector_free(struct ik_effector_t* effector);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_target_position(struct ik_effector_t* eff, const ikreal_t pos[3]);
 
-IK_PRIVATE_API const ikreal_t*
+IK_PUBLIC_API const ikreal_t*
 ik_effector_get_target_position(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_target_rotation(struct ik_effector_t* eff, const ikreal_t rot[4]);
 
-IK_PRIVATE_API const ikreal_t*
+IK_PUBLIC_API const ikreal_t*
 ik_effector_get_target_rotation(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_weight(struct ik_effector_t* eff, ikreal_t weight);
 
-IK_PRIVATE_API ikreal_t
+IK_PUBLIC_API ikreal_t
 ik_effector_get_weight(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_rotation_weight(struct ik_effector_t* eff, ikreal_t weight);
 
-IK_PRIVATE_API ikreal_t
+IK_PUBLIC_API ikreal_t
 ik_effector_get_rotation_weight(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_rotation_weight_decay(struct ik_effector_t* eff, ikreal_t decay);
 
-IK_PRIVATE_API ikreal_t
+IK_PUBLIC_API ikreal_t
 ik_effector_get_rotation_weight_decay(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_set_chain_length(struct ik_effector_t* eff, uint16_t length);
 
-IK_PRIVATE_API uint16_t
+IK_PUBLIC_API uint16_t
 ik_effector_get_chain_length(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_enable_features(struct ik_effector_t* eff, uint8_t features);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_effector_disable_features(struct ik_effector_t* eff, uint8_t features);
 
-IK_PRIVATE_API uint8_t
+IK_PUBLIC_API uint8_t
 ik_effector_get_features(const struct ik_effector_t* eff);
 
-IK_PRIVATE_API uint8_t
+IK_PUBLIC_API uint8_t
 ik_effector_is_feature_enabled(const struct ik_effector_t* eff,
                                enum ik_effector_features_e feature);
 

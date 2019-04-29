@@ -1,6 +1,6 @@
+#include "cstructures/memory.h"
+#include "cstructures/vector.h"
 #include "ik/init.h"
-#include "ik/memory.h"
-#include "ik/vector.h"
 #include "ik/callbacks.h"
 #include "ik/log.h"
 #include <stdarg.h>
@@ -39,7 +39,7 @@ ik_log_init(void)
         goto alloc_log_failed;
     }
 
-    vector_construct(&g_log->message_buffer, sizeof(char));
+    vector_init(&g_log->message_buffer, sizeof(char));
     g_log->prefix = NULL;
     g_log->timestamps = 1;
 #ifdef DEBUG
@@ -65,7 +65,7 @@ ik_log_deinit(void)
     if (--g_init_counter != 0)
         return;
 
-    vector_clear_free(&g_log->message_buffer);
+    vector_deinit(&g_log->message_buffer);
     if (g_log->prefix != NULL)
         FREE(g_log->prefix);
     FREE(g_log);

@@ -188,7 +188,7 @@ static PyTypeObject ik_LogType = {
     "ik.Log",                                      /* tp_name */
     sizeof(ik_Log),                                /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (destructor)Log_dealloc,                       /* tp_dealloc */
+    (deinitor)Log_dealloc,                       /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */

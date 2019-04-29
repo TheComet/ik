@@ -28,42 +28,42 @@ chain_create(void)
         ik_log_fatal("Failed to allocate chain: out of memory");
         return NULL;
     }
-    chain_construct(chain);
+    chain_init(chain);
     return chain;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_destroy(struct chain_t* chain)
+chain_free(struct chain_t* chain)
 {
-    chain_destruct(chain);
+    chain_deinit(chain);
     FREE(chain);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_construct(struct chain_t* chain)
+chain_init(struct chain_t* chain)
 {
-    vector_construct(&chain->nodes, sizeof(struct ik_node_t*));
-    vector_construct(&chain->children, sizeof(struct chain_t));
+    vector_init(&chain->nodes, sizeof(struct ik_node_t*));
+    vector_init(&chain->children, sizeof(struct chain_t));
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_destruct(struct chain_t* chain)
+chain_deinit(struct chain_t* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        chain_destruct(child_chain);
+        chain_deinit(child_chain);
     CHAIN_END_EACH
-    vector_clear_free(&chain->children);
-    vector_clear_free(&chain->nodes);
+    vector_deinit(&chain->children);
+    vector_deinit(&chain->nodes);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 chain_clear_free(struct chain_t* chain)
 {
-    chain_destruct(chain); /* does the same thing */
+    chain_deinit(chain); /* does the same thing */
 }
 
 /* ------------------------------------------------------------------------- */
@@ -226,7 +226,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                         ik_log_fatal("Failed to create base chain: Ran out of memory");
                         return IK_ERR_OUT_OF_MEMORY;
                     }
-                    chain_construct(child_chain);
+                    chain_init(child_chain);
                 }
                 else /* This is not the first chain in the tree */
                 {
@@ -240,7 +240,7 @@ recursively_build_chain_tree(struct vector_t* chain_list,
                         ik_log_fatal("Failed to create child chain: Ran out of memory");
                         return IK_ERR_OUT_OF_MEMORY;
                     }
-                    chain_construct(child_chain);
+                    chain_init(child_chain);
                 }
 
                 /*
@@ -299,15 +299,15 @@ chain_tree_rebuild(struct vector_t* chain_list,
 
     /* Clear all existing chain trees */
     VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        chain_destruct(chain);
+        chain_deinit(chain);
     VECTOR_END_EACH
-    vector_clear_free(chain_list);
+    vector_deinit(chain_list);
 
     /*
      * Build a set of all nodes that are in a direct path with all of the
      * effectors.
      */
-    bstv_construct(&involved_nodes);
+    bstv_init(&involved_nodes);
     if ((result = mark_involved_nodes(&involved_nodes, effector_nodes_list)) != IK_OK)
         goto mark_involved_nodes_failed;
     involved_nodes_count = bstv_count(&involved_nodes);

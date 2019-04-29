@@ -68,11 +68,11 @@ ik_constraint_create(struct ik_constraint_t** constraint);
 
 /*!
  * @brief Destroys and frees a constraint object. This should **NOT** be called
- * on constraints that are attached to nodes. Use ik_node_destroy_constraint()
+ * on constraints that are attached to nodes. Use ik_node_free_constraint()
  * instead.
  */
 IK_PRIVATE_API void
-ik_constraint_destroy(struct ik_constraint_t* constraint);
+ik_constraint_free(struct ik_constraint_t* constraint);
 
 /*!
  * @brief Sets the type of constraint to enforce.

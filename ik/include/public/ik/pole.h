@@ -46,7 +46,7 @@ IK_PRIVATE_API ikret_t
 ik_pole_create(struct ik_pole_t** pole);
 
 IK_PRIVATE_API void
-ik_pole_destroy(struct ik_pole_t* pole);
+ik_pole_free(struct ik_pole_t* pole);
 
 IK_PRIVATE_API void
 ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type);

@@ -3,8 +3,8 @@
 #include "ik/memory.h"
 #include "ik/ntf.h"
 #include "ik/node_data.h"
-#include "ik/algorithm_prepare.h"
-#include "ik/algorithm.h"
+#include "ik/solver_prepare.h"
+#include "ik/solver.h"
 #include "ik/transform.h"
 #include "ik/vector.h"
 #include <stddef.h>
@@ -12,13 +12,13 @@
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_prepare_stack_buffer(struct ik_algorithm_t* algorithm)
+ik_solver_prepare_stack_buffer(struct ik_solver_t* solver)
 {
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_algorithm_prepare_pole_targets(struct ik_algorithm_t* algorithm)
+ik_solver_prepare_pole_targets(struct ik_solver_t* solver)
 {
 }

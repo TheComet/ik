@@ -2,9 +2,9 @@
 #define IK_ALGORITHM_FABRIK_H
 
 #include "ik/config.h"
-#include "ik/algorithm.h"
+#include "ik/solver.h"
 
-struct ik_algorithm_FABRIK_t
+struct ik_solver_FABRIK_t
 {
     IK_ALGORITHM_HEAD
 
@@ -19,19 +19,19 @@ C_BEGIN
 #if defined(IK_BUILDING)
 
 IK_PRIVATE_API uintptr_t
-ik_algorithm_FABRIK_type_size(void);
+ik_solver_FABRIK_type_size(void);
 
 IK_PRIVATE_API ikret_t
-ik_algorithm_FABRIK_construct(struct ik_algorithm_FABRIK_t* algorithm);
+ik_solver_FABRIK_init(struct ik_solver_FABRIK_t* solver);
 
 IK_PRIVATE_API void
-ik_algorithm_FABRIK_destruct(struct ik_algorithm_FABRIK_t* algorithm);
+ik_solver_FABRIK_deinit(struct ik_solver_FABRIK_t* solver);
 
 IK_PRIVATE_API ikret_t
-ik_algorithm_FABRIK_prepare(struct ik_algorithm_FABRIK_t* algorithm);
+ik_solver_FABRIK_prepare(struct ik_solver_FABRIK_t* solver);
 
 IK_PRIVATE_API ikret_t
-ik_algorithm_FABRIK_solve(struct ik_algorithm_FABRIK_t* algorithm);
+ik_solver_FABRIK_solve(struct ik_solver_FABRIK_t* solver);
 
 #endif /* IK_BUILDING */
 

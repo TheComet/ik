@@ -6,9 +6,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug)
     set (DEBUG_FEATURE ON)
-    set (RELEASE_FEATURE OFF)
 else ()
-    set (DEBUG_FEATURE OFF)
     set (RELEASE_FEATURE ON)
 endif ()
 
@@ -17,8 +15,6 @@ set (IK_API_NAME "ik" CACHE STRING "This is the name of the symbol that is expor
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_BUILDINFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
-option (IK_MEMORY_DEBUGGING "Global switch for memory options. Keeps track of the number of allocations and de-allocations and prints a report when the program shuts down" ${DEBUG_FEATURE})
-cmake_dependent_option (IK_MEMORY_BACKTRACE "Generates backtraces for every malloc(), making it easy to track down memory leaks" ON "IK_MEMORY_DEBUGGING;NOT WIN32;NOT CYGWIN" OFF)
 option (IK_HASHMAP_STATS "Record statistics on the use of hashmaps" OFF)
 option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
@@ -82,7 +78,7 @@ set (IK_COMPILER ${CMAKE_C_COMPILER_ID})
 find_program (UNAME_PROGRAM uname)
 if (UNAME_PROGRAM)
     execute_process (
-        COMMAND ${UNAME_PROGRAM} -o -r -m -p -i
+        COMMAND ${UNAME_PROGRAM} -ormpi
         OUTPUT_VARIABLE IK_HOST_COMPUTER)
     string (REPLACE "\n" "" IK_HOST_COMPUTER ${IK_HOST_COMPUTER})
 else ()
@@ -142,43 +138,34 @@ add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURREN
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
-    "src/algorithm.c"
-    "src/algorithm_prepare.c"
-    "src/algorithm_update.c"
-    "src/algorithm_b1.c"
-    #"src/algorithm_b2.c"
-    #"src/algorithm_fabrik.c"
-    #"src/algorithm_mss.c"
-    "src/attachment.c"
-    "src/btree.c"
     "src/callbacks.c"
-    "src/constraint.c"
+    #"src/constraint.c"
     "src/effector.c"
     "src/hash.c"
-    "src/hashmap.c"
-    "src/ik.c"
+    #"src/ik.c"
     "src/init.c"
+    "src/joblist.c"
     "src/log.c"
     "src/mat3x3.c"
-    "src/memory.c"
     "src/node.c"
     "src/node_data.c"
-    "src/ntf.c"
-    "src/pole.c"
+    #"src/pole.c"
     "src/quat.c"
     "src/refcount.c"
     "src/retcodes.c"
-    "src/solver.c"
+    #"src/solver.c"
+    #"src/solver_prepare.c"
+    #"src/solver_update.c"
+    #"src/solver_b1.c"
+    #"src/solver_b2.c"
+    #"src/solver_fabrik.c"
+    #"src/solver_mss.c"
     #"src/transform_chains.c"
     #"src/transform_node.c"
     #"src/util.c"
     "src/vec3.c"
-    "src/vector.c"
     "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>"
     "${CMAKE_CURRENT_BINARY_DIR}/src/info.c"
-    $<$<PLATFORM_ID:Linux>:
-        "src/platform/linux/backtrace_linux.c"
-    >
     "templates/info.c.in")
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
@@ -201,23 +188,19 @@ set (IK_PYTHON_SOURCES
     "src/python/ik_type_Solver.c"
     "src/python/ik_type_Vec3.c")
 set (IK_TESTS_SOURCES
-    "thirdparty/googletest/src/gtest-all.cc"
-    "thirdparty/googlemock/src/gmock-all.cc"
     "src/tests/environment_library_init.cpp"
     "src/tests/tests_run.cpp"
-    "src/tests/test_btree.cpp"
-    "src/tests/test_constraint.cpp"
+    #"src/tests/test_constraint.cpp"
     #"src/tests/test_effector.cpp"
-   # "src/tests/test_FABRIK.cpp"
-    "src/tests/test_hashmap.cpp"
-    "src/tests/test_mat3x3.cpp"
+    #"src/tests/test_FABRIK.cpp"
+    #"src/tests/test_mat3x3.cpp"
     "src/tests/test_node.cpp"
-    "src/tests/test_ntf.cpp"
-    "src/tests/test_pole.cpp"
+    "src/tests/test_node_data_flatten.cpp"
+    #"src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
-    "src/tests/test_algorithm.cpp"
-    "src/tests/test_algorithm_prepare.cpp"
-    "src/tests/test_algorithm_update.cpp"
+    #"src/tests/test_solver.cpp"
+    #"src/tests/test_solver_prepare.cpp"
+    #"src/tests/test_solver_update.cpp"
    # "src/tests/test_transform_chain.cpp"
    # "src/tests/test_transform_chain_rotations.cpp"
    # "src/tests/test_transform_chain_translations.cpp"
@@ -225,12 +208,11 @@ set (IK_TESTS_SOURCES
    # "src/tests/test_transform_node_rotations.cpp"
    # "src/tests/test_transform_node_translations.cpp"
    # "src/tests/test_TWO_BONE.cpp"
-    "src/tests/test_vector.cpp"
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
 set (IK_BENCHMARK_SOURCES
-    "src/benchmarks/bench_FABRIK_algorithm.cpp"
-    "src/benchmarks/bench_algorithm.cpp")
+    "src/benchmarks/bench_FABRIK_solver.cpp"
+    "src/benchmarks/bench_solver.cpp")
 
 ###############################################################################
 # Main library
@@ -244,14 +226,14 @@ set_target_properties (ik_obj
         C_STANDARD 90
         POSITION_INDEPENDENT_CODE ${IK_PIC})
 target_include_directories (ik_obj
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
     PRIVATE
-            ${CMAKE_CURRENT_BINARY_DIR}/include/public
-            ${CMAKE_CURRENT_BINARY_DIR}/include/private
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/public
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/private)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/private>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/private>)
 target_compile_definitions (ik_obj
-    PRIVATE IK_BUILDING
-    PRIVATE $<$<CONFIG:Debug>:DEBUG>)
+    PRIVATE IK_BUILDING)
 target_compile_options (ik_obj
     PRIVATE $<$<C_COMPILER_ID:MSVC>:
         /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
@@ -262,18 +244,20 @@ target_compile_options (ik_obj
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
-        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough
+        -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
         -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
 )
+
+target_link_libraries (ik_obj PUBLIC cstructures)
 
 ###############################################################################
 # Python bindings
 ###############################################################################
 
 if (IK_PYTHON)
-    find_package (PythonLibs 3 REQUIRED)
+    find_package (Python3 COMPONENTS Development REQUIRED)
     add_library (ik_python_obj OBJECT
         ${IK_PYTHON_SOURCES}
         ${IK_PYTHON_HEADERS})
@@ -282,18 +266,16 @@ if (IK_PYTHON)
             C_STANDARD 90
             POSITION_INDEPENDENT_CODE ${IK_PIC})
     target_include_directories (ik_python_obj
-        PRIVATE
-            ${CMAKE_CURRENT_BINARY_DIR}/include/public
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/public
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/python
-            ${PYTHON_INCLUDE_DIRS})
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/python>)
     target_compile_options (ik_python_obj
         PUBLIC $<$<C_COMPILER_ID:MSVC>:
             /EHa /MTd /W4 /WX /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
-            -Wall -Wextra -Werror -pedantic -pedantic-errors
-            -Wno-missing-field-initializers -Wshadow -flto
+            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -flto
             $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
@@ -302,11 +284,8 @@ if (IK_PYTHON)
         >
     )
     target_compile_definitions (ik_python_obj
-        PRIVATE IK_BUILDING  # The library is being built
-        PRIVATE $<$<CONFIG:Debug>:
-            DEBUG
-        >
-    )
+        PRIVATE IK_BUILDING)  # The library is being built
+    target_link_libraries (ik_python_obj PRIVATE Python::Python)
 endif ()
 
 ###############################################################################
@@ -328,24 +307,16 @@ if (IK_TESTS)
         add_custom_target (ik_generate_unit_tests ALL
             DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp")
     endif ()
-    add_library (ik_tests_obj OBJECT
-        ${IK_TESTS_SOURCES})
-    if (IK_PYTHON)
-        add_dependencies (ik_tests_obj ik_generate_unit_tests)
-    endif ()
-    target_include_directories (ik_tests_obj
-        PRIVATE
-            ${CMAKE_CURRENT_BINARY_DIR}/include/public
-            ${CMAKE_CURRENT_BINARY_DIR}/include/private
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/public
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/private
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googlemock
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googlemock/include
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googletest
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googletest/include
-            $<$<BOOL:${IK_PYTHON}>:${PYTHON_INCLUDE_DIRS}>)
+    add_library (ik_tests_obj OBJECT ${IK_TESTS_SOURCES})
+    #target_include_directories (ik_tests_obj
+    #    PRIVATE
+    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
+    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
+    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/private>
+    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/private>)
     set_target_properties (ik_tests_obj
-        PROPERTIES POSITION_INDEPENDENT_CODE ${IK_PIC})
+        PROPERTIES
+            POSITION_INDEPENDENT_CODE ${IK_PIC})
     target_compile_options (ik_tests_obj
         PRIVATE $<$<C_COMPILER_ID:MSVC>:
             /MTd /D_CRT_SECURE_NO_DEPRECATE
@@ -360,11 +331,14 @@ if (IK_TESTS)
         >
     )
     target_compile_definitions (ik_tests_obj
-        PRIVATE IK_BUILDING  # The library is being built
-        PRIVATE $<$<CONFIG:Debug>:
-            DEBUG
-        >
-    )
+        PRIVATE IK_BUILDING)  # The library is being built
+    target_link_libraries (ik_tests_obj PRIVATE ik_obj)
+    target_link_libraries (ik_tests_obj PRIVATE gtest)
+    target_link_libraries (ik_tests_obj PRIVATE gmock)
+    if (IK_PYTHON)
+        add_dependencies (ik_tests_obj ik_generate_unit_tests)
+        target_link_libraries (ik_tests_obj PRIVATE Python::Python)
+    endif ()
 endif ()
 
 ###############################################################################
@@ -372,12 +346,8 @@ endif ()
 ###############################################################################
 
 if (IK_BENCHMARKS)
-    add_subdirectory ("thirdparty/benchmark")
-    set_target_properties (benchmark
-    PROPERTIES
-        POSITION_INDEPENDENT_CODE ${IK_PIC})
-    add_library (ik_benchmarks_obj OBJECT
-        ${IK_BENCHMARK_SOURCES})
+    # ik benchmark object files
+    add_library (ik_benchmarks_obj OBJECT ${IK_BENCHMARK_SOURCES})
     target_include_directories (ik_benchmarks_obj
         PRIVATE
             ${CMAKE_CURRENT_BINARY_DIR}/include/public
@@ -416,48 +386,41 @@ endif ()
 add_library (ik ${IK_LIB_TYPE}
     $<TARGET_OBJECTS:ik_obj>
     $<$<BOOL:${IK_BENCHMARKS}>:$<TARGET_OBJECTS:ik_benchmarks_obj>>
-    $<$<BOOL:${IK_TESTS}>:$<TARGET_OBJECTS:ik_tests_obj>>
-    $<$<BOOL:${IK_PYTHON}>:$<TARGET_OBJECTS:ik_python_obj>>)
-
-target_include_directories (ik
-    INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
-        $<INSTALL_INTERFACE:include>)
-
+    $<$<BOOL:${IK_PYTHON}>:$<TARGET_OBJECTS:ik_python_obj>>
+    $<$<BOOL:${IK_TESTS}>:$<TARGET_OBJECTS:ik_tests_obj>>)
 set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
     OUTPUT_NAME ${IK_API_NAME}
     SOVERSION ${PROJECT_VERSION})
-
+# This causes the include directories to be exposed to targets that link to "ik"
+target_link_libraries (ik
+    PUBLIC
+        ik_obj
+        $<$<BOOL:${IK_BENCHMARKS}>:ik_benchmarks_obj>
+        $<$<BOOL:${IK_PYTHON}>:ik_python_obj>
+        $<$<BOOL:${IK_TESTS}>:ik_tests_obj>)
 if (UNIX)
-    target_link_libraries (ik PRIVATE m)
+    #target_link_libraries (ik PRIVATE m)
 endif (UNIX)
 
-if (IK_PYTHON)
-    target_link_libraries (ik PRIVATE ${PYTHON_LIBRARIES})
-endif ()
-
 if (IK_TESTS)
-    target_link_libraries (ik PRIVATE Threads::Threads)
-    add_executable (ik_tests "src/tests/tests_main.c")
-    target_link_libraries (ik_tests PUBLIC ik)
-    set_target_properties (ik_tests PROPERTIES
+    add_executable (iktests "src/tests/tests_main.c")
+    target_link_libraries (iktests PUBLIC ik)
+    set_target_properties (iktests PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-    install (TARGETS ik_tests
+    install (TARGETS iktests
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
 
 if (IK_BENCHMARKS)
-    add_executable (ik_benchmarks "src/benchmarks/run_benchmarks.cpp")
-    target_link_libraries (ik_benchmarks PUBLIC ik)
     target_link_libraries (ik PRIVATE benchmark)
-    target_include_directories (ik_benchmarks
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/benchmark/include)
-    set_target_properties (ik_benchmarks PROPERTIES
+
+    add_executable (ikbenchmarks "src/benchmarks/run_benchmarks.cpp")
+    target_link_libraries (ikbenchmarks PUBLIC ik)
+    set_target_properties (ikbenchmarks PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-    install (TARGETS ik_benchmarks
+    install (TARGETS ikbenchmarks
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif ()
 
@@ -489,15 +452,35 @@ message (STATUS "------------------------------------------------------------")
 # install targets
 ###############################################################################
 
+# make install to correct locations provided by GNUInstallDirs
 install (
-    TARGETS ik
-    EXPORT ikConfig
+    TARGETS
+        ik
+        ik_obj
+    EXPORT
+        ikConfig
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install (DIRECTORY "include/public/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install (DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/public/ik" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install (EXPORT ikConfig DESTINATION "share/ik/cmake")
-export (TARGETS ik FILE ikConfig.cmake)
-export (PACKAGE ik)
+install (
+    DIRECTORY
+        "include/public/ik"
+        "${CMAKE_CURRENT_BINARY_DIR}/include/public/ik"
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR})
+
+# Makes the project importable from the install directory
+install (
+    EXPORT ikConfig
+    DESTINATION "share/ik/cmake")
+
+# Makes the project importable from the build directory
+export (
+    TARGETS
+        ik
+        ik_obj
+    FILE
+        ikConfig.cmake)
+
+#export (PACKAGE ik)

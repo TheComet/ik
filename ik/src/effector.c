@@ -1,6 +1,6 @@
+#include "cstructures/memory.h"
 #include "ik/effector.h"
 #include "ik/log.h"
-#include "ik/memory.h"
 #include "ik/node.h"
 #include "ik/node_data.h"
 #include "ik/quat.h"
@@ -14,7 +14,7 @@
     } while (0)
 
 static void
-destruct_effector(struct ik_effector_t* effector)
+deinit_effector(struct ik_effector_t* effector)
 {
     /* No data is managed by constraint */
 }
@@ -35,7 +35,7 @@ ik_effector_create(struct ik_effector_t** effector)
     memset(*effector, 0, sizeof **effector);
 
     if ((status = ik_refcount_create(&(*effector)->refcount,
-            (ik_destruct_func)destruct_effector, 1)) != IK_OK)
+            (ik_deinit_func)deinit_effector, 1)) != IK_OK)
         IK_FAIL(status, init_refcount_failed);
 
     ik_vec3_set_zero((*effector)->target_position.f);
@@ -52,7 +52,7 @@ ik_effector_create(struct ik_effector_t** effector)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_effector_destroy(struct ik_effector_t* effector)
+ik_effector_free(struct ik_effector_t* effector)
 {
     IK_DECREF(effector);
 }

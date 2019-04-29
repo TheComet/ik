@@ -120,7 +120,7 @@ TEST(NAME, clear_free_deletes_underlying_vector)
     btree_insert(btree, 2, &a);
 
     // this should delete all entries + free the underlying vector
-    btree_clear_free(btree);
+    btree_deinit(btree);
 
     ASSERT_THAT(btree->vector.count, Eq(0u));
     ASSERT_THAT(btree->vector.data, IsNull());

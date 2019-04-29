@@ -1,5 +1,5 @@
+#include "cstructures/memory.h"
 #include "ik/init.h"
-#include "ik/memory.h"
 #include "ik/callbacks.h"
 #include <stddef.h>
 
@@ -12,7 +12,9 @@ ik_init(void)
     if (g_init_counter++ != 0)
         return IK_OK;
 
-    ik_memory_init();
+    memory_init();
+    ik_callbacks_init();
+
     return IK_OK;
 }
 
@@ -23,6 +25,5 @@ ik_deinit(void)
     if (--g_init_counter != 0)
         return 0;
 
-    ik_callbacks_implement(NULL);
-    return ik_memory_deinit();
+    return memory_deinit();
 }

@@ -5,12 +5,8 @@
 
 C_BEGIN
 
-#if defined(IK_BUILDING)
-
-IK_PRIVATE_API ikret_t
+IKRET
 ik_tests_run(int* argc, char** argv);
-
-#endif /* IK_BUILDING */
 
 C_END
 

@@ -8,10 +8,10 @@ C_BEGIN
 struct vector_t;
 
 IK_PRIVATE_API void
-ik_algorithm_update_effector_targets(struct ik_algorithm_t* algorithm);
+ik_solver_update_effector_targets(struct ik_solver_t* solver);
 
 IK_PRIVATE_API void
-ik_algorithm_update_node_distances(struct ik_algorithm_t* algorithm);
+ik_solver_update_node_distances(struct ik_solver_t* solver);
 
 C_END
 

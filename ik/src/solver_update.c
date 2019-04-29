@@ -1,5 +1,5 @@
-#include "ik/algorithm.h"
-#include "ik/algorithm_update.h"
+#include "ik/solver.h"
+#include "ik/solver_update.h"
 #include "ik/effector.h"
 #include "ik/node_data.h"
 #include "ik/ntf.h"
@@ -19,7 +19,7 @@ update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
     ik_vec3_mul_scalar(effector->actual_target.f, effector->weight);
     ik_vec3_add_vec3(effector->actual_target.f, tip->transform.t.position.f);
 
-    /* Fancy algorithm using nlerp, makes transitions look more natural */
+    /* Fancy solver using nlerp, makes transitions look more natural */
     if (effector->features & IK_EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
@@ -44,20 +44,20 @@ update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
     }
 }
 void
-ik_algorithm_update_effector_targets(struct ik_algorithm_t* algorithm)
+ik_solver_update_effector_targets(struct ik_solver_t* solver)
 {
     uint32_t i;
-    for (i = 0; i != algorithm->ntf->node_count; ++i)
+    for (i = 0; i != solver->ntf->node_count; ++i)
     {
-        if (NTF_POST_CHILD_COUNT(algorithm->ntf, i) == 0)
+        if (NTF_POST_CHILD_COUNT(solver->ntf, i) == 0)
         {
-            update(NTF_POST_NODE(algorithm->ntf, i), NTF_POST_BASE(algorithm->ntf, i));
+            update(NTF_POST_NODE(solver->ntf, i), NTF_POST_BASE(solver->ntf, i));
         }
     }
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_algorithm_update_node_distances(struct ik_algorithm_t* algorithm)
+ik_solver_update_node_distances(struct ik_solver_t* solver)
 {
 }

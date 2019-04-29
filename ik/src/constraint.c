@@ -1,4 +1,4 @@
-#include "ik/memory.h"
+#include "cstructures/memory.h"
 #include "ik/constraint.h"
 #include "ik/log.h"
 #include "ik/node_data.h"
@@ -53,7 +53,7 @@ apply_cone(ikreal_t delta_rotation[4],
 /* ------------------------------------------------------------------------- */
 
 static void
-destruct_constraint(struct ik_constraint_t* constraint)
+deinit_constraint(struct ik_constraint_t* constraint)
 {
     /* No data is managed by constraint */
 }
@@ -74,7 +74,7 @@ ik_constraint_create(struct ik_constraint_t** constraint)
     memset(*constraint, 0, sizeof **constraint);
 
     if ((status = ik_refcount_create(&(*constraint)->refcount,
-                  (ik_destruct_func)destruct_constraint, 1)) != IK_OK)
+                  (ik_deinit_func)deinit_constraint, 1)) != IK_OK)
         IK_FAIL(status, init_refcount_failed);
 
     ik_constraint_set_custom(*constraint, apply_dummy);
@@ -87,7 +87,7 @@ ik_constraint_create(struct ik_constraint_t** constraint)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_destroy(struct ik_constraint_t* constraint)
+ik_constraint_free(struct ik_constraint_t* constraint)
 {
     IK_DECREF(constraint);
 }

@@ -8,7 +8,7 @@ static void
 Solver_dealloc(ik_Solver* self)
 {
     if (self->algorithm)
-        IKAPI.algorithm.destroy(self->algorithm);
+        IKAPI.algorithm.free(self->algorithm);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -296,7 +296,7 @@ PyTypeObject ik_SolverType = {
     "IK.Solver",                                   /* tp_name */
     sizeof(ik_Solver),                             /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (destructor)Solver_dealloc,                    /* tp_dealloc */
+    (deinitor)Solver_dealloc,                    /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */

@@ -13,19 +13,21 @@ struct ik_callbacks_t
     (*on_log_message)(const char* message);
 
     void
-    (*on_node_destroy)(struct ik_node_t* node);
+    (*on_node_free)(struct ik_node_t* node);
 };
+
+IK_PUBLIC_API extern struct ik_callbacks_t ik_callbacks;
 
 #if defined(IK_BUILDING)
 
 IK_PRIVATE_API void
-ik_callbacks_implement(const struct ik_callbacks_t* callbacks);
+ik_callbacks_init(void);
 
 IK_PRIVATE_API void
 ik_callbacks_notify_log_message(const char* message);
 
 IK_PRIVATE_API void
-ik_callbacks_notify_node_destroy(struct ik_node_t* node);
+ik_callbacks_notify_node_free(struct ik_node_t* node);
 
 #endif /* IK_BUILDING */
 

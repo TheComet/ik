@@ -15,12 +15,12 @@ C_BEGIN
         assert((o)->refcount->refs > 0);                    \
         if (--((o)->refcount->refs) == 0)                   \
         {                                                   \
-            uint32_t i;                                     \
+            uint32_t decref_i;                              \
             struct ik_refcount_t* refcount = (o)->refcount; \
-            for (i = 0; refcount->array_length--; i++)      \
-                refcount->destruct((o) + i);                \
-            FREE(o); /* future: refcount->destroy(o); */    \
-            ik_refcount_destroy(refcount);                  \
+            for (decref_i = 0; refcount->array_length--; decref_i++) \
+                refcount->deinit((o) + decref_i);           \
+            FREE(o); /* future: refcount->free(o); */       \
+            ik_refcount_free(refcount);                     \
         }                                                   \
     } while(0)
 
@@ -34,25 +34,25 @@ C_BEGIN
             IK_DECREF(o);                                   \
     } while(0)
 
-typedef void (*ik_destruct_func)(void*);
+typedef void (*ik_deinit_func)(void*);
 
 struct ik_refcount_t
 {
     /* Handler for freeing data managed by the refcounted object */
-    ik_destruct_func destruct;
+    ik_deinit_func deinit;
     /* Reference count */
     uint32_t         refs;
     /* Number of contiguous objects pointing to this refcount */
     uint32_t         array_length;
 };
 
-IK_PRIVATE_API ikret_t
+IK_PRIVATE_API IKRET
 ik_refcount_create(struct ik_refcount_t** refcount,
-                   ik_destruct_func destruct,
+                   ik_deinit_func deinit,
                    uint32_t array_length);
 
 IK_PRIVATE_API void
-ik_refcount_destroy(struct ik_refcount_t* refcount);
+ik_refcount_free(struct ik_refcount_t* refcount);
 
 C_END
 

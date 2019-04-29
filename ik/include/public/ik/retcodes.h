@@ -23,7 +23,8 @@ typedef enum ikret_t
     IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT = -8,
     IK_ERR_INVALID_HASH = -9,
     IK_ERR_NO_EFFECTORS_FOUND = -10,
-    IK_ERR_GENERIC = -11
+    IK_ERR_GENERIC = -11,
+    IK_ERR_DUPLICATE_NODE = -12
 } ikret_t;
 
 #ifdef __cplusplus

@@ -66,7 +66,7 @@ calculate_roll_MAYA(ikreal_t q[4], const struct ik_pole_t* pole)
 /* ------------------------------------------------------------------------- */
 
 static void
-destruct_pole(struct ik_pole_t* pole)
+deinit_pole(struct ik_pole_t* pole)
 {
     /* No data is managed by pole */
 }
@@ -87,7 +87,7 @@ ik_pole_create(struct ik_pole_t** pole)
     memset(*pole, 0, sizeof **pole);
 
     if ((status = ik_refcount_create(&(*pole)->refcount,
-            (ik_destruct_func)destruct_pole, 1)) != IK_OK)
+            (ik_deinit_func)deinit_pole, 1)) != IK_OK)
         IK_FAIL(status, init_refcount_failed);
 
     (*pole)->angle = 0.0;
@@ -102,7 +102,7 @@ ik_pole_create(struct ik_pole_t** pole)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_destroy(struct ik_pole_t* pole)
+ik_pole_free(struct ik_pole_t* pole)
 {
     IK_DECREF(pole);
 }

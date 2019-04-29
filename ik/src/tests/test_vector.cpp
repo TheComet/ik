@@ -13,7 +13,7 @@ TEST(NAME, init)
     vec.count = 384;
     vec.data = (uint8_t*)4859;
     vec.element_size = 183;
-    vector_construct(&vec, sizeof(int));
+    vector_init(&vec, sizeof(int));
 
     ASSERT_EQ(0u, vec.capacity);
     ASSERT_EQ(0u, vec.count);
@@ -28,7 +28,7 @@ TEST(NAME, create_initialises_vector)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(NULL, vec->data);
     ASSERT_EQ(sizeof(int), vec->element_size);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, push_increments_count_and_causes_realloc_by_factor_2)
@@ -48,7 +48,7 @@ TEST(NAME, push_increments_count_and_causes_realloc_by_factor_2)
     ASSERT_EQ(4u, vec->capacity);
     ASSERT_EQ(3u, vec->count);
 
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, clear_keeps_buffer_and_resets_count)
@@ -60,7 +60,7 @@ TEST(NAME, clear_keeps_buffer_and_resets_count)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(2u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, clear_free_deletes_buffer_and_resets_count)
@@ -68,11 +68,11 @@ TEST(NAME, clear_free_deletes_buffer_and_resets_count)
     struct vector_t* vec; vector_create(&vec, sizeof(int));
     int x = 9;
     vector_push(vec, &x);
-    vector_clear_free(vec);
+    vector_deinit(vec);
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(0u, vec->capacity);
     ASSERT_EQ(NULL, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, push_emplace_increments_count_and_causes_realloc_by_factor_2)
@@ -87,7 +87,7 @@ TEST(NAME, push_emplace_increments_count_and_causes_realloc_by_factor_2)
     vector_emplace(vec);
     ASSERT_EQ(4u, vec->capacity);
     ASSERT_EQ(3u, vec->count);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, pop_returns_pushed_values)
@@ -107,7 +107,7 @@ TEST(NAME, pop_returns_pushed_values)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(4u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, pop_returns_push_emplaced_values)
@@ -126,7 +126,7 @@ TEST(NAME, pop_returns_push_emplaced_values)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(4u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, pop_empty_vector)
@@ -138,7 +138,7 @@ TEST(NAME, pop_empty_vector)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(2u, vec->capacity);
     ASSERT_NE((void*)0, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, pop_clear_freed_vector)
@@ -148,7 +148,7 @@ TEST(NAME, pop_clear_freed_vector)
     ASSERT_EQ(0u, vec->count);
     ASSERT_EQ(0u, vec->capacity);
     ASSERT_EQ(NULL, vec->data);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, get_element_random_access)
@@ -162,7 +162,7 @@ TEST(NAME, get_element_random_access)
     ASSERT_EQ(43, *(int*)vector_get_element(vec, 3));
     ASSERT_EQ(73, *(int*)vector_get_element(vec, 2));
     ASSERT_EQ(53, *(int*)vector_get_element(vec, 0));
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, popping_preserves_existing_elements)
@@ -178,7 +178,7 @@ TEST(NAME, popping_preserves_existing_elements)
     ASSERT_EQ(43, *(int*)vector_get_element(vec, 3));
     ASSERT_EQ(73, *(int*)vector_get_element(vec, 2));
     ASSERT_EQ(53, *(int*)vector_get_element(vec, 0));
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, erasing_by_index_preserves_existing_elements)
@@ -198,7 +198,7 @@ TEST(NAME, erasing_by_index_preserves_existing_elements)
     ASSERT_EQ(53, *(int*)vector_get_element(vec, 0));
     ASSERT_EQ(43, *(int*)vector_get_element(vec, 1));
     ASSERT_EQ(65, *(int*)vector_get_element(vec, 2));
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, erasing_by_element_preserves_existing_elements)
@@ -218,7 +218,7 @@ TEST(NAME, erasing_by_element_preserves_existing_elements)
     ASSERT_EQ(53, *(int*)vector_get_element(vec, 0));
     ASSERT_EQ(43, *(int*)vector_get_element(vec, 1));
     ASSERT_EQ(65, *(int*)vector_get_element(vec, 2));
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, get_invalid_index)
@@ -227,7 +227,7 @@ TEST(NAME, get_invalid_index)
     ASSERT_EQ(NULL, vector_get_element(vec, 1));
     *(int*)vector_emplace(vec) = 53;
     ASSERT_EQ(NULL, vector_get_element(vec, 1));
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, erase_invalid_index)
@@ -239,7 +239,7 @@ TEST(NAME, erase_invalid_index)
     vector_erase_index(vec, 1);
     vector_erase_index(vec, 0);
     vector_erase_index(vec, 0);
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, inserting_preserves_existing_elements)
@@ -297,7 +297,7 @@ TEST(NAME, inserting_preserves_existing_elements)
     ASSERT_EQ(37, *(int*)vector_get_element(vec, 7));
     ASSERT_EQ(82, *(int*)vector_get_element(vec, 8));
 
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, insert_emplacing_preserves_existing_elements)
@@ -351,7 +351,7 @@ TEST(NAME, insert_emplacing_preserves_existing_elements)
     ASSERT_EQ(37, *(int*)vector_get_element(vec, 7));
     ASSERT_EQ(82, *(int*)vector_get_element(vec, 8));
 
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, resizing_larger_than_capacity_reallocates_and_updates_size)
@@ -367,7 +367,7 @@ TEST(NAME, resizing_larger_than_capacity_reallocates_and_updates_size)
     EXPECT_THAT(vec->capacity, Eq(64u));
     EXPECT_THAT(vec->count, Eq(64u));
 
-    vector_destroy(vec);
+    vector_free(vec);
 }
 
 TEST(NAME, resizing_smaller_than_capacity_updates_size_but_not_capacity)
@@ -384,5 +384,5 @@ TEST(NAME, resizing_smaller_than_capacity_updates_size_but_not_capacity)
     EXPECT_THAT(vec->capacity, Eq(64u));
     EXPECT_THAT(vec->count, Eq(8u));
 
-    vector_destroy(vec);
+    vector_free(vec);
 }

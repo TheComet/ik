@@ -11,14 +11,14 @@ public:
     virtual void SetUp()
     {
         testing::FLAGS_gtest_death_test_style = "threadsafe";
-        ASSERT_THAT(IKAPI.init(), Eq(IK_OK));
-        IKAPI.log.init();
+        ASSERT_THAT(ik_init(), Eq(IK_OK));
+        ik_log_init();
     }
 
     virtual void TearDown()
     {
-        IKAPI.log.deinit();
-        EXPECT_THAT(IKAPI.deinit(), Eq(0u)) << "Number of memory leaks";
+        ik_log_deinit();
+        EXPECT_THAT(ik_deinit(), Eq(0u)) << "Number of memory leaks";
     }
 };
 

@@ -9,7 +9,7 @@
      * Build settings
      * --------------------------------------------------------------------- */
 
-#   define IKAPI ${IK_API_NAME}
+#   define IKRET IK_WARN_UNUSED ikret_t
     #cmakedefine IK_BENCHMARKS
     #cmakedefine IK_DOT_EXPORT
     #cmakedefine IK_HAVE_STDINT_H
@@ -74,6 +74,11 @@
 
     /* The "real" datatype to be used throughout the library */
 typedef ${IK_PRECISION} ikreal_t;
+
+    /* 2 to the power of CPU word size. E.g. on 64-bit machines, this would
+     * be 3 because 2^3 = 8.
+     */
+#   define IK_CPU_WORD_SIZE ${CMAKE_SIZEOF_VOID_P}
 
     /* Define epsilon depending on the type of "real" */
 #   include <float.h>

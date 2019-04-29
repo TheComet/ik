@@ -4,7 +4,7 @@
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/quat.h"
-#include "ik/algorithm_FABRIK.h"
+#include "ik/solver_FABRIK.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
@@ -72,7 +72,7 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain)
     }
 
     /*
-     * Iterate through each segment and apply the FABRIK algorithm.
+     * Iterate through each segment and apply the FABRIK solver.
      */
     node_count = chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
@@ -148,7 +148,7 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
     }
 
     /*
-     * Iterate through each segment and apply the FABRIK algorithm.
+     * Iterate through each segment and apply the FABRIK solver.
      */
     node_count = chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
@@ -210,7 +210,7 @@ solve_chain_forwards(struct chain_t* chain)
     }
 
     /*
-     * Iterate through each segment and apply the FABRIK algorithm.
+     * Iterate through each segment and apply the FABRIK solver.
      */
     node_count = chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
@@ -251,7 +251,7 @@ solve_chain_backwards_with_constraints(struct chain_t* chain,
 
     /*
      * Iterate through each segment the other way around and apply the FABRIK
-     * algorithm (starting at the base and moving down to the tip).
+     * solver (starting at the base and moving down to the tip).
      */
     while (node_idx-- > 0)
     {
@@ -337,7 +337,7 @@ solve_chain_backwards(struct chain_t* chain, struct ik_vec3_t target_position)
 
     /*
      * Iterate through each segment the other way around and apply the FABRIK
-     * algorithm.
+     * solver.
      */
     while (node_idx-- > 0)
     {
@@ -436,7 +436,7 @@ calculate_joint_rotations_for_chain(struct chain_t* chain)
      *
      * The angle between the original and solved segments are calculated using
      * standard vector math (dot product). The axis of rotation is calculated
-     * with the cross product. From this data, a quaternion is constructed,
+     * with the cross product. From this data, a quaternion is inited,
      * describing this delta rotation. Finally, in order to make the rotations
      * global instead of relative, the delta rotation is multiplied with
      * node->original_rotation, which should be a quaternion describing the
@@ -503,53 +503,53 @@ store_initial_transform(const struct vector_t* chain_list)
 
 /* ------------------------------------------------------------------------- */
 uintptr_t
-ik_algorithm_FABRIK_type_size(void)
+ik_solver_FABRIK_type_size(void)
 {
-    return sizeof(struct ik_algorithm_FABRIK_t);
+    return sizeof(struct ik_solver_FABRIK_t);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_FABRIK_construct(struct ik_algorithm_t* algorithm)
+ik_solver_FABRIK_init(struct ik_solver_t* solver)
 {
     /* typical default values */
-    algorithm->max_iterations = 20;
-    algorithm->tolerance = 1e-3;
+    solver->max_iterations = 20;
+    solver->tolerance = 1e-3;
 
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_algorithm_FABRIK_destruct(struct ik_algorithm_t* algorithm)
+ik_solver_FABRIK_deinit(struct ik_solver_t* solver)
 {
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_FABRIK_rebuild(struct ik_algorithm_t* algorithm)
+ik_solver_FABRIK_rebuild(struct ik_solver_t* solver)
 {
     uint32_t max_children;
 
     /*
-     * The algorithm needs a small stack to push/pop transformations as it
+     * The solver needs a small stack to push/pop transformations as it
      * iterates the tree.
      * TODO: Add support for alloca(). If the stack is small enough and the
      * platform supports alloca(), leave this as NULL.
      */
 
-    XFREE(algorithm->stack_buffer);
-    algorithm->stack_buffer = NULL;
+    XFREE(solver->stack_buffer);
+    solver->stack_buffer = NULL;
 
     /* Simple trees don't have more than 1 child */
-    max_children = ik_ntf_find_highest_child_count(algorithm->ntf);
+    max_children = ik_ntf_find_highest_child_count(solver->ntf);
     if (max_children <= 1)
         return IK_OK;
 
-    algorithm->stack_buffer = MALLOC(sizeof(union ik_transform_t) * max_children);
-    if (algorithm->stack_buffer == NULL)
+    solver->stack_buffer = MALLOC(sizeof(union ik_transform_t) * max_children);
+    if (solver->stack_buffer == NULL)
     {
-        ik_log_fatal("Failed to allocate algorithm stack: Ran out of memory");
+        ik_log_fatal("Failed to allocate solver stack: Ran out of memory");
         return IK_ERR_OUT_OF_MEMORY;
     }
 
@@ -558,14 +558,14 @@ ik_algorithm_FABRIK_rebuild(struct ik_algorithm_t* algorithm)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
+ik_solver_FABRIK_solve(struct ik_solver_t* solver)
 {
     ikret_t result = IK_OK;
-    int iteration = algorithm->max_iterations;
-    ikreal_t tolerance_squared = algorithm->tolerance * algorithm->tolerance;
+    int iteration = solver->max_iterations;
+    ikreal_t tolerance_squared = solver->tolerance * solver->tolerance;
 
     /* Tree is in local space -- FABRIK needs only global node positions */
-    ik_transform_chain_list(algorithm, IK_TRANSFORM_L2G);
+    ik_transform_chain_list(solver, IK_TRANSFORM_L2G);
 
     /*
      * Joint rotations are calculated by comparing positional differences
@@ -573,13 +573,13 @@ ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
      * global space (doesn't work in local as far as I can see). Store the
      * positions and locations before solving for later.
      */
-    if (algorithm->features & IK_ALGORITHM_JOINT_ROTATIONS)
-        store_initial_transform(&algorithm->chain_list);
+    if (solver->features & IK_ALGORITHM_JOINT_ROTATIONS)
+        store_initial_transform(&solver->chain_list);
 
     while (iteration-- > 0)
     {
         /* Check if all effectors are within range */
-        ALGORITHM_FOR_EACH_EFFECTOR_NODE(algorithm, node)
+        ALGORITHM_FOR_EACH_EFFECTOR_NODE(solver, node)
             struct ik_vec3_t diff = node->position;
             ik_vec3_sub_vec3(diff.f, node->effector->target_position.f);
             if (ik_vec3_length_squared(diff.f) > tolerance_squared)
@@ -591,12 +591,12 @@ ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
         break;
         hasnt_converged:
 
-        ALGORITHM_FOR_EACH_CHAIN(algorithm, chain)
+        ALGORITHM_FOR_EACH_CHAIN(solver, chain)
             struct  ik_node_t* base_node;
             int idx;
 
             /*
-             * The algorithm assumes chains have at least one bone. This should
+             * The solver assumes chains have at least one bone. This should
              * be asserted while building the chain trees, but it can't hurt
              * to double check
              */
@@ -605,12 +605,12 @@ ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
 
             base_node = chain_get_node(chain, idx);
 
-            if (algorithm->features & IK_ALGORITHM_TARGET_ROTATIONS)
+            if (solver->features & IK_ALGORITHM_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);
             else
                 solve_chain_forwards(chain);
 
-            if (algorithm->features & IK_ALGORITHM_CONSTRAINTS)
+            if (solver->features & IK_ALGORITHM_CONSTRAINTS)
                 solve_chain_backwards_with_constraints(chain, base_node->position, base_node->rotation, base_node->position);
             else
                 solve_chain_backwards(chain, base_node->position);
@@ -618,11 +618,11 @@ ik_algorithm_FABRIK_solve(struct ik_algorithm_t* algorithm)
 
     }
 
-    if (algorithm->features & IK_ALGORITHM_JOINT_ROTATIONS)
-        calculate_joint_rotations(&algorithm->chain_list);
+    if (solver->features & IK_ALGORITHM_JOINT_ROTATIONS)
+        calculate_joint_rotations(&solver->chain_list);
 
     /* Transform back to local space now that solving is complete */
-    ik_transform_chain_list(algorithm, IK_TRANSFORM_G2L);
+    ik_transform_chain_list(solver, IK_TRANSFORM_G2L);
 
     return result;
 }
