@@ -22,7 +22,7 @@ C_BEGIN
  * buffer size easier.
  */
 #define IK_NODE_DATA_PROPERTIES_LIST                                          \
-    X(USER_DATA,        user_data,       const void*)                         \
+    X(USER_DATA,        user_data,       void*)                               \
     X(TRANSFORM,        transform,       union ik_transform_t)                \
     X(DIST_TO_PARENT,   dist_to_parent,  ikreal_t)                            \
     X(ROTATION_WEIGHT,  rotation_weight, ikreal_t)                            \
@@ -117,10 +117,11 @@ struct ik_node_data_t
     /*!
      *
      */
-    struct {
-        uint32_t* base_index;
-        uint32_t* child_count;
-    } pre_order;
+    uint32_t* base_idx;
+    uint32_t* parent_idx;
+    uint32_t* child_count;
+    uint32_t* chain_depth;
+    uint32_t* commands;
 
     /*!
      * The number of nodes that are contiguously allocated for each field. In
@@ -128,6 +129,11 @@ struct ik_node_data_t
      * is flattened, this will be greater than 1.
      */
     uint32_t node_count;
+};
+
+enum commands_e
+{
+    CMD_LOAD_EFFECTOR = 0x01
 };
 
 IK_PRIVATE_API IKRET
@@ -145,15 +151,20 @@ ik_node_data_find_highest_child_count(const struct ik_node_data_t* nd);
 struct ik_node_data_view_t
 {
     struct ik_node_data_t* node_data;
-    uint32_t begin_idx;
-    uint32_t end_idx;
+    uint32_t subbase_idx;
+    uint32_t chain_begin_idx;
+    uint32_t chain_end_idx;
 };
 
 IK_PRIVATE_API IKRET
-ik_node_data_view_create(struct ik_node_data_view_t** ndav, struct ik_node_data_t* source, uint32_t begin_idx, uint32_t end_idx);
+ik_node_data_view_create(struct ik_node_data_view_t** ndav,
+                         struct ik_node_data_t* source,
+                         uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx);
 
 IK_PRIVATE_API IKRET
-ik_node_data_view_init(struct ik_node_data_view_t* ndav, struct ik_node_data_t* source, uint32_t begin_idx, uint32_t end_idx);
+ik_node_data_view_init(struct ik_node_data_view_t* ndav,
+                       struct ik_node_data_t* source,
+                       uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx);
 
 IK_PRIVATE_API void
 ik_node_data_view_deinit(struct ik_node_data_view_t* ndav);
@@ -161,7 +172,25 @@ ik_node_data_view_deinit(struct ik_node_data_view_t* ndav);
 IK_PRIVATE_API void
 ik_node_data_array_free(struct ik_node_data_view_t* ndav);
 
-#define IK_NDV_AT(ndv, member, idx) ((ndv)->node_data->member[idx + (ndv)->begin_idx])
+#define IK_NDV_AT(ndv, member, idx) ( \
+        (idx) == 0 ? \
+            (ndv)->node_data->member[(ndv)->subbase_idx] : \
+            (ndv)->node_data->member[(ndv)->chain_begin_idx + (idx)] \
+        )
+
+#define IK_NDV_FOR(ndv, idx) { \
+        int idx; \
+        for (idx = (ndv)->subbase_idx; \
+             idx != (int)(ndv)->chain_end_idx; \
+             idx = (int)(ndv)->subbase_idx ? (int)(ndv)->chain_begin_idx : idx + 1) {
+
+#define IK_NDV_FOR_R(ndv, idx) { \
+        int idx; \
+        for (idx = (ndv)->chain_end_idx - 1; \
+             idx != (int)(ndv)->subbase_idx - 1; \
+             idx = (int)(ndv)->chain_begin_idx ? (int)(ndv)->subbase_idx : idx - 1) {
+
+#define IK_NDV_END }}
 
 C_END
 

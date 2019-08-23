@@ -13,7 +13,7 @@ static void init_python()
     PyImport_AppendInittab("ik", PyInit_ik);
         Py_Initialize();
         // "module 'sys' has no attribute 'argv'"
-        PyRun_SimpleString("import sys\nsys.argv = ['./ik_tests']");
+        PyRun_SimpleString("import sys\nsys.argv = ['./iktests']");
         // sys.exit() would cause the program to exit. Raise an exception instead so PyRun_SimpleString() returns non-zero if exit was called
         PyRun_SimpleString(
             "import sys\n"

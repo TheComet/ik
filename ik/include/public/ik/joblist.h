@@ -1,17 +1,14 @@
 #ifndef IK_JOBLIST_H
 #define IK_JOBLIST_H
 
-#include "cstructures/vector.h"
 #include "ik/config.h"
+#include "ik/node_data.h"
 
 C_BEGIN
 
-struct ik_node_t;
-
 struct ik_joblist_t
 {
-    struct vector_t ndv_list  /* ik_node_data_view_t */;
-    uint32_t highest_child_count;
+    struct vector_t solver_list;  /* ik_solver_t* */
 };
 
 /*!

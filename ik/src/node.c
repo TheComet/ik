@@ -1,4 +1,4 @@
-#include "ik/callbacks.h"
+#include "ik/algorithm.h"
 #include "ik/constraint.h"
 #include "ik/effector.h"
 #include "ik/node_data.h"
@@ -20,7 +20,7 @@
 /* ------------------------------------------------------------------------- */
 ikret_t
 ik_node_create(struct ik_node_t** node,
-               const void* user_data)
+               void* user_data)
 {
     ikret_t status;
     assert(node);
@@ -43,7 +43,7 @@ ik_node_create(struct ik_node_t** node,
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_node_init(struct ik_node_t* node, const void* user_data)
+ik_node_init(struct ik_node_t* node, void* user_data)
 {
     ikret_t status;
     assert(node);
@@ -173,7 +173,7 @@ ik_node_link(struct ik_node_t* node, struct ik_node_t* child)
 ikret_t
 ik_node_create_child(struct ik_node_t** child,
                      struct ik_node_t* parent,
-                     const void* user_data)
+                     void* user_data)
 {
     ikret_t status;
     if ((status = ik_node_create(child, user_data)) != IK_OK)

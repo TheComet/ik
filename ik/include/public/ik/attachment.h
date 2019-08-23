@@ -8,8 +8,9 @@
     IK_REFCOUNT_HEAD
 
 #define IK_ATTACHMENT_LIST \
-    /*X(CONSTRAINT, constraint) */\
-    X(EFFECTOR,   effector,  struct ik_effector_t) \
+    X(ALGORITHM,  algorithm,  struct ik_algorithm_t) \
+    X(CONSTRAINT, constraint, struct ik_constraint_t) \
+    X(EFFECTOR,   effector,   struct ik_effector_t) \
     /*X(POLE,       pole) \
     X(SOLVER,     solver)*/
 

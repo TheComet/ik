@@ -240,7 +240,7 @@ TEST(NAME, rotate_vector_45_degree)
 
     ik_vec3_t v;
     ik_vec3_set(v.f, 1, 0, 0);
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
 
     EXPECT_THAT(v.v.x, DoubleEq(1/sqrt(2)));
     EXPECT_THAT(v.v.y, DoubleEq(0));
@@ -254,17 +254,17 @@ TEST(NAME, rotate_vector_120_degree_steps)
     ik_vec3_set(v.f, 1, 0, 0);
     ik_quat_set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
 
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(1, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
 
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(1, 1e-15));
 
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(1, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
@@ -276,9 +276,9 @@ TEST(NAME, rotate_vector_there_and_back)
     ik_vec3_t v;
     ik_vec3_set(v.f, 3, 7, 4);
     ik_quat_set_axis_angle(q.f, 63, 9679, 34, 48.32 * pi / 180);
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
     ik_quat_conj(q.f);
-    ik_vec3_rotate(v.f, q.f);
+    ik_vec3_rotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(3, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(7, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(4, 1e-15));
@@ -291,7 +291,7 @@ TEST(NAME, nrotate_vector_45_degree)
 
     ik_vec3_t v;
     ik_vec3_set(v.f, 1, 0, 0);
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
 
     EXPECT_THAT(v.v.x, DoubleEq(1/sqrt(2)));
     EXPECT_THAT(v.v.y, DoubleEq(0));
@@ -305,17 +305,17 @@ TEST(NAME, nrotate_vector_120_degree_steps)
     ik_vec3_set(v.f, 1, 0, 0);
     ik_quat_set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
 
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(1, 1e-15));
 
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(1, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
 
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(1, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
@@ -327,9 +327,9 @@ TEST(NAME, nrotate_vector_there_and_back)
     ik_vec3_t v;
     ik_vec3_set(v.f, 3, 7, 4);
     ik_quat_set_axis_angle(q.f, 63, 9679, 34, 48.32 * pi / 180);
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
     ik_quat_conj(q.f);
-    ik_vec3_nrotate(v.f, q.f);
+    ik_vec3_nrotate_quat(v.f, q.f);
     EXPECT_THAT(v.v.x, DoubleNear(3, 1e-15));
     EXPECT_THAT(v.v.y, DoubleNear(7, 1e-15));
     EXPECT_THAT(v.v.z, DoubleNear(4, 1e-15));

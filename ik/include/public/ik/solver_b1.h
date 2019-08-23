@@ -8,11 +8,8 @@ C_BEGIN
 
 struct ik_solver_b1_t
 {
-    IK_ALGORITHM_HEAD
+    IK_SOLVER_HEAD
 };
-
-IK_PRIVATE_API uintptr_t
-ik_solver_b1_type_size(void);
 
 IK_PRIVATE_API ikret_t
 ik_solver_b1_init(struct ik_solver_b1_t* solver);

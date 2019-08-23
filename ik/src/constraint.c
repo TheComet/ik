@@ -12,18 +12,18 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_dummy(ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4],
-            struct ik_constraint_t* constraint)
+apply_dummy(struct ik_constraint_t* constraint,
+            ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_stiff(ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4],
-            struct ik_constraint_t* constraint)
+apply_stiff(struct ik_constraint_t* constraint,
+            ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4])
 {
     ik_quat_copy(delta_rotation, current_rotation);
     ik_quat_conj(delta_rotation);
@@ -32,18 +32,18 @@ apply_stiff(ikreal_t delta_rotation[4],
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_hinge(ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4],
-            struct ik_constraint_t* constraint)
+apply_hinge(struct ik_constraint_t* constraint,
+            ikreal_t delta_rotation[4],
+            const ikreal_t current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_cone(ikreal_t delta_rotation[4],
-           const ikreal_t current_rotation[4],
-           struct ik_constraint_t* constraint)
+apply_cone(struct ik_constraint_t* constraint,
+           ikreal_t delta_rotation[4],
+           const ikreal_t current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }

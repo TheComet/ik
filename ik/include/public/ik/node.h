@@ -30,13 +30,13 @@ struct ik_node_t
  * You may use ik_guid() to generate a random integer if you don't care.
  */
 IKRET
-ik_node_create(struct ik_node_t** node, const void* user_data);
+ik_node_create(struct ik_node_t** node, void* user_data);
 
 /*!
  * @brief Constructs an already allocated node.
  */
 IKRET
-ik_node_init(struct ik_node_t* node, const void* user_data);
+ik_node_init(struct ik_node_t* node, void* user_data);
 
 /*!
  * @brief Destructs a node, freeing all children in the process, but does
@@ -76,7 +76,7 @@ ik_node_free_recursive(struct ik_node_t* node);
 IKRET
 ik_node_create_child(struct ik_node_t** child,
                      struct ik_node_t* parent,
-                     const void* user_data);
+                     void* user_data);
 
 /*!
  * @brief Attaches a node as a child to another node. The parent node gains
@@ -135,6 +135,7 @@ ik_node_find(struct ik_node_t* node, const void* user_data);
 #undef X
 
 #define IK_NODE_CONSTRAINT(n)       ((n)->d->constraint[(n)->data_index])
+#define IK_NODE_ALGORITHM(n)        ((n)->d->algorithm[(n)->data_index])
 #define IK_NODE_EFFECTOR(n)         ((n)->d->effector[(n)->data_index])
 #define IK_NODE_POLE(n)             ((n)->d->pole[(n)->data_index])
 #define IK_NODE_USER_DATA(n)        ((n)->d->user_data[(n)->data_index])

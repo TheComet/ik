@@ -106,12 +106,6 @@ else ()
     message (WARNING "Git not found. Build will not contain git revision info.")
 endif ()
 
-# Need pthread for unit tests
-if (IK_TESTS)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-    find_package(Threads REQUIRED)
-endif ()
-
 configure_file ("templates/config.h.in"
                 "include/public/ik/config.h")
 
@@ -138,11 +132,11 @@ add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURREN
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
+    "src/algorithm.c"
     "src/callbacks.c"
-    #"src/constraint.c"
+    "src/constraint.c"
     "src/effector.c"
     "src/hash.c"
-    #"src/ik.c"
     "src/init.c"
     "src/joblist.c"
     "src/log.c"
@@ -153,12 +147,13 @@ set (IK_SOURCES
     "src/quat.c"
     "src/refcount.c"
     "src/retcodes.c"
-    #"src/solver.c"
+    "src/solver.c"
     #"src/solver_prepare.c"
     #"src/solver_update.c"
-    #"src/solver_b1.c"
-    #"src/solver_b2.c"
-    #"src/solver_fabrik.c"
+    "src/solver_b1.c"
+    "src/solver_b2.c"
+    "src/solver_dummy.c"
+    "src/solver_fabrik.c"
     #"src/solver_mss.c"
     #"src/transform_chains.c"
     #"src/transform_node.c"
@@ -171,21 +166,16 @@ set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
     "include/python/ik/python/ik_type_Algorithm.h"
-    "include/python/ik/python/ik_type_Constraint.h"
     "include/python/ik/python/ik_type_Node.h"
-    "include/python/ik/python/ik_type_Pole.h"
     "include/python/ik/python/ik_type_Quat.h"
     "include/python/ik/python/ik_type_Vec3.h")
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
     "src/python/ik_module_info.c"
     "src/python/ik_module_log.c"
-    "src/python/ik_type_Constraint.c"
-    "src/python/ik_type_Effector.c"
+    "src/python/ik_type_Algorithm.c"
     "src/python/ik_type_Node.c"
-    "src/python/ik_type_Pole.c"
     "src/python/ik_type_Quat.c"
-    "src/python/ik_type_Solver.c"
     "src/python/ik_type_Vec3.c")
 set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
@@ -195,7 +185,7 @@ set (IK_TESTS_SOURCES
     #"src/tests/test_FABRIK.cpp"
     #"src/tests/test_mat3x3.cpp"
     "src/tests/test_node.cpp"
-    "src/tests/test_node_data_flatten.cpp"
+    "src/tests/test_joblist.cpp"
     #"src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
     #"src/tests/test_solver.cpp"
@@ -285,7 +275,8 @@ if (IK_PYTHON)
     )
     target_compile_definitions (ik_python_obj
         PRIVATE IK_BUILDING)  # The library is being built
-    target_link_libraries (ik_python_obj PRIVATE Python::Python)
+    target_link_libraries (ik_python_obj PRIVATE Python3::Python)
+    target_link_libraries (ik_python_obj PUBLIC cstructures)
 endif ()
 
 ###############################################################################
@@ -337,7 +328,7 @@ if (IK_TESTS)
     target_link_libraries (ik_tests_obj PRIVATE gmock)
     if (IK_PYTHON)
         add_dependencies (ik_tests_obj ik_generate_unit_tests)
-        target_link_libraries (ik_tests_obj PRIVATE Python::Python)
+        target_link_libraries (ik_tests_obj PRIVATE Python3::Python)
     endif ()
 endif ()
 
@@ -400,9 +391,6 @@ target_link_libraries (ik
         $<$<BOOL:${IK_BENCHMARKS}>:ik_benchmarks_obj>
         $<$<BOOL:${IK_PYTHON}>:ik_python_obj>
         $<$<BOOL:${IK_TESTS}>:ik_tests_obj>)
-if (UNIX)
-    #target_link_libraries (ik PRIVATE m)
-endif (UNIX)
 
 if (IK_TESTS)
     add_executable (iktests "src/tests/tests_main.c")

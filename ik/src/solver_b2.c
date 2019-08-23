@@ -1,50 +1,36 @@
-#include "ik/chain.h"
 #include "ik/effector.h"
 #include "ik/log.h"
 #include "ik/node.h"
-#include "ik/solverdef.h"
-#include "ik/solver_TWO_BONE.h"
+#include "ik/solver_b2.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
 
-struct ik_solver_t
-{
-    ALGORITHM_HEAD
-};
-
 /* ------------------------------------------------------------------------- */
-uintptr_t
-ik_solver_TWO_BONE_type_size(void)
-{
-    return sizeof(struct ik_solver_t);
-}
-
-/* ------------------------------------------------------------------------- */
-int
-ik_solver_TWO_BONE_init(struct ik_solver_t* solver)
+ikret_t
+ik_solver_b2_init(struct ik_solver_b2_t* solver)
 {
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_TWO_BONE_deinit(struct ik_solver_t* solver)
+ik_solver_b2_deinit(struct ik_solver_b2_t* solver)
 {
 }
 
 /* ------------------------------------------------------------------------- */
-int
-ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver)
+ikret_t
+ik_solver_b2_prepare(struct ik_solver_b2_t* solver)
 {
     /*
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
-     */
+     *
     ALGORITHM_FOR_EACH_CHAIN(solver, chain)
-        if (chain_length(chain) != 3) /* 3 nodes = 2 bones */
+        if (chain_length(chain) != 3) * 3 nodes = 2 bones *
         {
             ik_log_error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver solver?");
             return -1;
@@ -54,15 +40,16 @@ ik_solver_TWO_BONE_rebuild(struct ik_solver_t* solver)
             ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another solver (e.g. FABRIK)");
             return -1;
         }
-    ALGORITHM_END_EACH
+    ALGORITHM_END_EACH*/
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-int
-ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
+ikret_t
+ik_solver_b2_solve(struct ik_solver_b2_t* solver)
 {
+#if 0
     /* Tree is in local space, we need global positions */
     ik_transform_chain_list(solver, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
 
@@ -155,6 +142,6 @@ ik_solver_TWO_BONE_solve(struct ik_solver_t* solver)
 
     /* Transform back again */
     ik_transform_chain_list(solver, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
-
+#endif
     return 0;
 }

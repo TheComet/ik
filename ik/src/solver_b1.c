@@ -1,19 +1,10 @@
 #include "ik/effector.h"
-#include "ik/ntf.h"
 #include "ik/log.h"
 #include "ik/node_data.h"
-#include "ik/solver_head.h"
 #include "ik/solver_b1.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
-
-/* ------------------------------------------------------------------------- */
-uintptr_t
-ik_solver_b1_type_size(void)
-{
-    return sizeof(struct ik_solver_b1_t);
-}
 
 /* ------------------------------------------------------------------------- */
 int
@@ -35,7 +26,7 @@ ik_solver_b1_prepare(struct ik_solver_b1_t* solver)
     /*
      * We need to assert that there really are only chains of length 1 and no
      * sub chains.
-     */
+     *
     uint32_t i = solver->ntf->node_count;
     while (i--)
     {
@@ -46,11 +37,11 @@ ik_solver_b1_prepare(struct ik_solver_b1_t* solver)
         }
     }
 
-    if (solver->ntf->node_count != 2) /* 2 nodes = 1 bone */
+    if (solver->ntf->node_count != 2) * 2 nodes = 1 bone *
     {
         ik_log_error("Your tree has chains that are longer than 1 bone. Are you sure you selected the correct solver solver?");
         return IK_ERR_GENERIC;
-    }
+    }*/
 
     return IK_OK;
 }
@@ -58,7 +49,7 @@ ik_solver_b1_prepare(struct ik_solver_b1_t* solver)
 /* ------------------------------------------------------------------------- */
 int
 ik_solver_b1_solve(struct ik_solver_b1_t* solver)
-{
+{/*
     struct ik_node_data_t* tip;
     struct ik_node_data_t* base;
     struct ik_effector_t* eff;
@@ -80,7 +71,7 @@ ik_solver_b1_solve(struct ik_solver_b1_t* solver)
     ik_vec3_sub_vec3(tip_pos, base_pos);
     ik_vec3_normalize(tip_pos);
     ik_vec3_mul_scalar(tip_pos, tip->dist_to_parent);
-    ik_vec3_add_vec3(tip_pos, base_pos);
+    ik_vec3_add_vec3(tip_pos, base_pos);*/
 
     return 0;
 }

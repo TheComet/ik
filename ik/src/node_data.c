@@ -60,8 +60,10 @@ determine_zla_size_and_malloc(uintptr_t node_count)
 #undef X
 
     /* Space for index data */
-    ADD_TO_SIZE(pre_order.base_index)
-    ADD_TO_SIZE(pre_order.child_count)
+    ADD_TO_SIZE(base_idx)
+    ADD_TO_SIZE(parent_idx)
+    ADD_TO_SIZE(child_count)
+    ADD_TO_SIZE(chain_depth)
 
     /* Allocate and zero init structure */
     node_data = MALLOC(sizeof(*node_data) + zla_size + buffer_alignment);
@@ -86,8 +88,10 @@ determine_zla_size_and_malloc(uintptr_t node_count)
 #undef X
 
     /* Index data offsets */
-    ADD_OFFSET(pre_order.base_index)
-    ADD_OFFSET(pre_order.child_count)
+    ADD_OFFSET(base_idx)
+    ADD_OFFSET(parent_idx)
+    ADD_OFFSET(child_count)
+    ADD_OFFSET(chain_depth)
 
 #undef ADD_TO_SIZE
 #undef ADD_OFFSET
@@ -153,8 +157,8 @@ ik_node_data_find_highest_child_count(const struct ik_node_data_t* nd)
     uint32_t max_children = 0;
     for (i = 0; i != nd->node_count; ++i)
     {
-        if (max_children < nd->pre_order.child_count[i])
-            max_children = nd->pre_order.child_count[i];
+        if (max_children < nd->child_count[i])
+            max_children = nd->child_count[i];
     }
 
     return max_children;
@@ -162,24 +166,31 @@ ik_node_data_find_highest_child_count(const struct ik_node_data_t* nd)
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_node_data_view_create(struct ik_node_data_view_t** ndav, struct ik_node_data_t* source, uint32_t begin_idx, uint32_t end_idx)
+ik_node_data_view_create(struct ik_node_data_view_t** ndav,
+                         struct ik_node_data_t* source,
+                         uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx)
 {
     assert(ndav);
     assert(source);
-    assert(end_idx <= source->node_count);
+    assert(chain_end_idx <= source->node_count);
+    assert(chain_begin_idx <= chain_end_idx);
+    assert(subbase_idx < chain_begin_idx);
 
     *ndav = MALLOC(sizeof **ndav);
     if (*ndav == NULL)
         return IK_ERR_OUT_OF_MEMORY;
-    return ik_node_data_view_init(*ndav, source, begin_idx, end_idx);
+    return ik_node_data_view_init(*ndav, source, subbase_idx, chain_begin_idx, chain_end_idx);
 }
 
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_node_data_view_init(struct ik_node_data_view_t* ndav, struct ik_node_data_t* source, uint32_t begin_idx, uint32_t end_idx)
+ik_node_data_view_init(struct ik_node_data_view_t* ndav,
+                       struct ik_node_data_t* source,
+                       uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx)
 {
-    ndav->begin_idx = begin_idx;
-    ndav->end_idx = end_idx;
+    ndav->subbase_idx = subbase_idx;
+    ndav->chain_begin_idx = chain_begin_idx;
+    ndav->chain_end_idx = chain_end_idx;
     ndav->node_data = source;
     IK_INCREF(ndav->node_data);
 

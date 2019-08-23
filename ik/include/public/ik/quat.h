@@ -90,7 +90,7 @@ IK_PRIVATE_API void
 ik_quat_normalize(ikreal_t q[4]);
 
 /*!
- * @brief Multiplies two quaternions together, combining the rotations.
+ * @brief Multiplies two quaternions q1*q2 and stores the result into q1.
  * This operation is not commutative. The resulting quaternion is
  * normalized. See mul_no_normalize() for a version of this function that
  * doesn't normalize the result.
@@ -99,8 +99,8 @@ IK_PRIVATE_API void
 ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4]);
 
 /*!
- * @brief Multiplies the conjugate of the specified quaternion, combining
- * the rotations. This operation is not commutative. The resulting quaternion is
+ * @brief Multiplies q2*q1 and stores the result into q1.
+ * This operation is not commutative. The resulting quaternion is
  * normalized. See nmul_no_normalize() for a version of this function that
  * doesn't normalize the result.
  */
@@ -108,11 +108,34 @@ IK_PRIVATE_API void
 ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4]);
 
 /*!
- * @brief Multiplies two quaternions together, combining the rotations, and
- * does not normalize the result. This operation is not commutative.
+ * @brief Multiplies the conjugate of the specified quaternion, combining
+ * the rotations. This operation is not commutative. The resulting quaternion is
+ * normalized. See nmul_no_normalize() for a version of this function that
+ * doesn't normalize the result.
  */
 IK_PRIVATE_API void
-ik_quat_mul_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
+ik_quat_mul_quat_conj(ikreal_t q1[4], const ikreal_t q2[4]);
+
+/*!
+ * @brief Multiplies q1*q2 and stores the result in q1. The result is not
+ * normalized. This operation is not commutative.
+ */
+IK_PRIVATE_API void
+ik_quat_mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
+
+/*!
+ * @brief Multiplies q2*q1 and stores the result in q1. The result is not
+ * normalized. This operation is not commutative.
+ */
+IK_PRIVATE_API void
+ik_quat_nmul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
+
+/*!
+ * @brief Multiplies q1*q2 and stores the result in q1. The result is not
+ * normalized. This operation is not commutative.
+ */
+IK_PRIVATE_API void
+ik_quat_mul_quat_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
 
 /*!
  * @brief Multiplies the conjugate of the specified quaternion, combining
@@ -120,7 +143,7 @@ ik_quat_mul_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
  * quaternion is not normalized. This operation is not commutative.
  */
 IK_PRIVATE_API void
-ik_quat_nmul_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
+ik_quat_mul_quat_conj_no_normalize(ikreal_t q1[4], const ikreal_t q2[4]);
 
 /*!
  * @brief Multiplies each component by a scalar value.

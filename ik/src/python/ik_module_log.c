@@ -12,18 +12,18 @@ static void
 Log_dealloc(ik_Log* self)
 {
     (void)self;
-    IKAPI.log.deinit();
+    ik_log_deinit();
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
 Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
+    ik_Log* self;
     (void)args;
     (void)kwds;
-    ik_Log* self;
 
-    if (IKAPI.log.init() != IK_OK)
+    if (ik_log_init() != IK_OK)
         goto ik_log_init_failed;
 
     self = (ik_Log*)type->tp_alloc(type, 0);
@@ -32,7 +32,7 @@ Log_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    alloc_self_failed  : IKAPI.log.deinit();
+    alloc_self_failed  : ik_log_deinit();
     ik_log_init_failed : return NULL;
 }
 
@@ -61,43 +61,37 @@ log_message(PyObject* args, void (*log_func)(const char* fmt, ...))
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-log_debug(PyObject* self, PyObject* args)
-{
-    (void)self;
-    return log_message(args, IKAPI.log.debug);
-}
-static PyObject*
 log_info(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.info);
+    return log_message(args, ik_log_info);
 }
 static PyObject*
 log_warning(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.warning);
+    return log_message(args, ik_log_warning);
 }
 static PyObject*
 log_error(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.error);
+    return log_message(args, ik_log_error);
 }
 static PyObject*
 log_fatal(PyObject* self, PyObject* args)
 {
     (void)self;
-    return log_message(args, IKAPI.log.fatal);
+    return log_message(args, ik_log_fatal);
 }
 
 /* ------------------------------------------------------------------------- */
 static int
 Log_setseverity(ik_Log* self, PyObject* value, void* closure)
 {
+    int severity;
     (void)self;
     (void)closure;
-    int severity;
 
     if (!PyLong_Check(value))
     {
@@ -112,7 +106,7 @@ Log_setseverity(ik_Log* self, PyObject* value, void* closure)
         return -1;
     }
 
-    IKAPI.log.severity(severity);
+    ik_log_severity(severity);
 
     return 0;
 }
@@ -130,7 +124,7 @@ Log_settimestamps(ik_Log* self, PyObject* value, void* closure)
         return -1;
     }
 
-    IKAPI.log.timestamps(PyObject_IsTrue(value));
+    ik_log_timestamps(PyObject_IsTrue(value));
 
     return 0;
 }
@@ -148,12 +142,12 @@ Log_setprefix(ik_Log* self, PyObject* value, void* closure)
         if (ascii == NULL)
             return -1;
 
-        IKAPI.log.prefix(PyBytes_AS_STRING(ascii));
+        ik_log_prefix(PyBytes_AS_STRING(ascii));
         Py_DECREF(ascii);
     }
     else if(value == Py_None)
     {
-        IKAPI.log.prefix("");
+        ik_log_prefix("");
     }
     else
     {
@@ -166,7 +160,6 @@ Log_setprefix(ik_Log* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Log_methods[] = {
-    {"debug",   log_debug,   METH_O, "Log a debug message to the library."},
     {"info",    log_info,    METH_O, "Log an info message to the library."},
     {"warning", log_warning, METH_O, "Log a warning message to the library."},
     {"error",   log_error,   METH_O, "Log an error message to the library."},
@@ -188,7 +181,7 @@ static PyTypeObject ik_LogType = {
     "ik.Log",                                      /* tp_name */
     sizeof(ik_Log),                                /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (deinitor)Log_dealloc,                       /* tp_dealloc */
+    (destructor)Log_dealloc,                       /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */

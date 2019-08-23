@@ -11,9 +11,9 @@ C_BEGIN
 struct ik_constraint_t;
 struct ik_node_data_t;
 
-typedef void (*ik_constraint_apply_func)(ikreal_t delta_rotation[4],
-                                         const ikreal_t current_rotation[4],
-                                         struct ik_constraint_t* constraint);
+typedef void (*ik_constraint_apply_func)(struct ik_constraint_t* constraint,
+                                         ikreal_t delta_rotation[4],
+                                         const ikreal_t current_rotation[4]);
 
 #define IK_CONSTRAINTS_LIST \
     X(STIFF) \

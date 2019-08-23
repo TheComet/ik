@@ -167,7 +167,7 @@ ik_vec3_ncross(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
+ik_vec3_rotate_quat(ikreal_t v[3], const ikreal_t q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
@@ -189,7 +189,7 @@ ik_vec3_rotate(ikreal_t v[3], const ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_nrotate(ikreal_t v[3], const ikreal_t q[4])
+ik_vec3_nrotate_quat(ikreal_t v[3], const ikreal_t q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
@@ -207,6 +207,51 @@ ik_vec3_nrotate(ikreal_t v[3], const ikreal_t q[4])
     ik_vec3_copy(tmp.f, q);
     ik_vec3_mul_scalar(tmp.f, 2.0 * dot_qv);
     ik_vec3_sub_vec3(v, tmp.f);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_rotate_vec3_span(ikreal_t v[3], const ikreal_t v1[3], const ikreal_t v2[3])
+{
+    union ik_vec3_t v1n;
+    union ik_vec3_t v2n;
+    ik_vec3_copy(v1n.f, v1);
+    ik_vec3_copy(v2n.f, v2);
+    ik_vec3_normalize(v1n.f);
+    ik_vec3_normalize(v2n.f);
+    ik_vec3_rotate_vec3_span_normalized(v, v1, v2);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_vec3_rotate_vec3_span_normalized(ikreal_t v[3], const ikreal_t v1[3], const ikreal_t v2[3])
+{
+    /* Rodrigues' rotation formula */
+    /* vrot = v cos(a) + (k x v)sin(a) + k(k.v)(1-cos(a)) */
+    union ik_vec3_t k1, k2;
+    ikreal_t a, cosa;
+
+    /* angle between v1 and v2 */
+    cosa = ik_vec3_dot(v1, v2);
+    a = acos(cosa);
+
+    /* axis of rotation */
+    ik_vec3_copy(k1.f, v1);
+    ik_vec3_cross(k1.f, v2);
+    ik_vec3_copy(k2.f, k1.f);
+
+    /* (k x v)sin(a) */
+    ik_vec3_cross(k1.f, v);
+    ik_vec3_mul_scalar(k1.f, sin(a));
+
+    /* k(k.v)(1-cos(a)) */
+    ik_vec3_mul_scalar(k2.f, ik_vec3_dot(k2.f, v));
+    ik_vec3_mul_scalar(k2.f, 1.0 - cosa);
+
+    /* accumulate */
+    ik_vec3_mul_scalar(v, cosa);
+    ik_vec3_add_vec3(v, k1.f);
+    ik_vec3_add_vec3(v, k2.f);
 }
 
 /* ------------------------------------------------------------------------- */

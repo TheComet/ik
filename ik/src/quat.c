@@ -99,7 +99,31 @@ ik_quat_normalize(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+{
+    ik_quat_mul_quat_no_normalize(q1, q2);
+    ik_quat_normalize(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+{
+    ik_quat_nmul_quat_no_normalize(q1, q2);
+    ik_quat_normalize(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_mul_quat_conj(ikreal_t q1[4], const ikreal_t q2[4])
+{
+    ik_quat_mul_quat_conj_no_normalize(q1, q2);
+    ik_quat_normalize(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_mul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
     ikreal_t q1[4];
     ik_quat_copy(q1, q);
@@ -127,16 +151,41 @@ ik_quat_mul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 #undef y2
 #undef z2
 }
+
+/* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+ik_quat_nmul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
-    ik_quat_mul_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
+    ikreal_t q1[4];
+    ik_quat_copy(q1, q);
+
+#define w1 q2[3]
+#define x1 q2[0]
+#define y1 q2[1]
+#define z1 q2[2]
+#define w2 q1[3]
+#define x2 q1[0]
+#define y2 q1[1]
+#define z2 q1[2]
+
+    q[3] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
+    q[0] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
+    q[1] = w1*y2 + y1*w2 + z1*x2 - x1*z2;
+    q[2] = w1*z2 + z1*w2 + x1*y2 - y1*x2;
+
+#undef w1
+#undef x1
+#undef y1
+#undef z1
+#undef w2
+#undef x2
+#undef y2
+#undef z2
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+ik_quat_mul_quat_conj_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 {
     ikreal_t q1[4];
     ik_quat_copy(q1, q);
@@ -150,7 +199,7 @@ ik_quat_nmul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 #define y2 q2[1]
 #define z2 q2[2]
 
-    q[3] = w1*w2 + x1*x2 + y1*y2 + z1*z2;
+    q[3] =  w1*w2 + x1*x2 + y1*y2 + z1*z2;
     q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
     q[1] = -w1*y2 + y1*w2 - z1*x2 + x1*z2;
     q[2] = -w1*z2 + z1*w2 - x1*y2 + y1*x2;
@@ -163,12 +212,6 @@ ik_quat_nmul_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 #undef x2
 #undef y2
 #undef z2
-}
-void
-ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4])
-{
-    ik_quat_nmul_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
 }
 
 /* ------------------------------------------------------------------------- */

@@ -6,24 +6,22 @@
 
 C_BEGIN
 
-#if defined(IK_BUILDING)
-
-IK_PRIVATE_API uintptr_t
-ik_solver_MSS_type_size(void);
+struct ik_solver_mss_t
+{
+    IK_SOLVER_HEAD
+};
 
 IK_PRIVATE_API ikret_t
-ik_solver_MSS_init(struct ik_solver_t* solver);
+ik_solver_MSS_init(struct ik_solver_mss_t* solver);
 
 IK_PRIVATE_API void
-ik_solver_MSS_deinit(struct ik_solver_t* solver);
+ik_solver_MSS_deinit(struct ik_solver_mss_t* solver);
 
 IK_PRIVATE_API ikret_t
-ik_solver_MSS_rebuild(struct ik_solver_t* solver);
+ik_solver_MSS_rebuild(struct ik_solver_mss_t* solver);
 
 IK_PRIVATE_API ikret_t
-ik_solver_MSS_solve(struct ik_solver_t* solver);
-
-#endif /* IK_BUILDING */
+ik_solver_MSS_solve(struct ik_solver_mss_t* solver);
 
 C_END
 
