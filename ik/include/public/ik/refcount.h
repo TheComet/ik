@@ -5,62 +5,147 @@
 
 C_BEGIN
 
-#define IK_REFCOUNT_HEAD                                                      \
+/*!
+ * All structures that are refcounted must have the following fields present.
+ * This way, all refcounted objects can be cased to ik_refcounted_t.
+ */
+#define IK_REFCOUNT_HEAD \
         struct ik_refcount_t* refcount;
 
-#define IK_INCREF(o) IK_INCREF_((struct ik_refcounted_t*)o)
-#define IK_INCREF_(o)                                                         \
-        (o)->refcount->refs++;
+/*!
+ * Get the number of references of a refcount allocated memory block.
+ */
+#define IK_REFCOUNT(o) \
+        (o)->refcount->refs
 
-#define IK_DECREF(o) IK_DECREF_((struct ik_refcounted_t*)o)
-#define IK_DECREF_(o) do {                                                    \
+/*!
+ * Adds a reference to a refcount allocated memory block.
+ */
+#define IK_INCREF(o) do {                                                     \
+        assert((o)->refcount->refs > 0);                                      \
+        (o)->refcount->refs++;                                                \
+    } while(0)
+
+/*!
+ * Removes a reference from a refcount allocated memory block. If the refcount
+ * reaches 0, then the registered deinit function is called for all objects
+ * in the block before freeing the memory.
+ */
+#define IK_DECREF(o) do {                                                     \
         assert((o)->refcount->refs > 0);                                      \
         if (--((o)->refcount->refs) == 0)                                     \
         {                                                                     \
             uint32_t decref_i;                                                \
-            struct ik_refcount_t* refcount = (o)->refcount;                   \
-            for (decref_i = 0; refcount->array_length--; decref_i++)          \
-                refcount->deinit((o) + decref_i);                             \
-            FREE(o); /* future: refcount->free(o); */                         \
-            ik_refcount_free(refcount);                                       \
+            for (decref_i = 0; (o)->refcount->array_length--; decref_i++)     \
+                if ((o)->refcount->deinit)                                    \
+                    (o)->refcount->deinit((o) + decref_i);                    \
+                    /* XXX: This only works if o is the correct type, which   \
+                     * should be the case */                                  \
+                                                                              \
+            /* refcount is located at beginning of memory block, meaning this \
+             * is the easiest way to find the pointer to free. */             \
+            FREE((o)->refcount);                                              \
         }                                                                     \
     } while(0)
 
+/*!
+ * Identical to IK_INCREF with an additional NULL-check.
+ */
 #define IK_XINCREF(o) do {                                                    \
         if (o)                                                                \
             IK_INCREF(o);                                                     \
     } while(0)
 
+/*!
+ * Identical to IK_DECREF with an additional NULL-check.
+ */
 #define IK_XDECREF(o) do {                                                    \
         if (o)                                                                \
             IK_DECREF(o);                                                     \
     } while(0)
 
-
+/*!
+ * When the refcount of a block of memory reaches 0, a callback function of
+ * this type is called.
+ */
 typedef void (*ik_deinit_func)(void*);
-
-struct ik_refcounted_t
-{
-    IK_REFCOUNT_HEAD
-};
 
 struct ik_refcount_t
 {
     /* Handler for freeing data managed by the refcounted object */
     ik_deinit_func deinit;
     /* Reference count */
-    uint32_t         refs;
+    uint32_t       refs;
     /* Number of contiguous objects pointing to this refcount */
-    uint32_t         array_length;
+    uint32_t       array_length;
 };
 
-IK_PRIVATE_API IKRET
-ik_refcount_create(struct ik_refcount_t** refcount,
-                   ik_deinit_func deinit,
-                   uint32_t array_length);
+struct ik_refcounted_t
+{
+    IK_REFCOUNT_HEAD
+};
 
-IK_PRIVATE_API void
-ik_refcount_free(struct ik_refcount_t* refcount);
+/*!
+ * @brief Allocates a refcounted block of memory of the specified size.
+ * @param[out] refcounted_obj Pointer to the beginning of the usable memory.
+ * @param[in] bytes The number of bytes to allocate.
+ * @param[in] deinit The function to call before freeing the block of memory.
+ * When deinit is called, the *refcounted_obj address is passed to it as an
+ * argument.
+ *
+ * The actual number of bytes allocated will be the requested number of bytes
+ * plus the size of the ik_refcount_t structure, which is placed at the
+ * beginning of the block of memory. To make this detail transparent to the
+ * user, the returned pointer will point to the beginning of the usable memory,
+ * after the refcount header.
+ *
+ *   Beginning of memory block
+ *           |
+ *           v_______________ _______________________
+ *           | ik_refcount_t | N number of bytes ...
+ *                           ^
+ *                           |
+ *                   *refcounted_obj points here
+ */
+IK_PRIVATE_API IKRET
+ik_refcount_malloc(struct ik_refcounted_t** refcounted_obj,
+                   uintptr_t bytes,
+                   ik_deinit_func deinit);
+
+/*!
+ * @brief Allocates a refcounted block of memory of the specified size
+ * array_length times.
+ * @param[out] refcounted_obj Pointer to the beginning of the usable memory.
+ * @param[in] bytes The number of bytes to allocate.
+ * @param[in] deinit The function to call before freeing the block of memory.
+ * When deinit is called, the *refcounted_obj address is passed to it as an
+ * argument.
+ *
+ * The actual number of bytes allocated will be the requested number of bytes
+ * multiplied by array_length plus the size of the ik_refcount_t structure,
+ * which is placed at the beginning of the block of memory. To make this detail
+ * transparent to the user, the returned pointer will point to the beginning of
+ * the usable memory, after the refcount header.
+ *
+ *   Beginning of memory block
+ *           |
+ *           v_______________ _______ _______ _______ ______
+ *           | ik_refcount_t | bytes | bytes | bytes | ...
+ *                           ^
+ *                           |
+ *                   *refcounted_obj points here
+ *
+ * The deinit function will be called array_length number of times when the
+ * refcount is decremented to 0, once for every contiguous block of bytes.
+ * The pointer to the beginning of each block is passed to the deinit function.
+ * This is similar to how the delete[] operator in C++ works and allows multiple
+ * objects with deinit functions to share the same refcount.
+ */
+IK_PRIVATE_API IKRET
+ik_refcount_malloc_array(struct ik_refcounted_t** refcounted_obj,
+                         uintptr_t bytes,
+                         ik_deinit_func deinit,
+                         uint32_t array_length);
 
 C_END
 

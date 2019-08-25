@@ -4,30 +4,47 @@
 #include <stddef.h>
 #include <assert.h>
 
+/* TODO: Move this somewhere else and don't fix it to 64-bit */
+#define IK_ALIGN_TO_CPU_WORD_SIZE(offset) \
+        (((offset) & 0x7) == 0 ? (offset) : ((offset) & ~0x7) + 8)
+
+/*!
+ * Bytes to subtract from a refcount allocated memory block to get to the
+ * refcount structure.
+ */
+#define IK_REFCOUNT_OFFSET \
+        IK_ALIGN_TO_CPU_WORD_SIZE(sizeof(struct ik_refcount_t))
+
 /* ------------------------------------------------------------------------- */
 ikret_t
-ik_refcount_create(struct ik_refcount_t** refcount,
-                   ik_deinit_func deinit,
-                   uint32_t array_length)
+ik_refcount_malloc_array(struct ik_refcounted_t** refcounted_obj,
+                         uintptr_t bytes,
+                         ik_deinit_func deinit,
+                         uint32_t array_length)
 {
-    *refcount = MALLOC(sizeof **refcount);
-    if (*refcount == NULL)
+    uintptr_t refcount_size = IK_REFCOUNT_OFFSET;
+    struct ik_refcount_t* head = MALLOC(refcount_size + bytes * array_length);
+    if (*refcounted_obj == NULL)
     {
-        ik_log_fatal("Failed to allocate refcount: Ran out of memory");
+        ik_log_fatal("Failed to allocate refcounted memory: Ran out of memory");
         return IK_ERR_OUT_OF_MEMORY;
     }
 
-    (*refcount)->deinit = deinit;
-    (*refcount)->refs = 1;
-    (*refcount)->array_length = array_length;
+    head->refs = 1;
+    head->deinit = deinit;
+    head->array_length = array_length;
+
+    *refcounted_obj = (struct ik_refcounted_t*)((uintptr_t)head + refcount_size);
+    (*refcounted_obj)->refcount = head;
 
     return IK_OK;
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_refcount_free(struct ik_refcount_t* refcount)
+ikret_t
+ik_refcount_malloc(struct ik_refcounted_t** refcounted_obj,
+                   uintptr_t bytes,
+                   ik_deinit_func deinit)
 {
-    assert(refcount->refs == 0);
-    FREE(refcount);
+    return ik_refcount_malloc_array(refcounted_obj, bytes, deinit, 1);
 }

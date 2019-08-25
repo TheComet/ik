@@ -24,11 +24,12 @@ Unit tests and benchmarks are also included, those can be enabled with ```-DIK_T
 Overview
 --------
 
-IK  (Inverse kinematics)  can  be  useful  in  many  situations  ranging  from
-procedural animation to small adjustments of animation. Simply put, IK is used
-when you want to position the tips of a  hierarchichal  structure  at  a known
-location and need to calculate all  of  the  rotations of the parent joints to
-achieve this.
+What is IK? It is [pretty simple trigonometry](https://youtu.be/LNidsMesxSE?t=686); except when it isn't.
+
+IK can be useful in many situations ranging from procedural animation to small
+adjustments of animation. Simply put, IK is used when you want to position the
+tips of a  hierarchichal  structure  at a known location and need to calculate
+all of the rotations of the parent joints to achieve this.
 
 Here is an example of foot placement being adjusted according to inclination.
 
