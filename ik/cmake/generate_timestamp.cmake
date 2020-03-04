@@ -1,7 +1,8 @@
 string (TIMESTAMP IK_BUILD_TIME UTC)
 
 # Update build number
-file (STRINGS "${IK_SOURCE_DIR}/cmake/build_number.txt" IK_BUILD_NUMBER)
+file (STRINGS "${IK_SOURCE_DIR}/cmake/build_number.txt" IK_BUILD_NUMBER_STRINGS)
+list (GET IK_BUILD_NUMBER_STRINGS 1 IK_BUILD_NUMBER)
 math (EXPR IK_BUILD_NUMBER "${IK_BUILD_NUMBER}+1")
 file (WRITE "${IK_SOURCE_DIR}/cmake/build_number.txt" "# If you ever get merge conflicts with this file, figure out how many times you've built the file since the last successful pull and add that to the conflicting branch.\n")
 file (APPEND "${IK_SOURCE_DIR}/cmake/build_number.txt" ${IK_BUILD_NUMBER})
