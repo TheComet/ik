@@ -65,8 +65,8 @@ endif ()
 check_include_files ("stdint.h" IK_HAVE_STDINT_H)
 
 # Check if we can warn about unused function results
-check_c_source_compiles ("int __attribute__((warn_unused_result)) f(int z) { return z*z + z*2 + z/3 + 23; } int main(void) { return f(4); }" HAVE_WARN_UNUSED)
-check_c_source_compiles ("int _Check_return_ f(int z) { return z*z + z*2 + z/3 + 23; } int main(void) { return f(4); }" HAVE_CHECK_RETURN)
+check_c_source_compiles ("int __attribute__((warn_unused_result)) f(void) { return 1; } int main(void) { return f(4); }" HAVE_WARN_UNUSED)
+check_c_source_compiles ("int _Check_return_ f(void) { return 1; } int main(void) { return f(4); }" HAVE_CHECK_RETURN)
 if (HAVE_WARN_UNUSED)
     set (IK_WARN_UNUSED "__attribute__((warn_unused_result))")
 elseif (HAVE_CHECK_RETURN)
@@ -139,7 +139,7 @@ set (IK_SOURCES
     "src/effector.c"
     #"src/hash.c"
     "src/init.c"
-    #"src/joblist.c"
+    "src/joblist.c"
     "src/log.c"
     #"src/mat3x3.c"
     "src/node.c"

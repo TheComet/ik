@@ -25,7 +25,7 @@ struct ik_pole;
 
 union ik_node_user_data {
     void* ptr;
-    uint32_t guid;
+    uintptr_t guid;
 };
 
 /*!

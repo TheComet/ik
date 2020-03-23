@@ -19,17 +19,17 @@ struct marking_t
         MARK_SPLIT
     } type;
 
-    struct ik_algorithm_t* segment_algorithm;
+    struct ik_algorithm* segment_algorithm;
 };
 
 /* ------------------------------------------------------------------------- */
 static uint32_t
-count_children_marked(const struct ik_node_t* node,
+count_children_marked(const struct ik_node* node,
                       const struct btree_t* marked_nodes)
 {
     uint32_t count = 0;
     NODE_FOR_EACH(node, uid, child)
-        if (btree_find(marked_nodes, (uintptr_t)IK_NODE_USER_DATA(node)))
+        if (btree_find(marked_nodes, node->user.guid))
             count++;
     NODE_END_EACH
 
@@ -37,16 +37,16 @@ count_children_marked(const struct ik_node_t* node,
 }
 
 /* ------------------------------------------------------------------------- */
-static ikret_t
-find_all_effector_nodes(struct vector_t* result, const struct ik_node_t* node)
+static ikret
+find_all_effector_nodes(struct vector_t* result, const struct ik_node* node)
 {
-    ikret_t status;
+    ikret status;
     NODE_FOR_EACH(node, user_data, child)
         if ((status = find_all_effector_nodes(result, child)) != IK_OK)
             return status;
     NODE_END_EACH
 
-    if (IK_NODE_EFFECTOR(node) != NULL)
+    if (node->effector != NULL)
         if ((status = vector_push(result, &node)) != IK_OK)
             return status;
 
@@ -54,10 +54,10 @@ find_all_effector_nodes(struct vector_t* result, const struct ik_node_t* node)
 }
 
 /* ------------------------------------------------------------------------- */
-static ikret_t
+static ikret
 walk_chain_and_mark(struct btree_t* marked,
-                    struct ik_node_t* node,
-                    struct ik_algorithm_t** chain_algorithm,
+                    struct ik_node* node,
+                    struct ik_algorithm** chain_algorithm,
                     int chain_length_counter)
 {
     /*
@@ -76,7 +76,7 @@ walk_chain_and_mark(struct btree_t* marked,
                         ? MARK_SPLIT : MARK_SECTION;
         new_mark.segment_algorithm = NULL;  /* Don't know algorithm yet */
 
-        switch (btree_insert_or_get(marked, (uintptr_t)IK_NODE_USER_DATA(node), &new_mark, (void**)&current_mark))
+        switch (btree_insert_or_get(marked, node->user.guid, &new_mark, (void**)&current_mark))
         {
             case BTREE_EXISTS: {
                 /* overwrite existing mark with MARK_SECTION */
@@ -100,19 +100,19 @@ walk_chain_and_mark(struct btree_t* marked,
      * reverse -- required when assigning an algorithm to each segment */
     if (chain_length_counter != 0 && node->parent != NULL)
     {
-        ikret_t status;
+        ikret status;
         if ((status = walk_chain_and_mark(marked, node->parent, chain_algorithm, chain_length_counter - 1)) != IK_OK)
             return status;
     }
     /* Reached end of chain. Need to search for the next algorithm */
     else
     {
-        struct ik_node_t* next;
+        struct ik_node* next;
         /* Walk further up the chain in search of the next algorithm */
         for (next = node; next != NULL; next = next->parent)
-            if (IK_NODE_ALGORITHM(next) != NULL)
+            if (next->algorithm != NULL)
             {
-                *chain_algorithm = IK_NODE_ALGORITHM(next);
+                *chain_algorithm = next->algorithm;
                 break;
             }
     }
@@ -122,10 +122,10 @@ walk_chain_and_mark(struct btree_t* marked,
      * down by walking up the callstack */
     if (*chain_algorithm == NULL)
     {
-        if (IK_NODE_ALGORITHM(node) != NULL)
-            *chain_algorithm = IK_NODE_ALGORITHM(node);
+        if (node->algorithm != NULL)
+            *chain_algorithm = node->algorithm;
         else
-            btree_erase(marked, (uintptr_t)IK_NODE_USER_DATA(node));
+            btree_erase(marked, node->user.guid);
         return IK_OK;  /* don't update this node's marking with the algorithm,
                         * even if it was found. Algorithms are assigned to
                         * segments rather than individual nodes, which means
@@ -134,7 +134,7 @@ walk_chain_and_mark(struct btree_t* marked,
 
     /* Update each segment's marking with the found algorithm */
     {
-        struct marking_t* marking = btree_find(marked, (uintptr_t)IK_NODE_USER_DATA(node));
+        struct marking_t* marking = btree_find(marked, node->user.guid);
         assert(marking);
         marking->segment_algorithm = *chain_algorithm;
     }
@@ -143,7 +143,7 @@ walk_chain_and_mark(struct btree_t* marked,
 }
 
 /* ------------------------------------------------------------------------- */
-static ikret_t
+static ikret
 mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 {
     /*
@@ -151,11 +151,11 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
      * at the specified chain length of the effector, mark every node on the
      * way.
      */
-    VECTOR_FOR_EACH(effector_nodes, struct ik_node_t*, p_effector_node)
-        ikret_t status;
-        struct ik_node_t* node                 = *p_effector_node;
-        const struct ik_effector_t* effector   = IK_NODE_EFFECTOR(node);
-        struct ik_algorithm_t* chain_algorithm = NULL;
+    VECTOR_FOR_EACH(effector_nodes, struct ik_node*, p_effector_node)
+        ikret status;
+        struct ik_node* node                 = *p_effector_node;
+        const struct ik_effector* effector   = node->effector;
+        struct ik_algorithm* chain_algorithm = NULL;
         int chain_length_counter               = (int)effector->chain_length != 0 ?
                                                  (int)effector->chain_length : -1;
 
@@ -171,7 +171,7 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 /* ------------------------------------------------------------------------- */
 static void
 copy_marked_nodes_into_nda_recursive(struct ik_node_data_t* nda,
-                                     struct ik_node_t* node,
+                                     struct ik_node* node,
                                      uint32_t base_node_idx,
                                      uint32_t parent_node_idx,
                                      uint32_t chain_depth,
@@ -183,9 +183,9 @@ copy_marked_nodes_into_nda_recursive(struct ik_node_data_t* nda,
     if (this_marking != NULL)
     {
         /*
-         * Each ik_node_t object points to a ik_node_data_t object, which is
+         * Each ik_node object points to a ik_node_data_t object, which is
          * refcounted. After copying over the node's data, we have to point the
-         * ik_node_t to the copied node data and decrement the refcount of the
+         * ik_node to the copied node data and decrement the refcount of the
          * original node data.
          *
          * Node data also points to refcounted attachments such as effectors or
@@ -193,7 +193,7 @@ copy_marked_nodes_into_nda_recursive(struct ik_node_data_t* nda,
          * add a reference to each of them because they're being referenced by the
          * new node data.
          */
-#define X(upper, lower, type) nda->lower[*flat_idx] = node->d->lower[node->data_index];
+#define X(upper, lower) nda->lower[*flat_idx] = node->d->lower[node->data_index];
         IK_ATTACHMENT_LIST
         IK_NODE_DATA_PROPERTIES_LIST
 #undef X
@@ -242,7 +242,7 @@ copy_marked_nodes_into_nda_recursive(struct ik_node_data_t* nda,
 }
 static void
 copy_marked_nodes_into_nda(struct ik_node_data_t* nda,
-                           struct ik_node_t* subtree_root,
+                           struct ik_node* subtree_root,
                            const struct btree_t* marked_nodes)
 {
     uint32_t flat_index = 0;
@@ -263,12 +263,12 @@ copy_marked_nodes_into_nda(struct ik_node_data_t* nda,
 }
 
 /* ------------------------------------------------------------------------- */
-static ikret_t
+static ikret
 flattened_tree_create(struct ik_node_data_t** nda,
-                      struct ik_node_t* root,
+                      struct ik_node* root,
                       const struct btree_t* marked_nodes)
 {
-    ikret_t status;
+    ikret status;
     uint32_t node_count;
 
     /* Create new node data array into which the tree will be flattened */
@@ -290,16 +290,16 @@ flattened_tree_free(struct ik_node_data_t* nda)
 }
 
 /* ------------------------------------------------------------------------- */
-static ikret_t
+static ikret
 allocate_solvers_to_subtrees(struct ik_joblist_t* joblist,
                              struct ik_node_data_t* node_data,
                              const struct btree_t* marked_nodes)
 {
-    ikret_t status;
+    ikret status;
     int idx;
     int subbase_idx = 0;
     int chain_start_idx = 1;
-    struct ik_algorithm_t* last_algorithm = NULL;
+    struct ik_algorithm* last_algorithm = NULL;
 
     assert(node_data->node_count > 1);
 
@@ -371,7 +371,7 @@ allocate_solvers_to_subtrees(struct ik_joblist_t* joblist,
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
+ikret
 ik_joblist_create(struct ik_joblist_t** joblist)
 {
     *joblist = MALLOC(sizeof **joblist);
@@ -382,7 +382,7 @@ ik_joblist_create(struct ik_joblist_t** joblist)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
+ikret
 ik_joblist_init(struct ik_joblist_t* joblist)
 {
     if (vector_init(&joblist->solver_list, sizeof(struct ik_solver_t*)) != VECTOR_OK)
@@ -412,20 +412,20 @@ ik_joblist_free(struct ik_joblist_t* joblist)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_joblist_update(struct ik_joblist_t* joblist, struct ik_node_t* root)
+ikret
+ik_joblist_update(struct ik_joblist_t* joblist, struct ik_node* root)
 {
     /*
      *
      */
 
-    ikret_t status;
+    ikret status;
     struct vector_t effector_nodes;
     struct btree_t marked_nodes;
     struct ik_node_data_t* flattened_node_data;
 
     /* Create list of all nodes that have effectors attached */
-    if (vector_init(&effector_nodes, sizeof(struct ik_node_t*)) != VECTOR_OK)
+    if (vector_init(&effector_nodes, sizeof(struct ik_node*)) != VECTOR_OK)
     {
         ik_log_fatal("vector_init() failed : Ran out of memory");
         IK_FAIL(IK_ERR_OUT_OF_MEMORY, init_effector_nodes_failed);

@@ -1,22 +1,20 @@
 #ifndef IK_SOLVER_H
 #define IK_SOLVER_H
 
-#include "cstructures/vector.h"
 #include "ik/config.h"
-#include "ik/node_data.h"
 
 C_BEGIN
 
-struct ik_solver_t;
+struct ik_solver;
 
 typedef void(*ik_solver_callback_func)(void* user_data,
-                                       const ikreal_t position[3],
-                                       const ikreal_t rotation[4]);
+                                       const ikreal position[3],
+                                       const ikreal rotation[4]);
 
-typedef ikret_t (*ik_solver_init_func)   (struct ik_solver_t*);
-typedef void    (*ik_solver_deinit_func) (struct ik_solver_t*);
-typedef ikret_t (*ik_solver_prepare_func)(struct ik_solver_t*);
-typedef ikret_t (*ik_solver_solve_func)  (struct ik_solver_t*);
+typedef ikret (*ik_solver_init_func)   (struct ik_solver*);
+typedef void  (*ik_solver_deinit_func) (struct ik_solver*);
+typedef ikret (*ik_solver_prepare_func)(struct ik_solver*);
+typedef ikret (*ik_solver_solve_func)  (struct ik_solver*);
 
 /*!
  * @brief This is a base for all solvers.
@@ -30,7 +28,7 @@ typedef ikret_t (*ik_solver_solve_func)  (struct ik_solver_t*);
                                                                               \
     struct ik_algorithm_t*       algorithm;
 
-struct ik_solver_t
+struct ik_solver
 {
     IK_SOLVER_HEAD
 };
@@ -72,8 +70,8 @@ struct ik_solver_t
  * @param[in] solver The solver to use. Currently, only FABRIK is
  * supported.
  */
-IK_PRIVATE_API ikret_t
-ik_solver_create(struct ik_solver_t** solver,
+IK_PRIVATE_API ikret
+ik_solver_create(struct ik_solver** solver,
                  struct ik_algorithm_t* algorithm,
                  struct ik_node_data_t* node_data,
                  uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx);
@@ -83,7 +81,7 @@ ik_solver_create(struct ik_solver_t** solver,
  * solver. Any pointers to tree nodes are invalid after this function returns.
  */
 IK_PRIVATE_API void
-ik_solver_free(struct ik_solver_t* solver);
+ik_solver_free(struct ik_solver* solver);
 
 /*!
  * @brief Computes the distances between the nodes and stores them in
@@ -99,10 +97,10 @@ ik_solver_free(struct ik_solver_t* solver);
  * @note This function gets called by ik_solver_prepare().
  */
 IK_PRIVATE_API void
-ik_solver_update_translations(struct ik_solver_t* solver);
+ik_solver_update_translations(struct ik_solver* solver);
 
 IK_PRIVATE_API void
-ik_solver_iterate_nodes(const struct ik_solver_t* solver, ik_solver_callback_func cb);
+ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
 
 C_END
 
