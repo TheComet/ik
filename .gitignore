@@ -10,3 +10,7 @@ ik.wiki
 
 # valgrind results
 *.grind
+
+# temp files
+*.kate-swp
+*.swp

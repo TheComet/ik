@@ -9,7 +9,6 @@
      * Build settings
      * --------------------------------------------------------------------- */
 
-#   define IKRET IK_WARN_UNUSED ikret_t
     #cmakedefine IK_BENCHMARKS
     #cmakedefine IK_DOT_EXPORT
     #cmakedefine IK_HAVE_STDINT_H
@@ -51,11 +50,6 @@
 #       define C_END
 #   endif
 
-#   define IK_FAIL(errcode, label) do { \
-        status = errcode; \
-        goto label; \
-    } while (0)
-
     /* --------------------------------------------------------------
      * Common include files
      * --------------------------------------------------------------*/
@@ -73,7 +67,7 @@
      * --------------------------------------------------------------*/
 
     /* The "real" datatype to be used throughout the library */
-typedef ${IK_PRECISION} ikreal_t;
+typedef ${IK_PRECISION} ikreal;
 
     /* 2 to the power of CPU word size. E.g. on 64-bit machines, this would
      * be 3 because 2^3 = 8.
@@ -90,12 +84,6 @@ typedef ${IK_PRECISION} ikreal_t;
 #       define IK_EPSILON FLT_EPSILON
 #   else
 #       error Unknown precision. Are you sure you defined IK_PRECISION and IK_PRECISION_CAPS_AND_NO_SPACES?
-#   endif
-
-#   ifdef IK_VECTOR_64BIT
-typedef uintptr_t vector_size_t;
-#   else
-typedef uint32_t vector_size_t;
 #   endif
 
 #endif /* IK_CONFIG_H */

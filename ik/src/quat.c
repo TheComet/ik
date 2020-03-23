@@ -5,7 +5,7 @@
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_set(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
+ik_quat_set(ikreal q[4], ikreal x, ikreal y, ikreal z, ikreal w)
 {
     q[0] = x;
     q[1] = y;
@@ -15,15 +15,15 @@ ik_quat_set(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t w)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_set_identity(ikreal_t q[4])
+ik_quat_set_identity(ikreal q[4])
 {
-    memset(q, 0, sizeof(ikreal_t) * 3);
+    memset(q, 0, sizeof(ikreal) * 3);
     q[3] = 1;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_copy(ikreal_t q[4], const ikreal_t src[4])
+ik_quat_copy(ikreal q[4], const ikreal src[4])
 {
     q[0] = src[0];
     q[1] = src[1];
@@ -33,7 +33,7 @@ ik_quat_copy(ikreal_t q[4], const ikreal_t src[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_set_axis_angle(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal_t a)
+ik_quat_set_axis_angle(ikreal q[4], ikreal x, ikreal y, ikreal z, ikreal a)
 {
     ik_vec3_set(q, x, y, z);
     ik_vec3_normalize(q);
@@ -43,7 +43,7 @@ ik_quat_set_axis_angle(ikreal_t q[4], ikreal_t x, ikreal_t y, ikreal_t z, ikreal
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_add_quat(ikreal_t q1[4], const ikreal_t q2[4])
+ik_quat_add_quat(ikreal q1[4], const ikreal q2[4])
 {
     q1[0] += q2[0];
     q1[1] += q2[1];
@@ -52,15 +52,15 @@ ik_quat_add_quat(ikreal_t q1[4], const ikreal_t q2[4])
 }
 
 /* ------------------------------------------------------------------------- */
-ikreal_t
-ik_quat_mag(const ikreal_t q[4])
+ikreal
+ik_quat_mag(const ikreal q[4])
 {
     return sqrt(q[3]*q[3] + q[2]*q[2] + q[1]*q[1] + q[0]*q[0]);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_conj(ikreal_t q[4])
+ik_quat_conj(ikreal q[4])
 {
     q[0] = -q[0];
     q[1] = -q[1];
@@ -69,7 +69,7 @@ ik_quat_conj(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_negate(ikreal_t q[4])
+ik_quat_negate(ikreal q[4])
 {
     q[0] = -q[0];
     q[1] = -q[1];
@@ -79,18 +79,18 @@ ik_quat_negate(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_invert(ikreal_t q[4])
+ik_quat_invert(ikreal q[4])
 {
-    ikreal_t mag_squared = ik_quat_dot(q, q);
+    ikreal mag_squared = ik_quat_dot(q, q);
     ik_quat_conj(q);
     ik_quat_div_scalar(q, mag_squared);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_normalize(ikreal_t q[4])
+ik_quat_normalize(ikreal q[4])
 {
-    ikreal_t r_mag = 1.0 / ik_quat_mag(q);
+    ikreal r_mag = 1.0 / ik_quat_mag(q);
     q[0] *= r_mag;
     q[1] *= r_mag;
     q[2] *= r_mag;
@@ -99,7 +99,7 @@ ik_quat_normalize(ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4])
 {
     ik_quat_mul_quat_no_normalize(q1, q2);
     ik_quat_normalize(q1);
@@ -107,7 +107,7 @@ ik_quat_mul_quat(ikreal_t q1[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4])
+ik_quat_nmul_quat(ikreal q1[4], const ikreal q2[4])
 {
     ik_quat_nmul_quat_no_normalize(q1, q2);
     ik_quat_normalize(q1);
@@ -115,7 +115,7 @@ ik_quat_nmul_quat(ikreal_t q1[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat_conj(ikreal_t q1[4], const ikreal_t q2[4])
+ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4])
 {
     ik_quat_mul_quat_conj_no_normalize(q1, q2);
     ik_quat_normalize(q1);
@@ -123,9 +123,9 @@ ik_quat_mul_quat_conj(ikreal_t q1[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+ik_quat_mul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
 {
-    ikreal_t q1[4];
+    ikreal q1[4];
     ik_quat_copy(q1, q);
 
 #define w1 q1[3]
@@ -154,9 +154,9 @@ ik_quat_mul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+ik_quat_nmul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
 {
-    ikreal_t q1[4];
+    ikreal q1[4];
     ik_quat_copy(q1, q);
 
 #define w1 q2[3]
@@ -185,9 +185,9 @@ ik_quat_nmul_quat_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat_conj_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
+ik_quat_mul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
 {
-    ikreal_t q1[4];
+    ikreal q1[4];
     ik_quat_copy(q1, q);
 
 #define w1 q1[3]
@@ -216,7 +216,7 @@ ik_quat_mul_quat_conj_no_normalize(ikreal_t q[4], const ikreal_t q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_scalar(ikreal_t q[4], ikreal_t scalar)
+ik_quat_mul_scalar(ikreal q[4], ikreal scalar)
 {
     q[0] *= scalar;
     q[1] *= scalar;
@@ -226,13 +226,13 @@ ik_quat_mul_scalar(ikreal_t q[4], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_div_scalar(ikreal_t q[4], ikreal_t scalar)
+ik_quat_div_scalar(ikreal q[4], ikreal scalar)
 {
     if (scalar == 0.0)
         ik_quat_set_identity(q);
     else
     {
-        ikreal_t rec = 1.0 / scalar;
+        ikreal rec = 1.0 / scalar;
         q[0] *= rec;
         q[1] *= rec;
         q[2] *= rec;
@@ -241,34 +241,34 @@ ik_quat_div_scalar(ikreal_t q[4], ikreal_t scalar)
 }
 
 /* ------------------------------------------------------------------------- */
-ikreal_t
-ik_quat_dot(const ikreal_t q1[4], const ikreal_t q2[4])
+ikreal
+ik_quat_dot(const ikreal q1[4], const ikreal q2[4])
 {
     return q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3];
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_ensure_positive_sign(ikreal_t q1[4])
+ik_quat_ensure_positive_sign(ikreal q1[4])
 {
-    ikreal_t unit[4] = {0, 0, 0, 1};
-    ikreal_t dot = ik_quat_dot(q1, unit);
+    ikreal unit[4] = {0, 0, 0, 1};
+    ikreal dot = ik_quat_dot(q1, unit);
     if (dot < 0.0)
         ik_quat_negate(q1);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_quat_angle(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t cos_a, sin_a, angle, denominator;
+    ikreal cos_a, sin_a, angle, denominator;
 
     denominator = 1.0 / ik_vec3_length(v1) / ik_vec3_length(v2);
     cos_a = ik_vec3_dot(v1, v2) * denominator;
     if (cos_a >= -1.0 && cos_a <= 1.0)
     {
         /* calculate axis of rotation and write it to the quaternion's vector section */
-        memcpy(q, v1, sizeof(ikreal_t) * 3);
+        memcpy(q, v1, sizeof(ikreal) * 3);
         ik_vec3_cross(q, v2);
         ik_vec3_normalize(q);
 
@@ -288,9 +288,9 @@ ik_quat_angle(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_quat_angle_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t cos_a, sin_a, angle;
+    ikreal cos_a, sin_a, angle;
 
     cos_a = ik_vec3_dot(v1, v2);
     if (cos_a >= -1.0 && cos_a <= 1.0)
@@ -317,7 +317,7 @@ ik_quat_angle_no_normalize(ikreal_t q[4], const ikreal_t v1[3], const ikreal_t v
 
 /* ------------------------------------------------------------------------- */
 int
-ik_quat_print(char* buf, const ikreal_t q[4])
+ik_quat_print(char* buf, const ikreal q[4])
 {
     return 0;
 }

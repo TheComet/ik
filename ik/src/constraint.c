@@ -1,7 +1,5 @@
-#include "cstructures/memory.h"
 #include "ik/constraint.h"
 #include "ik/log.h"
-#include "ik/node_data.h"
 #include "ik/quat.h"
 #include <string.h>
 #include <assert.h>
@@ -12,18 +10,18 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_dummy(struct ik_constraint_t* constraint,
-            ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4])
+apply_dummy(struct ik_constraint* constraint,
+            ikreal delta_rotation[4],
+            const ikreal current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_stiff(struct ik_constraint_t* constraint,
-            ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4])
+apply_stiff(struct ik_constraint* constraint,
+            ikreal delta_rotation[4],
+            const ikreal current_rotation[4])
 {
     ik_quat_copy(delta_rotation, current_rotation);
     ik_quat_conj(delta_rotation);
@@ -32,18 +30,18 @@ apply_stiff(struct ik_constraint_t* constraint,
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_hinge(struct ik_constraint_t* constraint,
-            ikreal_t delta_rotation[4],
-            const ikreal_t current_rotation[4])
+apply_hinge(struct ik_constraint* constraint,
+            ikreal delta_rotation[4],
+            const ikreal current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_cone(struct ik_constraint_t* constraint,
-           ikreal_t delta_rotation[4],
-           const ikreal_t current_rotation[4])
+apply_cone(struct ik_constraint* constraint,
+           ikreal delta_rotation[4],
+           const ikreal current_rotation[4])
 {
     ik_quat_set_identity(delta_rotation);
 }
@@ -53,49 +51,29 @@ apply_cone(struct ik_constraint_t* constraint,
 /* ------------------------------------------------------------------------- */
 
 static void
-deinit_constraint(struct ik_constraint_t* constraint)
+deinit_constraint(struct ik_constraint* con)
 {
     /* No data is managed by constraint */
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_constraint_create(struct ik_constraint_t** constraint)
+struct ik_constraint*
+ik_constraint_create(void)
 {
-    ikret_t status;
+    struct ik_constraint* con = (struct ik_constraint*)
+        ik_attachment_alloc(sizeof *con, (ik_deinit_func)deinit_constraint);
+    if (con == NULL)
+        return NULL;
 
-    *constraint = MALLOC(sizeof **constraint);
-    if (*constraint == NULL)
-    {
-        ik_log_fatal("Failed to allocate constraint: Out of memory");
-        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_constraint_failed);
-    }
+    ik_constraint_set_custom(con, apply_dummy);
 
-    memset(*constraint, 0, sizeof **constraint);
-
-    if ((status = ik_refcount_create(&(*constraint)->refcount,
-                  (ik_deinit_func)deinit_constraint, 1)) != IK_OK)
-        IK_FAIL(status, init_refcount_failed);
-
-    ik_constraint_set_custom(*constraint, apply_dummy);
-
-    return IK_OK;
-
-    init_refcount_failed    : FREE(*constraint);
-    alloc_constraint_failed : return status;
+    return con;
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_constraint_free(struct ik_constraint_t* constraint)
-{
-    IK_DECREF(constraint);
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_constraint_set_type(struct ik_constraint_t* constraint,
-                       enum ik_constraint_type_e type)
+ikret
+ik_constraint_set_type(struct ik_constraint* constraint,
+                       enum ik_constraint_type type)
 {
     switch (type)
     {
@@ -113,11 +91,11 @@ ik_constraint_set_type(struct ik_constraint_t* constraint,
             break;
 
         case IK_CONSTRAINT_CUSTOM:
-            ik_log_error("Use constraint.set_custom() for type IK_CUSTOM. Constraint will have no effect.");
+            ik_log_printf(IK_ERROR, "Use ik_constraint_set_custom() for type IK_CUSTOM. Constraint will have no effect.");
             return IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
 
         default:
-            ik_log_warning("ik_constraint_set_type(): Unknown type %d, ignoring...", type);
+            ik_log_printf(IK_ERROR, "ik_constraint_set_type(): Unknown type %d, ignoring...", type);
             break;
     }
 
@@ -127,7 +105,7 @@ ik_constraint_set_type(struct ik_constraint_t* constraint,
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback)
+ik_constraint_set_custom(struct ik_constraint* constraint, ik_constraint_apply_func callback)
 {
     constraint->apply = callback;
 }

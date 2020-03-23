@@ -1,6 +1,4 @@
 #include "ik/ik.h"
-#include "ik/memory.h"
-#include "ik/node_data.h"
 #include "ik/log.h"
 #include "ik/pole.h"
 #include "ik/quat.h"
@@ -15,16 +13,17 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_roll_GENERIC(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_GENERIC(ikreal q[4], const struct ik_pole* pole)
 {
     ik_quat_set_identity(q);
 }
 
 /* ------------------------------------------------------------------------- */
+#if 0
 static void
-calculate_roll_BLENDER(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_BLENDER(ikreal q[4], const struct ik_pole* pole)
 {
-    union ik_vec3_t work, x_axis, z_axis;
+    union ik_vec3 work, x_axis, z_axis;
 
     /*
      * Determine "ik axis", which is the vector from the pole node to the
@@ -53,63 +52,51 @@ calculate_roll_BLENDER(ikreal_t q[4], const struct ik_pole_t* pole)
     ik_vec3_project_from_vec3_normalized(z_axis.f, work.f);
     ik_vec3_add_vec3(z_axis.f, x_axis.f);  /* z_axis is now projected pole axis */
 }
+#endif
 
-/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- *
 static void
-calculate_roll_MAYA(ikreal_t q[4], const struct ik_pole_t* pole)
+calculate_roll_MAYA(ikreal q[4], const struct ik_pole* pole)
 {
     ik_quat_set_identity(q);
-}
+}*/
 
 /* ------------------------------------------------------------------------- */
 /* Pole API */
 /* ------------------------------------------------------------------------- */
 
 static void
-deinit_pole(struct ik_pole_t* pole)
+deinit_pole(struct ik_pole* pole)
 {
     /* No data is managed by pole */
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_pole_create(struct ik_pole_t** pole)
+struct ik_pole*
+ik_pole_create(void)
 {
-    ikret_t status;
-
-    *pole = MALLOC(sizeof **pole);
+    struct ik_pole* pole = (struct ik_pole*)
+        ik_attachment_alloc(sizeof *pole, (ik_deinit_func)deinit_pole);
     if (pole == NULL)
-    {
-        ik_log_fatal("Failed to allocate pole: Out of memory");
-        IK_FAIL(IK_ERR_OUT_OF_MEMORY, alloc_pole_failed);
-    }
+        return NULL;
 
-    memset(*pole, 0, sizeof **pole);
+    pole->angle = 0.0;
+    pole->calculate_roll = calculate_roll_GENERIC;
+    ik_vec3_set_zero((pole)->position.f);
 
-    if ((status = ik_refcount_create(&(*pole)->refcount,
-            (ik_deinit_func)deinit_pole, 1)) != IK_OK)
-        IK_FAIL(status, init_refcount_failed);
-
-    (*pole)->angle = 0.0;
-    (*pole)->calculate_roll = calculate_roll_GENERIC;
-    ik_vec3_set_zero((*pole)->position.f);
-
-    return IK_OK;
-
-    init_refcount_failed : FREE(*pole);
-    alloc_pole_failed    : return status;
+    return pole;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_free(struct ik_pole_t* pole)
+ik_pole_free(struct ik_pole* pole)
 {
     IK_DECREF(pole);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
+ik_pole_set_type(struct ik_pole* pole, enum ik_pole_type type)
 {
     switch (type)
     {
@@ -118,7 +105,7 @@ ik_pole_set_type(struct ik_pole_t* pole, enum ik_pole_type_e type)
 #undef X
 
         default:
-            ik_log_warning("ik_pole_set_type(): Unknown type %d, ignoring...", type);
+            ik_log_printf(IK_WARN, "ik_pole_set_type(): Unknown type %d, ignoring...", type);
             break;
     }
 }

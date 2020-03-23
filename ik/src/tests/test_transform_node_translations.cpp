@@ -55,8 +55,8 @@ public:
 
 protected:
     ik_solver_t* solver;
-    ik_vec3_t tg[7];
-    ik_vec3_t tl[7];
+    ik_vec3 tg[7];
+    ik_vec3 tl[7];
 };
 
 

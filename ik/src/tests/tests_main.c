@@ -1,4 +1,4 @@
-#include "ik/ik.h"
+#include "ik/tests.h"
 
 int main(int argc, char** argv)
 {

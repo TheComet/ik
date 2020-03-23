@@ -6,12 +6,8 @@
 extern "C" {
 #endif
 
-typedef enum ikret_t
+typedef enum ikret
 {
-    IK_NODE_NOT_FOUND = 4,
-    IK_HASH_NOT_FOUND = 3,
-    IK_HASH_EXISTS = 2,
-    IK_RESULT_CONVERGED = 1,
     IK_OK = 0,
     IK_ERR_OUT_OF_MEMORY = -1,
     IK_ERR_ALREADY_HAS_ATTACHMENT = -2,
@@ -22,7 +18,7 @@ typedef enum ikret_t
     IK_ERR_NO_EFFECTORS_FOUND = -10,
     IK_ERR_GENERIC = -11,
     IK_ERR_DUPLICATE_NODE = -12
-} ikret_t;
+} ikret;
 
 #ifdef __cplusplus
 }

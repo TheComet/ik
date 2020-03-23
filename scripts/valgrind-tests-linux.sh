@@ -8,5 +8,5 @@ valgrind --num-callers=50 \
 	--track-origins=yes \
 	--time-stamp=yes \
 	--suppressions=../../scripts/valgrind-suppressions.supp \
-	./ik_tests 2>&1 | tee ../../tests.grind
+	./iktests 2>&1 | tee ../../tests.grind
 cd .. && cd ..

@@ -11,7 +11,7 @@ struct ik_solver_fabrik_t
     /* Used to push/pop transformations as the trees are iterated. This is
      * allocated in prepare() if alloca() is not supported, or if the stack
      * is larger than IK_MAX_STACK_ALLOC. */
-    union ik_vec3_t* transform_stack;
+    union ik_vec3* transform_stack;
     uint32_t transform_stack_depth;
 
     /* Used to store the initial transform for computing rotations later */

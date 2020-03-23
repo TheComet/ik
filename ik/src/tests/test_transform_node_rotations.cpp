@@ -69,8 +69,8 @@ public:
 
 protected:
     ik_solver_t* solver;
-    ik_quat_t rg[7];
-    ik_quat_t rl[7];
+    ik_quat rg[7];
+    ik_quat rl[7];
 };
 
 TEST_F(NAME, global_to_local_single_chain)

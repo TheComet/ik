@@ -28,7 +28,7 @@
 
 C_BEGIN
 
-enum ik_solver_algorithm_e
+enum ik_algorithm_type
 {
 #define X(upper, lower) IK_SOLVER_##upper,
     IK_SOLVER_ALGORITHM_LIST
@@ -37,7 +37,7 @@ enum ik_solver_algorithm_e
     IK_SOLVER_ALGORITHM_COUNT
 };
 
-enum ik_solver_feature_e
+enum ik_algorithm_feature
 {
 #define X(name, value) IK_SOLVER_##name,
     IK_SOLVER_FEATURES_LIST
@@ -46,21 +46,27 @@ enum ik_solver_feature_e
     IK_SOLVER_FEATURE_COUNT
 };
 
-struct ik_algorithm_t
+struct ik_algorithm
 {
     IK_ATTACHMENT_HEAD
 
-    ikreal_t tolerance;
-    uint16_t max_iterations;
+    ikreal tolerance;
     uint16_t features;
-    enum ik_solver_algorithm_e type;
+    uint16_t max_iterations;
+    enum ik_algorithm_type algorithm;
 };
 
-ikret_t
-ik_algorithm_create(struct ik_algorithm_t** algorithm);
+struct ik_algorithm_interface
+{
+    struct ik_algorithm* (*create)(enum ik_algorithm_type algorithm);
+    void (*destroy)(struct ik_algorithm* algorithm);
+};
 
-void
-ik_algorithm_free(struct ik_algorithm_t* algorithm);
+IK_PRIVATE_API struct ik_algorithm*
+ik_algorithm_create(void);
+
+IK_PRIVATE_API void
+ik_algorithm_destroy(struct ik_algorithm* algorithm);
 
 C_END
 

@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
-#include "ik/ik.h"
+#include "ik/effector.h"
+#include "ik/node.h"
 
 #define NAME effector
 
@@ -10,43 +11,40 @@ class NAME : public Test
 public:
     virtual void SetUp() override
     {
-        IKAPI.solver.create(&solver_, IKAPI.solver.FABRIK);
     }
 
     virtual void TearDown() override
     {
-        IKAPI.solver.destroy(solver_);
     }
 
 protected:
-    ik_solver_t* solver_;
 };
 
 TEST_F(NAME, create_initializes_fields_properly)
 {
-    ik_effector_t* eff = IKAPI.effector.create();
+    ik_effector* eff = ik_effector_create();
 
-    EXPECT_THAT(eff->node, IsNull());
-    EXPECT_THAT(eff->target_position.x, DoubleEq(0));
-    EXPECT_THAT(eff->target_position.y, DoubleEq(0));
-    EXPECT_THAT(eff->target_position.z, DoubleEq(0));
-    EXPECT_THAT(eff->target_rotation.x, DoubleEq(0));
-    EXPECT_THAT(eff->target_rotation.y, DoubleEq(0));
-    EXPECT_THAT(eff->target_rotation.z, DoubleEq(0));
-    EXPECT_THAT(eff->target_rotation.w, DoubleEq(1));
+    EXPECT_THAT(eff->target_position.v.x, DoubleEq(0));
+    EXPECT_THAT(eff->target_position.v.y, DoubleEq(0));
+    EXPECT_THAT(eff->target_position.v.z, DoubleEq(0));
+    EXPECT_THAT(eff->target_rotation.q.x, DoubleEq(0));
+    EXPECT_THAT(eff->target_rotation.q.y, DoubleEq(0));
+    EXPECT_THAT(eff->target_rotation.q.z, DoubleEq(0));
+    EXPECT_THAT(eff->target_rotation.q.w, DoubleEq(1));
     EXPECT_THAT(eff->weight, DoubleEq(1));
     EXPECT_THAT(eff->rotation_weight, DoubleEq(1));
     EXPECT_THAT(eff->rotation_decay, DoubleEq(0.25));
     EXPECT_THAT(eff->chain_length, Eq(0u));
-    EXPECT_THAT(eff->flags, Eq(0u));
+    EXPECT_THAT(eff->features, Eq(0u));
 
-    IKAPI.effector.destroy(eff);
+    IK_DECREF(eff);
 }
 
+#if 0
 TEST_F(NAME, duplicate_copies_parameters_correctly)
 {
-    ik_effector_t* eff = IKAPI.effector.create();
-    ik_node_t* n = IKAPI.node.create(0);
+    ik_effector* eff = ik_effector_create();
+    ik_node* n = ik_node_create(0);
 
     eff->node = n; /* make node not null so we can test duplicated version */
     IKAPI.vec3.set(eff->target_position.f, 1, 2, 3);
@@ -57,7 +55,7 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
     eff->chain_length = 7;
     eff->flags = IK_EFFECTOR_WEIGHT_NLERP;
 
-    ik_effector_t* dup = IKAPI.effector.duplicate(eff);
+    ik_effector* dup = IKAPI.effector.duplicate(eff);
 
     EXPECT_THAT(dup->node, IsNull());
     EXPECT_THAT(dup->target_position.x, DoubleEq(1));
@@ -73,71 +71,73 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
     EXPECT_THAT(dup->chain_length, Eq(7u));
     EXPECT_THAT(dup->flags, Eq(IK_EFFECTOR_WEIGHT_NLERP));
 
-    IKAPI.effector.destroy(eff);
-    IKAPI.effector.destroy(dup);
-    IKAPI.node.destroy(n);
+    IK_DECREF(eff);
+    IK_DECREF(dup);
+    IK_DECREF(n);
 }
+#endif
 
 TEST_F(NAME, attach_detach_works)
 {
-    ik_node_t* n = IKAPI.node.create(0);
-    ik_effector_t* eff = IKAPI.effector.create();
-    IKAPI.effector.attach(eff, n);
+    ik_node* n = ik_node_create(ik_guid(0));
+    ik_effector* eff = ik_effector_create();
 
-    EXPECT_THAT(eff->node, Eq(n));
+    ik_node_attach_effector(n, eff);
     EXPECT_THAT(n->effector, Eq(eff));
+    EXPECT_THAT(eff->node, Eq(n));
 
-    IKAPI.effector.detach(eff);
-
-    EXPECT_THAT(eff->node, IsNull());
+    EXPECT_THAT(ik_node_detach_effector(n), Eq(eff));
     EXPECT_THAT(n->effector, IsNull());
+    EXPECT_THAT(eff->node, IsNull());
 
-    IKAPI.effector.destroy(eff);
-    IKAPI.node.destroy(n);
+    IK_DECREF(eff);
+    IK_DECREF(n);
 }
 
 TEST_F(NAME, reattach_removes_from_previous_node)
 {
-    ik_node_t* n1 = IKAPI.node.create(0);
-    ik_node_t* n2 = IKAPI.node.create_child(n1, 1);
-    ik_effector_t* eff = IKAPI.effector.create();
-    IKAPI.effector.attach(eff, n1);
+    ik_node* n1 = ik_node_create(ik_guid(0));
+    ik_node* n2 = ik_node_create_child(n1, ik_guid(1));
+    ik_effector* eff = ik_effector_create();
 
-    EXPECT_THAT(eff->node, Eq(n1));
+    ik_node_attach_effector(n1, eff);
     EXPECT_THAT(n1->effector, Eq(eff));
+    EXPECT_THAT(n2->effector, IsNull());
+    EXPECT_THAT(eff->node, Eq(n1));
 
-    IKAPI.effector.attach(eff, n2);
-
+    ik_node_attach_effector(n2, eff);
     EXPECT_THAT(n1->effector, IsNull());
-    EXPECT_THAT(eff->node, Eq(n2));
     EXPECT_THAT(n2->effector, Eq(eff));
+    EXPECT_THAT(eff->node, Eq(n2));
 
-    IKAPI.node.destroy(n1);
+    IK_DECREF(n1);
 }
 
 TEST_F(NAME, attach_two_effectors_to_same_node)
 {
-    ik_node_t* n = IKAPI.node.create(0);
-    ik_effector_t* eff1 = IKAPI.effector.create();
-    ik_effector_t* eff2 = IKAPI.effector.create();
+    ik_node* n = ik_node_create(ik_guid(0));
+    ik_effector* eff1 = ik_effector_create();
+    ik_effector* eff2 = ik_effector_create();
 
-    EXPECT_THAT(IKAPI.effector.attach(eff1, n), Eq(IK_OK));
-    EXPECT_THAT(IKAPI.effector.attach(eff2, n), Eq(IK_ERR_ALREADY_HAS_ATTACHMENT));
-    EXPECT_THAT(n->effector, Eq(eff1));
-    EXPECT_THAT(eff1->node, Eq(n));
+    ik_node_attach_effector(n, eff1);
+    ik_node_attach_effector(n, eff2);
+    EXPECT_THAT(n->effector, Eq(eff2));
+    EXPECT_THAT(eff1->node, IsNull());
+    EXPECT_THAT(eff2->node, Eq(n));
 
-    IKAPI.effector.destroy(eff2);
-    IKAPI.node.destroy(n);
+    IK_DECREF(eff1);
+    IK_DECREF(n);
 }
 
-TEST_F(NAME, destroy_attached_effector)
+TEST_F(NAME, attach_already_attached_effector_again)
 {
-    ik_node_t* n = IKAPI.node.create(0);
-    ik_effector_t* eff = IKAPI.effector.create();
-    IKAPI.effector.attach(eff, n);
-    IKAPI.effector.destroy(eff);
+    ik_node* n = ik_node_create(ik_guid(0));
+    ik_effector* eff = ik_effector_create();
 
-    EXPECT_THAT(n->effector, IsNull());
+    ik_node_attach_effector(n, eff);
+    ik_node_attach_effector(n, eff);
+    EXPECT_THAT(n->effector, Eq(eff));
+    EXPECT_THAT(eff->node, Eq(n));
 
-    IKAPI.node.destroy(n);
+    IK_DECREF(n);
 }

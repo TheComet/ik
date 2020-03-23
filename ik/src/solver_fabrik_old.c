@@ -14,8 +14,8 @@
 union position_direction_t
 {
     struct {
-        union ik_vec3_t position;
-        union ik_vec3_t direction;
+        union ik_vec3 position;
+        union ik_vec3 direction;
     } v;
     ikreal_t f[6];
 };
@@ -98,12 +98,12 @@ solve_chain_forwards_with_target_rotation(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_vec3_t
+struct ik_vec3
 solve_chain_forwards_with_constraints(struct chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
-    struct ik_vec3_t target_position;
+    struct ik_vec3 target_position;
 
     /*
      * Target position and rotation is the average of all solved child chain
@@ -171,12 +171,12 @@ solve_chain_forwards_with_constraints(struct chain_t* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-static struct ik_vec3_t
+static struct ik_vec3
 solve_chain_forwards(struct chain_t* chain)
 {
     int node_count, node_idx;
     int average_count;
-    struct ik_vec3_t target_position;
+    struct ik_vec3 target_position;
 
     /*
      * Target position is the average of all solved child chain base positions.
@@ -231,8 +231,8 @@ solve_chain_forwards(struct chain_t* chain)
 /* ------------------------------------------------------------------------- */
 static void
 solve_chain_backwards_with_constraints(struct chain_t* chain,
-                                       struct ik_vec3_t target_position,
-                                       struct ik_quat_t acc_rot, struct ik_vec3_t acc_pos)
+                                       struct ik_vec3 target_position,
+                                       struct ik_quat acc_rot, struct ik_vec3 acc_pos)
 {
     int node_idx = chain_length(chain) - 1;
 
@@ -318,7 +318,7 @@ solve_chain_backwards_with_constraints(struct chain_t* chain,
 
 /* ------------------------------------------------------------------------- */
 static void
-solve_chain_backwards(struct chain_t* chain, struct ik_vec3_t target_position)
+solve_chain_backwards(struct chain_t* chain, struct ik_vec3 target_position)
 {
     int node_idx = chain_length(chain) - 1;
 
@@ -363,7 +363,7 @@ static void
 recurse_into_children(struct chain_t* chain)
 {
     int average_count = 0;
-    struct ik_quat_t average_rotation;
+    struct ik_quat average_rotation;
     ik_quat_set(average_rotation.f, 0, 0, 0, 0);
 
     /* Recurse into children chains */
@@ -411,8 +411,8 @@ calculate_delta_rotation_of_each_segment(struct chain_t* chain)
         struct ik_node_t* parent_node = chain_get_node(chain, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
-        struct ik_vec3_t segment_original = child_node->FABRIK.initial_position;
-        struct ik_vec3_t segment_solved   = child_node->position;
+        struct ik_vec3 segment_original = child_node->FABRIK.initial_position;
+        struct ik_vec3 segment_solved   = child_node->position;
         ik_vec3_sub_vec3(segment_original.f, parent_node->FABRIK.initial_position.f);
         ik_vec3_sub_vec3(segment_solved.f, parent_node->position.f);
         ik_quat_angle(parent_node->rotation.f, segment_solved.f, segment_original.f);

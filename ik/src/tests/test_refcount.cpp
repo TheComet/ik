@@ -13,8 +13,7 @@ struct MyObj {
 
 TEST(NAME, can_decref_with_null_deinit_function)
 {
-    MyObj* o;
-    EXPECT_THAT(ik_refcount_malloc((ik_refcounted_t**)&o, sizeof(MyObj), NULL), Eq(IK_OK));
+    MyObj* o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), NULL);
     ASSERT_THAT(o, NotNull());
     EXPECT_THAT(IK_REFCOUNT(o), Eq(1));
     IK_DECREF(o);
@@ -27,8 +26,8 @@ static void deinit1(void* o)
 }
 TEST(NAME, deinit_function_is_called_on_decref)
 {
-    MyObj* o;
-    EXPECT_THAT(ik_refcount_malloc((ik_refcounted_t**)&o, sizeof(MyObj), deinit1), Eq(IK_OK));
+    MyObj* o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), deinit1);
+    ASSERT_THAT(o, NotNull());
     deinit1Called = false;
     IK_DECREF(o);
     EXPECT_THAT(deinit1Called, IsTrue());
@@ -42,7 +41,7 @@ static void deinit2(void* o)
 TEST(NAME, deinit_function_is_only_called_on_last_decref)
 {
     MyObj *o;
-    EXPECT_THAT(ik_refcount_malloc((ik_refcounted_t**)&o, sizeof(MyObj), deinit2), Eq(IK_OK));
+    EXPECT_THAT(ik_refcounted_alloc((ik_refcounted_t**)&o, sizeof(MyObj), deinit2), Eq(IK_OK));
     IK_INCREF(o);
     deinit2Called = false;
     IK_DECREF(o);
@@ -60,7 +59,7 @@ static void deinit3(void* o)
 TEST(NAME, deinit_function_is_called_on_every_element_in_array)
 {
     MyObj* o;
-    EXPECT_THAT(ik_refcount_malloc_array((ik_refcounted_t**)&o, sizeof(MyObj), deinit3, 5), Eq(IK_OK));
+    EXPECT_THAT(ik_refcounted_alloc_array((ik_refcounted_t**)&o, sizeof(MyObj), deinit3, 5), Eq(IK_OK));
     deinit3Calls = 0;
     memset(deinit3Ptrs, 0, sizeof(void*) * 5);
     IK_DECREF(o);

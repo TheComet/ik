@@ -10,7 +10,7 @@ const double pi = std::atan(1.0) * 4;
 TEST(NAME, from_quat_1)
 {
     ik_mat3x3_t m;
-    ik_quat_t q;
+    ik_quat q;
     IKAPI.quat.set_identity(q.f);
     IKAPI.mat3x3.from_quat(m.f, q.f);
 
@@ -28,7 +28,7 @@ TEST(NAME, from_quat_1)
 TEST(NAME, from_quat_2)
 {
     ik_mat3x3_t m;
-    ik_quat_t q;
+    ik_quat q;
     IKAPI.quat.set_axis_angle(q.f, 0, 1, 0, 45.0*pi/180);
     IKAPI.mat3x3.from_quat(m.f, q.f);
 
@@ -46,7 +46,7 @@ TEST(NAME, from_quat_2)
 TEST(NAME, from_quat_3)
 {
     ik_mat3x3_t m;
-    ik_quat_t q;
+    ik_quat q;
     IKAPI.quat.set_axis_angle(q.f, 1, 0, 0, 45.0*pi/180);
     IKAPI.mat3x3.from_quat(m.f, q.f);
 
@@ -64,7 +64,7 @@ TEST(NAME, from_quat_3)
 TEST(NAME, from_quat_4)
 {
     ik_mat3x3_t m;
-    ik_quat_t q;
+    ik_quat q;
     IKAPI.quat.set_axis_angle(q.f, 0, 0, 1, 45.0*pi/180);
     IKAPI.mat3x3.from_quat(m.f, q.f);
 

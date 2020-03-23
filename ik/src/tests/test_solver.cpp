@@ -27,12 +27,12 @@ TEST(NAME, test)
     ik_node_attach(n2, eff1);
     ik_node_attach(n3, eff2);
 
-    ik_pole_t* pole;
+    ik_pole* pole;
     ik_pole_create(&pole, IK_BLENDER);
     ik_pole_set_angle(pole, 45);
     ik_node_attach(n2, pole);
 
-    ik_constraint_t *c1, *c2;
+    ik_constraint *c1, *c2;
     ik_constraint_create(&c1, IK_HINGE);
     ik_constraint_create(&c2, IK_CONE);
     ik_constraint_set_rotation_limits(c1, 45, 90, 0, 0, 0, 0);

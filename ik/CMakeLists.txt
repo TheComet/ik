@@ -107,7 +107,7 @@ else ()
 endif ()
 
 configure_file ("templates/config.h.in"
-                "include/public/ik/config.h")
+                "include/ik/config.h")
 
 set (IK_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 configure_file ("templates/info.c.in" "src/info.c")
@@ -117,7 +117,7 @@ configure_file ("templates/info.c.in" "src/info.c")
 ###############################################################################
 
 # Update build info every time the project is compiled
-set (UPDATE_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/private/ik/info_for_every_compile.h")
+set (UPDATE_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/ik/info_for_every_compile.h")
 add_custom_target (ik_ifec_header
     COMMAND ${CMAKE_COMMAND}
             -DOUTPUT_FILE=${UPDATE_INFO_HEADER}
@@ -132,21 +132,22 @@ add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURREN
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
-    #"src/algorithm.c"
+    "src/algorithm.c"
+    "src/attachment.c"
     "src/callbacks.c"
-    #"src/constraint.c"
-    #"src/effector.c"
+    "src/constraint.c"
+    "src/effector.c"
     #"src/hash.c"
     "src/init.c"
     #"src/joblist.c"
     "src/log.c"
     #"src/mat3x3.c"
-    #"src/node.c"
+    "src/node.c"
     #"src/node_data.c"
-    #"src/pole.c"
+    "src/pole.c"
     "src/quat.c"
     "src/refcount.c"
-    "src/retcodes.c"
+    #"src/retcodes.c"
     #"src/solver.c"
     #"src/solver_prepare.c"
     #"src/solver_update.c"
@@ -181,14 +182,14 @@ set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
     "src/tests/tests_run.cpp"
     #"src/tests/test_constraint.cpp"
-    #"src/tests/test_effector.cpp"
+    "src/tests/test_effector.cpp"
     #"src/tests/test_FABRIK.cpp"
     #"src/tests/test_mat3x3.cpp"
-    #"src/tests/test_node.cpp"
+    "src/tests/test_node.cpp"
     #"src/tests/test_joblist.cpp"
     #"src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
-    "src/tests/test_refcount.cpp"
+    #"src/tests/test_refcount.cpp"
     #"src/tests/test_solver.cpp"
     #"src/tests/test_solver_prepare.cpp"
     #"src/tests/test_solver_update.cpp"
@@ -218,11 +219,8 @@ set_target_properties (ik_obj
         POSITION_INDEPENDENT_CODE ${IK_PIC})
 target_include_directories (ik_obj
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
-    PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/private>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/private>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_compile_definitions (ik_obj
     PRIVATE IK_BUILDING)
 target_compile_options (ik_obj

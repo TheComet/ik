@@ -4,7 +4,7 @@
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_set(ikreal_t v[3], ikreal_t x, ikreal_t y, ikreal_t z)
+ik_vec3_set(ikreal v[3], ikreal x, ikreal y, ikreal z)
 {
     v[0] = x;
     v[1] = y;
@@ -13,7 +13,7 @@ ik_vec3_set(ikreal_t v[3], ikreal_t x, ikreal_t y, ikreal_t z)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_set_zero(ikreal_t v[3])
+ik_vec3_set_zero(ikreal v[3])
 {
     v[0] = 0.0;
     v[1] = 0.0;
@@ -22,7 +22,7 @@ ik_vec3_set_zero(ikreal_t v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_copy(ikreal_t v[3], const ikreal_t src[3])
+ik_vec3_copy(ikreal v[3], const ikreal src[3])
 {
     v[0] = src[0];
     v[1] = src[1];
@@ -31,7 +31,7 @@ ik_vec3_copy(ikreal_t v[3], const ikreal_t src[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_add_scalar(ikreal_t v[3], ikreal_t scalar)
+ik_vec3_add_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] += scalar;
     v[1] += scalar;
@@ -40,7 +40,7 @@ ik_vec3_add_scalar(ikreal_t v[3], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_add_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_add_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] += v2[0];
     v1[1] += v2[1];
@@ -49,7 +49,7 @@ ik_vec3_add_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_sub_scalar(ikreal_t v[3], ikreal_t scalar)
+ik_vec3_sub_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] -= scalar;
     v[1] -= scalar;
@@ -58,7 +58,7 @@ ik_vec3_sub_scalar(ikreal_t v[3], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_sub_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_sub_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] -= v2[0];
     v1[1] -= v2[1];
@@ -67,7 +67,7 @@ ik_vec3_sub_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_mul_scalar(ikreal_t v[3], ikreal_t scalar)
+ik_vec3_mul_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] *= scalar;
     v[1] *= scalar;
@@ -76,7 +76,7 @@ ik_vec3_mul_scalar(ikreal_t v[3], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_mul_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_mul_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] *= v2[0];
     v1[1] *= v2[1];
@@ -85,9 +85,9 @@ ik_vec3_mul_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_div_scalar(ikreal_t v[3], ikreal_t scalar)
+ik_vec3_div_scalar(ikreal v[3], ikreal scalar)
 {
-    ikreal_t det = 1.0 / scalar;
+    ikreal det = 1.0 / scalar;
     v[0] *= det;
     v[1] *= det;
     v[2] *= det;
@@ -95,7 +95,7 @@ ik_vec3_div_scalar(ikreal_t v[3], ikreal_t scalar)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_div_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_div_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] /= v2[0];
     v1[1] /= v2[1];
@@ -103,24 +103,24 @@ ik_vec3_div_vec3(ikreal_t v1[3], const ikreal_t v2[3])
 }
 
 /* ------------------------------------------------------------------------- */
-ikreal_t
-ik_vec3_length_squared(const ikreal_t v[3])
+ikreal
+ik_vec3_length_squared(const ikreal v[3])
 {
     return ik_vec3_dot(v, v);
 }
 
 /* ------------------------------------------------------------------------- */
-ikreal_t
-ik_vec3_length(const ikreal_t v[3])
+ikreal
+ik_vec3_length(const ikreal v[3])
 {
     return sqrt(ik_vec3_length_squared(v));
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_normalize(ikreal_t v[3])
+ik_vec3_normalize(ikreal v[3])
 {
-    ikreal_t length = ik_vec3_length(v);
+    ikreal length = ik_vec3_length(v);
     if (length != 0.0)
     {
         length = 1.0 / length;
@@ -135,8 +135,8 @@ ik_vec3_normalize(ikreal_t v[3])
 }
 
 /* ------------------------------------------------------------------------- */
-ikreal_t
-ik_vec3_dot(const ikreal_t v1[3], const ikreal_t v2[3])
+ikreal
+ik_vec3_dot(const ikreal v1[3], const ikreal v2[3])
 {
     return v1[0] * v2[0] +
            v1[1] * v2[1] +
@@ -145,10 +145,10 @@ ik_vec3_dot(const ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_cross(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_cross(ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t v1x = v1[1] * v2[2] - v2[1] * v1[2];
-    ikreal_t v1z = v1[0] * v2[1] - v2[0] * v1[1];
+    ikreal v1x = v1[1] * v2[2] - v2[1] * v1[2];
+    ikreal v1z = v1[0] * v2[1] - v2[0] * v1[1];
     v1[1]        = v1[2] * v2[0] - v2[2] * v1[0];
     v1[0] = v1x;
     v1[2] = v1z;
@@ -156,10 +156,10 @@ ik_vec3_cross(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_ncross(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_ncross(ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t v1x = v2[1] * v1[2] - v1[1] * v2[2];
-    ikreal_t v1z = v2[0] * v1[1] - v1[0] * v2[1];
+    ikreal v1x = v2[1] * v1[2] - v1[1] * v2[2];
+    ikreal v1z = v2[0] * v1[1] - v1[0] * v2[1];
     v1[1]        = v2[2] * v1[0] - v1[2] * v2[0];
     v1[0] = v1x;
     v1[2] = v1z;
@@ -167,13 +167,13 @@ ik_vec3_ncross(ikreal_t v1[3], const ikreal_t v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_rotate_quat(ikreal_t v[3], const ikreal_t q[4])
+ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
-    union ik_vec3_t tmp;
-    ikreal_t dot_qv = ik_vec3_dot(q, v);
-    ikreal_t dot_qq = ik_vec3_dot(q, q);
+    union ik_vec3 tmp;
+    ikreal dot_qv = ik_vec3_dot(q, v);
+    ikreal dot_qq = ik_vec3_dot(q, q);
     ik_vec3_copy(tmp.f, v);
     /* 2.0f * s * cross(u, v) */
     ik_vec3_ncross(v, q);
@@ -189,13 +189,13 @@ ik_vec3_rotate_quat(ikreal_t v[3], const ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_nrotate_quat(ikreal_t v[3], const ikreal_t q[4])
+ik_vec3_nrotate_quat(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
-    union ik_vec3_t tmp;
-    ikreal_t dot_qv = -ik_vec3_dot(q, v);
-    ikreal_t dot_qq = ik_vec3_dot(q, q);
+    union ik_vec3 tmp;
+    ikreal dot_qv = -ik_vec3_dot(q, v);
+    ikreal dot_qq = ik_vec3_dot(q, q);
     ik_vec3_copy(tmp.f, v);
     /* 2.0f * s * cross(u, v) */
     ik_vec3_cross(v, q);
@@ -211,10 +211,10 @@ ik_vec3_nrotate_quat(ikreal_t v[3], const ikreal_t q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_rotate_vec3_span(ikreal_t v[3], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_rotate_vec3_span(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
 {
-    union ik_vec3_t v1n;
-    union ik_vec3_t v2n;
+    union ik_vec3 v1n;
+    union ik_vec3 v2n;
     ik_vec3_copy(v1n.f, v1);
     ik_vec3_copy(v2n.f, v2);
     ik_vec3_normalize(v1n.f);
@@ -224,12 +224,12 @@ ik_vec3_rotate_vec3_span(ikreal_t v[3], const ikreal_t v1[3], const ikreal_t v2[
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_rotate_vec3_span_normalized(ikreal_t v[3], const ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_rotate_vec3_span_normalized(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
 {
     /* Rodrigues' rotation formula */
     /* vrot = v cos(a) + (k x v)sin(a) + k(k.v)(1-cos(a)) */
-    union ik_vec3_t k1, k2;
-    ikreal_t a, cosa;
+    union ik_vec3 k1, k2;
+    ikreal a, cosa;
 
     /* angle between v1 and v2 */
     cosa = ik_vec3_dot(v1, v2);
@@ -256,26 +256,26 @@ ik_vec3_rotate_vec3_span_normalized(ikreal_t v[3], const ikreal_t v1[3], const i
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_project_from_vec3(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_project_from_vec3(ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t dot = ik_vec3_dot(v1, v2);
-    ikreal_t det = ik_vec3_length_squared(v1);
+    ikreal dot = ik_vec3_dot(v1, v2);
+    ikreal det = ik_vec3_length_squared(v1);
     ik_vec3_mul_scalar(v1, dot / det);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_project_from_vec3_normalized(ikreal_t v1[3], const ikreal_t v2[3])
+ik_vec3_project_from_vec3_normalized(ikreal v1[3], const ikreal v2[3])
 {
-    ikreal_t dot = ik_vec3_dot(v1, v2);
+    ikreal dot = ik_vec3_dot(v1, v2);
     ik_vec3_mul_scalar(v1, dot);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_project_onto_plane(ikreal_t v[3], const ikreal_t x[3], const ikreal_t y[3])
+ik_vec3_project_onto_plane(ikreal v[3], const ikreal x[3], const ikreal y[3])
 {
-    union ik_vec3_t n;
+    union ik_vec3 n;
     ik_vec3_copy(n.f, x);
     ik_vec3_cross(n.f, y);              /* plane normal */
     ik_vec3_project_from_vec3(n.f, v);  /* project vector onto normal */

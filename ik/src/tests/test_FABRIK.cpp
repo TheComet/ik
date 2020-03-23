@@ -229,7 +229,7 @@ TEST_F(NAME, two_bone_reach_90_degree_to_right_with_rest_pose_translations)
     ik.solver.rebuild(solver);
     ik.solver.solve(solver);
 
-    ik_quat_t expected_root, expected_mid;
+    ik_quat expected_root, expected_mid;
     IKAPI.quat.set_axis_angle(expected_root.f, 0, 0, 1, -45*pi/180);
     IKAPI.quat.set_axis_angle(expected_mid.f, 0, 0, 1, 45*pi/180);
 

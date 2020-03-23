@@ -13,8 +13,7 @@ C_BEGIN
  * library.
  * @return Returns IK_OK on success.
  */
-IK_PUBLIC_API IKRET
-ik_init(void);
+IK_PUBLIC_API ikret ik_init(void);
 
 /*!
  * @brief Deinitializes the library. Must be called when the library is no
@@ -38,9 +37,9 @@ ik_init(void);
  *
  * All other calls return 0.
  */
-IK_PUBLIC_API uintptr_t
-ik_deinit(void);
+IK_PUBLIC_API uintptr_t ik_deinit(void);
 
 C_END
 
 #endif /* IK_INIT_H */
+

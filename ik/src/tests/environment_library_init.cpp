@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
-#include "ik/ik.h"
+#include "ik/log.h"
+#include "ik/init.h"
 
 using namespace testing;
 
@@ -12,7 +13,7 @@ public:
     {
         testing::FLAGS_gtest_death_test_style = "threadsafe";
         ASSERT_THAT(ik_init(), Eq(IK_OK));
-        ik_log_init();
+        ASSERT_THAT(ik_log_init(), Eq(IK_OK));
     }
 
     virtual void TearDown()

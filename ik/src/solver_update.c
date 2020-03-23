@@ -23,8 +23,8 @@ update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
     if (effector->features & IK_EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
     {
         ikreal_t distance_to_target;
-        union ik_vec3_t base_to_effector;
-        union ik_vec3_t base_to_target;
+        union ik_vec3 base_to_effector;
+        union ik_vec3 base_to_target;
 
         /* Need distance from base node to target and base to effector node */
         base_to_effector = tip->transform.t.position;

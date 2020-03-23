@@ -21,7 +21,7 @@ C_BEGIN
 struct ik_node_t;
 struct ik_node_data_t;
 
-enum ik_effector_features_e
+enum ik_effector_features
 {
 #define X(arg, value) IK_EFFECTOR_##arg = value,
     IK_EFFECTOR_FEATURES_LIST
@@ -37,7 +37,7 @@ enum ik_effector_features_e
  * as how much influence the algorithm has on the tree (weight) and how many
  * child nodes are affected (chain_length).
  */
-struct ik_effector_t
+struct ik_effector
 {
     IK_ATTACHMENT_HEAD
 
@@ -47,7 +47,7 @@ struct ik_effector_t
      * position where the node it is attached to should head for.
      * @note Default value is (0, 0, 0).
      */
-    union ik_vec3_t target_position;
+    union ik_vec3 target_position;
 
     /*!
      * @brief Can be set at any point, and should be updated whenever you have
@@ -55,15 +55,7 @@ struct ik_effector_t
      * rotation where the node it is attached to should head for.
      * @note Default value is the identity quaternion.
      */
-    union ik_quat_t target_rotation;
-
-    /*!
-     * Used internally to hold the actual target position/rotation, which will
-     * be different from target_position/target_rotation if the weight is not
-     * 1.0. This value is updated right after calling solve() and before the
-     * solving algorithm begins.
-     */
-    union ik_vec3_t actual_target;
+    union ik_quat target_rotation;
 
     /*!
      * @brief Specifies how much influence the algorithm has on the chain of
@@ -77,10 +69,10 @@ struct ik_effector_t
      * (weight=0.0) and be fully active when the foot is on the ground
      * (weight=1.0).
      */
-    ikreal_t weight;
+    ikreal weight;
 
-    ikreal_t rotation_weight;
-    ikreal_t rotation_decay;
+    ikreal rotation_weight;
+    ikreal rotation_decay;
 
     /*!
      * @brief Specifies how many parent nodes should be affected. A value of
@@ -101,16 +93,8 @@ struct ik_effector_t
  * @brief Creates a new effector object. It can be attached to any node in the
  * tree using ik_node_attach_effector().
  */
-IK_PUBLIC_API IKRET
-ik_effector_create(struct ik_effector_t** effector);
-
-/*!
- * @brief Destroys and frees an effector object. This should **NOT** be called
- * on effectors that are attached to nodes. Use ik_node_free_effector()
- * instead.
- */
-IK_PUBLIC_API void
-ik_effector_free(struct ik_effector_t* effector);
+IK_PUBLIC_API struct ik_effector*
+ik_effector_create(void);
 
 C_END
 

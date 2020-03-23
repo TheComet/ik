@@ -18,8 +18,6 @@ struct ik_callbacks_t
 
 IK_PUBLIC_API extern struct ik_callbacks_t ik_callbacks;
 
-#if defined(IK_BUILDING)
-
 IK_PRIVATE_API void
 ik_callbacks_init(void);
 
@@ -28,8 +26,6 @@ ik_callbacks_notify_log_message(const char* message);
 
 IK_PRIVATE_API void
 ik_callbacks_notify_node_free(struct ik_node_t* node);
-
-#endif /* IK_BUILDING */
 
 C_END
 

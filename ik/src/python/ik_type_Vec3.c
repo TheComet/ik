@@ -70,7 +70,7 @@ Vec3_add(ik_Vec3* self, PyObject* arg)
         ik_vec3_add_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -99,7 +99,7 @@ Vec3_sub(ik_Vec3* self, PyObject* arg)
         ik_vec3_sub_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -128,7 +128,7 @@ Vec3_mul(ik_Vec3* self, PyObject* arg)
         ik_vec3_mul_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -157,7 +157,7 @@ Vec3_div(ik_Vec3* self, PyObject* arg)
         ik_vec3_div_scalar(self->vec.f, PyLong_AS_LONG(arg));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -207,7 +207,7 @@ Vec3_dot(ik_Vec3* self, PyObject* arg)
         return PyFloat_FromDouble(ik_vec3_dot(self->vec.f, ((ik_Vec3*)arg)->vec.f));
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -228,7 +228,7 @@ Vec3_cross(ik_Vec3* self, PyObject* arg)
         ik_vec3_cross(self->vec.f, ((ik_Vec3*)arg)->vec.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 3)
     {
-        union ik_vec3_t other;
+        union ik_vec3 other;
         other.v.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.v.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));
@@ -253,7 +253,7 @@ Vec3_rotate(ik_Vec3* self, PyObject* arg)
         ik_vec3_rotate_quat(self->vec.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
     {
-        union ik_quat_t other;
+        union ik_quat other;
         other.q.w = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 0));
         other.q.x = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 1));
         other.q.y = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(arg, 2));

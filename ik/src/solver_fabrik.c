@@ -51,9 +51,9 @@ static void zero_transform_stack(struct ik_solver_fabrik_t* solver)
 static void
 solve_forwards(struct ik_solver_fabrik_t* solver)
 {
-    union ik_vec3_t target_pos;
-    union ik_vec3_t target_dir;
-    union ik_quat_t parent_rot;
+    union ik_vec3 target_pos;
+    union ik_vec3 target_dir;
+    union ik_quat parent_rot;
     const struct ik_node_data_view_t* ndv = &solver->ndv;
     const struct ik_node_data_t* nda = ndv->node_data;
     const uint16_t features = solver->algorithm->features;
@@ -64,22 +64,7 @@ solve_forwards(struct ik_solver_fabrik_t* solver)
         ikreal_t* this_pos = nda->transform[idx].t.position.f;
         ikreal_t* this_rot = nda->transform[idx].t.rotation.f;
 
-        if (nda->commands[idx] & CMD_LOAD_EFFECTOR)
-        {
-            ik_vec3_copy(target_pos.f, nda->effector[idx]->actual_target.f);
-
-            if (features & IK_SOLVER_TARGET_ROTATIONS)
-            {
-                ik_vec3_set(target_dir.f, 0, 0, 1);
-                ik_vec3_rotate_quat(target_dir.f, nda->effector[idx]->target_rotation.f);
-            }
-        }
-        else if (nda->child_count[idx] > 1)
-        {
-        }
-        else
-        {
-        }
+        /* init target pos with effector target */
 
         /* Transform target into parent space, so it is in the same space as the
          * current node */
@@ -106,7 +91,7 @@ solve_forwards(struct ik_solver_fabrik_t* solver)
          * to the rotation of the parent node, not to the current node */
         if ((features & IK_SOLVER_CONSTRAINTS) && nda->constraint[idx] != NULL)
         {
-            union ik_quat_t delta_rot;
+            union ik_quat delta_rot;
             nda->constraint[idx]->apply(nda->constraint[idx], delta_rot.f, parent_rot.f);
         }
 

@@ -1,6 +1,6 @@
 #include "cstructures/memory.h"
 #include "ik/refcount.h"
-#include "ik/log.h"
+#include "ik/ik.h"
 #include <stddef.h>
 #include <assert.h>
 
@@ -13,38 +13,44 @@
  * refcount structure.
  */
 #define IK_REFCOUNT_OFFSET \
-        IK_ALIGN_TO_CPU_WORD_SIZE(sizeof(struct ik_refcount_t))
+        IK_ALIGN_TO_CPU_WORD_SIZE(sizeof(struct ik_refcount))
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_refcount_malloc_array(struct ik_refcounted_t** refcounted_obj,
-                         uintptr_t bytes,
-                         ik_deinit_func deinit,
-                         uint32_t array_length)
+struct ik_refcounted*
+ik_refcounted_alloc_array(uintptr_t obj_size,
+                          ik_deinit_func deinit,
+                          uint32_t obj_count)
 {
+    struct ik_refcounted* obj;
     uintptr_t refcount_size = IK_REFCOUNT_OFFSET;
-    struct ik_refcount_t* head = MALLOC(refcount_size + bytes * array_length);
-    if (*refcounted_obj == NULL)
+    struct ik_refcount* refcount = MALLOC(refcount_size + obj_size * obj_count);
+    if (refcount == NULL)
     {
-        ik_log_fatal("Failed to allocate refcounted memory: Ran out of memory");
-        return IK_ERR_OUT_OF_MEMORY;
+        ik_log_out_of_memory("ik_refcounted_alloc_array()");
+        return NULL;
     }
 
-    head->refs = 1;
-    head->deinit = deinit;
-    head->array_length = array_length;
+    refcount->refs = 1;
+    refcount->deinit = deinit;
+    refcount->obj_count = obj_count;
 
-    *refcounted_obj = (struct ik_refcounted_t*)((uintptr_t)head + refcount_size);
-    (*refcounted_obj)->refcount = head;
+    obj = (struct ik_refcounted*)((uintptr_t)refcount + refcount_size);
+    obj->refcount = refcount;
 
-    return IK_OK;
+    return obj;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_refcount_malloc(struct ik_refcounted_t** refcounted_obj,
-                   uintptr_t bytes,
-                   ik_deinit_func deinit)
+struct ik_refcounted*
+ik_refcounted_alloc(uintptr_t bytes,
+                    ik_deinit_func deinit)
 {
-    return ik_refcount_malloc_array(refcounted_obj, bytes, deinit, 1);
+    return ik_refcounted_alloc_array(bytes, deinit, 1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_refcounted_free(struct ik_refcounted* refcounted_obj)
+{
+    FREE(refcounted_obj->refcount);
 }

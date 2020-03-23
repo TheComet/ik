@@ -28,8 +28,7 @@ typedef ikret_t (*ik_solver_solve_func)  (struct ik_solver_t*);
     ik_solver_prepare_func       prepare;                                     \
     ik_solver_solve_func         solve;                                       \
                                                                               \
-    struct ik_algorithm_t*       algorithm;                                   \
-    struct ik_node_data_view_t   ndv;
+    struct ik_algorithm_t*       algorithm;
 
 struct ik_solver_t
 {

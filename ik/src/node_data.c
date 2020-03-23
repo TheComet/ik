@@ -1,6 +1,7 @@
 #include "cstructures/memory.h"
 #include "ik/log.h"
 #include "ik/node_data.h"
+#include "ik/algorithm.h"
 #include "ik/effector.h"
 #include "ik/constraint.h"
 #include "ik/pole.h"
@@ -98,7 +99,7 @@ determine_zla_size_and_malloc(uintptr_t node_count)
 
     /* node_data is a refcounted type so it can be safely casted to
      * ik_refcount_t. This initializes the refcount */
-    if ((status = ik_refcount_create(&node_data->refcount,
+    if ((status = ik_refcounted_create(&node_data->refcount,
             (ik_deinit_func)deinit_node_data, 1)) != IK_OK)
         IK_FAIL(status, refcount_create_failed);
 

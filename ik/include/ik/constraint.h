@@ -8,29 +8,29 @@
 
 C_BEGIN
 
-struct ik_constraint_t;
+struct ik_constraint;
 struct ik_node_data_t;
 
-typedef void (*ik_constraint_apply_func)(struct ik_constraint_t* constraint,
-                                         ikreal_t delta_rotation[4],
-                                         const ikreal_t current_rotation[4]);
+typedef void (*ik_constraint_apply_func)(struct ik_constraint* constraint,
+                                         ikreal delta_rotation[4],
+                                         const ikreal current_rotation[4]);
 
-#define IK_CONSTRAINTS_LIST \
+#define IK_CONSTRAINT_LIST \
     X(STIFF) \
     X(HINGE) \
     X(CONE) \
     X(CUSTOM)
 
-enum ik_constraint_type_e
+enum ik_constraint_type
 {
 #define X(type) IK_CONSTRAINT_##type,
-    IK_CONSTRAINTS_LIST
+    IK_CONSTRAINT_LIST
 #undef X
 
     IK_CONSTRAINT_TYPES_COUNT
 };
 
-struct ik_constraint_t
+struct ik_constraint
 {
     IK_ATTACHMENT_HEAD
 
@@ -38,22 +38,22 @@ struct ik_constraint_t
      *
      */
     ik_constraint_apply_func apply;
-    enum ik_constraint_type_e type;
+    enum ik_constraint_type type;
 
     union {
         struct {
-            union ik_quat_t angle;
+            union ik_quat angle;
         } stiff;
         struct {
-            union ik_vec3_t axis;
-            ikreal_t min_angle;
-            ikreal_t max_angle;
+            union ik_vec3 axis;
+            ikreal min_angle;
+            ikreal max_angle;
         } hinge;
         struct {
-            union ik_vec3_t center;
-            ikreal_t max_angle;
+            union ik_vec3 center;
+            ikreal max_angle;
         } cone;
-        ikreal_t custom[5];
+        ikreal custom[5];
     } data;
 };
 
@@ -63,16 +63,8 @@ struct ik_constraint_t
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
  */
-IK_PRIVATE_API ikret_t
-ik_constraint_create(struct ik_constraint_t** constraint);
-
-/*!
- * @brief Destroys and frees a constraint object. This should **NOT** be called
- * on constraints that are attached to nodes. Use ik_node_free_constraint()
- * instead.
- */
-IK_PRIVATE_API void
-ik_constraint_free(struct ik_constraint_t* constraint);
+IK_PUBLIC_API struct ik_constraint*
+ik_constraint_create(void);
 
 /*!
  * @brief Sets the type of constraint to enforce.
@@ -82,15 +74,15 @@ ik_constraint_free(struct ik_constraint_t* constraint);
  * causes the node to be excluded entirely from the chain tree, and determining
  * this requires a rebuild.
  */
-IK_PRIVATE_API ikret_t
-ik_constraint_set_type(struct ik_constraint_t* constraint, enum ik_constraint_type_e constraint_type);
+IK_PUBLIC_API ikret
+ik_constraint_set_type(struct ik_constraint* constraint, enum ik_constraint_type type);
 
 /*!
  * @brief Allows the user to specify a custom callback function for enforcing
  * a constraint.
  */
-IK_PRIVATE_API void
-ik_constraint_set_custom(struct ik_constraint_t* constraint, ik_constraint_apply_func callback);
+IK_PUBLIC_API void
+ik_constraint_set_custom(struct ik_constraint* constraint, ik_constraint_apply_func callback);
 
 #endif /* IK_BUILDING */
 

@@ -1,12 +1,12 @@
 #include "cstructures/memory.h"
-#include "ik/init.h"
+#include "ik/ik.h"
 #include "ik/callbacks.h"
 #include <stddef.h>
 
-static int g_init_counter = 0;
+static int g_init_counter;
 
 /* ------------------------------------------------------------------------- */
-ikret_t
+ikret
 ik_init(void)
 {
     if (g_init_counter++ != 0)

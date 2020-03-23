@@ -89,7 +89,7 @@ walk_chain_and_mark(struct btree_t* marked,
             } break;
 
             default: {
-                ik_log_fatal("Ran out of memory while marking involved nodes");
+                ik_log_out_of_memory("btree_insert_or_get()");
                 return IK_ERR_OUT_OF_MEMORY;
             }
         }
