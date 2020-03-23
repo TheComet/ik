@@ -11,8 +11,15 @@ struct ik_node;
 
 struct ik_subtree
 {
-
+    struct ik_node* root;
+    struct vector_t leaves;  /* list of ik_node* */
 };
+
+IK_PRIVATE_API void
+ik_subtree_init(struct ik_subtree* st);
+
+IK_PRIVATE_API void
+ik_subtree_deinit(struct ik_subtree* st);
 
 struct ik_joblist
 {
