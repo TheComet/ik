@@ -6,6 +6,8 @@
 C_BEGIN
 
 struct ik_solver;
+struct ik_algorithm;
+struct ik_subtree;
 
 typedef void(*ik_solver_callback_func)(void* user_data,
                                        const ikreal position[3],
@@ -70,11 +72,9 @@ struct ik_solver
  * @param[in] solver The solver to use. Currently, only FABRIK is
  * supported.
  */
-IK_PRIVATE_API ikret
-ik_solver_create(struct ik_solver** solver,
-                 struct ik_algorithm_t* algorithm,
-                 struct ik_node_data_t* node_data,
-                 uint32_t subbase_idx, uint32_t chain_begin_idx, uint32_t chain_end_idx);
+IK_PRIVATE_API struct ik_solver*
+ik_solver_create(const struct ik_subtree* subtree,
+                 const struct ik_algorithm* algorithm);
 
 /*!
  * @brief Destroys the solver and all nodes/effectors that are part of the

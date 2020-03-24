@@ -156,6 +156,7 @@ set (IK_SOURCES
     #"src/solver_dummy.c"
     #"src/solver_fabrik.c"
     #"src/solver_mss.c"
+    "src/subtree.c"
     #"src/transform_chains.c"
     #"src/transform_node.c"
     #"src/util.c"
