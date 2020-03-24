@@ -174,7 +174,7 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 #define has_effector() \
             (node->effector != NULL)
 
-            enum ik_marking* current_mark;
+            enum ik_marking* existing_mark;
             const enum ik_marking lookup_mark[16] = {
                 MARK_INVALID,
                 MARK_INVALID,
@@ -202,12 +202,25 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 
             enum ik_marking new_mark = lookup_mark[mark_idx];
 
-            switch (btree_insert_or_get(marked, node->user.guid, &new_mark, (void**)&current_mark))
+            switch (mark_idx) {
+                case 0: case 1: case 8: case 9: {
+                    ik_log_printf(IK_FATAL, "mark_nodes(): Found a leaf node with no effector attached. This should never happen!");
+                    return -1;
+                } break;
+
+                case 10: case 11: case 12: {
+                    ik_log_printf(IK_WARN, "Attached algorithm on node %zu (0x%p) is useless", node->user.guid, node->user.ptr);
+                } break;
+
+                default: break;
+            }
+
+            switch (btree_insert_or_get(marked, node->user.guid, &new_mark, (void**)&existing_mark))
             {
                 case BTREE_EXISTS: {
                     /* overwrite existing mark with MARK_SECTION */
                     if (new_mark == MARK_SECTION)
-                        *current_mark = MARK_SECTION;
+                        *existing_mark = MARK_SECTION;
                 } break;
 
                 case BTREE_NOT_FOUND: {
