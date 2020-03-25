@@ -4,24 +4,25 @@
 #include "ik/config.h"
 #include "ik/refcount.h"
 
-#define IK_ATTACHMENT_HEAD \
-    IK_REFCOUNT_HEAD       \
+#define IK_ATTACHMENT_HEAD    \
+    IK_REFCOUNTED_HEAD        \
     struct ik_node* node;
 
-#define IK_ATTACHMENT_LIST    \
-    X(ALGORITHM,  algorithm)  \
-    X(CONSTRAINT, constraint) \
-    X(EFFECTOR,   effector)   \
-    X(POLE,       pole)       \
-    /*X(SOLVER,     solver)*/
+#define IK_ATTACHMENT_LIST                   \
+    X1(ALGORITHM,  algorithm, const char*)   \
+    X(CONSTRAINT, constraint)                \
+    X(EFFECTOR,   effector)                  \
+    X(POLE,       pole)
 
 C_BEGIN
 
 enum ik_attachment_type
 {
-#define X(upper, lower) IK_ATTACHMENT_##upper,
+#define X1(upper, lower, arg0) X(upper, lower)
+#define X(upper, lower)       IK_ATTACHMENT_##upper,
     IK_ATTACHMENT_LIST
 #undef X
+#undef X1
 
     IK_ATTACHMENT_COUNT
 };

@@ -7,7 +7,7 @@
 using namespace ::testing;
 
 struct MyObj {
-    IK_REFCOUNT_HEAD
+    IK_REFCOUNTED_HEAD
     int x, y, z;
 };
 
@@ -40,8 +40,8 @@ static void deinit2(void* o)
 }
 TEST(NAME, deinit_function_is_only_called_on_last_decref)
 {
-    MyObj *o;
-    EXPECT_THAT(ik_refcounted_alloc((ik_refcounted_t**)&o, sizeof(MyObj), deinit2), Eq(IK_OK));
+    MyObj *o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), deinit2);
+    ASSERT_THAT(o, NotNull());
     IK_INCREF(o);
     deinit2Called = false;
     IK_DECREF(o);
@@ -58,8 +58,8 @@ static void deinit3(void* o)
 }
 TEST(NAME, deinit_function_is_called_on_every_element_in_array)
 {
-    MyObj* o;
-    EXPECT_THAT(ik_refcounted_alloc_array((ik_refcounted_t**)&o, sizeof(MyObj), deinit3, 5), Eq(IK_OK));
+    MyObj* o = (MyObj*)ik_refcounted_alloc_array(sizeof(MyObj), deinit3, 5);
+    ASSERT_THAT(o, NotNull());
     deinit3Calls = 0;
     memset(deinit3Ptrs, 0, sizeof(void*) * 5);
     IK_DECREF(o);

@@ -1,16 +1,12 @@
-#include "ik/joblist.h"
-
+#include "cstructures/btree.h"
 #include "cstructures/memory.h"
-#include "cstructures/vector.h"
-#include "ik/effector.h"
+#include "ik/algorithm.h"
 #include "ik/log.h"
 #include "ik/node.h"
-#include "ik/solver.h"
+#include "ik/solvers.h"
 #include "ik/subtree.h"
-#include <stddef.h>
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
 enum ik_marking
 {
@@ -19,6 +15,117 @@ enum ik_marking
     MARK_END,
     MARK_BEGIN_AND_END
 };
+
+static struct vector_t g_solvers;
+
+struct ik_solver
+{
+    IK_SOLVER_HEAD
+};
+
+/* ------------------------------------------------------------------------- */
+int
+ik_solver_init_interfaces()
+{
+    /*
+#define X(name) extern const struct ik_solver_interface ik_solver_##name;
+    IK_ALGORITHM_LIST
+#undef X*/
+
+    if (vector_init(&g_solvers, sizeof(struct ik_solver_interface*)) != 0)
+        goto solver_vector_init_failed;
+
+    /*
+#define X(name) ik_solver_register(&ik_solver_##name);
+    IK_ALGORITHM_LIST
+#undef X*/
+
+    return 0;
+
+    solver_vector_init_failed : return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_deinit_interfaces(void)
+{
+    vector_deinit(&g_solvers);
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_solver_register(const struct ik_solver_interface* interface)
+{
+    VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
+        if (strcmp((*p_iface)->name, interface->name) == 0)
+        {
+            ik_log_printf(IK_ERROR, "Solver with name `%s` already registered!", interface->name);
+            return -1;
+        }
+    VECTOR_END_EACH
+
+    if (vector_push(&g_solvers, &interface) != VECTOR_OK)
+    {
+        ik_log_out_of_memory("ik_solver_register()");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_solver_unregister(const struct ik_solver_interface* interface)
+{
+    VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
+        if (strcmp((*p_iface)->name, interface->name) == 0)
+        {
+            vector_erase_element(&g_solvers, p_iface);
+            return 0;
+        }
+    VECTOR_END_EACH
+
+    ik_log_printf(IK_ERROR, "Solver with name `%s` not found!", interface->name);
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+destroy_solver(struct ik_solver* solver)
+{
+    solver->impl->deinit(solver);
+    FREE(solver);
+}
+
+/* ------------------------------------------------------------------------- */
+static struct ik_solver*
+create_solver(const struct ik_algorithm* algorithm)
+{
+    VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
+        if (strcmp((*p_iface)->name, algorithm->name) == 0)
+        {
+            struct ik_solver_interface* iface = *p_iface;
+            struct ik_solver* solver = MALLOC(iface->size);
+            if (solver == NULL)
+            {
+                ik_log_out_of_memory("instantiate_solver()");
+                return NULL;
+            }
+
+            solver->algorithm = algorithm;
+            solver->impl = iface;
+            if (solver->impl->init(solver) != 0)
+            {
+                FREE(solver);
+                return NULL;
+            }
+
+            return solver;
+        }
+    VECTOR_END_EACH
+
+    return NULL;
+}
 
 /* ------------------------------------------------------------------------- */
 static int
@@ -131,6 +238,9 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 
             if (chain_length_counter == 0 || node->parent == NULL)
                 break;
+
+            chain_length_counter--;
+            node = node->parent;
         }
     VECTOR_END_EACH
 
@@ -139,14 +249,14 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-new_solver(struct ik_subtree* subtree)
+create_solver_and_rebuild(struct ik_subtree* subtree)
 {
     const struct ik_node* node;
     const struct ik_algorithm* algorithm;
     struct ik_solver* solver;
 
     algorithm = NULL;
-    for (node = subtree->root; node->parent != NULL; node = node->parent)
+    for (node = subtree->root; node != NULL; node = node->parent)
         if (node->algorithm != NULL)
         {
             algorithm = node->algorithm;
@@ -154,29 +264,35 @@ new_solver(struct ik_subtree* subtree)
         }
     if (algorithm == NULL)
     {
-        ik_log_printf(IK_ERROR, "No algorithm assigned to subtree starting at node %zu (0x%p)",
+        ik_log_printf(IK_ERROR, "No algorithm assigned to subtree with root node %zu (0x%p)",
                       subtree->root->user.guid,
                       subtree->root->user.ptr);
         return NULL;
     }
 
-    solver = ik_solver_create(subtree, algorithm);
+    solver = create_solver(algorithm);
     if (solver == NULL)
         return NULL;
+
+    if (solver->impl->rebuild(solver, subtree) != 0)
+    {
+        destroy_solver(solver);
+        return NULL;
+    }
 
     return solver;
 }
 
 /* ------------------------------------------------------------------------- */
 static int
-alloc_solvers(struct ik_joblist* joblist,
-              struct ik_subtree* current_subtree,
-              const struct ik_node* node,
-              const struct btree_t* marked_nodes);
+create_solver_for_each_subtree(struct ik_solvers* solver,
+                               struct ik_subtree* current_subtree,
+                               const struct ik_node* node,
+                               const struct btree_t* marked_nodes);
 static int
-recurse_with_new_subtree(struct ik_joblist* joblist,
-              const struct ik_node* node,
-              const struct btree_t* marked_nodes)
+recurse_with_new_subtree(struct ik_solvers* solvers,
+                         const struct ik_node* node,
+                         const struct btree_t* marked_nodes)
 {
     struct ik_solver* solver;
     struct ik_subtree subtree;
@@ -186,22 +302,22 @@ recurse_with_new_subtree(struct ik_joblist* joblist,
 
     subtree.root = node;
     NODE_FOR_EACH(node, user_data, child)
-        if (alloc_solvers(joblist, &subtree, child, marked_nodes) != 0)
+        if (create_solver_for_each_subtree(solvers, &subtree, child, marked_nodes) != 0)
             goto recurse_failed;
     NODE_END_EACH
 
-    solver = new_solver(&subtree);
+    solver = create_solver_and_rebuild(&subtree);
     if (solver == NULL)
         goto new_solver_failed;
 
-    if (vector_push(&joblist->solvers, &solver) != VECTOR_OK)
-        goto add_solver_to_joblist_failed;
+    if (vector_push(&solvers->solver_list, &solver) != VECTOR_OK)
+        goto add_solver_to_solver_failed;
 
     ik_subtree_deinit(&subtree);
 
     return 0;
 
-    add_solver_to_joblist_failed : ik_solver_free(solver);
+    add_solver_to_solver_failed  : destroy_solver(solver);
     new_solver_failed            :
     recurse_failed               : ik_subtree_deinit(&subtree);
     subtree_init_failed          : return -1;
@@ -209,10 +325,10 @@ recurse_with_new_subtree(struct ik_joblist* joblist,
 
 /* ------------------------------------------------------------------------- */
 static int
-alloc_solvers(struct ik_joblist* joblist,
-              struct ik_subtree* current_subtree,
-              const struct ik_node* node,
-              const struct btree_t* marked_nodes)
+create_solver_for_each_subtree(struct ik_solvers* solver,
+                              struct ik_subtree* current_subtree,
+                              const struct ik_node* node,
+                              const struct btree_t* marked_nodes)
 {
     enum ik_marking* mark = btree_find(marked_nodes, node->user.guid);
     if (mark) switch(*mark)
@@ -225,7 +341,7 @@ alloc_solvers(struct ik_joblist* joblist,
 
         case MARK_SECTION:
             NODE_FOR_EACH(node, user_data, child)
-                if (alloc_solvers(joblist, current_subtree, child, marked_nodes) != 0)
+                if (create_solver_for_each_subtree(solver, current_subtree, child, marked_nodes) != 0)
                     return -1;
             NODE_END_EACH
             break;
@@ -237,7 +353,7 @@ alloc_solvers(struct ik_joblist* joblist,
         /* fallthrough */
 
         case MARK_BEGIN:
-            return recurse_with_new_subtree(joblist, node, marked_nodes);
+            return recurse_with_new_subtree(solver, node, marked_nodes);
     }
 
     return 0;
@@ -245,44 +361,43 @@ alloc_solvers(struct ik_joblist* joblist,
 
 /* ------------------------------------------------------------------------- */
 static void
-deinit_joblist(struct ik_joblist* joblist)
+deinit_solvers(struct ik_solvers* solver)
 {
-    VECTOR_FOR_EACH(&joblist->solvers, struct ik_solver*, p_solver)
-        ik_solver_free(*p_solver);
+    VECTOR_FOR_EACH(&solver->solver_list, struct ik_solver*, p_solver)
+        (*p_solver)->impl->deinit(*p_solver);
+        FREE(*p_solver);
     VECTOR_END_EACH
-    vector_deinit(&joblist->solvers);
+    vector_deinit(&solver->solver_list);
 }
 
 /* ------------------------------------------------------------------------- */
-struct ik_joblist*
-ik_joblist_create(const struct ik_node* root)
+struct ik_solvers*
+ik_solvers_create(const struct ik_node* root)
 {
-    struct ik_joblist* joblist = (struct ik_joblist*)
-        ik_refcounted_alloc(sizeof *joblist, (ik_deinit_func)deinit_joblist);
-    if (joblist == NULL)
-        goto alloc_joblist_failed;
+    struct ik_solvers* solvers = (struct ik_solvers*)
+        ik_refcounted_alloc(sizeof *solvers, (ik_deinit_func)deinit_solvers);
+    if (solvers == NULL)
+        return NULL;
 
-    if (vector_init(&joblist->solvers, sizeof(struct ik_solver*)) != VECTOR_OK)
+    if (vector_init(&solvers->solver_list, sizeof(struct ik_solver*)) != VECTOR_OK)
     {
         ik_log_out_of_memory("vector_init()");
-        goto init_solver_vector_failed;
-    }
-
-    if (ik_joblist_update(joblist, root) != IK_OK)
-    {
-        IK_DECREF(joblist);
+        ik_refcounted_free((struct ik_refcounted*)solvers);
         return NULL;
     }
 
-    return joblist;
+    if (ik_solvers_rebuild(solvers, root) != 0)
+    {
+        IK_DECREF(solvers);
+        return NULL;
+    }
 
-    init_solver_vector_failed : ik_refcounted_free((struct ik_refcounted*)joblist);
-    alloc_joblist_failed      : return NULL;
+    return solvers;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret
-ik_joblist_update(struct ik_joblist* joblist, const struct ik_node* root)
+int
+ik_solvers_rebuild(struct ik_solvers* solvers, const struct ik_node* root)
 {
     ikret status;
     struct vector_t effector_nodes;
@@ -317,17 +432,17 @@ ik_joblist_update(struct ik_joblist* joblist, const struct ik_node* root)
         goto mark_nodes_failed;
 
     /* clear old solvers */
-    VECTOR_FOR_EACH(&joblist->solvers, struct ik_solver*, p_solver)
-        ik_solver_free(*p_solver);
+    VECTOR_FOR_EACH(&solvers->solver_list, struct ik_solver*, p_solver)
+        destroy_solver(*p_solver);
     VECTOR_END_EACH
-    vector_clear_compact(&joblist->solvers);
+    vector_clear_compact(&solvers->solver_list);
 
     /*
      * It's possible that chain length limits end up isolating parts of the
      * tree, splitting it into a list of "sub-trees" which must be solved
      * in-order.
      */
-    if ((status = alloc_solvers(joblist, NULL, root, &marked_nodes)) != IK_OK)
+    if ((status = create_solver_for_each_subtree(solvers, NULL, root, &marked_nodes)) != IK_OK)
         goto split_into_subtrees_failed;
 
     btree_deinit(&marked_nodes);
@@ -340,4 +455,37 @@ ik_joblist_update(struct ik_joblist* joblist, const struct ik_node* root)
     init_marked_nodes_failed       :
     find_effectors_failed          : vector_deinit(&effector_nodes);
     init_effector_nodes_failed     : return status;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solvers_update_translations(struct ik_solvers* solvers)
+{
+    VECTOR_FOR_EACH(&solvers->solver_list, struct ik_solver*, p_solver)
+        struct ik_solver* solver = *p_solver;
+        solver->impl->update_translations(solver);
+    VECTOR_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_solvers_solve(const struct ik_solvers* solvers)
+{
+    int result = 0;
+    VECTOR_FOR_EACH(&solvers->solver_list, struct ik_solver*, p_solver)
+        struct ik_solver* solver = *p_solver;
+        result += solver->impl->solve(solver);
+    VECTOR_END_EACH
+
+    return result;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solvers_iterate_nodes(const struct ik_solvers* solvers, ik_solver_callback_func cb)
+{
+    VECTOR_FOR_EACH(&solvers->solver_list, struct ik_solver*, p_solver)
+        struct ik_solver* solver = *p_solver;
+        solver->impl->iterate_nodes(solver, cb);
+    VECTOR_END_EACH
 }

@@ -33,7 +33,7 @@ union ik_node_user_data {
  */
 struct ik_node
 {
-    IK_REFCOUNT_HEAD
+    IK_REFCOUNTED_HEAD
 
     union ik_node_user_data user;
 
@@ -137,10 +137,18 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user);
  * a constraint attached. IK_OK if otherwise.
  * @note You will need to rebuild the algorithm's tree before solving.
  */
+#define X1(upper, lower, arg0)                                                \
+        IK_PUBLIC_API struct ik_##lower*                                      \
+        ik_node_create_##lower(struct ik_node* node, arg0 arg);
 #define X(upper, lower)                                                       \
         IK_PUBLIC_API struct ik_##lower*                                      \
-        ik_node_create_##lower(struct ik_node* node);                         \
-                                                                              \
+        ik_node_create_##lower(struct ik_node* node);
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+
+#define X1(upper, lower, arg0) X(upper, lower)
+#define X(upper, lower)                                                       \
         IK_PUBLIC_API void                                                    \
         ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower); \
                                                                               \
@@ -149,9 +157,9 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user);
                                                                               \
         IK_PUBLIC_API void                                                    \
         ik_node_destroy_##lower(struct ik_node* node);
-
     IK_ATTACHMENT_LIST
 #undef X
+#undef X1
 
 static inline union ik_node_user_data
 ik_guid(uint32_t guid) {

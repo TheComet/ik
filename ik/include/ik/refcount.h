@@ -9,7 +9,7 @@ C_BEGIN
  * All structures that are refcounted must have the following fields present.
  * This way, all refcounted objects can be cast to ik_refcounted_t.
  */
-#define IK_REFCOUNT_HEAD \
+#define IK_REFCOUNTED_HEAD                                                    \
         struct ik_refcount* refcount;
 
 /*!
@@ -79,7 +79,7 @@ struct ik_refcount
 
 struct ik_refcounted
 {
-    IK_REFCOUNT_HEAD
+    IK_REFCOUNTED_HEAD
 };
 
 /*!

@@ -1,38 +1,53 @@
-#ifndef IK_SOLVER_H
-#define IK_SOLVER_H
+#ifndef IK_SOLVERS_H
+#define IK_SOLVERS_H
 
 #include "ik/config.h"
+#include "ik/refcount.h"
+#include "cstructures/vector.h"
 
 C_BEGIN
 
 struct ik_solver;
 struct ik_algorithm;
 struct ik_subtree;
+struct ik_node;
 
 typedef void(*ik_solver_callback_func)(void* user_data,
                                        const ikreal position[3],
                                        const ikreal rotation[4]);
 
-typedef ikret (*ik_solver_init_func)   (struct ik_solver*);
-typedef void  (*ik_solver_deinit_func) (struct ik_solver*);
-typedef ikret (*ik_solver_prepare_func)(struct ik_solver*);
-typedef ikret (*ik_solver_solve_func)  (struct ik_solver*);
-
-/*!
- * @brief This is a base for all solvers.
- */
-#define IK_SOLVER_HEAD                                                        \
-    /* Derived interface */                                                   \
-    ik_solver_init_func          init;                                        \
-    ik_solver_deinit_func        deinit;                                      \
-    ik_solver_prepare_func       prepare;                                     \
-    ik_solver_solve_func         solve;                                       \
-                                                                              \
-    struct ik_algorithm_t*       algorithm;
-
-struct ik_solver
+struct ik_solver_interface
 {
-    IK_SOLVER_HEAD
+    char name[16];
+    uintptr_t size;
+    int (*init)(struct ik_solver*);
+    void (*deinit)(struct ik_solver*);
+    int (*rebuild)(struct ik_solver*, const struct ik_subtree*);
+    void (*update_translations)(struct ik_solver*);
+    int (*solve)(struct ik_solver*);
+    void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func);
+};
+
+IK_PRIVATE_API int
+ik_solver_init_interfaces(void);
+
+IK_PRIVATE_API void
+ik_solver_deinit_interfaces(void);
+
+IK_PUBLIC_API int
+ik_solver_register(const struct ik_solver_interface* interface);
+
+IK_PUBLIC_API int
+ik_solver_unregister(const struct ik_solver_interface* interface);
+
+#define IK_SOLVER_HEAD                                                        \
+    const struct ik_solver_interface* impl;                                   \
+    const struct ik_algorithm* algorithm;
+
+struct ik_solvers
+{
+    IK_REFCOUNTED_HEAD
+    struct vector_t solver_list;  /* list of ik_solver* */
 };
 
 /*!
@@ -72,16 +87,11 @@ struct ik_solver
  * @param[in] solver The solver to use. Currently, only FABRIK is
  * supported.
  */
-IK_PRIVATE_API struct ik_solver*
-ik_solver_create(const struct ik_subtree* subtree,
-                 const struct ik_algorithm* algorithm);
+IK_PUBLIC_API struct ik_solvers*
+ik_solvers_create(const struct ik_node* root);
 
-/*!
- * @brief Destroys the solver and all nodes/effectors that are part of the
- * solver. Any pointers to tree nodes are invalid after this function returns.
- */
-IK_PRIVATE_API void
-ik_solver_free(struct ik_solver* solver);
+IK_PUBLIC_API int
+ik_solvers_rebuild(struct ik_solvers* solver, const struct ik_node* root);
 
 /*!
  * @brief Computes the distances between the nodes and stores them in
@@ -97,10 +107,13 @@ ik_solver_free(struct ik_solver* solver);
  * @note This function gets called by ik_solver_prepare().
  */
 IK_PRIVATE_API void
-ik_solver_update_translations(struct ik_solver* solver);
+ik_solvers_update_translations(struct ik_solvers* solver);
 
-IK_PRIVATE_API void
-ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
+IK_PUBLIC_API int
+ik_solvers_solve(const struct ik_solvers* solver);
+
+IK_PUBLIC_API void
+ik_solvers_iterate_nodes(const struct ik_solvers* solver, ik_solver_callback_func cb);
 
 C_END
 

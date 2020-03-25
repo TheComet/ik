@@ -22,9 +22,11 @@ ik_node_deinit(struct ik_node* node)
     NODE_END_EACH
 
     /* unref attachments */
+#define X1(upper, lower, arg0) X(upper, lower)
 #define X(upper, lower) ik_node_destroy_##lower(node);
     IK_ATTACHMENT_LIST
 #undef X
+#undef X1
 
     /* deinit */
     btree_deinit(&node->children);
@@ -151,8 +153,16 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user)
 
     return NULL;
 }
-
-/* ------------------------------------------------------------------------- */
+#define X1(upper, lower, argtype)                                             \
+    struct ik_##lower*                                                        \
+    ik_node_create_##lower(struct ik_node* node, argtype arg) {               \
+        struct ik_##lower* lower = ik_##lower##_create(arg);                  \
+        if (lower == NULL)                                                    \
+            return NULL;                                                      \
+                                                                              \
+        ik_node_attach_##lower(node, lower);                                  \
+        return lower;                                                         \
+    }
 #define X(upper, lower)                                                       \
     struct ik_##lower*                                                        \
     ik_node_create_##lower(struct ik_node* node) {                            \
@@ -162,8 +172,14 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user)
                                                                               \
         ik_node_attach_##lower(node, lower);                                  \
         return lower;                                                         \
-    }                                                                         \
-                                                                              \
+    }
+IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+
+/* ------------------------------------------------------------------------- */
+#define X1(upper, lower, arg0) X(upper, lower)
+#define X(upper, lower)                                                       \
     void                                                                      \
     ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower) {  \
         if (lower->node)                                                      \
@@ -189,3 +205,4 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user)
     }
 IK_ATTACHMENT_LIST
 #undef X
+#undef X1

@@ -1,10 +1,34 @@
 #include "gmock/gmock.h"
-#include "ik/node.h"
 #include "ik/algorithm.h"
+#include "ik/node.h"
+#include "ik/solvers.h"
 
-#define NAME node_data_flatten
+#define NAME solvers
 
 using namespace ::testing;
+
+struct ik_solver
+{
+    IK_SOLVER_HEAD
+};
+
+static int  dummy_init(struct ik_solver* solver) { return 0; }
+static void dummy_deinit(struct ik_solver* solver) {}
+static int  dummy_rebuild(struct ik_solver* solver, const struct ik_subtree* subtree) { return 0; }
+static void update_translations(struct ik_solver* solver) {}
+static int  dummy_solve(struct ik_solver* solver) { return 0; }
+static void dummy_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb) {}
+
+const struct ik_solver_interface ik_solver_DUMMY = {
+    "dummy",
+    sizeof(struct ik_solver),
+    dummy_init,
+    dummy_deinit,
+    dummy_rebuild,
+    update_translations,
+    dummy_solve,
+    dummy_iterate_nodes
+};
 
 class NAME : public Test
 {
@@ -33,9 +57,7 @@ public:
 
         ik_node_create_effector(n6);
         ik_node_create_effector(n9);
-
-        ik_algorighm* alg = ik_node_create_algorithm(tree);
-        alg->type = IK_SOLVER_DUMMY1;
+        ik_node_create_algorithm(tree, "dummy");
 
         return tree;
     }
@@ -128,10 +150,12 @@ public:
 
     virtual void SetUp() override
     {
+        ik_solver_register(&ik_solver_DUMMY);
     }
 
     virtual void TearDown() override
     {
+        ik_solver_unregister(&ik_solver_DUMMY);
     }
 };
 
@@ -152,7 +176,7 @@ int main()
     ik_node_set_position(n2, ik_vec3_vec3(0, 1, 0));
     ik_node_set_position(n3, ik_vec3_vec3(0, 1, 0));
 
-    ik_effector_t *eff1, *eff2;
+    ik_effector *eff1, *eff2;
     ik_effector_create(&eff1);
     ik_effector_create(&eff1);
     ik_effector_set_chain_length(eff1, 2);
@@ -181,7 +205,7 @@ int main()
     ik_node_attach(tree, a1);
     ik_node_attach(n2, a2);
 
-    ik_solver_t* solver;
+    ik_solver* solver;
     ik_solver_create(&solver);
     ik_solver_prepare(solver, tree);
 
@@ -219,11 +243,9 @@ int main()
 TEST_F(NAME, no_action_if_tree_has_no_effectors_or_algorithms)
 {
     ik_node* tree = tree_without_effectors();
-    ik_joblist_t joblist;
-    ik_joblist_init(&joblist);
-    EXPECT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_ERR_NO_EFFECTORS_FOUND));
-    ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers* solvers = ik_solvers_create(tree);
+    EXPECT_THAT(solvers, IsNull());
+    IK_DECREF(tree);
 }
 
 TEST_F(NAME, no_action_if_tree_has_no_algorithms)
@@ -232,72 +254,51 @@ TEST_F(NAME, no_action_if_tree_has_no_algorithms)
     ik_node* n6 = ik_node_find(tree, ik_guid(6));
     ik_node* n9 = ik_node_find(tree, ik_guid(9));
 
-    ik_effector_t *eff1, *eff2;
-    ik_node_create_effector(&eff1, n6);
-    ik_node_create_effector(&eff2, n9);
+    ik_effector* eff1 = ik_node_create_effector(n6);
+    ik_effector* eff2 = ik_node_create_effector(n9);
 
-    ik_joblist_t joblist;
-    ik_joblist_init(&joblist);
-    EXPECT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_ERR_NO_ALGORITHMS_FOUND));
+    ik_solvers* solvers = ik_solvers_create(tree);
+    EXPECT_THAT(solvers, IsNull());
 
-    ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    IK_DECREF(tree);
 }
+
 
 TEST_F(NAME, check_refcounts_are_correct)
 {
-    ik_joblist_t joblist;
     ik_node* tree = tree_with_two_effectors();
+    ik_solvers* solvers = ik_solvers_create(tree);
+    ASSERT_THAT(solvers, NotNull());
+    ASSERT_THAT(vector_count(&solvers->solver_list), Eq(1));  // There should be one FABRIK solver
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));  // There should be a single flattened nda
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
+    ASSERT_THAT(solver->algorithm, NotNull());
+    EXPECT_THAT(solver->algorithm->name, StrEq("dummy"));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-
-    // There are 10 nodes in the tree
-    EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
-    EXPECT_THAT(solver->ndv.chain_begin_idx, Eq(1));
-    EXPECT_THAT(solver->ndv.chain_end_idx, Eq(10));
-    EXPECT_THAT(solver->ndv.node_data->node_count, Eq(10));
-
-    // Each node should hold a reference, plus the ndv object itself should hold a reference
-    EXPECT_THAT(solver->ndv.node_data->refcount->refs, Eq(11));
-
-    // All existing nodes should be pointing to the flattened nda.
-    EXPECT_THAT(solver->ndv.node_data, Eq(tree->d));
-    for (int i = 0; i != 10; ++i)
-        EXPECT_THAT(solver->ndv.node_data, Eq(ik_node_find(tree, ik_guid(i))->d));
-
-    // Attached effectors are being referenced by one nda
-    EXPECT_THAT(IK_NODE_EFFECTOR(ik_node_find(tree, ik_guid(6)))->refcount->refs, Eq(1));
-
-    // Attached algorithm is being referenced by the nda and by the solver
-    EXPECT_THAT(IK_NODE_ALGORITHM(tree)->refcount->refs, Eq(2));
-
-    ik_node_free_recursive(tree);
-    EXPECT_THAT(solver->ndv.node_data->refcount->refs, Eq(1));  // ndv structure should still hold a reference to the node data structure
-    ik_joblist_deinit(&joblist);
+    EXPECT_THAT(solvers->refcount->refs, Eq(1));
+    IK_DECREF(tree);
+    IK_DECREF(solvers);
 }
 
+/*
 TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
 {
-    ik_joblist_t joblist1;
-    ik_joblist_t joblist2;
-    ik_joblist_t joblist3;
+    ik_solvers solvers1;
+    ik_solvers solvers2;
+    ik_solvers solvers3;
     ik_node* tree = tree_with_two_effectors();
 
-    ik_joblist_init(&joblist1);
-    ik_joblist_init(&joblist2);
-    ik_joblist_init(&joblist3);
+    ik_solvers_init(&solvers1);
+    ik_solvers_init(&solvers2);
+    ik_solvers_init(&solvers3);
 
-    ASSERT_THAT(ik_joblist_update(&joblist1, tree), Eq(IK_OK));
-    ASSERT_THAT(ik_joblist_update(&joblist2, tree), Eq(IK_OK));
-    ASSERT_THAT(ik_joblist_update(&joblist3, tree), Eq(IK_OK));
+    ASSERT_THAT(ik_solvers_update(&solvers1, tree), Eq(IK_OK));
+    ASSERT_THAT(ik_solvers_update(&solvers2, tree), Eq(IK_OK));
+    ASSERT_THAT(ik_solvers_update(&solvers3, tree), Eq(IK_OK));
 
-    ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist1.solver_list, 0);
-    ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist2.solver_list, 0);
-    ik_solver_t* solver3 = *(ik_solver_t**)vector_get_element(&joblist3.solver_list, 0);
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers1.solver_list, 0);
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers2.solver_list, 0);
+    ik_solver* solver3 = *(ik_solver**)vector_get_element(&solvers3.solver_list, 0);
 
     // The newly created flattened node data should be the one pointing to
     // the original tree node data
@@ -306,11 +307,11 @@ TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
     EXPECT_THAT(solver3->ndv.node_data, Eq(tree->d));
 
     EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_joblist_deinit(&joblist1);
+    ik_solvers_deinit(&solvers1);
     EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_joblist_deinit(&joblist2);
+    ik_solvers_deinit(&solvers2);
     EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_joblist_deinit(&joblist3);
+    ik_solvers_deinit(&solvers3);
     EXPECT_THAT(tree->d->refcount->refs, Eq(10));
 
     ik_node_free_recursive(tree);
@@ -318,7 +319,7 @@ TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
 
 TEST_F(NAME, choose_algorithm_closest_to_root)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
 
@@ -328,8 +329,8 @@ TEST_F(NAME, choose_algorithm_closest_to_root)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // e1 -> 6           9 <- e2
@@ -347,9 +348,9 @@ TEST_F(NAME, choose_algorithm_closest_to_root)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(tree)));
     EXPECT_THAT(solver->ndv.node_data->node_count, Eq(10));
     EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
@@ -357,13 +358,13 @@ TEST_F(NAME, choose_algorithm_closest_to_root)
     EXPECT_THAT(solver->ndv.chain_end_idx, Eq(10));
     EXPECT_THAT(solver->algorithm, Eq(a1));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
@@ -379,8 +380,8 @@ TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // e1 -> 6           9 <- e2
@@ -398,11 +399,11 @@ TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
     // We expect algorithm 1 to be chosen because it is the next available
     // one after the chains end
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n2)));
     EXPECT_THAT(solver->ndv.node_data->node_count, Eq(8));
     EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
@@ -410,13 +411,13 @@ TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
     EXPECT_THAT(solver->ndv.chain_end_idx, Eq(8));
     EXPECT_THAT(solver->algorithm, Eq(a1));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
     ik_node* n6 = ik_node_find(tree, ik_guid(6));
@@ -431,8 +432,8 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // e1 -> 6           9 <- e2
@@ -450,9 +451,9 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n3)));
     EXPECT_THAT(solver->ndv.node_data->node_count, Eq(7));
     EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
@@ -460,13 +461,13 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     EXPECT_THAT(solver->ndv.chain_end_idx, Eq(7));
     EXPECT_THAT(solver->algorithm, Eq(a2));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
     ik_node* n4 = ik_node_find(tree, ik_guid(4));
@@ -483,8 +484,8 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // e1 -> 6           9 <- e2
@@ -502,10 +503,10 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(2));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
 
-    ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
     EXPECT_THAT(solver1->ndv.node_data, Eq(solver2->ndv.node_data));
     EXPECT_THAT(solver1->ndv.node_data->node_count, Eq(6));
 
@@ -521,13 +522,13 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     EXPECT_THAT(solver2->ndv.chain_end_idx, Eq(6));
     EXPECT_THAT(solver2->algorithm, Eq(a2));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, split_tree_with_different_algorithms_1)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
@@ -547,8 +548,8 @@ TEST_F(NAME, split_tree_with_different_algorithms_1)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // chain=4
@@ -567,9 +568,9 @@ TEST_F(NAME, split_tree_with_different_algorithms_1)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(2));
-    ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
 
     EXPECT_THAT(solver1->ndv.node_data, Eq(solver2->ndv.node_data));
     EXPECT_THAT(solver1->ndv.node_data->node_count, Eq(8));
@@ -595,13 +596,13 @@ TEST_F(NAME, split_tree_with_different_algorithms_1)
     EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 6), Eq(IK_NODE_USER_DATA(n4)));
     EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 7), Eq(IK_NODE_USER_DATA(n5)));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, split_tree_with_different_algorithms_2)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n1 = ik_node_find(tree, ik_guid(1));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
@@ -618,8 +619,8 @@ TEST_F(NAME, split_tree_with_different_algorithms_2)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // chain=2
@@ -638,9 +639,9 @@ TEST_F(NAME, split_tree_with_different_algorithms_2)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(2));
-    ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
 
     EXPECT_THAT(IK_NDV_AT(&solver1->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n1)));
     EXPECT_THAT(solver1->ndv.node_data->node_count, Eq(9));
@@ -655,13 +656,13 @@ TEST_F(NAME, split_tree_with_different_algorithms_2)
     EXPECT_THAT(solver2->ndv.chain_end_idx, Eq(9));
     EXPECT_THAT(solver2->algorithm, Eq(a1));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, algorithm_terminates_chain)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
@@ -672,8 +673,8 @@ TEST_F(NAME, algorithm_terminates_chain)
     a1->type = IK_SOLVER_DUMMY1;
     a2->type = IK_SOLVER_DUMMY2;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // Nodes are layed out in memory contiguously with the following
@@ -694,9 +695,9 @@ TEST_F(NAME, algorithm_terminates_chain)
     //             0
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n2)));
     EXPECT_THAT(solver->ndv.node_data->node_count, Eq(8));
     EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
@@ -704,19 +705,19 @@ TEST_F(NAME, algorithm_terminates_chain)
     EXPECT_THAT(solver->ndv.chain_end_idx, Eq(8));
     EXPECT_THAT(solver->algorithm, Eq(a1));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
 TEST_F(NAME, check_indices_are_correct)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors();
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     ik_node_data_t* nda = solver->ndv.node_data;
 
     //
@@ -760,18 +761,18 @@ TEST_F(NAME, check_indices_are_correct)
     EXPECT_THAT(nda->child_count[9], Eq(0));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, check_if_indices_are_correct_llr)
 {
 
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_llr();
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     ik_node_data_t* nda = solver->ndv.node_data;
 
     //
@@ -814,16 +815,16 @@ TEST_F(NAME, check_if_indices_are_correct_llr)
     EXPECT_THAT(nda->child_count[10], Eq(0));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, check_if_indices_are_correct_lrr)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_lrr();
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     ik_node_data_t* nda = solver->ndv.node_data;
 
     //
@@ -866,19 +867,19 @@ TEST_F(NAME, check_if_indices_are_correct_lrr)
     EXPECT_THAT(nda->child_count[10], Eq(0));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, ignore_effector_on_root_node)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2;
 
     ik_node* tree = ik_node_create(ik_guid(0));
     ik_node* n1 = ik_node_create_child(tree, ik_guid(1));
     ik_node* n2 = ik_node_create_child( n1,  ik_guid(2));
 
-    ik_effector_t *e1, *e2;
+    ik_effector *e1, *e2;
     ik_node_create_effector(&e1, tree);
     ik_node_create_effector(&e2, n2);
 
@@ -891,11 +892,11 @@ TEST_F(NAME, ignore_effector_on_root_node)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     ik_node_data_t* nda = solver->ndv.node_data;
     EXPECT_THAT(nda->node_count, Eq(3));
     EXPECT_THAT(nda->user_data[0], Eq(IK_NODE_USER_DATA(tree)));
@@ -903,12 +904,12 @@ TEST_F(NAME, ignore_effector_on_root_node)
     EXPECT_THAT(nda->effector[2], Eq(IK_NODE_EFFECTOR(n2)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_trees_on_effectors)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -919,7 +920,7 @@ TEST_F(NAME, split_trees_on_effectors)
     ik_node* n5 = ik_node_create_child( n4,  ik_guid(5));
     ik_node* n6 = ik_node_create_child( n5,  ik_guid(6));
 
-    ik_effector_t *e1, *e2, *e3;
+    ik_effector *e1, *e2, *e3;
     ik_node_create_effector(&e1, n2);
     ik_node_create_effector(&e2, n3);
     ik_node_create_effector(&e3, n5);
@@ -941,14 +942,14 @@ TEST_F(NAME, split_trees_on_effectors)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(3));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(3));
 
-    ik_solver_t *solver1, *solver2, *solver3;
-    solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
+    ik_solver *solver1, *solver2, *solver3;
+    solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
 
     EXPECT_THAT(solver1->ndv.node_data, Eq(tree->d));
     EXPECT_THAT(solver1->ndv.node_data, Eq(n1->d));
@@ -983,7 +984,7 @@ TEST_F(NAME, split_trees_on_effectors)
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 2), Eq(IK_NODE_USER_DATA(n5)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
@@ -1005,7 +1006,7 @@ TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
     ik_node* dead12 = ik_node_create_child(n5,    ik_guid(12));
     ik_node* dead13 = ik_node_create_child(dead6, ik_guid(13));
 
-    ik_effector_t *e1, *e2;
+    ik_effector *e1, *e2;
     ik_node_create_effector(&e1, n2);
     ik_node_create_effector(&e2, n5);
     e2->chain_length = 1;
@@ -1027,29 +1028,29 @@ TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
     //
     //
 
-    ik_joblist_t joblist1;
-    ik_joblist_init(&joblist1);
-    ASSERT_THAT(ik_joblist_update(&joblist1, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist1.solver_list), Eq(2));
-    ik_solver_t* j1solver1 = *(ik_solver_t**)vector_get_element(&joblist1.solver_list, 0);
-    ik_solver_t* j1solver2 = *(ik_solver_t**)vector_get_element(&joblist1.solver_list, 1);
-    EXPECT_THAT(j1solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and joblist's solver1->ndv,solver2->ndv are holding a ref
+    ik_solvers solvers1;
+    ik_solvers_init(&solvers1);
+    ASSERT_THAT(ik_solvers_update(&solvers1, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers1.solver_list), Eq(2));
+    ik_solver* j1solver1 = *(ik_solver**)vector_get_element(&solvers1.solver_list, 0);
+    ik_solver* j1solver2 = *(ik_solver**)vector_get_element(&solvers1.solver_list, 1);
+    EXPECT_THAT(j1solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and solvers's solver1->ndv,solver2->ndv are holding a ref
 
-    ik_joblist_t joblist2;
-    ik_joblist_init(&joblist2);
-    ASSERT_THAT(ik_joblist_update(&joblist2, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist2.solver_list), Eq(2));
-    ik_solver_t* j2solver1 = *(ik_solver_t**)vector_get_element(&joblist2.solver_list, 0);
-    ik_solver_t* j2solver2 = *(ik_solver_t**)vector_get_element(&joblist2.solver_list, 1);
-    EXPECT_THAT(j2solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and joblist's solver1->ndv,solver2->ndv are holding a ref
+    ik_solvers solvers2;
+    ik_solvers_init(&solvers2);
+    ASSERT_THAT(ik_solvers_update(&solvers2, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers2.solver_list), Eq(2));
+    ik_solver* j2solver1 = *(ik_solver**)vector_get_element(&solvers2.solver_list, 0);
+    ik_solver* j2solver2 = *(ik_solver**)vector_get_element(&solvers2.solver_list, 1);
+    EXPECT_THAT(j2solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and solvers's solver1->ndv,solver2->ndv are holding a ref
 
-    ik_joblist_t joblist3;
-    ik_joblist_init(&joblist3);
-    ASSERT_THAT(ik_joblist_update(&joblist3, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist3.solver_list), Eq(2));
-    ik_solver_t* j3solver1 = *(ik_solver_t**)vector_get_element(&joblist3.solver_list, 0);
-    ik_solver_t* j3solver2 = *(ik_solver_t**)vector_get_element(&joblist3.solver_list, 1);
-    EXPECT_THAT(j3solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and joblist's solver1->ndv,solver2->ndv are holding a ref
+    ik_solvers solvers3;
+    ik_solvers_init(&solvers3);
+    ASSERT_THAT(ik_solvers_update(&solvers3, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers3.solver_list), Eq(2));
+    ik_solver* j3solver1 = *(ik_solver**)vector_get_element(&solvers3.solver_list, 0);
+    ik_solver* j3solver2 = *(ik_solver**)vector_get_element(&solvers3.solver_list, 1);
+    EXPECT_THAT(j3solver1->ndv.node_data->refcount->refs, Eq(7));  // nodes 0,1,2,4,5 and solvers's solver1->ndv,solver2->ndv are holding a ref
 
     // The newly created flattened node data should be the one pointing to
     // the original tree node data
@@ -1067,17 +1068,17 @@ TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
     EXPECT_THAT(j1solver1->ndv.node_data->refcount->refs, Eq(2));  // nvd1,nvd2 are holding refs
     EXPECT_THAT(j2solver1->ndv.node_data->refcount->refs, Eq(2));  // nvd1,nvd2 are holding refs
     EXPECT_THAT(j3solver1->ndv.node_data->refcount->refs, Eq(2));  // nvd1,nvd2 are holding refs
-    ik_joblist_deinit(&joblist1);
+    ik_solvers_deinit(&solvers1);
     EXPECT_THAT(j2solver1->ndv.node_data->refcount->refs, Eq(2));
     EXPECT_THAT(j3solver1->ndv.node_data->refcount->refs, Eq(2));
-    ik_joblist_deinit(&joblist2);
+    ik_solvers_deinit(&solvers2);
     EXPECT_THAT(j3solver1->ndv.node_data->refcount->refs, Eq(2));
-    ik_joblist_deinit(&joblist3);
+    ik_solvers_deinit(&solvers3);
 }
 
 TEST_F(NAME, split_trees_on_effectors_with_chain_lengths)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -1088,7 +1089,7 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths)
     ik_node* n5 = ik_node_create_child( n4,  ik_guid(5));
     ik_node* n6 = ik_node_create_child( n5,  ik_guid(6));
 
-    ik_effector_t *e1, *e2, *e3;
+    ik_effector *e1, *e2, *e3;
     ik_node_create_effector(&e1, n2);
     ik_node_create_effector(&e2, n3);
     ik_node_create_effector(&e3, n5);
@@ -1111,14 +1112,14 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(3));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(3));
 
-    ik_solver_t *solver1, *solver2, *solver3;
-    solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
+    ik_solver *solver1, *solver2, *solver3;
+    solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
 
     EXPECT_THAT(solver1->ndv.node_data, Eq(tree->d));
     EXPECT_THAT(solver1->ndv.node_data, Eq(n1->d));
@@ -1152,12 +1153,12 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths)
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 1), Eq(IK_NODE_USER_DATA(n5)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, ignore_effector_on_root_node_with_dead_nodes)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *n3, *n4;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -1166,7 +1167,7 @@ TEST_F(NAME, ignore_effector_on_root_node_with_dead_nodes)
     ik_node* n3 = ik_node_create_child(tree,  ik_guid(3));
     ik_node* n4 = ik_node_create_child(n1,  ik_guid(4));
 
-    ik_effector_t *e1, *e2;
+    ik_effector *e1, *e2;
     ik_node_create_effector(&e1, tree);
     ik_node_create_effector(&e2, n2);
 
@@ -1179,11 +1180,11 @@ TEST_F(NAME, ignore_effector_on_root_node_with_dead_nodes)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(1));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
 
-    ik_solver_t* solver = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
     EXPECT_THAT(solver->ndv.node_data->node_count, Eq(3));
     EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
     EXPECT_THAT(solver->ndv.chain_begin_idx, Eq(1));
@@ -1195,12 +1196,12 @@ TEST_F(NAME, ignore_effector_on_root_node_with_dead_nodes)
     EXPECT_THAT(solver->ndv.node_data, Ne(n4->d));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *dead3, *n4, *n5, *dead6, *dead7, *dead8, *dead9, *dead10, *dead11, *dead12, *dead13;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -1218,7 +1219,7 @@ TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
     ik_node* dead12 = ik_node_create_child(n5,    ik_guid(12));
     ik_node* dead13 = ik_node_create_child(dead6, ik_guid(13));
 
-    ik_effector_t *e1, *e2;
+    ik_effector *e1, *e2;
     ik_node_create_effector(&e1, n2);
     ik_node_create_effector(&e2, n5);
     e2->chain_length = 1;
@@ -1240,13 +1241,13 @@ TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(2));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
 
-    ik_solver_t *solver1, *solver2;
-    solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
+    ik_solver *solver1, *solver2;
+    solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
 
     // Make sure node data was created properly
     EXPECT_THAT(solver1->ndv.node_data, Eq(tree->d));
@@ -1282,12 +1283,12 @@ TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
     EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 1), Eq(IK_NODE_USER_DATA(n5)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *dead6, *dead7, *dead8, *dead9, *dead10, *dead11, *dead12, *dead13;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -1305,7 +1306,7 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
     ik_node* dead12 = ik_node_create_child(n5,  ik_guid(12));
     ik_node* dead13 = ik_node_create_child(dead6,  ik_guid(13));
 
-    ik_effector_t *e1, *e2, *e3;
+    ik_effector *e1, *e2, *e3;
     ik_node_create_effector(&e1, n2);
     ik_node_create_effector(&e2, n3);
     ik_node_create_effector(&e3, n5);
@@ -1328,14 +1329,14 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
     //
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(3));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(3));
 
-    ik_solver_t *solver1, *solver2, *solver3;
-    solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
+    ik_solver *solver1, *solver2, *solver3;
+    solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
 
     // Make sure node data was created properly
     EXPECT_THAT(solver1->ndv.node_data, Eq(tree->d));
@@ -1379,7 +1380,7 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 1), Eq(IK_NODE_USER_DATA(n5)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_trees_with_dead_nodes)
@@ -1393,17 +1394,17 @@ TEST_F(NAME, split_trees_with_dead_nodes)
     ik_node* n5 = ik_node_create_child(n4, ik_guid(5));
     ik_node* n6 = ik_node_create_child(n5, ik_guid(6));
 
-    ik_effector_t *e1, *e2;
+    ik_effector *e1, *e2;
     ik_effector_create(&e1);
     ik_effector_create(&e2);
     ik_node_attach_effector(n3, e1);
     ik_node_attach_effector(n6, e2);
     e2->chain_length = 1;
 
-    ik_joblist_t joblist;
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(2));
+    ik_solvers solvers;
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
 
     //
     //                 6 <- e2, chain=1
@@ -1417,8 +1418,8 @@ TEST_F(NAME, split_trees_with_dead_nodes)
     //           0
     //
 
-    struct ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    struct ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
+    struct ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    struct ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
     ASSERT_THAT(solver1->ndv.node_data->node_count, Eq(6));  // excludes node 4
 
     EXPECT_THAT(solver1->ndv.subbase_idx, Eq(0));
@@ -1436,12 +1437,12 @@ TEST_F(NAME, split_trees_with_dead_nodes)
     EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 1), Eq(IK_NODE_USER_DATA(n6)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
 TEST_F(NAME, split_tree_with_effector_at_junction)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors();
     ik_node* n1 = ik_node_find(tree, ik_guid(1));
     ik_node* n2 = ik_node_find(tree, ik_guid(2));
@@ -1453,11 +1454,11 @@ TEST_F(NAME, split_tree_with_effector_at_junction)
     ik_node* n8 = ik_node_find(tree, ik_guid(8));
     ik_node* n9 = ik_node_find(tree, ik_guid(9));
 
-    ik_effector_t* e3;
+    ik_effector* e3;
     ik_node_create_effector(&e3, n3);
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
 
     //
     // e1 -> 6           9 <- e2
@@ -1475,10 +1476,10 @@ TEST_F(NAME, split_tree_with_effector_at_junction)
     //             0 <- a1
     //
 
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(3));
-    ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    ik_solver_t* solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(3));
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    ik_solver* solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
     ASSERT_THAT(solver1->ndv.node_data->node_count, Eq(10));
 
     ASSERT_THAT(solver1->ndv.subbase_idx, Eq(0));
@@ -1505,7 +1506,7 @@ TEST_F(NAME, split_tree_with_effector_at_junction)
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 2), Eq(IK_NODE_USER_DATA(n5)));
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 3), Eq(IK_NODE_USER_DATA(n6)));
 
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
     ik_node_free_recursive(tree);
 }
 
@@ -1537,9 +1538,9 @@ TEST_F(NAME, dd)
     //
 }
 
-TEST_F(NAME, check_joblist_order_for_disjoint_trees_llr)
+TEST_F(NAME, check_solvers_order_for_disjoint_trees_llr)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node* tree = tree_llr();
     ik_node *e1, *e2, *e3;
 
@@ -1550,15 +1551,15 @@ TEST_F(NAME, check_joblist_order_for_disjoint_trees_llr)
     IK_NODE_EFFECTOR(e1)->chain_length = 1;
     IK_NODE_EFFECTOR(e2)->chain_length = 1;
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(3));
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(3));
 
     //
     // The scenario here is nodes 0,1,2,9,10 form a chain (call this
     // "ndv 1"), nodes 5,6 form a chain ("ndv 2"), and nodes 7,8 form
     // a chain ("ndv 3"). Because nd's 2 and 3 depend on the solution of
-    // nd 1, nd 1 must appear before ndv's 2 and 3 in the joblist.
+    // nd 1, nd 1 must appear before ndv's 2 and 3 in the solvers.
     //
     // e1 -> 6       8 <- e2
     //        \     /
@@ -1578,21 +1579,21 @@ TEST_F(NAME, check_joblist_order_for_disjoint_trees_llr)
     b1 = tree;
     b2 = ik_node_find(tree, ik_guid(5));  // expected base of second nd
     b3 = ik_node_find(tree, ik_guid(7));  // expected base of third nd
-    struct ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    struct ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    struct ik_solver_t* solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
+    struct ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    struct ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    struct ik_solver* solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
 
     EXPECT_THAT(IK_NDV_AT(&solver1->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(b1)));
     EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(b2)));
     EXPECT_THAT(IK_NDV_AT(&solver3->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(b3)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
 
-TEST_F(NAME, check_joblist_order_for_disjoint_trees_llrr)
+TEST_F(NAME, check_solvers_order_for_disjoint_trees_llrr)
 {
-    ik_joblist_t joblist;
+    ik_solvers solvers;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6, *n7, *n8, *n9, *n10, *n11, *n12, *n13, *n14, *n15;
 
     ik_node* tree = ik_node_create(ik_guid(0));
@@ -1612,7 +1613,7 @@ TEST_F(NAME, check_joblist_order_for_disjoint_trees_llrr)
     ik_node* n14 = ik_node_create_child(n11, ik_guid(14));
     ik_node* n15 = ik_node_create_child(n14, ik_guid(15));
 
-    ik_effector_t *e1, *e2, *e3, *e4, *e5;
+    ik_effector *e1, *e2, *e3, *e4, *e5;
     ik_node_create_effector(&e1, n7);
     ik_node_create_effector(&e2, n9);
     ik_node_create_effector(&e3, n13);
@@ -1647,14 +1648,14 @@ TEST_F(NAME, check_joblist_order_for_disjoint_trees_llrr)
     //                   0
     //
 
-    ik_joblist_init(&joblist);
-    ASSERT_THAT(ik_joblist_update(&joblist, tree), Eq(IK_OK));
-    ASSERT_THAT(vector_count(&joblist.solver_list), Eq(5));
-    struct ik_solver_t* solver1 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 0);
-    struct ik_solver_t* solver2 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 1);
-    struct ik_solver_t* solver3 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 2);
-    struct ik_solver_t* solver4 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 3);
-    struct ik_solver_t* solver5 = *(ik_solver_t**)vector_get_element(&joblist.solver_list, 4);
+    ik_solvers_init(&solvers);
+    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(5));
+    struct ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
+    struct ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
+    struct ik_solver* solver3 = *(ik_solver**)vector_get_element(&solvers.solver_list, 2);
+    struct ik_solver* solver4 = *(ik_solver**)vector_get_element(&solvers.solver_list, 3);
+    struct ik_solver* solver5 = *(ik_solver**)vector_get_element(&solvers.solver_list, 4);
 
     EXPECT_THAT(solver1->ndv.node_data->node_count, Eq(15));
 
@@ -1700,5 +1701,6 @@ TEST_F(NAME, check_joblist_order_for_disjoint_trees_llrr)
     EXPECT_THAT(IK_NDV_AT(&solver5->ndv, user_data, 1), Eq(IK_NODE_USER_DATA(n9)));
 
     ik_node_free_recursive(tree);
-    ik_joblist_deinit(&joblist);
+    ik_solvers_deinit(&solvers);
 }
+*/
