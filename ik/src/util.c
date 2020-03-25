@@ -12,7 +12,7 @@ typedef struct effector_data_t
 
 /* ------------------------------------------------------------------------- */
 static effector_data_t
-calculate_rotation_weight_decays_recursive(struct chain_t* chain)
+calculate_rotation_weight_decays_recursive(struct ik_chain* chain)
 {
     int node_idx, node_count;
 

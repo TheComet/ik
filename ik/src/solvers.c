@@ -94,12 +94,13 @@ void
 destroy_solver(struct ik_solver* solver)
 {
     solver->impl->deinit(solver);
+    IK_DECREF(solver->algorithm);
     FREE(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-create_solver(const struct ik_algorithm* algorithm)
+create_solver(struct ik_algorithm* algorithm)
 {
     VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
         if (strcmp((*p_iface)->name, algorithm->name) == 0)
@@ -112,6 +113,7 @@ create_solver(const struct ik_algorithm* algorithm)
                 return NULL;
             }
 
+            IK_INCREF(algorithm);
             solver->algorithm = algorithm;
             solver->impl = iface;
             if (solver->impl->init(solver) != 0)
@@ -189,10 +191,10 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
                 MARK_BEGIN_AND_END,
                 -1,
                 -1,
-                MARK_SECTION,
                 MARK_BEGIN,
                 MARK_BEGIN,
-                MARK_BEGIN_AND_END,
+                MARK_END,
+                MARK_END,
                 MARK_BEGIN_AND_END,
                 MARK_BEGIN_AND_END
             };
@@ -211,7 +213,7 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
                     return -1;
                 } break;
 
-                case 10: case 11: case 12: {
+                case 12: {
                     ik_log_printf(IK_WARN, "Attached algorithm on node %zu (0x%p) is useless", node->user.guid, node->user.ptr);
                 } break;
 
@@ -236,7 +238,7 @@ mark_nodes(struct btree_t* marked, const struct vector_t* effector_nodes)
                 }
             }
 
-            if (chain_length_counter == 0 || node->parent == NULL)
+            if (is_end_of_chain() || mark_idx == 10)  /* has alg + has children */
                 break;
 
             chain_length_counter--;
@@ -252,7 +254,7 @@ static struct ik_solver*
 create_solver_and_rebuild(struct ik_subtree* subtree)
 {
     const struct ik_node* node;
-    const struct ik_algorithm* algorithm;
+    struct ik_algorithm* algorithm;
     struct ik_solver* solver;
 
     algorithm = NULL;
@@ -335,6 +337,7 @@ create_solver_for_each_subtree(struct ik_solvers* solver,
     {
         case MARK_END:
             assert(current_subtree != NULL);
+            assert(node->effector != NULL);
             if (vector_push(&current_subtree->leaves, &node) != VECTOR_OK)
                 return -1;
         /* fallthrough */
@@ -348,6 +351,7 @@ create_solver_for_each_subtree(struct ik_solvers* solver,
 
         case MARK_BEGIN_AND_END:
             assert(current_subtree != NULL);
+            assert(node->effector != NULL);
             if (vector_push(&current_subtree->leaves, &node) != VECTOR_OK)
                 return -1;
         /* fallthrough */

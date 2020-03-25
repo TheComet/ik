@@ -1,371 +1,142 @@
-#include "ik/btree.h"
+#include "cstructures/memory.h"
 #include "ik/chain.h"
-#include "ik/memory.h"
-#include "ik/vector.h"
-#include "ik/effector.h"
-#include "ik/node.h"
 #include "ik/log.h"
-#include "ik/vec3.h"
+#include "ik/node.h"
 #include <assert.h>
 #include <stdio.h>
 
-#if 0
-
-enum node_marking_e
-{
-    MARK_NONE = 0,
-    MARK_BASE,
-    MARK_SECTION
-};
-
 /* ------------------------------------------------------------------------- */
-struct chain_t*
+struct ik_chain*
 chain_create(void)
 {
-    struct chain_t* chain = MALLOC(sizeof *chain);
+    struct ik_chain* chain = MALLOC(sizeof *chain);
     if (chain == NULL)
     {
-        ik_log_fatal("Failed to allocate chain: out of memory");
+        ik_log_out_of_memory("chain_create()");
         return NULL;
     }
-    chain_init(chain);
+
+    if (chain_init(chain) != 0)
+    {
+        FREE(chain);
+        return NULL;
+    }
+
     return chain;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_free(struct chain_t* chain)
+chain_destroy(struct ik_chain* chain)
 {
     chain_deinit(chain);
     FREE(chain);
 }
 
 /* ------------------------------------------------------------------------- */
-void
-chain_init(struct chain_t* chain)
+int
+chain_init(struct ik_chain* chain)
 {
-    vector_init(&chain->nodes, sizeof(struct ik_node_t*));
-    vector_init(&chain->children, sizeof(struct chain_t));
+    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) == 0)
+        return -1;
+
+    if (vector_init(&chain->children, sizeof(struct ik_chain)) == 0)
+    {
+        vector_deinit(&chain->nodes);
+        return -1;
+    }
+
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_deinit(struct chain_t* chain)
+chain_deinit(struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
         chain_deinit(child_chain);
     CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_NODE(chain, node)
+        IK_DECREF(node);
+    CHAIN_END_EACH
+
     vector_deinit(&chain->children);
     vector_deinit(&chain->nodes);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-chain_clear_free(struct chain_t* chain)
+chain_clear_recursive(struct ik_chain* chain)
 {
-    chain_deinit(chain); /* does the same thing */
+    vec_size_t node_idx;
+
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        chain_clear_recursive(child_chain);
+    CHAIN_END_EACH
+
+    /*
+     * Decref all nodes except for the base node, because the base node is
+     * stored as part of the parent chain's leaf node
+     */
+    for (node_idx = 0; node_idx < chain_length(chain) - 1; ++node_idx)
+    {
+        struct ik_node* node  = chain_get_node(chain, node_idx);
+        IK_DECREF(node);
+    }
+
+    vector_clear_compact(&chain->children);
+    vector_clear_compact(&chain->nodes);
+}
+void
+chain_clear(struct ik_chain* chain)
+{
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        chain_clear_recursive(child_chain);
+    CHAIN_END_EACH
+
+    /*
+     * Decref all nodes INCLUDING the base node, because there are no parent
+     * chains
+     */
+    CHAIN_FOR_EACH_NODE(chain, node)
+        IK_DECREF(node);
+    CHAIN_END_EACH
+
+    vector_clear_compact(&chain->children);
+    vector_clear_compact(&chain->nodes);
 }
 
 /* ------------------------------------------------------------------------- */
-struct chain_t*
-chain_create_child(struct chain_t* chain)
+struct ik_chain*
+chain_create_child(struct ik_chain* chain)
 {
     return vector_emplace(&chain->children);
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-chain_add_node(struct chain_t* chain, const struct ik_node_t* node)
+int
+chain_add_node(struct ik_chain* chain, const struct ik_node* node)
 {
-    return vector_push(&chain->nodes, &node);
+    if (vector_push(&chain->nodes, &node) == VECTOR_OK)
+    {
+        IK_INCREF(node);
+        return 0;
+    }
+
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */
-static int
-count_chains_recursive(const struct chain_t* chain)
+int
+count_chains(const struct ik_chain* chain)
 {
     int counter = 1;
     CHAIN_FOR_EACH_CHILD(chain, child)
-        counter += count_chains_recursive(child);
+        counter += count_chains(child);
     CHAIN_END_EACH
     return counter;
 }
-int
-count_chains(const struct vector_t* chains)
-{
-    int counter = 0;
-    VECTOR_FOR_EACH(chains, struct chain_t, chain)
-        counter += count_chains_recursive(chain);
-    VECTOR_END_EACH
-    return counter;
-}
-
-/* ------------------------------------------------------------------------- */
-static ikret_t
-mark_involved_nodes(struct hashmap_t* involved_nodes,
-                    const struct vector_t* effector_nodes_list)
-{
-    /*
-     * Traverse the chain of parents starting at each effector node and ending
-     * at the sub-base node of the tree and mark every node on the way. Each
-     * effector specifies a maximum chain length, which means it's possible
-     * that we won't hit the base node.
-     */
-    VECTOR_FOR_EACH(effector_nodes_list, struct ik_node_t*, p_effector_node)
-
-        /*
-         * Set up chain length counter. If the chain length is 0 then it is
-         * infinitely long. Set the counter to -1 in this case to skip the
-         * escape condition.
-         */
-        int chain_length_counter;
-        struct ik_node_t* node = *p_effector_node;
-        assert(node->effector != NULL);
-        chain_length_counter = node->effector->chain_length == 0 ? -1 : (int)node->effector->chain_length;
-
-        /*
-         * Walk up chain (starting at effector node and ending if we run out of
-         * nodes, or the chain length counter reaches 0.
-         *
-         * Mark nodes that are at the base of the chain differently, so the
-         * chains can be split correctly later. Section markings will overwrite
-         * split markings.
-         */
-        for (; node != NULL; node = node->parent)
-        {
-            enum node_marking_e* current_marking;
-            enum node_marking_e marking = MARK_SECTION;
-            if (chain_length_counter == 0)
-                marking = MARK_BASE;
-
-            current_marking = (enum node_marking_e*)bstv_find_ptr(involved_nodes, node->guid);
-            if (current_marking == NULL)
-            {
-                if (bstv_insert(involved_nodes, node->guid, (void*)(intptr_t)marking) < 0)
-                {
-                    ik_log_fatal("Ran out of memory while marking involved nodes");
-                    return IK_ERR_OUT_OF_MEMORY;
-                }
-            }
-            else
-            {
-                if (chain_length_counter != 0)
-                    *current_marking = marking;
-            }
-
-            if (chain_length_counter-- == 0)
-                break;
-        }
-    VECTOR_END_EACH
-
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-static ikret_t
-recursively_build_chain_tree(struct vector_t* chain_list,
-                             struct chain_t* chain_current,
-                             const struct ik_node_t* node_base,
-                             const struct ik_node_t* node_current,
-                             struct bstv_t* involved_nodes)
-{
-    int marked_children_count;
-    const struct ik_node_t* child_node_base = node_base;
-    struct chain_t* child_chain = chain_current;
-
-    /* can remove the mark from the set to speed up future checks */
-    enum node_marking_e marking =
-        (enum node_marking_e)(intptr_t)bstv_erase(involved_nodes, node_current->guid);
-
-    switch(marking)
-    {
-        /*
-         * If this node was marked as the base of a chain then split the chain
-         * at this point by moving the pointer to the base node down the tree
-         * to the current node and set the current chain to NULL so a new
-         * island is created (this is necessary because all children of this
-         * node are necessarily part of an isolated tree).
-         */
-        case MARK_BASE:
-            child_node_base = node_current;
-            chain_current = NULL;
-            break;
-        /*
-         * If this node is not marked at all, cut off any previous chain but
-         * continue (fall through) as if a section was marked. It's possible
-         * that there are isolated chains somewhere further down the tree.
-         */
-        case MARK_NONE:
-            node_base = node_current;
-            /* falling through on purpose */
-
-        case MARK_SECTION:
-            /*
-             * If the current node has at least two children marked as sections
-             * or if (the current node is an effector node, but only if (the base
-             * node is not equal to this node (that is, we need to avoid chains
-             * that would have less than 2 nodes), then we must also split the
-             * chain at this point.
-             */
-            marked_children_count = 0;
-            NODE_FOR_EACH(node_current, child_guid, child)
-                if ((enum node_marking_e)(intptr_t)bstv_find(involved_nodes, child_guid) == MARK_SECTION)
-                    if (++marked_children_count == 2)
-                        break;
-            NODE_END_EACH
-            if ((marked_children_count == 2 || node_current->effector != NULL) && node_current != node_base)
-            {
-                const struct ik_node_t* node;
-
-                if (chain_current == NULL) /* First chain in the tree? */
-                {
-                    /* Insert and initialize a base chain in the list. */
-                    child_chain = vector_emplace(chain_list);
-                    if (child_chain == NULL)
-                    {
-                        ik_log_fatal("Failed to create base chain: Ran out of memory");
-                        return IK_ERR_OUT_OF_MEMORY;
-                    }
-                    chain_init(child_chain);
-                }
-                else /* This is not the first chain in the tree */
-                {
-                    /*
-                     * Create a new child chain in the current chain and
-                     * initialize it.
-                     */
-                    child_chain = chain_create_child(chain_current);
-                    if (child_chain == NULL)
-                    {
-                        ik_log_fatal("Failed to create child chain: Ran out of memory");
-                        return IK_ERR_OUT_OF_MEMORY;
-                    }
-                    chain_init(child_chain);
-                }
-
-                /*
-                 * Add pointers to all nodes that are part of this chain into
-                 * the chain's list, starting with the end node.
-                 */
-                for (node = node_current; node != node_base; node = node->parent)
-                    if (chain_add_node(child_chain, node) != 0)
-                    {
-                        ik_log_fatal("Failed to insert node into chain: Ran out of memory");
-                        return IK_ERR_OUT_OF_MEMORY;
-                    }
-                if (chain_add_node(child_chain, node_base) != 0)
-                {
-                    ik_log_fatal("Failed to insert node into chain: Ran out of memory");
-                    return IK_ERR_OUT_OF_MEMORY;
-                }
-
-                /*
-                 * Update the base node to be this node so deeper chains are
-                 * built back to this node
-                 */
-                child_node_base = node_current;
-            }
-            break;
-    }
-
-    /* Recurse into children of the current node. */
-    NODE_FOR_EACH(node_current, child_guid, child_node)
-        ikret_t result;
-        if ((result = recursively_build_chain_tree(
-                chain_list,
-                child_chain,
-                child_node_base,
-                child_node,
-                involved_nodes)) != IK_OK)
-            return result;
-    NODE_END_EACH
-
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-ikret_t
-chain_tree_rebuild(struct vector_t* chain_list,
-                   const struct ik_node_t* base_node,
-                   const struct vector_t* effector_nodes_list)
-{
-    ikret_t result;
-    struct bstv_t involved_nodes;
-    int involved_nodes_count;
-#ifdef IK_DOT_OUTPUT
-    char buffer[20];
-    static int file_name_counter = 0;
-#endif
-
-    /* Clear all existing chain trees */
-    VECTOR_FOR_EACH(chain_list, struct chain_t, chain)
-        chain_deinit(chain);
-    VECTOR_END_EACH
-    vector_deinit(chain_list);
-
-    /*
-     * Build a set of all nodes that are in a direct path with all of the
-     * effectors.
-     */
-    bstv_init(&involved_nodes);
-    if ((result = mark_involved_nodes(&involved_nodes, effector_nodes_list)) != IK_OK)
-        goto mark_involved_nodes_failed;
-    involved_nodes_count = bstv_count(&involved_nodes);
-
-    recursively_build_chain_tree(chain_list, NULL, base_node, base_node, &involved_nodes);
-
-    /* DEBUG: Save chain tree to DOT */
-#ifdef IK_DOT_OUTPUT
-    sprintf(buffer, "tree%d.dot", file_name_counter++);
-    dump_to_dot(base_node, chains, buffer);
-#endif
-
-    ik_log_info("There are %d effector(s) involving %d node(s). %d chain(s) were created",
-                   vector_count(effector_nodes_list),
-                   involved_nodes_count,
-                   count_chains(chain_list));
-
-    bstv_clear_free(&involved_nodes);
-
-    return result;
-
-    mark_involved_nodes_failed : bstv_clear_free(&involved_nodes);
-    return IK_OK;
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-calculate_segment_lengths_in_island(struct chain_t* chain)
-{
-    /*
-     * The nodes are in local space, so the segment length is just the length
-     * of the node->position vector.
-     *
-     * The segment length of a node refers to the distance to its parent rather
-     * than to the distance to its child. Thus, the base node of a chain does
-     * not need to be iterated.
-     */
-    int last_idx = chain_length(chain) - 1;
-    while (last_idx-- > 0)
-    {
-        struct ik_node_t* node = chain_get_node(chain, last_idx);
-
-        node->dist_to_parent = ik_vec3_length(node->position.f);
-    }
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        calculate_segment_lengths_in_island(child);
-    CHAIN_END_EACH
-}
-void
-update_distances(const struct vector_t* chains)
-{
-    /* TODO: Implement again, take into consideration bone skipping */
-    VECTOR_FOR_EACH(chains, struct chain_t, chain)
-        calculate_segment_lengths_in_island(chain);
-    VECTOR_END_EACH
-}
-#endif
 
 /* ------------------------------------------------------------------------- */
 #ifdef IK_DOT_OUTPUT
@@ -391,7 +162,7 @@ dump_chain(const chain_t* chain, FILE* fp)
     VECTOR_END_EACH
 }
 static void
-dump_node(const ik_node_t* node, FILE* fp)
+dump_node(const ik_node* node, FILE* fp)
 {
     if (node->effector != NULL)
         fprintf(fp, "    %d [color=\"0.6 0.5 1.0\"];\n", node->guid);
@@ -401,7 +172,7 @@ dump_node(const ik_node_t* node, FILE* fp)
     NODE_END_EACH
 }
 void
-dump_to_dot(const ik_node_t* node, const vector_t* chains, const char* file_name)
+dump_to_dot(const ik_node* node, const vector_t* chains, const char* file_name)
 {
     FILE* fp = fopen(file_name, "w");
     if (fp == NULL)

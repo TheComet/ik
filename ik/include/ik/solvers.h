@@ -41,8 +41,8 @@ IK_PUBLIC_API int
 ik_solver_unregister(const struct ik_solver_interface* interface);
 
 #define IK_SOLVER_HEAD                                                        \
-    const struct ik_solver_interface* impl;                                   \
-    const struct ik_algorithm* algorithm;
+    struct ik_solver_interface* impl;                                         \
+    struct ik_algorithm* algorithm;
 
 struct ik_solvers
 {

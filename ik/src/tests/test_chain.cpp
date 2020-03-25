@@ -77,7 +77,7 @@ TEST_F(NAME, weird_tree)
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
 
     // First has length 2
-    chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
+    ik_chain* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
     ASSERT_THAT(chain_length(chain1), Eq(2u));
     ik_node_t* node = chain_get_node(chain1, 0);
     EXPECT_THAT(node->guid, Eq(4u));
@@ -88,7 +88,7 @@ TEST_F(NAME, weird_tree)
     EXPECT_THAT(node, Eq(child3));
 
     // Second has length 4
-    chain_t* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
+    ik_chain* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
     ASSERT_THAT(chain_length(chain2), Eq(4u));
     node = chain_get_node(chain2, 0);
     EXPECT_THAT(node->guid, Eq(6u));
@@ -105,7 +105,7 @@ TEST_F(NAME, weird_tree)
 
     // First Sub-chain with length 2
     ASSERT_THAT(chain_child_count(chain2), Eq(2u));
-    chain_t* chain3 = chain_get_child(chain2, 0);
+    ik_chain* chain3 = chain_get_child(chain2, 0);
     ASSERT_THAT(chain_length(chain3), Eq(2u));
     node = chain_get_node(chain3, 0);
     EXPECT_THAT(node->guid, Eq(7u));
@@ -116,7 +116,7 @@ TEST_F(NAME, weird_tree)
     EXPECT_THAT(node, Eq(child6));
 
     // Second sub-chain with length 5
-    chain_t* chain4 = chain_get_child(chain2, 1);
+    ik_chain* chain4 = chain_get_child(chain2, 1);
     ASSERT_THAT(chain_length(chain4), Eq(5u));
     node = chain_get_node(chain4, 0);
     EXPECT_THAT(node->guid, Eq(11u));
@@ -180,8 +180,8 @@ TEST_F(NAME, two_arms_meet_at_same_node)
     IKAPI.solver.rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
-    chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
-    chain_t* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
+    ik_chain* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
+    ik_chain* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
 
     // First arm
     ASSERT_THAT(chain_length(chain1), Eq(3u));
@@ -239,8 +239,8 @@ TEST_F(NAME, two_separate_arms)
     IKAPI.solver.rebuild(solver);
 
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(2u));
-    chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
-    chain_t* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
+    ik_chain* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
+    ik_chain* chain2 = (chain_t*)vector_get_element(&solver->chain_list, 1);
 
     // First arm
     ASSERT_THAT(chain_length(chain1), Eq(2u));
@@ -293,9 +293,9 @@ TEST_F(NAME, effector_in_middle_of_chain)
 
     // We expect the chain to be broken into 2 parts, one as a child of the other
     ASSERT_THAT(vector_count(&solver->chain_list), Eq(1u));
-    chain_t* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
+    ik_chain* chain1 = (chain_t*)vector_get_element(&solver->chain_list, 0);
     ASSERT_THAT(chain_child_count(chain1), Eq(1u));
-    chain_t* chain2 = chain_get_child(chain1, 0);
+    ik_chain* chain2 = chain_get_child(chain1, 0);
 
     // Bottom section
     ASSERT_THAT(chain_length(chain1), Eq(4u));
