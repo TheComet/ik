@@ -12,6 +12,7 @@
 C_BEGIN
 
 struct ik_node;
+struct ik_subtree;
 
 struct ik_chain
 {
@@ -56,6 +57,9 @@ chain_create_child(struct ik_chain* chain);
 IK_PRIVATE_API int
 chain_add_node(struct ik_chain* chain, const struct ik_node* node);
 
+IK_PRIVATE_API int
+chain_tree_rebuild(struct ik_chain* chain, const struct ik_subtree* subtree);
+
 /*!
  * @brief Counts all of the chains in the tree.
  */
@@ -89,6 +93,9 @@ count_chains(const struct ik_chain* chains);
  */
 #define chain_get_tip_node(chain_var) \
     chain_get_node(chain_var, 0)
+
+#define chain_child_count(chain_var) \
+    (vector_count(&(chain_var)->children))
 
 #define CHAIN_FOR_EACH_CHILD(chain_var, var_name) \
     VECTOR_FOR_EACH(&(chain_var)->children, struct ik_chain, var_name) {

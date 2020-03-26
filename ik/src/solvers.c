@@ -299,10 +299,10 @@ recurse_with_new_subtree(struct ik_solvers* solvers,
     struct ik_solver* solver;
     struct ik_subtree subtree;
 
-    if (ik_subtree_init(&subtree) != 0)
+    if (subtree_init(&subtree) != 0)
         goto subtree_init_failed;
 
-    subtree.root = node;
+    subtree_set_root(&subtree, node);
     NODE_FOR_EACH(node, user_data, child)
         if (create_solver_for_each_subtree(solvers, &subtree, child, marked_nodes) != 0)
             goto recurse_failed;
@@ -315,13 +315,14 @@ recurse_with_new_subtree(struct ik_solvers* solvers,
     if (vector_push(&solvers->solver_list, &solver) != VECTOR_OK)
         goto add_solver_to_solver_failed;
 
-    ik_subtree_deinit(&subtree);
+    subtree_deinit(&subtree);
 
     return 0;
 
     add_solver_to_solver_failed  : destroy_solver(solver);
     new_solver_failed            :
-    recurse_failed               : ik_subtree_deinit(&subtree);
+    recurse_failed               :
+    subtree_deinit(&subtree);
     subtree_init_failed          : return -1;
 }
 
@@ -338,7 +339,7 @@ create_solver_for_each_subtree(struct ik_solvers* solver,
         case MARK_END:
             assert(current_subtree != NULL);
             assert(node->effector != NULL);
-            if (vector_push(&current_subtree->leaves, &node) != VECTOR_OK)
+            if (subtree_add_leaf(current_subtree, node) != 0)
                 return -1;
         /* fallthrough */
 
@@ -352,7 +353,7 @@ create_solver_for_each_subtree(struct ik_solvers* solver,
         case MARK_BEGIN_AND_END:
             assert(current_subtree != NULL);
             assert(node->effector != NULL);
-            if (vector_push(&current_subtree->leaves, &node) != VECTOR_OK)
+            if (subtree_add_leaf(current_subtree, node) != 0)
                 return -1;
         /* fallthrough */
 

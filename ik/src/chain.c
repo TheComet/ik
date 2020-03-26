@@ -2,6 +2,7 @@
 #include "ik/chain.h"
 #include "ik/log.h"
 #include "ik/node.h"
+#include "ik/subtree.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -125,6 +126,20 @@ chain_add_node(struct ik_chain* chain, const struct ik_node* node)
     }
 
     return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+chain_tree_rebuild_recursive(struct ik_chain* chain,
+                             const struct ik_node* node,
+                             const struct ik_subtree* subtree)
+{
+    return 0;
+}
+int
+chain_tree_rebuild(struct ik_chain* chain, const struct ik_subtree* subtree)
+{
+    return chain_tree_rebuild_recursive(chain, subtree->root, subtree);
 }
 
 /* ------------------------------------------------------------------------- */

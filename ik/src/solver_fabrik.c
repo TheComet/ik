@@ -76,7 +76,7 @@ solve_chain_forwards_with_target_rotation(struct ik_chain* chain)
      */
     if (average_count == 0)
     {
-        struct ik_node* effector_node = chain_get_node(chain, 0);
+        struct ik_node* effector_node = ik_chain_get_node(chain, 0);
         struct ik_effector* effector = effector_node->effector;
         target.v.pos = effector->actual_target;
 
@@ -95,11 +95,11 @@ solve_chain_forwards_with_target_rotation(struct ik_chain* chain)
     /*
      * Iterate through each segment and apply the FABRIK solver.
      */
-    node_count = chain_length(chain);
+    node_count = ik_chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct ik_node* child_node  = chain_get_node(chain, node_idx + 0);
-        struct ik_node* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node* child_node  = ik_chain_get_node(chain, node_idx + 0);
+        struct ik_node* parent_node = ik_chain_get_node(chain, node_idx + 1);
 
         /* move node to target */
         child_node->position = target.v.pos;
@@ -148,7 +148,7 @@ solve_chain_forwards(struct ik_chain* chain)
      */
     if (average_count == 0)
     {
-        struct ik_node* effector_node = chain_get_node(chain, 0);
+        struct ik_node* effector_node = ik_chain_get_node(chain, 0);
         struct ik_effector* effector = effector_node->effector;
         target_position = effector->actual_target;
     }
@@ -160,11 +160,11 @@ solve_chain_forwards(struct ik_chain* chain)
     /*
      * Iterate through each segment and apply the FABRIK solver.
      */
-    node_count = chain_length(chain);
+    node_count = ik_chain_length(chain);
     for (node_idx = 0; node_idx < node_count - 1; ++node_idx)
     {
-        struct ik_node* child_node  = chain_get_node(chain, node_idx + 0);
-        struct ik_node* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node* child_node  = ik_chain_get_node(chain, node_idx + 0);
+        struct ik_node* parent_node = ik_chain_get_node(chain, node_idx + 1);
 
         /* move node to target */
         child_node->position = target_position;
@@ -183,7 +183,7 @@ solve_chain_forwards(struct ik_chain* chain)
 static void
 solve_chain_backwards(struct ik_chain* chain, union ik_vec3 target_position)
 {
-    int node_idx = chain_length(chain) - 1;
+    int node_idx = ik_chain_length(chain) - 1;
 
     /*
      * The base node must be set to the target position before iterating.
@@ -191,7 +191,7 @@ solve_chain_backwards(struct ik_chain* chain, union ik_vec3 target_position)
      */
     if (node_idx > 1)
     {
-        struct ik_node* base_node = chain_get_node(chain, node_idx);
+        struct ik_node* base_node = ik_chain_get_node(chain, node_idx);
         base_node->position = target_position;
     }
 
@@ -201,8 +201,8 @@ solve_chain_backwards(struct ik_chain* chain, union ik_vec3 target_position)
      */
     while (node_idx-- > 0)
     {
-        struct ik_node* child_node  = chain_get_node(chain, node_idx + 0);
-        struct ik_node* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node* child_node  = ik_chain_get_node(chain, node_idx + 0);
+        struct ik_node* parent_node = ik_chain_get_node(chain, node_idx + 1);
 
         /* point segment to child node and set target position to its beginning */
         ik_vec3_sub_vec3(target_position.f, child_node->position.f); /* child points to parent */
@@ -234,7 +234,7 @@ recurse_into_children(struct ik_chain* chain)
         struct ik_quat_t rotation;
         calculate_joint_rotations_for_chain(child);
 
-        rotation = chain_get_base_node(chain)->rotation;
+        rotation = ik_chain_get_base_node(chain)->rotation;
 
         /*
          * Averaging quaternions taken from here
@@ -255,7 +255,7 @@ recurse_into_children(struct ik_chain* chain)
     {
         ik_quat_div_scalar(average_rotation.f, average_count);
         ik_quat_normalize(average_rotation.f);
-        chain_get_tip_node(chain)->rotation = average_rotation;
+        ik_chain_get_tip_node(chain)->rotation = average_rotation;
     }
 }
 
@@ -267,11 +267,11 @@ calculate_delta_rotation_of_each_segment(struct ik_chain* chain)
      * Calculate all of the delta rotations of the joints and store them into
      * node->rotation.
      */
-    int node_idx = chain_length(chain) - 1;
+    int node_idx = ik_chain_length(chain) - 1;
     while (node_idx-- > 0)
     {
-        struct ik_node* child_node  = chain_get_node(chain, node_idx + 0);
-        struct ik_node* parent_node = chain_get_node(chain, node_idx + 1);
+        struct ik_node* child_node  = ik_chain_get_node(chain, node_idx + 0);
+        struct ik_node* parent_node = ik_chain_get_node(chain, node_idx + 1);
 
         /* calculate vectors for original and solved segments */
         union ik_vec3 segment_original = child_node->FABRIK.initial_position;
@@ -288,7 +288,7 @@ calculate_joint_rotations_for_chain(struct ik_chain* chain)
 {
     struct ik_node* effector_node;
 
-    assert(chain_length(chain) >= 2);
+    assert(ik_chain_length(chain) >= 2);
 
     /*
      * Calculates the "global" (world) angles of each joint and writes them to
@@ -316,10 +316,10 @@ calculate_joint_rotations_for_chain(struct ik_chain* chain)
      * this may or may not be desirable, so the user can enable the effector
      * node to inherit its parent rotation.
      */
-    effector_node = chain_get_tip_node(chain);
+    effector_node = ik_chain_get_tip_node(chain);
     if (effector_node->effector && !(effector_node->effector->flags & IK_EFFECTOR_KEEP_ORIENTATION))
     {
-        effector_node->rotation = chain_get_node(chain, 1)->rotation; /* parent node */
+        effector_node->rotation = ik_chain_get_node(chain, 1)->rotation; /* parent node */
     }
 
     /*
@@ -432,10 +432,10 @@ FABRIK_solve(struct ik_solver* solver)
              * be asserted while building the chain trees, but it can't hurt
              * to double check
              */
-            idx = chain_length(chain) - 1;
+            idx = ik_chain_length(chain) - 1;
             assert(idx > 0);
 
-            base_node = chain_get_node(chain, idx);
+            base_node = ik_chain_get_node(chain, idx);
 
             if (solver->features & IK_ALGORITHM_TARGET_ROTATIONS)
                 solve_chain_forwards_with_target_rotation(chain);

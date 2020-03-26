@@ -154,7 +154,7 @@ set (IK_SOURCES
     #"src/solver_b1.c"
     #"src/solver_b2.c"
     #"src/solver_dummy.c"
-    "src/solver_fabrik.c"
+    #"src/solver_fabrik.c"
     #"src/solver_mss.c"
     "src/subtree.c"
     #"src/transform_chains.c"
@@ -182,6 +182,7 @@ set (IK_PYTHON_SOURCES
 set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
     "src/tests/tests_run.cpp"
+    "src/tests/test_chain.cpp"
     #"src/tests/test_constraint.cpp"
     "src/tests/test_effector.cpp"
     #"src/tests/test_FABRIK.cpp"

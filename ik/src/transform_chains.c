@@ -28,11 +28,11 @@ struct ik_algorithm_t
 static void
 local_to_global_rotation_recursive(const struct ik_chain* chain)
 {
-    int idx = idx = chain_length(chain) - 1;
+    int idx = idx = ik_chain_length(chain) - 1;
     while (idx--)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_quat_mul_quat(child->rotation.f, parent->rotation.f);
     }
@@ -50,10 +50,10 @@ global_to_local_rotation_recursive(const struct ik_chain* chain)
         global_to_local_rotation_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 1; ++idx)
+    for (idx = 0; idx != (int)ik_chain_length(chain) - 1; ++idx)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_quat_nmul_quat(child->rotation.f, parent->rotation.f);
     }
@@ -63,11 +63,11 @@ global_to_local_rotation_recursive(const struct ik_chain* chain)
 static void
 local_to_global_translation_recursive(const struct ik_chain* chain)
 {
-    int idx = chain_length(chain) - 1;
+    int idx = ik_chain_length(chain) - 1;
     while (idx--)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_vec3_nrotate(child->position.f, parent->rotation.f);
         ik_vec3_add_vec3(child->position.f, parent->position.f);
@@ -86,10 +86,10 @@ global_to_local_translation_recursive(const struct ik_chain* chain)
         global_to_local_translation_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 1; idx++)
+    for (idx = 0; idx != (int)ik_chain_length(chain) - 1; idx++)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_vec3_sub_vec3(child->position.f, parent->position.f);
         ik_vec3_rotate(child->position.f, parent->rotation.f);
@@ -100,11 +100,11 @@ global_to_local_translation_recursive(const struct ik_chain* chain)
 static void
 local_to_global_recursive(const struct ik_chain* chain)
 {
-    int idx = chain_length(chain) - 1;
+    int idx = ik_chain_length(chain) - 1;
     while (idx--)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_vec3_nrotate(child->position.f, parent->rotation.f);
         ik_vec3_add_vec3(child->position.f, parent->position.f);
@@ -124,10 +124,10 @@ global_to_local_recursive(const struct ik_chain* chain)
         global_to_local_recursive(child);
     CHAIN_END_EACH
 
-    for (idx = 0; idx != (int)chain_length(chain) - 1; ++idx)
+    for (idx = 0; idx != (int)ik_chain_length(chain) - 1; ++idx)
     {
-        struct ik_node_t* child  = chain_get_node(chain, idx + 0);
-        struct ik_node_t* parent = chain_get_node(chain, idx + 1);
+        struct ik_node_t* child  = ik_chain_get_node(chain, idx + 0);
+        struct ik_node_t* parent = ik_chain_get_node(chain, idx + 1);
 
         ik_quat_nmul_quat(child->rotation.f, parent->rotation.f);
         ik_vec3_sub_vec3(child->position.f, parent->position.f);
@@ -159,7 +159,7 @@ eff_global_to_local(struct ik_effector_t* eff, const struct ik_node_t* node)
 static void
 eff_all_local_to_global(const struct ik_node_t* node_before_base, const struct ik_chain* chain)
 {
-    struct ik_node_t* tip = chain_get_tip_node(chain);
+    struct ik_node_t* tip = ik_chain_get_tip_node(chain);
     if (tip->effector)
         eff_local_to_global(tip->effector, node_before_base);
 
@@ -170,7 +170,7 @@ eff_all_local_to_global(const struct ik_node_t* node_before_base, const struct i
 static void
 eff_all_global_to_local(const struct ik_node_t* node_before_base, const struct ik_chain* chain)
 {
-    struct ik_node_t* tip = chain_get_tip_node(chain);
+    struct ik_node_t* tip = ik_chain_get_tip_node(chain);
     if (tip->effector)
         eff_global_to_local(tip->effector, node_before_base);
 
@@ -208,7 +208,7 @@ ik_transform_chain_list(const struct ik_algorithm_t* algorithm, uint8_t flags)
 void
 ik_transform_chain(struct ik_chain* chain, uint8_t flags)
 {
-    struct ik_node_t* base_node = chain_get_base_node(chain);
+    struct ik_node_t* base_node = ik_chain_get_base_node(chain);
     (*transform_table[flags])(chain);
     if (base_node->parent)
         (*eff_transform_table[flags & 0x01])(base_node->parent, chain);
