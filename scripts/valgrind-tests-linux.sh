@@ -7,6 +7,7 @@ valgrind --num-callers=50 \
 	--leak-check=full \
 	--track-origins=yes \
 	--time-stamp=yes \
+    --gen-suppressions=all \
 	--suppressions=../../scripts/valgrind-suppressions.supp \
-	./iktests 2>&1 | tee ../../tests.grind
+	./iktests -- --gtest_filter="solvers.check_refcounts_are_correct" 2>&1 | tee ../../tests.grind
 cd .. && cd ..

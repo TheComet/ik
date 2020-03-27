@@ -369,8 +369,7 @@ static void
 deinit_solvers(struct ik_solvers* solver)
 {
     VECTOR_FOR_EACH(&solver->solver_list, struct ik_solver*, p_solver)
-        (*p_solver)->impl->deinit(*p_solver);
-        FREE(*p_solver);
+        destroy_solver(*p_solver);
     VECTOR_END_EACH
     vector_deinit(&solver->solver_list);
 }

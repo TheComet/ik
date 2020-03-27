@@ -28,10 +28,12 @@ IK_PRIVATE_API int
 subtree_is_leaf_node(const struct ik_subtree* st, const struct ik_node* node);
 
 IK_PRIVATE_API int
-subtree_is_part_of(const struct ik_subtree* st, const struct ik_node* node);
+subtree_check_node(const struct ik_subtree* st, const struct ik_node* node);
 
-IK_PRIVATE_API int
-subtree_two_or_more_children_are_part_of(const struct ik_subtree* st, const struct ik_node* node);
+int
+subtree_check_children_up_to(const struct ik_subtree* st,
+                             const struct ik_node* node,
+                             int max_count);
 
 C_END
 

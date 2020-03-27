@@ -58,7 +58,7 @@ subtree_is_leaf_node(const struct ik_subtree* st, const struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_is_part_of(const struct ik_subtree* st, const struct ik_node* node)
+subtree_check_node(const struct ik_subtree* st, const struct ik_node* node)
 {
     VECTOR_FOR_EACH(&st->leaves, struct ik_node*, p_node)
         const struct ik_node* cur_node = *p_node;
@@ -76,14 +76,16 @@ subtree_is_part_of(const struct ik_subtree* st, const struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_two_or_more_children_are_part_of(const struct ik_subtree* st, const struct ik_node* node)
+subtree_check_children_up_to(const struct ik_subtree* st,
+                             const struct ik_node* node,
+                             int max_count)
 {
     int found = 0;
     NODE_FOR_EACH(node, user_data, child)
-        found += subtree_is_part_of(st, child);
-        if (found == 2)
-            return 1;
+        found += subtree_check_node(st, child);
+        if (found == max_count)
+            break;
     NODE_END_EACH
 
-    return 0;
+    return found;
 }

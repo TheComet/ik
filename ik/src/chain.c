@@ -38,10 +38,10 @@ chain_destroy(struct ik_chain* chain)
 int
 chain_init(struct ik_chain* chain)
 {
-    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) == 0)
+    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) != VECTOR_OK)
         return -1;
 
-    if (vector_init(&chain->children, sizeof(struct ik_chain)) == 0)
+    if (vector_init(&chain->children, sizeof(struct ik_chain)) != VECTOR_OK)
     {
         vector_deinit(&chain->nodes);
         return -1;
@@ -68,12 +68,12 @@ chain_deinit(struct ik_chain* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-chain_clear_recursive(struct ik_chain* chain)
+chain_tree_clear_recursive(struct ik_chain* chain)
 {
     vec_size_t node_idx;
 
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        chain_clear_recursive(child_chain);
+        chain_tree_clear_recursive(child_chain);
     CHAIN_END_EACH
 
     /*
@@ -90,10 +90,10 @@ chain_clear_recursive(struct ik_chain* chain)
     vector_clear_compact(&chain->nodes);
 }
 void
-chain_clear(struct ik_chain* chain)
+chain_tree_clear(struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        chain_clear_recursive(child_chain);
+        chain_tree_clear_recursive(child_chain);
     CHAIN_END_EACH
 
     /*
@@ -112,7 +112,17 @@ chain_clear(struct ik_chain* chain)
 struct ik_chain*
 chain_create_child(struct ik_chain* chain)
 {
-    return vector_emplace(&chain->children);
+    struct ik_chain* child = vector_emplace(&chain->children);
+    if (child == NULL)
+        return NULL;
+
+    if (chain_init(child) != 0)
+    {
+        vector_erase_element(&chain->children, child);
+        return NULL;
+    }
+
+    return child;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -130,16 +140,49 @@ chain_add_node(struct ik_chain* chain, const struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 static int
-chain_tree_rebuild_recursive(struct ik_chain* chain,
-                             const struct ik_node* node,
-                             const struct ik_subtree* subtree)
+chain_tree_build_recursive(struct ik_chain* chain,
+                           const struct ik_node* node,
+                           const struct ik_subtree* subtree)
 {
+    switch (subtree_check_children_up_to(subtree, node, 2))
+    {
+        case 2: {
+            NODE_FOR_EACH(node, user_data, child_node)
+                struct ik_chain* child_chain;
+
+                if (!subtree_check_node(subtree, child_node))
+                    continue;
+
+                child_chain = chain_create_child(chain);
+                if (child_chain == NULL)
+                    return -1;
+
+                if (chain_tree_build_recursive(child_chain, child_node, subtree) != 0)
+                    return -1;
+                if (chain_add_node(child_chain, node) != 0)
+                    return -1;
+            NODE_END_EACH
+        } break;
+
+        case 1: {
+            NODE_FOR_EACH(node, user_data, child_node)
+                if (!subtree_check_node(subtree, child_node))
+                    continue;
+                if (chain_tree_build_recursive(chain, child_node, subtree) != 0)
+                    return -1;
+            NODE_END_EACH
+        } break;
+    }
+
+    if (chain_add_node(chain, node) != 0)
+        return -1;
+
     return 0;
 }
 int
-chain_tree_rebuild(struct ik_chain* chain, const struct ik_subtree* subtree)
+chain_tree_build(struct ik_chain* chain, const struct ik_subtree* subtree)
 {
-    return chain_tree_rebuild_recursive(chain, subtree->root, subtree);
+    return chain_tree_build_recursive(chain, subtree->root, subtree);
 }
 
 /* ------------------------------------------------------------------------- */

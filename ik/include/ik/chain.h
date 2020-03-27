@@ -49,7 +49,7 @@ chain_deinit(struct ik_chain* chain);
  * @brief Deletes all children and nodes.
  */
 IK_PRIVATE_API void
-chain_clear(struct ik_chain* chain);
+chain_tree_clear(struct ik_chain* chain);
 
 IK_PRIVATE_API struct ik_chain*
 chain_create_child(struct ik_chain* chain);
@@ -58,7 +58,7 @@ IK_PRIVATE_API int
 chain_add_node(struct ik_chain* chain, const struct ik_node* node);
 
 IK_PRIVATE_API int
-chain_tree_rebuild(struct ik_chain* chain, const struct ik_subtree* subtree);
+chain_tree_build(struct ik_chain* chain, const struct ik_subtree* subtree);
 
 /*!
  * @brief Counts all of the chains in the tree.
@@ -72,6 +72,9 @@ count_chains(const struct ik_chain* chains);
  */
 #define chain_get_node(chain_var, idx) \
     (*(struct ik_node**)vector_get_element(&(chain_var)->nodes, idx))
+
+#define chain_get_child(chain_var, idx) \
+    ((struct ik_chain*)vector_get_element(&(chain_var)->children, idx))
 
 /*!
  * @brief Helper macro for retrieving the number of nodes in a chain.
