@@ -15,17 +15,28 @@ struct ik_solver
 static int  dummy_init(struct ik_solver* solver) { return 0; }
 static void dummy_deinit(struct ik_solver* solver) {}
 static int  dummy_rebuild(struct ik_solver* solver, const struct ik_subtree* subtree) { return 0; }
-static void update_translations(struct ik_solver* solver) {}
+static void dummy_update_translations(struct ik_solver* solver) {}
 static int  dummy_solve(struct ik_solver* solver) { return 0; }
 static void dummy_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb) {}
 
-const struct ik_solver_interface ik_solver_DUMMY = {
-    "dummy",
+const struct ik_solver_interface ik_solver_DUMMY1 = {
+    "dummy1",
     sizeof(struct ik_solver),
     dummy_init,
     dummy_deinit,
     dummy_rebuild,
-    update_translations,
+    dummy_update_translations,
+    dummy_solve,
+    dummy_iterate_nodes
+};
+
+const struct ik_solver_interface ik_solver_DUMMY2 = {
+    "dummy2",
+    sizeof(struct ik_solver),
+    dummy_init,
+    dummy_deinit,
+    dummy_rebuild,
+    dummy_update_translations,
     dummy_solve,
     dummy_iterate_nodes
 };
@@ -57,7 +68,7 @@ public:
 
         ik_node_create_effector(n6);
         ik_node_create_effector(n9);
-        ik_node_create_algorithm(tree, "dummy");
+        ik_node_create_algorithm(tree, "dummy1");
 
         return tree;
     }
@@ -150,12 +161,14 @@ public:
 
     virtual void SetUp() override
     {
-        ik_solver_register(&ik_solver_DUMMY);
+        ik_solver_register(&ik_solver_DUMMY1);
+        ik_solver_register(&ik_solver_DUMMY2);
     }
 
     virtual void TearDown() override
     {
-        ik_solver_unregister(&ik_solver_DUMMY);
+        ik_solver_unregister(&ik_solver_DUMMY2);
+        ik_solver_unregister(&ik_solver_DUMMY1);
     }
 };
 
@@ -263,7 +276,6 @@ TEST_F(NAME, no_action_if_tree_has_no_algorithms)
     IK_DECREF(tree);
 }
 
-
 TEST_F(NAME, check_refcounts_are_correct)
 {
     ik_node* tree = tree_with_two_effectors();
@@ -273,64 +285,23 @@ TEST_F(NAME, check_refcounts_are_correct)
 
     ik_solver* solver = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
     ASSERT_THAT(solver->algorithm, NotNull());
-    EXPECT_THAT(solver->algorithm->name, StrEq("dummy"));
+    EXPECT_THAT(solver->algorithm->name, StrEq("dummy1"));
 
     EXPECT_THAT(solvers->refcount->refs, Eq(1));
     IK_DECREF(tree);
     IK_DECREF(solvers);
 }
 
-/*
-TEST_F(NAME, node_tree_can_be_flattened_multiple_times)
-{
-    ik_solvers solvers1;
-    ik_solvers solvers2;
-    ik_solvers solvers3;
-    ik_node* tree = tree_with_two_effectors();
-
-    ik_solvers_init(&solvers1);
-    ik_solvers_init(&solvers2);
-    ik_solvers_init(&solvers3);
-
-    ASSERT_THAT(ik_solvers_update(&solvers1, tree), Eq(IK_OK));
-    ASSERT_THAT(ik_solvers_update(&solvers2, tree), Eq(IK_OK));
-    ASSERT_THAT(ik_solvers_update(&solvers3, tree), Eq(IK_OK));
-
-    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers1.solver_list, 0);
-    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers2.solver_list, 0);
-    ik_solver* solver3 = *(ik_solver**)vector_get_element(&solvers3.solver_list, 0);
-
-    // The newly created flattened node data should be the one pointing to
-    // the original tree node data
-    EXPECT_THAT(solver1->ndv.node_data, Ne(tree->d));
-    EXPECT_THAT(solver2->ndv.node_data, Ne(tree->d));
-    EXPECT_THAT(solver3->ndv.node_data, Eq(tree->d));
-
-    EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_solvers_deinit(&solvers1);
-    EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_solvers_deinit(&solvers2);
-    EXPECT_THAT(tree->d->refcount->refs, Eq(11));
-    ik_solvers_deinit(&solvers3);
-    EXPECT_THAT(tree->d->refcount->refs, Eq(10));
-
-    ik_node_free_recursive(tree);
-}
-
 TEST_F(NAME, choose_algorithm_closest_to_root)
 {
-    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
 
-    ik_algorithm_t *a1, *a2;
-    ik_node_create_algorithm(&a1, tree);
-    ik_node_create_algorithm(&a2, n3);
-    a1->type = IK_SOLVER_DUMMY1;
-    a2->type = IK_SOLVER_DUMMY2;
+    ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n3, "dummy2");
 
-    ik_solvers_init(&solvers);
-    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solvers* solvers = ik_solvers_create(tree);
+    ASSERT_THAT(solvers, NotNull());
 
     //
     // e1 -> 6           9 <- e2
@@ -347,41 +318,34 @@ TEST_F(NAME, choose_algorithm_closest_to_root)
     //             |
     //             0 <- a1
     //
+    ASSERT_THAT(vector_count(&solvers->solver_list), Eq(1));
 
-    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
-
-    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
-    EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(tree)));
-    EXPECT_THAT(solver->ndv.node_data->node_count, Eq(10));
-    EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
-    EXPECT_THAT(solver->ndv.chain_begin_idx, Eq(1));
-    EXPECT_THAT(solver->ndv.chain_end_idx, Eq(10));
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
+    ASSERT_THAT(solver->algorithm, NotNull());
     EXPECT_THAT(solver->algorithm, Eq(a1));
 
-    ik_solvers_deinit(&solvers);
-    ik_node_free_recursive(tree);
+    IK_DECREF(solvers);
+    IK_DECREF(tree);
 }
+
 
 TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
 {
-    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
+
     ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
     ik_node* n6 = ik_node_find(tree, ik_guid(6));
     ik_node* n9 = ik_node_find(tree, ik_guid(9));
 
-    IK_NODE_EFFECTOR(n6)->chain_length = 4;
-    IK_NODE_EFFECTOR(n9)->chain_length = 4;
+    ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n3, "dummy2");
 
-    ik_algorithm_t *a1, *a2;
-    ik_node_create_algorithm(&a1, tree);
-    ik_node_create_algorithm(&a2, n3);
-    a1->type = IK_SOLVER_DUMMY1;
-    a2->type = IK_SOLVER_DUMMY2;
+    n6->effector->chain_length = 4;
+    n9->effector->chain_length = 4;
 
-    ik_solvers_init(&solvers);
-    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solvers* solvers = ik_solvers_create(tree);
+    ASSERT_THAT(solvers, NotNull());
 
     //
     // e1 -> 6           9 <- e2
@@ -398,42 +362,35 @@ TEST_F(NAME, choose_algorithm_closest_to_root_with_limited_chain_length)
     //             |
     //             0 <- a1
     //
-
-    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
+    ASSERT_THAT(vector_count(&solvers->solver_list), Eq(1));
 
     // We expect algorithm 1 to be chosen because it is the next available
     // one after the chains end
-    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
-    EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n2)));
-    EXPECT_THAT(solver->ndv.node_data->node_count, Eq(8));
-    EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
-    EXPECT_THAT(solver->ndv.chain_begin_idx, Eq(1));
-    EXPECT_THAT(solver->ndv.chain_end_idx, Eq(8));
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
+    ASSERT_THAT(solver->algorithm, NotNull());
     EXPECT_THAT(solver->algorithm, Eq(a1));
 
-    ik_solvers_deinit(&solvers);
-    ik_node_free_recursive(tree);
+    IK_DECREF(solvers);
+    IK_DECREF(tree);
 }
 
 TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
 {
-    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
+
+    ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
     ik_node* n6 = ik_node_find(tree, ik_guid(6));
     ik_node* n9 = ik_node_find(tree, ik_guid(9));
 
-    IK_NODE_EFFECTOR(n6)->chain_length = 3;
-    IK_NODE_EFFECTOR(n9)->chain_length = 3;
+    ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n3, "dummy2");
 
-    ik_algorithm_t *a1, *a2;
-    ik_node_create_algorithm(&a1, tree);
-    ik_node_create_algorithm(&a2, n3);
-    a1->type = IK_SOLVER_DUMMY1;
-    a2->type = IK_SOLVER_DUMMY2;
+    n6->effector->chain_length = 3;
+    n9->effector->chain_length = 3;
 
-    ik_solvers_init(&solvers);
-    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solvers* solvers = ik_solvers_create(tree);
+    ASSERT_THAT(solvers, NotNull());
 
     //
     // e1 -> 6           9 <- e2
@@ -450,42 +407,35 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     //             |
     //             0 <- a1
     //
+    ASSERT_THAT(vector_count(&solvers->solver_list), Eq(1));
 
-    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(1));
-
-    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
-    EXPECT_THAT(IK_NDV_AT(&solver->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n3)));
-    EXPECT_THAT(solver->ndv.node_data->node_count, Eq(7));
-    EXPECT_THAT(solver->ndv.subbase_idx, Eq(0));
-    EXPECT_THAT(solver->ndv.chain_begin_idx, Eq(1));
-    EXPECT_THAT(solver->ndv.chain_end_idx, Eq(7));
+    // We expect algorithm 2 to be chosen because it is the next available
+    // one after the chains end
+    ik_solver* solver = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
+    ASSERT_THAT(solver->algorithm, NotNull());
     EXPECT_THAT(solver->algorithm, Eq(a2));
 
-    ik_solvers_deinit(&solvers);
-    ik_node_free_recursive(tree);
+    IK_DECREF(solvers);
+    IK_DECREF(tree);
 }
 
 TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
 {
-    ik_solvers solvers;
     ik_node* tree = tree_with_two_effectors_and_no_algorithms();
+
+    ik_node* n2 = ik_node_find(tree, ik_guid(2));
     ik_node* n3 = ik_node_find(tree, ik_guid(3));
-    ik_node* n4 = ik_node_find(tree, ik_guid(4));
     ik_node* n6 = ik_node_find(tree, ik_guid(6));
-    ik_node* n7 = ik_node_find(tree, ik_guid(7));
     ik_node* n9 = ik_node_find(tree, ik_guid(9));
 
-    IK_NODE_EFFECTOR(n6)->chain_length = 2;
-    IK_NODE_EFFECTOR(n9)->chain_length = 2;
+    ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n3, "dummy2");
 
-    ik_algorithm_t *a1, *a2;
-    ik_node_create_algorithm(&a1, tree);
-    ik_node_create_algorithm(&a2, n3);
-    a1->type = IK_SOLVER_DUMMY1;
-    a2->type = IK_SOLVER_DUMMY2;
+    n6->effector->chain_length = 2;
+    n9->effector->chain_length = 2;
 
-    ik_solvers_init(&solvers);
-    ASSERT_THAT(ik_solvers_update(&solvers, tree), Eq(IK_OK));
+    ik_solvers* solvers = ik_solvers_create(tree);
+    ASSERT_THAT(solvers, NotNull());
 
     //
     // e1 -> 6           9 <- e2
@@ -502,30 +452,24 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     //             |
     //             0 <- a1
     //
+    ASSERT_THAT(vector_count(&solvers->solver_list), Eq(2));
 
-    ASSERT_THAT(vector_count(&solvers.solver_list), Eq(2));
-
-    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers.solver_list, 0);
-    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers.solver_list, 1);
-    EXPECT_THAT(solver1->ndv.node_data, Eq(solver2->ndv.node_data));
-    EXPECT_THAT(solver1->ndv.node_data->node_count, Eq(6));
-
-    EXPECT_THAT(IK_NDV_AT(&solver1->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n4)));
-    EXPECT_THAT(solver1->ndv.subbase_idx, Eq(0));
-    EXPECT_THAT(solver1->ndv.chain_begin_idx, Eq(1));
-    EXPECT_THAT(solver1->ndv.chain_end_idx, Eq(3));
+    // We expect algorithm 2 to be chosen because it is the next available
+    // one after the chains end
+    ik_solver* solver1 = *(ik_solver**)vector_get_element(&solvers->solver_list, 0);
+    ASSERT_THAT(solver1->algorithm, NotNull());
     EXPECT_THAT(solver1->algorithm, Eq(a2));
 
-    EXPECT_THAT(IK_NDV_AT(&solver2->ndv, user_data, 0), Eq(IK_NODE_USER_DATA(n7)));
-    EXPECT_THAT(solver2->ndv.subbase_idx, Eq(3));
-    EXPECT_THAT(solver2->ndv.chain_begin_idx, Eq(4));
-    EXPECT_THAT(solver2->ndv.chain_end_idx, Eq(6));
+    // same deal with second solver
+    ik_solver* solver2 = *(ik_solver**)vector_get_element(&solvers->solver_list, 1);
+    ASSERT_THAT(solver2->algorithm, NotNull());
     EXPECT_THAT(solver2->algorithm, Eq(a2));
 
-    ik_solvers_deinit(&solvers);
-    ik_node_free_recursive(tree);
+    IK_DECREF(solvers);
+    IK_DECREF(tree);
 }
 
+/*
 TEST_F(NAME, split_tree_with_different_algorithms_1)
 {
     ik_solvers solvers;
