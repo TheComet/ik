@@ -1,5 +1,5 @@
 #include "cstructures/memory.h"
-#include "ik/chain.h"
+#include "ik/chain_tree.h"
 #include "ik/log.h"
 #include "ik/node.h"
 #include "ik/subtree.h"
@@ -8,7 +8,7 @@
 
 /* ------------------------------------------------------------------------- */
 struct ik_chain*
-chain_create(void)
+chain_tree_create(void)
 {
     struct ik_chain* chain = MALLOC(sizeof *chain);
     if (chain == NULL)
@@ -17,7 +17,7 @@ chain_create(void)
         return NULL;
     }
 
-    if (chain_init(chain) != 0)
+    if (chain_tree_init(chain) != 0)
     {
         FREE(chain);
         return NULL;
@@ -28,15 +28,15 @@ chain_create(void)
 
 /* ------------------------------------------------------------------------- */
 void
-chain_destroy(struct ik_chain* chain)
+chain_tree_destroy(struct ik_chain* chain)
 {
-    chain_deinit(chain);
+    chain_tree_deinit(chain);
     FREE(chain);
 }
 
 /* ------------------------------------------------------------------------- */
 int
-chain_init(struct ik_chain* chain)
+chain_tree_init(struct ik_chain* chain)
 {
     if (vector_init(&chain->nodes, sizeof(struct ik_node*)) != VECTOR_OK)
         return -1;
@@ -52,10 +52,10 @@ chain_init(struct ik_chain* chain)
 
 /* ------------------------------------------------------------------------- */
 void
-chain_deinit(struct ik_chain* chain)
+chain_tree_deinit(struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        chain_deinit(child_chain);
+        chain_tree_deinit(child_chain);
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_NODE(chain, node)
@@ -116,7 +116,7 @@ chain_create_child(struct ik_chain* chain)
     if (child == NULL)
         return NULL;
 
-    if (chain_init(child) != 0)
+    if (chain_tree_init(child) != 0)
     {
         vector_erase_element(&chain->children, child);
         return NULL;

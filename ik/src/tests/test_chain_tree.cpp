@@ -1,5 +1,5 @@
 #include "gmock/gmock.h"
-#include "ik/chain.h"
+#include "ik/chain_tree.h"
 #include "ik/node.h"
 #include "ik/subtree.h"
 
@@ -13,12 +13,12 @@ public:
     virtual void SetUp()
     {
         subtree_init(&subtree);
-        chain_init(&chain_tree);
+        chain_tree_init(&chain_tree);
     }
 
     virtual void TearDown()
     {
-        chain_deinit(&chain_tree);
+        chain_tree_deinit(&chain_tree);
         subtree_deinit(&subtree);
     }
 

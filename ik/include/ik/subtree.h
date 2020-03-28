@@ -1,3 +1,4 @@
+
 #ifndef IK_SUBTREE_H
 #define IK_SUBTREE_H
 
@@ -34,6 +35,9 @@ int
 subtree_check_children_up_to(const struct ik_subtree* st,
                              const struct ik_node* node,
                              int max_count);
+
+#define subtree_leaves(st) \
+    (vector_count(&(st)->leaves))
 
 C_END
 

@@ -2,6 +2,7 @@
 #define IK_REFCOUNT_H
 
 #include "ik/config.h"
+#include <assert.h>
 
 C_BEGIN
 

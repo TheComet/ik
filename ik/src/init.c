@@ -1,6 +1,6 @@
 #include "cstructures/memory.h"
 #include "ik/init.h"
-#include "ik/solvers.h"
+#include "ik/solver.h"
 #include "ik/callbacks.h"
 #include <stddef.h>
 

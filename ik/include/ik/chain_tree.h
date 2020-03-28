@@ -1,5 +1,5 @@
 /*!
- * @file chain.h
+ * @file chain_tree.h
  * @brief Manages synthesising the user specified tree of nodes (ik_node)
  * into a structure more optimal for solvers.
  */
@@ -27,23 +27,23 @@ struct ik_chain
 };
 
 IK_PRIVATE_API struct ik_chain*
-chain_create(void);
+chain_tree_create(void);
 
 IK_PRIVATE_API void
-chain_destroy(struct ik_chain* chain);
+chain_tree_destroy(struct ik_chain* chain);
 
 /*!
  * @brief Initializes an allocated chain object.
  */
 IK_PRIVATE_API int
-chain_init(struct ik_chain* chain);
+chain_tree_init(struct ik_chain* chain);
 
 /*!
  * @brief Destroys and frees all members, but does not deallocate the chain
  * object itself.
  */
 IK_PRIVATE_API void
-chain_deinit(struct ik_chain* chain);
+chain_tree_deinit(struct ik_chain* chain);
 
 /*!
  * @brief Deletes all children and nodes.

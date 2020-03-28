@@ -386,3 +386,40 @@ TEST(NAME, resizing_smaller_than_capacity_updates_size_but_not_capacity)
 
     vector_free(vec);
 }
+
+TEST(NAME, reverse_empty_vector_does_nothing)
+{
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
+    vector_reverse(vec);
+    vector_destroy(vec);
+}
+
+TEST(NAME, reverse_vector_with_single_element_does_nothing)
+{
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
+    *(int*)vector_emplace(vec) = 1;
+
+    vector_reverse(vec);
+    EXPECT_THAT(*(int*)vector_get_element(vec, 0), Eq(1));
+
+    vector_destroy(vec);
+}
+
+TEST(NAME, reverse_vector)
+{
+    struct vector_t* vec; vector_create(&vec, sizeof(int));
+    *(int*)vector_emplace(vec) = 1;
+    *(int*)vector_emplace(vec) = 2;
+    *(int*)vector_emplace(vec) = 3;
+    *(int*)vector_emplace(vec) = 4;
+    *(int*)vector_emplace(vec) = 5;
+
+    vector_reverse(vec);
+    EXPECT_THAT(*(int*)vector_get_element(vec, 0), Eq(5));
+    EXPECT_THAT(*(int*)vector_get_element(vec, 1), Eq(4));
+    EXPECT_THAT(*(int*)vector_get_element(vec, 2), Eq(3));
+    EXPECT_THAT(*(int*)vector_get_element(vec, 3), Eq(2));
+    EXPECT_THAT(*(int*)vector_get_element(vec, 4), Eq(1));
+
+    vector_destroy(vec);
+}
