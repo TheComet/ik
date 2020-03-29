@@ -168,6 +168,7 @@ set (IK_SOURCES
 set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
+    "include/python/ik/python/ik_type_Attachment.h"
     "include/python/ik/python/ik_type_Algorithm.h"
     "include/python/ik/python/ik_type_Node.h"
     "include/python/ik/python/ik_type_Quat.h"
@@ -175,7 +176,8 @@ set (IK_PYTHON_HEADERS
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
     "src/python/ik_module_info.c"
-    "src/python/ik_module_log.c"
+    #"src/python/ik_module_log.c"
+    "src/python/ik_type_Attachment.c"
     "src/python/ik_type_Algorithm.c"
     "src/python/ik_type_Node.c"
     "src/python/ik_type_Quat.c"
@@ -192,7 +194,7 @@ set (IK_TESTS_SOURCES
     #"src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
     "src/tests/test_refcount.cpp"
-    "src/tests/test_solver_group.cpp"
+    "src/tests/test_solver.cpp"
     #"src/tests/test_solver_prepare.cpp"
     #"src/tests/test_solver_update.cpp"
    # "src/tests/test_transform_chain.cpp"
@@ -254,30 +256,27 @@ if (IK_PYTHON)
         ${IK_PYTHON_HEADERS})
     set_target_properties (ik_python_obj
         PROPERTIES
-            C_STANDARD 90
+            C_STANDARD 99
             POSITION_INDEPENDENT_CODE ${IK_PIC})
     target_include_directories (ik_python_obj
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/python>)
     target_compile_options (ik_python_obj
         PUBLIC $<$<C_COMPILER_ID:MSVC>:
             /EHa /MTd /W4 /WX /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
-            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -flto
+            -Wall -Wextra -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -Wno-cast-function-type
             $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
-            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow
+            -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -Wno-cast-function-type
             $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
     )
-    target_compile_definitions (ik_python_obj
-        PRIVATE IK_BUILDING)  # The library is being built
     target_link_libraries (ik_python_obj PRIVATE Python3::Python)
-    target_link_libraries (ik_python_obj PUBLIC cstructures)
+    target_link_libraries (ik_python_obj PRIVATE ik_obj)
 endif ()
 
 ###############################################################################

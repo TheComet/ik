@@ -38,6 +38,11 @@ ik_solver_register(const struct ik_solver_interface* interface);
 IK_PUBLIC_API int
 ik_solver_unregister(const struct ik_solver_interface* interface);
 
+struct ik_solver
+{
+    IK_SOLVER_HEAD
+};
+
 /*!
  * @brief Allocates a new solver object according to the specified solver.
  *
@@ -100,13 +105,15 @@ ik_solver_solve(struct ik_solver* solver);
 IK_PUBLIC_API void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
 
-
+#if defined(IK_BUILDING)
 
 IK_PRIVATE_API int
 ik_solver_init_interfaces(void);
 
 IK_PRIVATE_API void
 ik_solver_deinit_interfaces(void);
+
+#endif
 
 C_END
 

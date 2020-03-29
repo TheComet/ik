@@ -36,7 +36,7 @@ struct ik_algorithm
 {
     IK_ATTACHMENT_HEAD
 
-    char name[16];
+    char type[16];
 
     ikreal tolerance;
     uint16_t features;
@@ -45,6 +45,9 @@ struct ik_algorithm
 
 IK_PUBLIC_API struct ik_algorithm*
 ik_algorithm_create(const char* name);
+
+IK_PUBLIC_API int
+ik_algorithm_set_type(struct ik_algorithm* algorighm, const char* name);
 
 C_END
 

@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "ik/ik.h"
+#include "ik/init.h"
 #include "ik/python/ik_module_info.h"
 #include "ik/python/ik_module_log.h"
 #include "ik/python/ik_type_Algorithm.h"
@@ -16,10 +16,12 @@ module_free(void* x)
 }
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(IK_MODULE_DOC,
+"");
 static PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
     "ik",                    /* Module name */
-    NULL,                    /* docstring, may be NULL */
+    IK_MODULE_DOC,           /* docstring, may be NULL */
     -1,                      /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables */
     NULL,                    /* module methods */
     NULL,                    /* m_reload */
@@ -32,6 +34,7 @@ static PyModuleDef ik_module = {
 static int
 init_builtin_types(void)
 {
+    if (init_ik_AttachmentType() != 0) return -1;
     if (init_ik_AlgorithmType() != 0)  return -1;
     if (init_ik_NodeType() != 0)       return -1;
     if (init_ik_QuatType() != 0)       return -1;
@@ -43,10 +46,11 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    Py_INCREF(&ik_AlgorithmType); if (PyModule_AddObject(m, "Algorithm", (PyObject*)&ik_AlgorithmType) != 0) return -1;
-    Py_INCREF(&ik_NodeType);      if (PyModule_AddObject(m, "Node",      (PyObject*)&ik_NodeType) != 0)      return -1;
-    Py_INCREF(&ik_QuatType);      if (PyModule_AddObject(m, "Quat",      (PyObject*)&ik_QuatType) != 0)      return -1;
-    Py_INCREF(&ik_Vec3Type);      if (PyModule_AddObject(m, "Vec3",      (PyObject*)&ik_Vec3Type) != 0)      return -1;
+    Py_INCREF(&ik_AttachmentType); if (PyModule_AddObject(m, "Attachment", (PyObject*)&ik_AttachmentType) != 0) return -1;
+    Py_INCREF(&ik_AlgorithmType);  if (PyModule_AddObject(m, "Algorithm",  (PyObject*)&ik_AlgorithmType) != 0)  return -1;
+    Py_INCREF(&ik_NodeType);       if (PyModule_AddObject(m, "Node",       (PyObject*)&ik_NodeType) != 0)       return -1;
+    Py_INCREF(&ik_QuatType);       if (PyModule_AddObject(m, "Quat",       (PyObject*)&ik_QuatType) != 0)       return -1;
+    Py_INCREF(&ik_Vec3Type);       if (PyModule_AddObject(m, "Vec3",       (PyObject*)&ik_Vec3Type) != 0)       return -1;
     return 0;
 }
 
@@ -54,10 +58,11 @@ add_builtin_types_to_module(PyObject* m)
 static int
 add_constants_to_module(PyObject* m)
 {
-    /* Log constants */
+    (void)m;
+    /* Log constants *
 #define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_LOG_##arg) != 0) return -1;
     IK_LOG_SEVERITY_LIST
-#undef X
+#undef X*/
 
     return 0;
 }
@@ -76,7 +81,7 @@ add_submodules_to_module(PyObject* m)
         Py_DECREF(submodule);
         return -1;
     }
-
+/*
     submodule = ik_module_log_create();
     if (submodule == NULL)
         return -1;
@@ -84,7 +89,7 @@ add_submodules_to_module(PyObject* m)
     {
         Py_DECREF(submodule);
         return -1;
-    }
+    }*/
 
     return 0;
 }

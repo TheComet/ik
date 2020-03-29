@@ -16,30 +16,25 @@ enum ik_marking
     MARK_BEGIN_AND_END
 };
 
-struct ik_solver_base
-{
-    IK_SOLVER_HEAD
-};
-
 static struct vector_t g_solvers;
 
 /* ------------------------------------------------------------------------- */
 static void
-deinit_solver(struct ik_solver_base* solver)
+deinit_solver(struct ik_solver* solver)
 {
     solver->impl->deinit((struct ik_solver*)solver);
     IK_DECREF(solver->algorithm);
 }
 
 /* ------------------------------------------------------------------------- */
-static struct ik_solver_base*
+static struct ik_solver*
 create_solver(struct ik_algorithm* algorithm)
 {
     VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
-        if (strcmp((*p_iface)->name, algorithm->name) == 0)
+        if (strcmp((*p_iface)->name, algorithm->type) == 0)
         {
             struct ik_solver_interface* iface = *p_iface;
-            struct ik_solver_base* solver = (struct ik_solver_base*)
+            struct ik_solver* solver = (struct ik_solver*)
                 ik_refcounted_alloc(iface->size, (ik_deinit_func)deinit_solver);
             if (solver == NULL)
             {
@@ -245,12 +240,12 @@ mark_reachable_nodes(struct btree_t* marked, const struct vector_t* effector_nod
 }
 
 /* ------------------------------------------------------------------------- */
-static struct ik_solver_base*
+static struct ik_solver*
 create_and_init_solver(struct ik_subtree* subtree)
 {
     const struct ik_node* node;
     struct ik_algorithm* algorithm;
-    struct ik_solver_base* solver;
+    struct ik_solver* solver;
 
     algorithm = NULL;
     for (node = subtree->root; node != NULL; node = node->parent)
@@ -291,7 +286,7 @@ recurse_with_new_subtree(struct vector_t* solver_list,
                          const struct ik_node* node,
                          const struct btree_t* marked_nodes)
 {
-    struct ik_solver_base* solver;
+    struct ik_solver* solver;
     struct ik_subtree subtree;
 
     NODE_FOR_EACH(node, user_data, child)
@@ -454,7 +449,7 @@ ik_solver_build(const struct ik_node* root)
 void
 ik_solver_update_translations(struct ik_solver* solver)
 {
-    struct ik_solver_base* solver_base = (struct ik_solver_base*)solver;
+    struct ik_solver* solver_base = (struct ik_solver*)solver;
     solver_base->impl->update_translations(solver);
 }
 
@@ -462,7 +457,7 @@ ik_solver_update_translations(struct ik_solver* solver)
 int
 ik_solver_solve(struct ik_solver* solver)
 {
-    struct ik_solver_base* solver_base = (struct ik_solver_base*)solver;
+    struct ik_solver* solver_base = (struct ik_solver*)solver;
     return solver_base->impl->solve(solver);
 }
 
@@ -470,6 +465,6 @@ ik_solver_solve(struct ik_solver* solver)
 void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
 {
-    struct ik_solver_base* solver_base = (struct ik_solver_base*)solver;
+    struct ik_solver* solver_base = (struct ik_solver*)solver;
     solver_base->impl->iterate_nodes(solver, cb);
 }

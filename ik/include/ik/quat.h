@@ -21,14 +21,12 @@ union ik_quat
     ikreal f[4];
 };
 
-#if defined(IK_BUILDING)
-
 /*!
  * @brief Copies x, y, z, w components from another quaternion.
  * @param[out] q Destination quaternion.
  * @param[in] src Source quaternion to copy from.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_copy(ikreal q[4], const ikreal src[4]);
 
 /*!
@@ -36,43 +34,43 @@ ik_quat_copy(ikreal q[4], const ikreal src[4]);
  * @param[out] q Destination quaternion.
  * @param[in] src Source quaternion to copy from.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_set(ikreal q[4], ikreal x, ikreal y, ikreal z, ikreal w);
 
 /*!
  * @brief Sets the quaternion to its identity rotation.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_set_identity(ikreal q[4]);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_set_axis_angle(ikreal q[4], ikreal x, ikreal y, ikreal z, ikreal a);
 
 /*!
  * @brief Adds the elements from one quaternion to another. Required for
  * averaging multiple quaternions.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_add_quat(ikreal q1[4], const ikreal q2[4]);
 
 /*!
  * @brief Calculates the magnitude of a quaternion.
  */
-IK_PRIVATE_API ikreal
+IK_PUBLIC_API ikreal
 ik_quat_mag(const ikreal q[4]);
 
 /*!
  * @brief Calculates the conjugate, which is done by negating the vector
  * portion of the quaternion: q(w,-xyz)
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_conj(ikreal q[4]);
 
 /*!
  * @brief Negates the sign of all components (this is NOT the conjugate):
  * q(-wxyz)
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_negate(ikreal q[4]);
 
 /*!
@@ -80,13 +78,13 @@ ik_quat_negate(ikreal q[4]);
  * identical to the quaternion's conjugate. This function is for inverting
  * quaternions that don't have unit length.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_invert(ikreal q[4]);
 
 /*!
  * @brief Normalizes the quaternion so ||q|| = 1
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_normalize(ikreal q[4]);
 
 /*!
@@ -95,7 +93,7 @@ ik_quat_normalize(ikreal q[4]);
  * normalized. See mul_no_normalize() for a version of this function that
  * doesn't normalize the result.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4]);
 
 /*!
@@ -104,7 +102,7 @@ ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4]);
  * normalized. See nmul_no_normalize() for a version of this function that
  * doesn't normalize the result.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_nmul_quat(ikreal q1[4], const ikreal q2[4]);
 
 /*!
@@ -113,28 +111,28 @@ ik_quat_nmul_quat(ikreal q1[4], const ikreal q2[4]);
  * normalized. See nmul_no_normalize() for a version of this function that
  * doesn't normalize the result.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4]);
 
 /*!
  * @brief Multiplies q1*q2 and stores the result in q1. The result is not
  * normalized. This operation is not commutative.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
 
 /*!
  * @brief Multiplies q2*q1 and stores the result in q1. The result is not
  * normalized. This operation is not commutative.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_nmul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
 
 /*!
  * @brief Multiplies q1*q2 and stores the result in q1. The result is not
  * normalized. This operation is not commutative.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
 
 /*!
@@ -142,26 +140,26 @@ ik_quat_mul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
  * the rotations. This operation is not commutative. The resulting
  * quaternion is not normalized. This operation is not commutative.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_quat_conj_no_normalize(ikreal q1[4], const ikreal q2[4]);
 
 /*!
  * @brief Multiplies each component by a scalar value.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_mul_scalar(ikreal q[4], ikreal scalar);
 
 /*!
  * @brief Divides each component by a scalar value. If the constant is 0 then the
  * result will be a unit quaternion.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_div_scalar(ikreal q[4], ikreal scalar);
 
 /*!
  * @brief Calculates the scalar product of two quaternions.
  */
-IK_PRIVATE_API ikreal
+IK_PUBLIC_API ikreal
 ik_quat_dot(const ikreal q1[4], const ikreal q2[4]);
 
 /*!
@@ -171,7 +169,7 @@ ik_quat_dot(const ikreal q1[4], const ikreal q2[4]);
  * adding quaternions together won't always cut it; you can only average
  * quaternions who's signs are all positive (or negative).
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_ensure_positive_sign(ikreal q1[4]);
 
 /*!
@@ -183,7 +181,7 @@ ik_quat_ensure_positive_sign(ikreal q1[4]);
  * @param[in] v1 The first vector.
  * @param[in] v2 The second vector.
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_angle(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
 /*!
@@ -194,13 +192,11 @@ ik_quat_angle(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
  * @param[in] v1 The first vector (must be nomralized).
  * @param[in] v2 The second vector (must be normalized).
  */
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_quat_angle_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
-IK_PRIVATE_API int
+IK_PUBLIC_API int
 ik_quat_print(char* buf, const ikreal q[4]);
-
-#endif /* IK_BUILDING */
 
 C_END
 

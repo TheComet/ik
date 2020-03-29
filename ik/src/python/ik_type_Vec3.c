@@ -1,6 +1,6 @@
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
-#include "ik/ik.h"
+#include "ik/vec3.h"
 #include "structmember.h"
 
 #if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)

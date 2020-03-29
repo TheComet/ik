@@ -78,7 +78,7 @@ ik_node_create_child(struct ik_node* parent, union ik_node_user_data user);
  * ownership of the child node and is responsible for deallocating it.
  * @note You will need to rebuild the algorithm's tree before solving.
  */
-IK_PUBLIC_API ikret
+IK_PUBLIC_API int
 ik_node_link(struct ik_node* parent, struct ik_node* child);
 
 /*!
@@ -153,10 +153,7 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user);
         ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower); \
                                                                               \
         IK_PUBLIC_API struct ik_##lower*                                      \
-        ik_node_detach_##lower(struct ik_node* node);                         \
-                                                                              \
-        IK_PUBLIC_API void                                                    \
-        ik_node_destroy_##lower(struct ik_node* node);
+        ik_node_detach_##lower(struct ik_node* node);
     IK_ATTACHMENT_LIST
 #undef X
 #undef X1

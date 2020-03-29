@@ -4,7 +4,7 @@
 typedef struct ik_Vec3
 {
     PyObject_HEAD
-    union ik_vec3_t vec;
+    union ik_vec3 vec;
 } ik_Vec3;
 
 extern PyTypeObject ik_Vec3Type;

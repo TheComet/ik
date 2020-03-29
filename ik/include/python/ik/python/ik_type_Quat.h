@@ -4,7 +4,7 @@
 typedef struct ik_Quat
 {
     PyObject_HEAD
-    union ik_quat_t quat;
+    union ik_quat quat;
 } ik_Quat;
 
 extern PyTypeObject ik_QuatType;

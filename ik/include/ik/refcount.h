@@ -23,7 +23,6 @@ C_BEGIN
  * Adds a reference to a refcount allocated memory block.
  */
 #define IK_INCREF(o) do {                                                     \
-        assert((o)->refcount->refs > 0);                                      \
         (o)->refcount->refs++;                                                \
     } while(0)
 

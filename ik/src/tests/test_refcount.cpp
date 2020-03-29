@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
 #include "ik/refcount.h"
+#include "ik/cpputils.hpp"
 #include "cstructures/memory.h"
 
 #define NAME refcount
@@ -15,8 +16,8 @@ TEST(NAME, can_decref_with_null_deinit_function)
 {
     MyObj* o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), NULL);
     ASSERT_THAT(o, NotNull());
-    EXPECT_THAT(IK_REFCOUNT(o), Eq(1));
-    IK_DECREF(o);
+    EXPECT_THAT(IK_REFCOUNT(o), Eq(0));
+    ik_refcounted_free((struct ik_refcounted*)o);
 }
 
 static bool deinit1Called = false;
@@ -29,6 +30,7 @@ TEST(NAME, deinit_function_is_called_on_decref)
     MyObj* o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), deinit1);
     ASSERT_THAT(o, NotNull());
     deinit1Called = false;
+    IK_INCREF(o);
     IK_DECREF(o);
     EXPECT_THAT(deinit1Called, IsTrue());
 }
@@ -42,6 +44,7 @@ TEST(NAME, deinit_function_is_only_called_on_last_decref)
 {
     MyObj *o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), deinit2);
     ASSERT_THAT(o, NotNull());
+    IK_INCREF(o);
     IK_INCREF(o);
     deinit2Called = false;
     IK_DECREF(o);
@@ -60,6 +63,7 @@ TEST(NAME, deinit_function_is_called_on_every_element_in_array)
 {
     MyObj* o = (MyObj*)ik_refcounted_alloc_array(sizeof(MyObj), deinit3, 5);
     ASSERT_THAT(o, NotNull());
+    IK_INCREF(o);
     deinit3Calls = 0;
     memset(deinit3Ptrs, 0, sizeof(void*) * 5);
     IK_DECREF(o);

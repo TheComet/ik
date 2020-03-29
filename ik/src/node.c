@@ -23,13 +23,21 @@ ik_node_deinit(struct ik_node* node)
 
     /* unref attachments */
 #define X1(upper, lower, arg0) X(upper, lower)
-#define X(upper, lower) ik_node_destroy_##lower(node);
+#define X(upper, lower) ik_node_detach_##lower(node);
     IK_ATTACHMENT_LIST
 #undef X
 #undef X1
 
     /* deinit */
     btree_deinit(&node->children);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+ik_node_destroy(struct ik_node* node)
+{
+    ik_node_deinit(node);
+    ik_refcounted_free((struct ik_refcounted*)node);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -80,12 +88,12 @@ ik_node_create_child(struct ik_node* parent, union ik_node_user_data user)
 
     return child;
 
-    add_child_failed    : IK_DECREF(child);
+    add_child_failed    : ik_node_destroy(child);
     create_child_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret
+int
 ik_node_link(struct ik_node* node, struct ik_node* child)
 {
     assert(node);
@@ -108,15 +116,15 @@ ik_node_link(struct ik_node* node, struct ik_node* child)
     if (btree_insert_new(&node->children, GUID(child), &child) != BTREE_OK)
     {
         ik_log_printf(IK_ERROR, "Child guid %d already exists in this node's list of children! Node was not inserted into the tree.", GUID(child));
-        return IK_ERR_DUPLICATE_NODE;
+        return -1;
     }
 
     /* May already be part of a tree */
-    if (child->parent)
-        btree_erase(&child->parent->children, GUID(child));
-
+    IK_INCREF(child);
+    ik_node_unlink(child);
     child->parent = node;
-    return IK_OK;
+
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -130,6 +138,7 @@ ik_node_unlink(struct ik_node* node)
 
     btree_erase(&node->parent->children, GUID(node));
     node->parent = NULL;
+    IK_DECREF(node);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -182,6 +191,7 @@ IK_ATTACHMENT_LIST
 #define X(upper, lower)                                                       \
     void                                                                      \
     ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower) {  \
+        IK_INCREF(lower);                                                     \
         if (lower->node)                                                      \
             ik_node_detach_##lower(lower->node);                              \
         ik_node_detach_##lower(node);                                         \
@@ -193,16 +203,13 @@ IK_ATTACHMENT_LIST
     ik_node_detach_##lower(struct ik_node* node) {                            \
         struct ik_##lower* lower = node->lower;                               \
         node->lower = NULL;                                                   \
-        if (lower)                                                            \
+        if (lower) {                                                          \
             lower->node = NULL;                                               \
+            IK_DECREF(lower);                                                 \
+        }                                                                     \
         return lower;                                                         \
-    }                                                                         \
-                                                                              \
-    void                                                                      \
-    ik_node_destroy_##lower(struct ik_node* node) {                           \
-        struct ik_##lower* lower = ik_node_detach_##lower(node);              \
-        IK_XDECREF(lower);                                                    \
     }
+
 IK_ATTACHMENT_LIST
 #undef X
 #undef X1

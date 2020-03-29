@@ -30,7 +30,7 @@ ik_refcounted_alloc_array(uintptr_t obj_size,
         return NULL;
     }
 
-    refcount->refs = 1;
+    refcount->refs = 0;
     refcount->deinit = deinit;
     refcount->obj_count = obj_count;
 
