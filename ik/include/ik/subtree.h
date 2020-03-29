@@ -39,6 +39,9 @@ subtree_check_children_up_to(const struct ik_subtree* st,
 #define subtree_leaves(st) \
     (vector_count(&(st)->leaves))
 
+#define subtree_get_leaf(st, idx) \
+    (*(struct ik_node**)vector_get_element(&(st)->leaves, idx))
+
 C_END
 
 #endif /* IK_SUBTREE_H */

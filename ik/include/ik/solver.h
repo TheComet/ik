@@ -17,9 +17,7 @@ struct ik_node;
     struct ik_solver_interface* impl;                                         \
     struct ik_algorithm* algorithm;
 
-typedef void(*ik_solver_callback_func)(void* user_data,
-                                       const ikreal position[3],
-                                       const ikreal rotation[4]);
+typedef void(*ik_solver_callback_func)(struct ik_node*);
 
 struct ik_solver_interface
 {

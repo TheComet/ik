@@ -12,8 +12,8 @@
 #define IK_ALGORITHM_LIST \
     X(ONE_BONE)           \
     X(TWO_BONE)           \
-    X(FABRIK)             \
-    X(MSS)
+    /*X(FABRIK)             \
+    X(MSS)*/
 
 #define IK_ALGORITHM_FEATURES_LIST \
     X(CONSTRAINTS,      0x0001) \

@@ -214,6 +214,20 @@ static PyGetSetDef Node_getset[] = {
 };
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+Node_repr(ik_Node* self)
+{
+    return PyUnicode_FromFormat("Node(guid=%d, user=%R)", self->guid, self->user);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_str(ik_Node* self)
+{
+    return Node_repr(self);
+}
+
+/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_DOC,
 "");
 PyTypeObject ik_NodeType = {
@@ -221,6 +235,8 @@ PyTypeObject ik_NodeType = {
     .tp_name = "ik.Node",
     .tp_basicsize = sizeof(ik_Node),
     .tp_dealloc = (destructor)Node_dealloc,
+    .tp_repr = (reprfunc)Node_repr,
+    .tp_str = (reprfunc)Node_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = NODE_DOC,
     .tp_methods = Node_methods,

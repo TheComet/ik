@@ -57,18 +57,16 @@ create_solver(struct ik_algorithm* algorithm)
 int
 ik_solver_init_interfaces()
 {
-    /*
 #define X(name) extern const struct ik_solver_interface ik_solver_##name;
     IK_ALGORITHM_LIST
-#undef X*/
+#undef X
 
     if (vector_init(&g_solvers, sizeof(struct ik_solver_interface*)) != 0)
         goto solver_vector_init_failed;
 
-    /*
 #define X(name) ik_solver_register(&ik_solver_##name);
     IK_ALGORITHM_LIST
-#undef X*/
+#undef X
 
     return 0;
 

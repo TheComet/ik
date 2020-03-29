@@ -1,147 +1,187 @@
 #include "ik/effector.h"
-#include "ik/log.h"
 #include "ik/node.h"
-#include "ik/solver_b2.h"
-#include "ik/transform.h"
+#include "ik/log.h"
+#include "ik/solver.h"
+#include "ik/subtree.h"
 #include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
 #include <stddef.h>
 
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_b2_init(struct ik_solver_b2_t* solver)
+struct ik_solver_b2
 {
-    return 0;
-}
+    IK_SOLVER_HEAD
+
+    struct ik_node* base;
+    struct ik_node* mid;
+    struct ik_node* tip;
+};
 
 /* ------------------------------------------------------------------------- */
-void
-ik_solver_b2_deinit(struct ik_solver_b2_t* solver)
+static int
+solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
-}
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-/* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_b2_prepare(struct ik_solver_b2_t* solver)
-{
     /*
-     * We need to assert that there really are only chains of length 1 and no
+     * We need to assert that there really are only chains of length 2 and no
      * sub chains.
-     *
-    ALGORITHM_FOR_EACH_CHAIN(solver, chain)
-        if (chain_length(chain) != 3) * 3 nodes = 2 bones *
-        {
-            ik_log_error("Your tree has chains that are longer or shorter than 2 bones. Are you sure you selected the correct solver solver?");
-            return -1;
-        }
-        if (chain_length(chain) > 0)
-        {
-            ik_log_error("Your tree has child chains. This solver does not support arbitrary trees. You will need to switch to another solver (e.g. FABRIK)");
-            return -1;
-        }
-    ALGORITHM_END_EACH*/
+     */
+    if (subtree_leaves(subtree) != 1)
+    {
+        ik_log_printf(IK_ERROR, "This solver does not support multiple end effectors. You will need to switch to another solver (e.g. FABRIK)");
+        return -1;
+    }
+
+    solver->tip = subtree_get_leaf(subtree, 0);
+    solver->mid = solver->tip->parent;
+    solver->base = solver->mid ? solver->mid->parent : NULL;
+
+    if (solver->base == NULL || solver->base != subtree->root)
+    {
+        ik_log_printf(IK_ERROR, "Your tree has chains that are longer than 2 bones. The \"two bone\" solver only supports two bones.");
+        return -1;
+    }
+
+    IK_INCREF(solver->base);
+    IK_INCREF(solver->mid);
+    IK_INCREF(solver->tip);
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_b2_solve(struct ik_solver_b2_t* solver)
+static void
+solver_b2_deinit(struct ik_solver* solver_base)
 {
-#if 0
-    /* Tree is in local space, we need global positions */
-    ik_transform_chain_list(solver, IK_TRANSFORM_L2G | IK_TRANSFORM_TRANSLATIONS);
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-    ALGORITHM_FOR_EACH_CHAIN(solver, chain)
-        struct ik_node_t* node_tip;
-        struct ik_node_t* node_mid;
-        struct ik_node_t* node_base;
-        struct ik_vec3_t to_target;
-        ikreal_t a, b, c, aa, bb, cc;
+    IK_DECREF(solver->tip);
+    IK_DECREF(solver->mid);
+    IK_DECREF(solver->base);
+}
 
-        assert(chain_length(chain) > 2);
-        node_tip  = chain_get_node(chain, 0);
-        node_mid  = chain_get_node(chain, 1);
-        node_base = chain_get_node(chain, 2);
+/* ------------------------------------------------------------------------- */
+static void
+solver_b2_update_translations(struct ik_solver* solver_base)
+{
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-        assert(node_tip->effector != NULL);
-        to_target = node_tip->effector->target_position;
-        ik_vec3_sub_vec3(to_target.f, node_base->position.f);
+    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->trans.t.pos.f);
+    solver->mid->dist_to_parent = ik_vec3_length(solver->mid->trans.t.pos.f);
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+solver_b2_solve(struct ik_solver* solver_base)
+{
+    ikreal a, b, c, aa, bb, cc;
+
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+
+    struct ik_effector* eff = solver->tip->effector;
+    ikreal* base_pos = solver->base->trans.t.pos.f;
+    ikreal* mid_pos = solver->mid->trans.t.pos.f;
+    ikreal* tip_pos = solver->tip->trans.t.pos.f;
+    union ik_vec3 to_target = eff->target_position;
+
+    /* TODO: Tree is in local space -- we need global positions */
+
+    ik_vec3_sub_vec3(to_target.f, solver->base->trans.t.pos.f);
+
+    /*
+     * Form a triangle from the two segment lengths so we can calculate the
+     * angles. Here's some visual help.
+     *
+     *   target *--.__  a
+     *           \     --.___ (unknown position, needs solving)
+     *            \      _-
+     *           c \   _-
+     *              \-    b
+     *            base
+     *
+     */
+    a = solver->tip->dist_to_parent;
+    b = solver->mid->dist_to_parent;
+    aa = a*a;
+    bb = b*b;
+    cc = ik_vec3_length_squared(to_target.f);
+    c = sqrt(cc);
+
+    /* check if in reach */
+    if (c < a + b)
+    {
+        /* Cosine law to get base angle (alpha) */
+        union ik_quat base_rot;
+        ikreal base_angle = acos((bb + cc - aa) / (2.0 * b * c));
+        ikreal cos_a = cos(base_angle * 0.5);
+        ikreal sin_a = sin(base_angle * 0.5);
+
+        /* Cross product of both segment vectors defines axis of rotation */
+        ik_vec3_copy(base_rot.v.v.f, tip_pos);
+        ik_vec3_sub_vec3(base_rot.f, mid_pos);  /* top segment */
+        ik_vec3_sub_vec3(mid_pos, base_pos);  /* bottom segment */
+        ik_vec3_cross(base_rot.f, mid_pos);
 
         /*
-         * Form a triangle from the two segment lengths so we can calculate the
-         * angles. Here's some visual help.
-         *
-         *   target *--.__  a
-         *           \     --.___ (unknown position, needs solving)
-         *            \      _-
-         *           c \   _-
-         *              \-    b
-         *            base
-         *
+         * Set up quaternion describing the rotation of alpha. Need to
+         * normalise vec3 component of quaternion so rotation is correct.
+         * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
+         * length vector. We rely on this behavior for a default axis.
          */
-        a = node_tip->dist_to_parent;
-        b = node_mid->dist_to_parent;
-        aa = a*a;
-        bb = b*b;
-        cc = ik_vec3_length_squared(to_target.f);
-        c = sqrt(cc);
+        ik_vec3_normalize(base_rot.f);
+        ik_vec3_mul_scalar(base_rot.f, sin_a);
+        base_rot.q.w = cos_a;
 
-        /* check if in reach */
-        if (c < a + b)
-        {
-            /* Cosine law to get base angle (alpha) */
-            struct ik_quat_t base_rotation;
-            ikreal_t base_angle = acos((bb + cc - aa) / (2.0 * b * c));
-            ikreal_t cos_a = cos(base_angle * 0.5);
-            ikreal_t sin_a = sin(base_angle * 0.5);
+        /*
+         * Rotate side c and scale to length of side b to get the unknown
+         * position. node_base was already subtracted from node_mid
+         * previously, which means it will rotate around the base node's
+         * position (as it should)
+         */
+        ik_vec3_copy(mid_pos, to_target.f);
+        ik_vec3_normalize(mid_pos);
+        ik_vec3_rotate_quat(mid_pos, base_rot.f);
+        ik_vec3_mul_scalar(mid_pos, solver->mid->dist_to_parent);
+        ik_vec3_add_vec3(mid_pos, base_pos);
 
-            /* Cross product of both segment vectors defines axis of rotation */
-            base_rotation.v = node_tip->position;
-            ik_vec3_sub_vec3(base_rotation.f, node_mid->position.f);  /* top segment */
-            ik_vec3_sub_vec3(node_mid->position.f, node_base->position.f);  /* bottom segment */
-            ik_vec3_cross(base_rotation.f, node_mid->position.f);
+        ik_vec3_copy(tip_pos, eff->target_position.f);
+    }
+    else
+    {
+        /* Just point both segments at target */
+        ik_vec3_normalize(to_target.f);
+        ik_vec3_copy(mid_pos, to_target.f);
+        ik_vec3_copy(tip_pos, to_target.f);
+        ik_vec3_mul_scalar(mid_pos, b);
+        ik_vec3_mul_scalar(tip_pos, a);
+        ik_vec3_add_vec3(mid_pos, base_pos);
+        ik_vec3_add_vec3(tip_pos, mid_pos);
+    }
 
-            /*
-             * Set up quaternion describing the rotation of alpha. Need to
-             * normalise vec3 component of quaternion so rotation is correct.
-             * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
-             * length vector. We rely on this behavior for a default axis.
-             */
-            ik_vec3_normalize(base_rotation.f);
-            ik_vec3_mul_scalar(base_rotation.f, sin_a);
-            base_rotation.w = cos_a;
+    /* TODO: Transform back again */
 
-            /*
-             * Rotate side c and scale to length of side b to get the unknown
-             * position. node_base was already subtracted from node_mid
-             * previously, which means it will rotate around the base node's
-             * position (as it should)
-             */
-            node_mid->position = to_target;
-            ik_vec3_normalize(node_mid->position.f);
-            ik_vec3_rotate(node_mid->position.f, base_rotation.f);
-            ik_vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
-
-            node_tip->position = node_tip->effector->target_position;
-        }
-        else
-        {
-            /* Just point both segments at target */
-            ik_vec3_normalize(to_target.f);
-            node_mid->position = to_target;
-            node_tip->position = to_target;
-            ik_vec3_mul_scalar(node_mid->position.f, node_mid->dist_to_parent);
-            ik_vec3_mul_scalar(node_tip->position.f, node_tip->dist_to_parent);
-            ik_vec3_add_vec3(node_mid->position.f, node_base->position.f);
-            ik_vec3_add_vec3(node_tip->position.f, node_mid->position.f);
-        }
-    ALGORITHM_END_EACH
-
-    /* Transform back again */
-    ik_transform_chain_list(solver, IK_TRANSFORM_G2L | IK_TRANSFORM_TRANSLATIONS);
-#endif
     return 0;
 }
+
+/* ------------------------------------------------------------------------- */
+static void
+solver_b2_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+{
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+
+    cb(solver->base);
+    cb(solver->mid);
+    cb(solver->tip);
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_solver_interface ik_solver_TWO_BONE = {
+    "two bone",
+    sizeof(struct ik_solver_b2),
+    solver_b2_init,
+    solver_b2_deinit,
+    solver_b2_update_translations,
+    solver_b2_solve,
+    solver_b2_iterate_nodes
+};
