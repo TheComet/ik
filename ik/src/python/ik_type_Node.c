@@ -1,4 +1,8 @@
 #include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_Algorithm.h"
+#include "ik/python/ik_type_Constraint.h"
+#include "ik/python/ik_type_Effector.h"
+#include "ik/python/ik_type_Pole.h"
 #include "ik/node.h"
 #include "structmember.h"
 
@@ -20,6 +24,10 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     static char* kwds_str[] = {
         "guid",
         "user",
+        "algorithm",
+        "constraint",
+        "effector",
+        "pole",
         NULL
     };
 
@@ -30,7 +38,13 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_self_failed;
 
     self->guid = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|IO", kwds_str, &self->guid, &self->user))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|IOO!O!O!O!", kwds_str,
+            &self->guid,
+            &self->user,
+            &ik_AlgorithmType, &self->algorithm,
+            &ik_ConstraintType, &self->constraint,
+            &ik_EffectorType, &self->effector,
+            &ik_PoleType, &self->pole))
         goto parse_args_failed;
 
     self->node = ik_node_create(ik_ptr(self));
@@ -42,10 +56,20 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         self->guid = guid_counter++;
 
     if (self->user == NULL)
-    {
-        Py_INCREF(Py_None);
         self->user = Py_None;
-    }
+
+#define X1(upper, lower, arg) X(upper, lower)
+#define X(upper, lower) \
+    if (self->lower) \
+        ik_node_attach_##lower(self->node, (struct ik_##lower*)(((ik_Attachment*)self->lower)->attachment)); \
+    else \
+        self->lower = Py_None; \
+    Py_INCREF(self->lower);
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+
+    Py_INCREF(self->user);
 
     return (PyObject*)self;
 
@@ -146,14 +170,12 @@ Node_find(ik_Node* self, PyObject* guid)
 }
 
 /* ------------------------------------------------------------------------- */
-
-/* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
-    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
-    {"link",         (PyCFunction)Node_link, METH_O, NODE_LINK_DOC},
-    {"unlink",       (PyCFunction)Node_unlink, METH_NOARGS, NODE_UNLINK_DOC},
-    {"pack",         (PyCFunction)Node_pack, METH_NOARGS, NODE_PACK_DOC},
-    {"find",         (PyCFunction)Node_find, METH_O, NODE_FIND_DOC},
+    {"create_child",      (PyCFunction)Node_create_child,      METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
+    {"link",              (PyCFunction)Node_link,              METH_O,                       NODE_LINK_DOC},
+    {"unlink",            (PyCFunction)Node_unlink,            METH_NOARGS,                  NODE_UNLINK_DOC},
+    {"pack",              (PyCFunction)Node_pack,              METH_NOARGS,                  NODE_PACK_DOC},
+    {"find",              (PyCFunction)Node_find,              METH_O,                       NODE_FIND_DOC},
     {NULL}
 };
 
@@ -206,10 +228,67 @@ Node_setchild_count(ik_Node* self, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_ALGORITHM_DOC,"");
+PyDoc_STRVAR(NODE_CONSTRAINT_DOC,"");
+PyDoc_STRVAR(NODE_EFFECTOR_DOC,"");
+PyDoc_STRVAR(NODE_POLE_DOC,"");
+#define X1(upper, lower, arg) X(upper, lower)
+#define X(upper, lower)                                                       \
+    static PyObject*                                                          \
+    Node_get##lower(ik_Node* self, void* closure)                             \
+    {                                                                         \
+        (void)closure;                                                        \
+        return Py_INCREF(self->lower), self->lower;                           \
+    }                                                                         \
+                                                                              \
+    static int                                                                \
+    Node_set##lower(ik_Node* self, PyObject* value, void* closure)            \
+    {                                                                         \
+        (void)closure;                                                        \
+                                                                              \
+        if (ik_##lower##_CheckExact(value))                                   \
+        {                                                                     \
+            PyObject* tmp;                                                    \
+            ik_Attachment* lower = (ik_Attachment*)value;                     \
+            ik_node_attach_##lower(self->node, (struct ik_##lower*)lower->attachment); \
+                                                                              \
+            tmp = self->lower;                                                \
+            Py_INCREF(value);                                                 \
+            self->lower = value;                                              \
+            Py_DECREF(tmp);                                                   \
+                                                                              \
+            return 0;                                                         \
+        }                                                                     \
+                                                                              \
+        if (value == Py_None)                                                 \
+        {                                                                     \
+            PyObject* tmp;                                                    \
+            ik_node_detach_##lower(self->node);                               \
+                                                                              \
+            tmp = self->lower;                                                \
+            Py_INCREF(Py_None);                                               \
+            self->lower = Py_None;                                            \
+            Py_DECREF(tmp);                                                   \
+                                                                              \
+            return 0;                                                         \
+        }                                                                     \
+                                                                              \
+        PyErr_SetString(PyExc_TypeError, "Must assign an instance of type " #lower " or None"); \
+        return -1; \
+    }
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+
+/* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
     {"guid",        (getter)Node_getguid,        (setter)Node_setguid,        NODE_GUID_DOC,        NULL},
     {"user",        (getter)Node_getuser,        (setter)Node_setuser,        NODE_USER_DOC,        NULL},
     {"child_count", (getter)Node_getchild_count, (setter)Node_setchild_count, NODE_CHILD_COUNT_DOC, NULL},
+    {"algorithm",   (getter)Node_getalgorithm,   (setter)Node_setalgorithm,   NODE_ALGORITHM_DOC,   NULL},
+    {"constraint",  (getter)Node_getconstraint,  (setter)Node_setconstraint,  NODE_CONSTRAINT_DOC,  NULL},
+    {"effector",    (getter)Node_geteffector,    (setter)Node_seteffector,    NODE_EFFECTOR_DOC,    NULL},
+    {"pole",        (getter)Node_getpole,        (setter)Node_setpole,        NODE_POLE_DOC,        NULL},
     {NULL}
 };
 

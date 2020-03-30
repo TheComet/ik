@@ -57,8 +57,6 @@ struct ik_constraint
     } data;
 };
 
-#if defined(IK_BUILDING)
-
 /*!
  * @brief Creates a new constraint object. It can be attached to any node in the
  * tree using ik_node_attach_constraint().
@@ -83,8 +81,6 @@ ik_constraint_set_type(struct ik_constraint* constraint, enum ik_constraint_type
  */
 IK_PUBLIC_API void
 ik_constraint_set_custom(struct ik_constraint* constraint, ik_constraint_apply_func callback);
-
-#endif /* IK_BUILDING */
 
 C_END
 

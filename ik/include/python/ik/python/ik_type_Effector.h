@@ -1,15 +1,15 @@
-#include "Python.h"
+#include "ik/python/ik_type_Attachment.h"
+
+#define ik_effector_CheckExact(o) \
+    (Py_TYPE(o) == &ik_EffectorType)
 
 struct ik_effector_t;
-typedef struct ik_Vec3 ik_Vec3;
-typedef struct ik_Quat ik_Quat;
+struct ik_Vec3;
+struct ik_Quat;
 
 typedef struct ik_Effector
 {
-    PyObject_HEAD
-    struct ik_effector_t* effector;
-    ik_Vec3* target_position;
-    ik_Quat* target_rotation;
+    ik_Attachment super;
 } ik_Effector;
 
 extern PyTypeObject ik_EffectorType;

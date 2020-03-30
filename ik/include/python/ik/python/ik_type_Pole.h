@@ -1,8 +1,11 @@
-#include "Python.h"
+#include "ik/python/ik_type_Attachment.h"
+
+#define ik_pole_CheckExact(o) \
+    (Py_TYPE(o) == &ik_PoleType)
 
 typedef struct ik_Pole
 {
-    PyObject_HEAD
+    ik_Attachment super;
 } ik_Pole;
 
 extern PyTypeObject ik_PoleType;

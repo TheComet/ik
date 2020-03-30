@@ -1,6 +1,5 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Node.h"
-#include "ik/ik.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */

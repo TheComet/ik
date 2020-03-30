@@ -1,15 +1,12 @@
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Solver.h"
-#include "ik/python/ik_type_Node.h"
-#include "ik/ik.h"
+#include "ik/constraint.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
 static void
 Constraint_dealloc(ik_Constraint* self)
 {
-    if (self->constraint)
-        IKAPI.constraint.free(self->constraint);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -34,10 +31,6 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    self->constraint = IKAPI.constraint.create();
-    if (self->constraint == NULL)
-        goto create_constraint_failed;
-
     result = Constraint_set_type(self, constraint_name);
     if (result == NULL)
         goto set_constraint_type_failed;
@@ -45,23 +38,8 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    set_constraint_type_failed : IKAPI.constraint.free(self->constraint);
-    create_constraint_failed   : Py_DECREF(self);
+    set_constraint_type_failed : Py_DECREF(self);
     alloc_self_failed          : return NULL;
-}
-
-/* ------------------------------------------------------------------------- */
-static int
-Constraint_init(ik_Constraint* self, PyObject* args, PyObject* kwds)
-{
-    if (self->constraint == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
-        return -1;
-    }
-
-    (void)kwds, (void)args, (void)self;
-    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -69,12 +47,6 @@ static PyObject*
 Constraint_set_type(ik_Constraint* self, PyObject* arg)
 {
     PyObject* ascii_name;
-
-    if (self->constraint == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
-        return NULL;
-    }
 
     if ((ascii_name = PyUnicode_AsASCIIString(arg)) == NULL)
         goto convert_to_ascii_failed;
@@ -84,18 +56,18 @@ Constraint_set_type(ik_Constraint* self, PyObject* arg)
     if (0) {}
 #define X(type) \
             else if (strcmp(PyBytes_AS_STRING(ascii_name), #type) == 0) { \
-                if (IKAPI.constraint.set_type(self->constraint, IK_CONSTRAINT_##type) != IK_OK) { \
+                if (ik_constraint_set_type((struct ik_constraint*)self->super.attachment, IK_CONSTRAINT_##type) != IK_OK) { \
                     PyErr_SetString(PyExc_TypeError, "Failed to set constraint type. Did you use the correct method?"); \
                     goto set_constraint_type_failed; \
                 } \
             }
-    IK_CONSTRAINTS_LIST
+    IK_CONSTRAINT_LIST
 #undef X
     else
     {
         PyErr_SetString(PyExc_TypeError, "Unknown constraint type. Exepected one of the following: "
 #define X(type) #type ", "
-                        IK_CONSTRAINTS_LIST
+        IK_CONSTRAINT_LIST
 #undef X
         );
         goto set_constraint_type_failed;
@@ -109,61 +81,8 @@ Constraint_set_type(ik_Constraint* self, PyObject* arg)
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Constraint_attach(ik_Constraint* self, PyObject* pyNode)
-{
-    struct ik_node_t* node;
-
-    if (self->constraint == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
-        return NULL;
-    }
-
-    if (!PyObject_TypeCheck(pyNode, &ik_NodeType))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a node of type ik.Node() to attach to.");
-        return NULL;
-    }
-
-    node = ((ik_Node*)pyNode)->node;
-    if (node == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "The node you are trying to attach to was freeed internally");
-        return NULL;
-    }
-
-    if (IKAPI.constraint.attach(self->constraint, node) != IK_OK)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to attach constraint. Does the node already have a constraint?");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Constraint_detach(ik_Constraint* self, PyObject* args)
-{
-    (void)args;
-
-    if (self->constraint == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Constraint was freeed internally");
-        return NULL;
-    }
-
-    IKAPI.constraint.detach(self->constraint);
-
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
 static PyMethodDef Constraint_methods[] = {
     {"set_type", (PyCFunction)Constraint_set_type, METH_O,      "Sets the type of the constraint"},
-    {"attach",   (PyCFunction)Constraint_attach,   METH_O,      "Attaches the constraint to a node in a tree"},
-    {"detach",   (PyCFunction)Constraint_detach,   METH_NOARGS, "Detaches the constraint from a node in a tree"},
     {NULL}
 };
 
@@ -173,7 +92,7 @@ PyTypeObject ik_ConstraintType = {
     "ik.Constraint",                               /* tp_name */
     sizeof(ik_Constraint),                         /* tp_basicsize */
     0,                                             /* tp_itemsize */
-    (deinitor)Constraint_dealloc,                /* tp_dealloc */
+    (destructor)Constraint_dealloc,                /* tp_dealloc */
     0,                                             /* tp_print */
     0,                                             /* tp_getattr */
     0,                                             /* tp_setattr */
@@ -204,7 +123,7 @@ PyTypeObject ik_ConstraintType = {
     0,                                             /* tp_descr_get */
     0,                                             /* tp_descr_set */
     0,                                             /* tp_dictoffset */
-    (initproc)Constraint_init,                     /* tp_init */
+    0,                                             /* tp_init */
     0,                                             /* tp_alloc */
     Constraint_new                                 /* tp_new */
 };
