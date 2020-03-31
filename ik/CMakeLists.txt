@@ -200,6 +200,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_quat.cpp"
     "src/tests/test_refcount.cpp"
     "src/tests/test_solver.cpp"
+    "src/tests/test_solver_b1.cpp"
     #"src/tests/test_solver_prepare.cpp"
     #"src/tests/test_solver_update.cpp"
    # "src/tests/test_transform_chain.cpp"

@@ -7,7 +7,8 @@
 #include "ik/pole.h"
 #include "ik/config.h"
 #include "ik/refcount.h"
-#include "ik/transform.h"
+#include "ik/quat.h"
+#include "ik/vec3.h"
 #include "cstructures/btree.h"
 
 #define NODE_FOR_EACH(node, userdata, child) \
@@ -42,7 +43,9 @@ struct ik_node
     struct ik_effector* effector;
     struct ik_pole* pole;
 
-    union ik_transform trans;
+    union ik_quat rotation;
+    union ik_vec3 position;
+
     ikreal dist_to_parent;
     ikreal rotation_weight;
     ikreal mass;

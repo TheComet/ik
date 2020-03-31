@@ -16,10 +16,19 @@ union ik_quat
     } q;
     struct {
         union ik_vec3 v;
-        ikreal _w;
+        ikreal w;
     } v;
     ikreal f[4];
 };
+
+static inline union ik_quat ik_quat(ikreal x, ikreal y, ikreal z, ikreal w) {
+    union ik_quat q;
+    q.q.x = x;
+    q.q.y = y;
+    q.q.z = z;
+    q.q.w = w;
+    return q;
+}
 
 /*!
  * @brief Copies x, y, z, w components from another quaternion.

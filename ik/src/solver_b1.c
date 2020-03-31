@@ -59,7 +59,7 @@ solver_b1_update_translations(struct ik_solver* solver_base)
 {
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
 
-    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->trans.t.pos.f);
+    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->position.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -69,8 +69,8 @@ solver_b1_solve(struct ik_solver* solver_base)
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
     struct ik_effector* eff = solver->tip->effector;
     ikreal bone_length = solver->tip->dist_to_parent;
-    ikreal* tip_pos = solver->tip->trans.t.pos.f;
-    ikreal* base_pos = solver->base->trans.t.pos.f;
+    ikreal* tip_pos = solver->tip->position.f;
+    ikreal* base_pos = solver->base->position.f;
     ikreal* target_pos = eff->target_position.f;
 
     ik_vec3_copy(tip_pos, target_pos);

@@ -432,6 +432,8 @@ ik_solver_build(const struct ik_node* root)
     btree_deinit(&marked_nodes);
     vector_deinit(&effector_nodes);
 
+    solver->impl->update_translations(solver);
+
     return solver;
 
     solver_group_create_failed     :

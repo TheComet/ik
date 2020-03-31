@@ -56,8 +56,8 @@ ik_node_create(union ik_node_user_data user)
     node->effector = NULL;
     node->pole = NULL;
 
-    ik_vec3_set_zero(node->trans.t.pos.f);
-    ik_quat_set_identity(node->trans.t.rot.f);
+    ik_vec3_set_zero(node->position.f);
+    ik_quat_set_identity(node->rotation.f);
     node->dist_to_parent = 0;
     node->rotation_weight = 0;
     node->mass = 0;

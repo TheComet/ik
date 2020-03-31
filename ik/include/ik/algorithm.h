@@ -25,11 +25,11 @@ C_BEGIN
 
 enum ik_algorithm_feature
 {
-#define X(name, value) IK_SOLVER_##name = value,
+#define X(name, value) IK_ALGORITHM_##name = value,
     IK_ALGORITHM_FEATURES_LIST
 #undef X
 
-    IK_SOLVER_FEATURE_COUNT
+    IK_ALGORITHM_FEATURE_COUNT
 };
 
 struct ik_algorithm

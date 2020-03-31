@@ -15,6 +15,14 @@ union ik_vec3
     ikreal f[3];
 };
 
+static inline union ik_vec3 ik_vec3(ikreal x, ikreal y, ikreal z) {
+    union ik_vec3 v;
+    v.v.x = x;
+    v.v.y = y;
+    v.v.z = z;
+    return v;
+}
+
 /*! Copy vector src into v */
 IK_PUBLIC_API void
 ik_vec3_copy(ikreal v[3], const ikreal src[3]);

@@ -67,8 +67,8 @@ solver_b2_update_translations(struct ik_solver* solver_base)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->trans.t.pos.f);
-    solver->mid->dist_to_parent = ik_vec3_length(solver->mid->trans.t.pos.f);
+    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->position.f);
+    solver->mid->dist_to_parent = ik_vec3_length(solver->mid->position.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -80,14 +80,14 @@ solver_b2_solve(struct ik_solver* solver_base)
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
     struct ik_effector* eff = solver->tip->effector;
-    ikreal* base_pos = solver->base->trans.t.pos.f;
-    ikreal* mid_pos = solver->mid->trans.t.pos.f;
-    ikreal* tip_pos = solver->tip->trans.t.pos.f;
+    ikreal* base_pos = solver->base->position.f;
+    ikreal* mid_pos = solver->mid->position.f;
+    ikreal* tip_pos = solver->tip->position.f;
     union ik_vec3 to_target = eff->target_position;
 
     /* TODO: Tree is in local space -- we need global positions */
 
-    ik_vec3_sub_vec3(to_target.f, solver->base->trans.t.pos.f);
+    ik_vec3_sub_vec3(to_target.f, solver->base->position.f);
 
     /*
      * Form a triangle from the two segment lengths so we can calculate the
