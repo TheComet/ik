@@ -3,6 +3,7 @@
 #include "ik/log.h"
 #include "ik/solver.h"
 #include "ik/subtree.h"
+#include "ik/transform.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
@@ -65,61 +66,6 @@ solver_b1_update_translations(struct ik_solver* solver_base)
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
 
     solver->tip->dist_to_parent = ik_vec3_length(solver->tip->position.f);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_transform_pos_rot_l2g(ikreal pos[3], ikreal rot[4], const struct ik_node* tip, const struct ik_node* base)
-{
-    while (tip != base)
-    {
-        ik_vec3_nrotate_quat(pos, tip->rotation.f);
-        ik_vec3_add_vec3(pos, tip->position.f);
-        ik_quat_mul_quat(rot, tip->rotation.f);
-
-        tip = tip->parent;
-        assert(tip != NULL);
-    }
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4],  const struct ik_node* tip, const struct ik_node* base)
-{
-    assert(tip != NULL);
-    if (tip != base)
-        ik_transform_pos_rot_g2l(pos, rot, tip->parent, base);
-
-    ik_quat_nmul_quat(rot, tip->rotation.f);
-    ik_vec3_sub_vec3(pos, tip->position.f);
-    ik_vec3_rotate_quat(pos, tip->rotation.f);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
-{
-    while (tip != base)
-    {
-        ik_vec3_nrotate_quat(pos, tip->rotation.f);
-        ik_vec3_add_vec3(pos, tip->position.f);
-
-        tip = tip->parent;
-        assert(tip != NULL);
-    }
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
-{
-    assert(tip != NULL);
-    if (tip == base)
-        return;
-    ik_transform_pos_g2l(pos, tip->parent, base);
-
-    ik_vec3_sub_vec3(pos, tip->position.f);
-    ik_vec3_rotate_quat(pos, tip->rotation.f);
 }
 
 /* ------------------------------------------------------------------------- */

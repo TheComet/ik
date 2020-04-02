@@ -1,20 +1,11 @@
-#include "ik/chain.h"
-#include "ik/effector.h"
 #include "ik/node.h"
-#include "ik/quat.h"
-#include "ik/algorithmdef.h"
 #include "ik/transform.h"
 #include "ik/vec3.h"
 #include <stddef.h>
 #include <assert.h>
 #include <string.h>
 
-/* Need the algorithm structure for ik_transform_chain_list */
-struct ik_algorithm_t
-{
-    ALGORITHM_HEAD
-};
-
+#if 0
 /*
  * In all of the following algorithms, we iterate the nodes in a chain starting
  * with the node *after* the base node. This is because the base node is shared
@@ -212,4 +203,94 @@ ik_transform_chain(struct ik_chain* chain, uint8_t flags)
     (*transform_table[flags])(chain);
     if (base_node->parent)
         (*eff_transform_table[flags & 0x01])(base_node->parent, chain);
+}
+#endif
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_pos_rot_l2g(ikreal pos[3], ikreal rot[4], const struct ik_node* tip, const struct ik_node* base)
+{
+    while (tip != base)
+    {
+        ik_vec3_nrotate_quat(pos, tip->rotation.f);
+        ik_vec3_add_vec3(pos, tip->position.f);
+        ik_quat_mul_quat(rot, tip->rotation.f);
+
+        tip = tip->parent;
+        assert(tip != NULL);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4],  const struct ik_node* tip, const struct ik_node* base)
+{
+    assert(tip != NULL);
+    if (tip != base)
+        ik_transform_pos_rot_g2l(pos, rot, tip->parent, base);
+
+    ik_quat_nmul_quat(rot, tip->rotation.f);
+    ik_vec3_sub_vec3(pos, tip->position.f);
+    ik_vec3_rotate_quat(pos, tip->rotation.f);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
+{
+    while (tip != base)
+    {
+        ik_vec3_nrotate_quat(pos, tip->rotation.f);
+        ik_vec3_add_vec3(pos, tip->position.f);
+
+        tip = tip->parent;
+        assert(tip != NULL);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
+{
+    assert(tip != NULL);
+    if (tip == base)
+        return;
+    ik_transform_pos_g2l(pos, tip->parent, base);
+
+    ik_vec3_sub_vec3(pos, tip->position.f);
+    ik_vec3_rotate_quat(pos, tip->rotation.f);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_node_section_l2g(struct ik_node* tip, const struct ik_node* base)
+{
+    struct ik_node* parent;
+
+    assert(tip != NULL);
+    if (tip == base)
+        return;
+    ik_transform_node_section_l2g(tip->parent, base);
+
+    parent = tip->parent;
+    ik_vec3_nrotate_quat(tip->position.f, parent->rotation.f);
+    ik_vec3_add_vec3(tip->position.f, parent->position.f);
+    ik_quat_mul_quat(tip->rotation.f, parent->rotation.f);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
+{
+    while (tip != base)
+    {
+        struct ik_node* parent = tip->parent;
+        assert(parent != NULL);
+
+        ik_vec3_sub_vec3(tip->position.f, parent->position.f);
+        ik_vec3_rotate_quat(tip->position.f, parent->rotation.f);
+        ik_quat_nmul_quat(tip->rotation.f, parent->rotation.f);
+
+        tip = tip->parent;
+    }
 }

@@ -3,6 +3,7 @@
 #include "ik/log.h"
 #include "ik/solver.h"
 #include "ik/subtree.h"
+#include "ik/transform.h"
 #include "ik/vec3.h"
 #include <assert.h>
 #include <math.h>
@@ -77,17 +78,21 @@ solver_b2_solve(struct ik_solver* solver_base)
 {
     ikreal a, b, c, aa, bb, cc;
 
-    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+    struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
 
-    struct ik_effector* eff = solver->tip->effector;
-    ikreal* base_pos = solver->base->position.f;
-    ikreal* mid_pos = solver->mid->position.f;
-    ikreal* tip_pos = solver->tip->position.f;
-    union ik_vec3 to_target = eff->target_position;
+    struct ik_effector* e = s->tip->effector;
+    ikreal* base_pos = s->base->position.f;
+    ikreal* base_rot = s->base->rotation.f;
+    ikreal* mid_pos = s->mid->position.f;
+    /*ikreal* mid_rot = s->mid->rotation.f;*/
+    ikreal* tip_pos = s->tip->position.f;
+    /*ikreal* tip_rot = s->tip->rotation.f;*/
+    ikreal* target_pos = e->target_position.f;
 
-    /* TODO: Tree is in local space -- we need global positions */
-
-    ik_vec3_sub_vec3(to_target.f, solver->base->position.f);
+    /* Tree and effector target position are in local space. Transform everything
+     * into base node space */
+    ik_transform_pos_l2g(target_pos, s->tip, s->base);
+    ik_transform_node_section_l2g(s->tip, s->base);
 
     /*
      * Form a triangle from the two segment lengths so we can calculate the
@@ -101,27 +106,26 @@ solver_b2_solve(struct ik_solver* solver_base)
      *            base
      *
      */
-    a = solver->tip->dist_to_parent;
-    b = solver->mid->dist_to_parent;
+    a = s->tip->dist_to_parent;
+    b = s->mid->dist_to_parent;
     aa = a*a;
     bb = b*b;
-    cc = ik_vec3_length_squared(to_target.f);
+    cc = ik_vec3_length_squared(target_pos);
     c = sqrt(cc);
 
     /* check if in reach */
     if (c < a + b)
     {
         /* Cosine law to get base angle (alpha) */
-        union ik_quat base_rot;
         ikreal base_angle = acos((bb + cc - aa) / (2.0 * b * c));
         ikreal cos_a = cos(base_angle * 0.5);
         ikreal sin_a = sin(base_angle * 0.5);
 
         /* Cross product of both segment vectors defines axis of rotation */
-        ik_vec3_copy(base_rot.v.v.f, tip_pos);
-        ik_vec3_sub_vec3(base_rot.f, mid_pos);  /* top segment */
+        ik_vec3_copy(base_rot, tip_pos);
+        ik_vec3_sub_vec3(base_rot, mid_pos);  /* top segment */
         ik_vec3_sub_vec3(mid_pos, base_pos);  /* bottom segment */
-        ik_vec3_cross(base_rot.f, mid_pos);
+        ik_vec3_cross(base_rot, mid_pos);
 
         /*
          * Set up quaternion describing the rotation of alpha. Need to
@@ -129,9 +133,9 @@ solver_b2_solve(struct ik_solver* solver_base)
          * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
          * length vector. We rely on this behavior for a default axis.
          */
-        ik_vec3_normalize(base_rot.f);
-        ik_vec3_mul_scalar(base_rot.f, sin_a);
-        base_rot.q.w = cos_a;
+        ik_vec3_normalize(base_rot);
+        ik_vec3_mul_scalar(base_rot, sin_a);
+        base_rot[3] = cos_a;  /* w component */
 
         /*
          * Rotate side c and scale to length of side b to get the unknown
@@ -139,27 +143,29 @@ solver_b2_solve(struct ik_solver* solver_base)
          * previously, which means it will rotate around the base node's
          * position (as it should)
          */
-        ik_vec3_copy(mid_pos, to_target.f);
+        ik_vec3_copy(mid_pos, target_pos);
         ik_vec3_normalize(mid_pos);
-        ik_vec3_rotate_quat(mid_pos, base_rot.f);
-        ik_vec3_mul_scalar(mid_pos, solver->mid->dist_to_parent);
+        ik_vec3_rotate_quat(mid_pos, base_rot);
+        ik_vec3_mul_scalar(mid_pos, s->mid->dist_to_parent);
         ik_vec3_add_vec3(mid_pos, base_pos);
 
-        ik_vec3_copy(tip_pos, eff->target_position.f);
+        ik_vec3_copy(tip_pos, e->target_position.f);
     }
     else
     {
         /* Just point both segments at target */
-        ik_vec3_normalize(to_target.f);
-        ik_vec3_copy(mid_pos, to_target.f);
-        ik_vec3_copy(tip_pos, to_target.f);
+        ik_vec3_normalize(target_pos);
+        ik_vec3_copy(mid_pos, target_pos);
+        ik_vec3_copy(tip_pos, target_pos);
         ik_vec3_mul_scalar(mid_pos, b);
         ik_vec3_mul_scalar(tip_pos, a);
         ik_vec3_add_vec3(mid_pos, base_pos);
         ik_vec3_add_vec3(tip_pos, mid_pos);
     }
 
-    /* TODO: Transform back again */
+    /* Transform back to local space */
+    ik_transform_node_section_g2l(s->tip, s->base);
+    ik_transform_pos_g2l(target_pos, s->tip, s->base);
 
     return 0;
 }
