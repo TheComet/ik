@@ -14,12 +14,9 @@
  */
 #define IK_EFFECTOR_FEATURES_LIST \
     X(WEIGHT_NLERP, 0x01) \
-    X(KEEP_ORIENTATION, 0x02)
+    X(KEEP_GLOBAL_ORIENTATION, 0x02)
 
 C_BEGIN
-
-struct ik_node_t;
-struct ik_node_data_t;
 
 enum ik_effector_features
 {

@@ -45,7 +45,7 @@ ik_algorithm_create(const char* type)
     strcpy(alg->type, type);
     alg->tolerance = 1e-2;
     alg->max_iterations = 20;
-    alg->features = IK_SOLVER_JOINT_ROTATIONS;
+    alg->features = IK_ALGORITHM_JOINT_ROTATIONS;
 
     return alg;
 }
