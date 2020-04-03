@@ -117,7 +117,7 @@ ik_vec3_length(const ikreal v[3])
 }
 
 /* ------------------------------------------------------------------------- */
-void
+int
 ik_vec3_normalize(ikreal v[3])
 {
     ikreal length = ik_vec3_length(v);
@@ -127,10 +127,11 @@ ik_vec3_normalize(ikreal v[3])
         v[0] *= length;
         v[1] *= length;
         v[2] *= length;
+        return 1;
     }
     else
     {
-        v[0] = 1;
+        return 0;
     }
 }
 

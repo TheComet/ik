@@ -268,7 +268,7 @@ ik_transform_node_section_l2g(struct ik_node* tip, const struct ik_node* base)
     struct ik_node* parent;
 
     assert(tip != NULL);
-    if (tip == base)
+    if (tip->parent == base)
         return;
     ik_transform_node_section_l2g(tip->parent, base);
 
@@ -282,7 +282,7 @@ ik_transform_node_section_l2g(struct ik_node* tip, const struct ik_node* base)
 void
 ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
 {
-    while (tip != base)
+    while (tip->parent != base)
     {
         struct ik_node* parent = tip->parent;
         assert(parent != NULL);
@@ -292,5 +292,6 @@ ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
         ik_quat_nmul_quat(tip->rotation.f, parent->rotation.f);
 
         tip = tip->parent;
+        assert(tip != NULL);
     }
 }

@@ -81,7 +81,6 @@ solver_b2_solve(struct ik_solver* solver_base)
     struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
 
     struct ik_effector* e = s->tip->effector;
-    ikreal* base_pos = s->base->position.f;
     ikreal* base_rot = s->base->rotation.f;
     ikreal* mid_pos = s->mid->position.f;
     /*ikreal* mid_rot = s->mid->rotation.f;*/
@@ -124,7 +123,7 @@ solver_b2_solve(struct ik_solver* solver_base)
         /* Cross product of both segment vectors defines axis of rotation */
         ik_vec3_copy(base_rot, tip_pos);
         ik_vec3_sub_vec3(base_rot, mid_pos);  /* top segment */
-        ik_vec3_sub_vec3(mid_pos, base_pos);  /* bottom segment */
+        /*ik_vec3_sub_vec3(mid_pos, base_pos);  * bottom segment */
         ik_vec3_cross(base_rot, mid_pos);
 
         /*
@@ -133,7 +132,12 @@ solver_b2_solve(struct ik_solver* solver_base)
          * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
          * length vector. We rely on this behavior for a default axis.
          */
-        ik_vec3_normalize(base_rot);
+        if (!ik_vec3_normalize(base_rot))
+        {
+            ik_vec3_copy(base_rot, target_pos);
+            ik_vec3_cross(base_rot, tip_pos);
+            ik_vec3_normalize(base_rot);
+        }
         ik_vec3_mul_scalar(base_rot, sin_a);
         base_rot[3] = cos_a;  /* w component */
 
@@ -146,10 +150,10 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_vec3_copy(mid_pos, target_pos);
         ik_vec3_normalize(mid_pos);
         ik_vec3_rotate_quat(mid_pos, base_rot);
-        ik_vec3_mul_scalar(mid_pos, s->mid->dist_to_parent);
-        ik_vec3_add_vec3(mid_pos, base_pos);
+        ik_vec3_mul_scalar(mid_pos, b);
+        /*ik_vec3_add_vec3(mid_pos, base_pos);*/
 
-        ik_vec3_copy(tip_pos, e->target_position.f);
+        ik_vec3_copy(tip_pos, target_pos);
     }
     else
     {
@@ -159,7 +163,7 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_vec3_copy(tip_pos, target_pos);
         ik_vec3_mul_scalar(mid_pos, b);
         ik_vec3_mul_scalar(tip_pos, a);
-        ik_vec3_add_vec3(mid_pos, base_pos);
+        /*ik_vec3_add_vec3(mid_pos, base_pos);*/
         ik_vec3_add_vec3(tip_pos, mid_pos);
     }
 

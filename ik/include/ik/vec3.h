@@ -76,7 +76,7 @@ IK_PUBLIC_API ikreal
 ik_vec3_length(const ikreal v[3]);
 
 /*! Normalize vector (length is scaled to 1) */
-IK_PUBLIC_API void
+IK_PUBLIC_API int
 ik_vec3_normalize(ikreal v[3]);
 
 /*! Calculate dot product of v1 and v2 */
