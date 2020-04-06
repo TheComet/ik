@@ -120,10 +120,10 @@ ik_vec3_length(const ikreal v[3])
 int
 ik_vec3_normalize(ikreal v[3])
 {
-    ikreal length = ik_vec3_length(v);
-    if (length != 0.0)
+    ikreal length_squared = ik_vec3_length_squared(v);
+    if (length_squared != 0.0)
     {
-        length = 1.0 / length;
+        ikreal length = 1.0 / sqrt(length_squared);
         v[0] *= length;
         v[1] *= length;
         v[2] *= length;

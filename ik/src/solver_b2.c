@@ -120,24 +120,35 @@ solver_b2_solve(struct ik_solver* solver_base)
         ikreal cos_a = cos(base_angle * 0.5);
         ikreal sin_a = sin(base_angle * 0.5);
 
-        /* Cross product of both segment vectors defines axis of rotation */
-        ik_vec3_copy(base_rot, tip_pos);
-        ik_vec3_sub_vec3(base_rot, mid_pos);  /* top segment */
-        /*ik_vec3_sub_vec3(mid_pos, base_pos);  * bottom segment */
-        ik_vec3_cross(base_rot, mid_pos);
+        /*
+         * The plane in which both segments lie is best determined by the
+         * plane spanned by the pole vector and the target position. If no
+         * pole vector exists, then we use the plane spanned by the mid position
+         * and the target position. If these two vectors happen to be colinear
+         * then fall back to using the tip position instead of the mid position.
+         * If this too is colinear with the target vector then as a last restort,
+         * simply use 0,0,1 as our rotation.
+         */
+        if (s->mid->pole)
+            ik_vec3_copy(base_rot, s->mid->pole->position.f);
+        else
+            ik_vec3_copy(base_rot, mid_pos);
+        ik_vec3_cross(base_rot, target_pos);
+        if (!ik_vec3_normalize(base_rot))  /* mid and target vectors are colinear */
+        {
+            ik_vec3_copy(base_rot, tip_pos);
+            ik_vec3_cross(base_rot, target_pos);
+            if (!ik_vec3_normalize(base_rot))  /* tip and target vectors are colinear */
+            {
+                ik_vec3_set(base_rot, 0, 0, 1);
+            }
+        }
 
         /*
-         * Set up quaternion describing the rotation of alpha. Need to
-         * normalise vec3 component of quaternion so rotation is correct.
-         * NOTE: Normalize will give us (1,0,0) in case of giving it a zero
-         * length vector. We rely on this behavior for a default axis.
+         * Normalized cross product of base_rot gives us the axis of rotation.
+         * Now we can scale the components and set the w component to construct
+         * the quaternion describing the correct base node rotation.
          */
-        if (!ik_vec3_normalize(base_rot))
-        {
-            ik_vec3_copy(base_rot, target_pos);
-            ik_vec3_cross(base_rot, tip_pos);
-            ik_vec3_normalize(base_rot);
-        }
         ik_vec3_mul_scalar(base_rot, sin_a);
         base_rot[3] = cos_a;  /* w component */
 
