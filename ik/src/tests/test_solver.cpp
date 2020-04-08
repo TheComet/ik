@@ -282,7 +282,7 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     //             0 <- a1
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl->name, StrEq("solver group"));
+    ASSERT_THAT(solver->impl.name, StrEq("solver group"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(2));
 
     // We expect algorithm 2 to be chosen because it is the next available
@@ -328,7 +328,7 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     //             0 <- a1
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl->name, StrEq("solver group"));
+    ASSERT_THAT(solver->impl.name, StrEq("solver group"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(2));
 
     // We expect algorithm 2 to be chosen because it is the next available
@@ -405,7 +405,7 @@ TEST_F(NAME, split_trees_on_effectors)
     //
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl->name, StrEq("solver group"));
+    ASSERT_THAT(solver->impl.name, StrEq("solver group"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(3));
 
     ik_solver_dummy* s1 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->solver_list, 0);

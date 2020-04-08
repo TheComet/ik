@@ -22,7 +22,7 @@ static struct vector_t g_solvers;
 static void
 deinit_solver(struct ik_solver* solver)
 {
-    solver->impl->deinit((struct ik_solver*)solver);
+    solver->impl.deinit((struct ik_solver*)solver);
     IK_DECREF(solver->algorithm);
 }
 
@@ -44,7 +44,7 @@ create_solver(struct ik_algorithm* algorithm)
 
             IK_INCREF(algorithm);
             solver->algorithm = algorithm;
-            solver->impl = iface;
+            solver->impl = *iface;
 
             return solver;
         }
@@ -264,7 +264,7 @@ create_and_init_solver(struct ik_subtree* subtree)
     if (solver == NULL)
         return NULL;
 
-    if (solver->impl->init((struct ik_solver*)solver, subtree) != 0)
+    if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
     {
         IK_DECREF(solver);
         return NULL;
@@ -432,7 +432,7 @@ ik_solver_build(const struct ik_node* root)
     btree_deinit(&marked_nodes);
     vector_deinit(&effector_nodes);
 
-    solver->impl->update_translations(solver);
+    solver->impl.update_translations(solver);
 
     return solver;
 
@@ -450,7 +450,7 @@ void
 ik_solver_update_translations(struct ik_solver* solver)
 {
     struct ik_solver* solver_base = (struct ik_solver*)solver;
-    solver_base->impl->update_translations(solver);
+    solver_base->impl.update_translations(solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -458,7 +458,7 @@ int
 ik_solver_solve(struct ik_solver* solver)
 {
     struct ik_solver* solver_base = (struct ik_solver*)solver;
-    return solver_base->impl->solve(solver);
+    return solver_base->impl.solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -466,5 +466,5 @@ void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
 {
     struct ik_solver* solver_base = (struct ik_solver*)solver;
-    solver_base->impl->iterate_nodes(solver, cb);
+    solver_base->impl.iterate_nodes(solver, cb);
 }

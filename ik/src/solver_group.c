@@ -38,7 +38,7 @@ solver_group_update_translations(struct ik_solver* solver)
     struct ik_solver_group* group = (struct ik_solver_group*)solver;
 
     VECTOR_FOR_EACH(&group->solver_list, struct ik_solver*, child_solver)
-        (*child_solver)->impl->update_translations(*child_solver);
+        (*child_solver)->impl.update_translations(*child_solver);
     VECTOR_END_EACH
 }
 
@@ -50,7 +50,7 @@ solver_group_solve(struct ik_solver* solver)
     int result = 0;
 
     VECTOR_FOR_EACH(&group->solver_list, struct ik_solver*, child_solver)
-        result += group->impl->solve(*child_solver);
+        result += group->impl.solve(*child_solver);
     VECTOR_END_EACH
 
     return result;
@@ -63,7 +63,7 @@ solver_group_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_fu
     const struct ik_solver_group* group = (const struct ik_solver_group*)solver;
 
     VECTOR_FOR_EACH(&group->solver_list, struct ik_solver*, child_solver)
-        solver->impl->iterate_nodes(*child_solver, cb);
+        solver->impl.iterate_nodes(*child_solver, cb);
     VECTOR_END_EACH
 }
 
@@ -87,7 +87,7 @@ ik_solver_group_create(struct vector_t solver_list)
     if (solver_group == NULL)
         return NULL;
 
-    solver_group->impl = &ik_solver_group;
+    solver_group->impl = ik_solver_group;
     solver_group->algorithm = NULL;
     solver_group->solver_list = solver_list;
 

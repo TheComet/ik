@@ -14,7 +14,7 @@ struct ik_node;
 #define IK_SOLVER_HEAD                                                        \
     IK_REFCOUNTED_HEAD                                                        \
                                                                               \
-    struct ik_solver_interface* impl;                                         \
+    struct ik_solver_interface impl;                                          \
     struct ik_algorithm* algorithm;
 
 typedef void(*ik_solver_callback_func)(struct ik_node*);
