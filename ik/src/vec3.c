@@ -150,7 +150,7 @@ ik_vec3_cross(ikreal v1[3], const ikreal v2[3])
 {
     ikreal v1x = v1[1] * v2[2] - v2[1] * v1[2];
     ikreal v1z = v1[0] * v2[1] - v2[0] * v1[1];
-    v1[1]        = v1[2] * v2[0] - v2[2] * v1[0];
+    v1[1]      = v1[2] * v2[0] - v2[2] * v1[0];
     v1[0] = v1x;
     v1[2] = v1z;
 }
@@ -161,7 +161,7 @@ ik_vec3_ncross(ikreal v1[3], const ikreal v2[3])
 {
     ikreal v1x = v2[1] * v1[2] - v1[1] * v2[2];
     ikreal v1z = v2[0] * v1[1] - v1[0] * v2[1];
-    v1[1]        = v2[2] * v1[0] - v1[2] * v2[0];
+    v1[1]      = v2[2] * v1[0] - v1[2] * v2[0];
     v1[0] = v1x;
     v1[2] = v1z;
 }

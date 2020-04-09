@@ -191,7 +191,15 @@ ik_quat_ensure_positive_sign(ikreal q1[4]);
  * @param[in] v2 The second vector.
  */
 IK_PUBLIC_API void
-ik_quat_angle(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+ik_quat_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+
+/*!
+ * @brief Calculates the absolute angle of the vector. By convention bones are
+ * aligned to the Z axis, so this will return the angle between the specified
+ * vector and the vector [0, 0, 1].
+ */
+IK_PUBLIC_API void
+ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
 
 /*!
  * @brief Calculates the angle between two **normalized** vectors. If the
@@ -202,7 +210,7 @@ ik_quat_angle(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
  * @param[in] v2 The second vector (must be normalized).
  */
 IK_PUBLIC_API void
-ik_quat_angle_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
 IK_PUBLIC_API int
 ik_quat_print(char* buf, const ikreal q[4]);

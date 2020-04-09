@@ -86,7 +86,7 @@ solver_b1_solve_no_joint_rotations(struct ik_solver* solver_base)
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
     {
         union ik_quat delta;
-        ik_quat_angle(delta.f, e->target_position.f, tip->position.f);
+        ik_quat_angle_between(delta.f, e->target_position.f, tip->position.f);
         ik_quat_mul_quat(tip->rotation.f, delta.f);
     }
 
@@ -129,7 +129,7 @@ solver_b1_solve_joint_rotations(struct ik_solver* solver_base)
      * opposite direction has the same effect as pointing the tip node
      * to the target position and then calculating the base node angle.
      */
-    ik_quat_angle(delta.f, tip->position.f, target_pos);
+    ik_quat_angle_between(delta.f, tip->position.f, target_pos);
     ik_quat_mul_quat(base->rotation.f, delta.f);
 
     target_distance = ik_vec3_length(target_pos);

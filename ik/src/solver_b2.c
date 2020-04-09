@@ -78,19 +78,17 @@ solver_b2_solve(struct ik_solver* solver_base)
 {
     ikreal a, b, c, aa, bb, cc;
 
-    struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
+    union ik_vec3 tip_pos, mid_pos, target_pos;
 
+    struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
+    struct ik_node* base = s->base;
+    struct ik_node* mid = s->mid;
+    struct ik_node* tip = s->tip;
     struct ik_effector* e = s->tip->effector;
-    ikreal* base_rot = s->base->rotation.f;
-    ikreal* mid_pos = s->mid->position.f;
-    /*ikreal* mid_rot = s->mid->rotation.f;*/
-    ikreal* tip_pos = s->tip->position.f;
-    /*ikreal* tip_rot = s->tip->rotation.f;*/
-    ikreal* target_pos = e->target_position.f;
 
     /* Tree and effector target position are in local space. Transform everything
      * into base node space */
-    ik_transform_pos_l2g(target_pos, s->tip, s->base);
+    ik_transform_pos_l2g(target_pos, tip, base);
     ik_transform_node_section_l2g(s->tip, s->base);
 
     /*

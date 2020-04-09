@@ -278,7 +278,7 @@ calculate_delta_rotation_of_each_segment(struct ik_chain* chain)
         union ik_vec3 segment_solved   = child_node->position;
         ik_vec3_sub_vec3(segment_original.f, parent_node->FABRIK.initial_position.f);
         ik_vec3_sub_vec3(segment_solved.f, parent_node->position.f);
-        ik_quat_angle(parent_node->rotation.f, segment_solved.f, segment_original.f);
+        ik_quat_angle_between(parent_node->rotation.f, segment_solved.f, segment_original.f);
     }
 }
 
