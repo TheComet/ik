@@ -21,13 +21,31 @@ typedef void(*ik_solver_callback_func)(struct ik_node*);
 
 struct ik_solver_interface
 {
+    /*! Unique string that identifies this solver. This is matched against the
+     * string in ik_algorithm to instantiate a solver when building */
     char name[16];
+
+    /*! Size of the solver struct, e.g. sizeof(struct my_solver) */
     uintptr_t size;
+
+    /*! Called When the solver is allocated. The base fields will be initialized,
+     * so don't use memset() to set your fields. */
     int (*init)(struct ik_solver*, const struct ik_subtree*);
+
+    /*! Called before the solver is freed. */
     void (*deinit)(struct ik_solver*);
+
+    /*! Called when the distances between nodes have changed. */
     void (*update_translations)(struct ik_solver*);
+
+    /*! Called when it's time to solve */
     int (*solve)(struct ik_solver*);
-    void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func);
+
+    /*! Call the specified callback function for every node that the solver
+     * affects. The order must be from base node to leaf node(s), depth first.
+     * If skip_base is non-zero, then the solver should call cb on every node
+     * except for the base node. */
+    void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func cb, int skip_base);
 };
 
 IK_PUBLIC_API int

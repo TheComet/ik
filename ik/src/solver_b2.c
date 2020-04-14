@@ -78,7 +78,8 @@ solver_b2_solve(struct ik_solver* solver_base)
 {
     ikreal a, b, c, aa, bb, cc;
 
-    union ik_vec3 tip_pos, mid_pos, target_pos;
+    union ik_vec3 target_pos;
+    union ik_quat alpha_rot;
 
     struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
     struct ik_node* base = s->base;
@@ -88,8 +89,8 @@ solver_b2_solve(struct ik_solver* solver_base)
 
     /* Tree and effector target position are in local space. Transform everything
      * into base node space */
-    ik_transform_pos_l2g(target_pos, tip, base);
-    ik_transform_node_section_l2g(s->tip, s->base);
+    ik_vec3_copy(target_pos.f, e->target_position.f);
+    ik_transform_pos_l2g(target_pos.f, tip, base);
 
     /*
      * Form a triangle from the two segment lengths so we can calculate the
@@ -107,7 +108,7 @@ solver_b2_solve(struct ik_solver* solver_base)
     b = s->mid->dist_to_parent;
     aa = a*a;
     bb = b*b;
-    cc = ik_vec3_length_squared(target_pos);
+    cc = ik_vec3_length_squared(target_pos.f);
     c = sqrt(cc);
 
     /* check if in reach */
@@ -125,31 +126,37 @@ solver_b2_solve(struct ik_solver* solver_base)
          * and the target position. If these two vectors happen to be colinear
          * then fall back to using the tip position instead of the mid position.
          * If this too is colinear with the target vector then as a last restort,
-         * simply use 0,0,1 as our rotation.
+         * simply use 0,0,1 as our rotation axis.
          */
         if (s->mid->pole)
-            ik_vec3_copy(base_rot, s->mid->pole->position.f);
+            ik_vec3_copy(alpha_rot.f, s->mid->pole->position.f);
         else
-            ik_vec3_copy(base_rot, mid_pos);
-        ik_vec3_cross(base_rot, target_pos);
-        if (!ik_vec3_normalize(base_rot))  /* mid and target vectors are colinear */
+            ik_vec3_copy(alpha_rot.f, mid->position.f);
+        ik_transform_pos_l2g(alpha_rot.f, mid, base);
+        ik_vec3_cross(alpha_rot.f, target_pos.f);
+
+        /* if mid and target vectors are colinear... */
+        if (!ik_vec3_normalize(alpha_rot.f))
         {
-            ik_vec3_copy(base_rot, tip_pos);
-            ik_vec3_cross(base_rot, target_pos);
-            if (!ik_vec3_normalize(base_rot))  /* tip and target vectors are colinear */
-            {
-                ik_vec3_set(base_rot, 0, 0, 1);
-            }
+            ik_vec3_copy(alpha_rot.f, tip->position.f);
+            ik_transform_pos_l2g(alpha_rot.f, tip, base);
+            ik_vec3_cross(alpha_rot.f, target_pos.f);
+
+            /* if tip and target vectors are also colinear... */
+            if (!ik_vec3_normalize(alpha_rot.f))
+                ik_vec3_set(alpha_rot.f, 0, 0, 1);
         }
 
         /*
-         * Normalized cross product of base_rot gives us the axis of rotation.
+         * Normalized cross product of alpha_rot gives us the axis of rotation.
          * Now we can scale the components and set the w component to construct
-         * the quaternion describing the correct base node rotation.
+         * the quaternion describing the correct delta rotation of alpha.
          */
-        ik_vec3_mul_scalar(base_rot, sin_a);
-        base_rot[3] = cos_a;  /* w component */
+        ik_vec3_mul_scalar(alpha_rot.f, sin_a);
+        alpha_rot.q.w = cos_a;
 
+        ik_quat_mul_angle_of(alpha_rot.f, target_pos.f);
+#if 0
         /*
          * Rotate side c and scale to length of side b to get the unknown
          * position. node_base was already subtracted from node_mid
@@ -158,14 +165,16 @@ solver_b2_solve(struct ik_solver* solver_base)
          */
         ik_vec3_copy(mid_pos, target_pos);
         ik_vec3_normalize(mid_pos);
-        ik_vec3_rotate_quat(mid_pos, base_rot);
+        ik_vec3_rotate_quat(mid_pos, alpha_rot);
         ik_vec3_mul_scalar(mid_pos, b);
         /*ik_vec3_add_vec3(mid_pos, base_pos);*/
 
         ik_vec3_copy(tip_pos, target_pos);
+#endif
     }
     else
     {
+#if 0
         /* Just point both segments at target */
         ik_vec3_normalize(target_pos);
         ik_vec3_copy(mid_pos, target_pos);
@@ -174,22 +183,24 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_vec3_mul_scalar(tip_pos, a);
         /*ik_vec3_add_vec3(mid_pos, base_pos);*/
         ik_vec3_add_vec3(tip_pos, mid_pos);
+#endif
     }
 
     /* Transform back to local space */
     ik_transform_node_section_g2l(s->tip, s->base);
-    ik_transform_pos_g2l(target_pos, s->tip, s->base);
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b2_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_b2_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-    cb(solver->base);
+    if (!skip_base)
+        cb(solver->base);
+
     cb(solver->mid);
     cb(solver->tip);
 }

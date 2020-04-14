@@ -1,7 +1,7 @@
 #include "ik/algorithm.h"
 #include "ik/node.h"
 #include "ik/solver.h"
-#include "ik/solver_group.h"
+#include "ik/solver_subtrees.h"
 #include "ik/subtree.h"
 #include "ik/log.h"
 #include "cstructures/btree.h"
@@ -418,8 +418,8 @@ ik_solver_build(const struct ik_node* root)
      * solver can be returned directly. */
     if (vector_count(&solver_list) > 1)
     {
-        /* NOTE: solver_list ownership is moved to the group solver. */
-        solver = ik_solver_group_create(solver_list);
+        /* NOTE: solver_list ownership is moved to the islands solver. */
+        solver = ik_solver_subtrees_create(solver_list);
         if (solver == NULL)
             goto solver_group_create_failed;
     }
@@ -449,22 +449,19 @@ ik_solver_build(const struct ik_node* root)
 void
 ik_solver_update_translations(struct ik_solver* solver)
 {
-    struct ik_solver* solver_base = (struct ik_solver*)solver;
-    solver_base->impl.update_translations(solver);
+    solver->impl.update_translations(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 int
 ik_solver_solve(struct ik_solver* solver)
 {
-    struct ik_solver* solver_base = (struct ik_solver*)solver;
-    return solver_base->impl.solve(solver);
+    return solver->impl.solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
 void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
 {
-    struct ik_solver* solver_base = (struct ik_solver*)solver;
-    solver_base->impl.iterate_nodes(solver, cb);
+    solver->impl.iterate_nodes(solver, cb, 0);
 }

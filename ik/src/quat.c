@@ -342,6 +342,58 @@ ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal
 }
 
 /* ------------------------------------------------------------------------- */
+void
+ik_quat_mul_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
+{
+    ikreal cos_a, sin_a, angle, denominator;
+    ikreal delta[4];
+
+    denominator = 1.0 / ik_vec3_length(v1) / ik_vec3_length(v2);
+    cos_a = ik_vec3_dot(v1, v2) * denominator;
+    if (cos_a >= -1.0 && cos_a <= 1.0)
+    {
+        /* calculate axis of rotation and write it to the quaternion's vector section */
+        ik_vec3_copy(delta, v1);
+        ik_vec3_cross(delta, v2);
+        ik_vec3_normalize(delta);
+
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(cos_a);
+        cos_a = cos(angle * 0.5);
+        sin_a = sin(angle * 0.5);
+        ik_vec3_mul_scalar(delta, sin_a);
+        delta[3] = cos_a; /* w component */
+
+        ik_quat_mul_quat_no_normalize(q, delta);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_mul_angle_of(ikreal q[4], const ikreal v[3])
+{
+    ikreal cos_a, sin_a, angle;
+    ikreal delta[4];
+
+    cos_a = v[2] / ik_vec3_length(v);
+    if (cos_a >= -1.0 && cos_a <= 1.0)
+    {
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(cos_a);
+        sin_a = sin(angle * 0.5);
+
+        /* cross product of v with [0, 0, 1], store result into q */
+        delta[0] = v[1]  * sin_a;
+        delta[1] = -v[0] * sin_a;
+        delta[2] = 0;
+        /* w component */
+        delta[3] = cos(angle * 0.5);
+
+        ik_quat_mul_quat_no_normalize(q, delta);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
 int
 ik_quat_print(char* buf, const ikreal q[4])
 {

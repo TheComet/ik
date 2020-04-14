@@ -167,10 +167,11 @@ solver_b1_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b1_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_b1_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
 {
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
-    cb(solver->base);
+    if (!skip_base)
+        cb(solver->base);
     cb(solver->tip);
 }
 

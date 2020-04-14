@@ -212,6 +212,26 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
 IK_PUBLIC_API void
 ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
+/*!
+ * @brief Multiplies q by the rotation between two vectors. Equivalent to calling
+ * ik_quat_angle_between() followed by ik_quat_mul_quat().
+ * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
+ * The result is written to this. Any previous data is overwritten.
+ * @param[in] v1 The first vector.
+ * @param[in] v2 The second vector.
+ */
+IK_PUBLIC_API void
+ik_quat_mul_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+
+/*!
+ * @brief Multiplies q by the absolute angle of the specified vector. By
+ * convention bones are aligned to the Z axis, so this will multiply q by the
+ * angle  between the specified vector and the vector [0, 0, 1]. This is Equivalent
+ * to calling ik_quat_angle_of() followed by ik_quat_mul_quat().
+ */
+IK_PUBLIC_API void
+ik_quat_mul_angle_of(ikreal q[4], const ikreal v[3]);
+
 IK_PUBLIC_API int
 ik_quat_print(char* buf, const ikreal q[4]);
 
