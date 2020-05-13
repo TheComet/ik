@@ -55,7 +55,7 @@ ik_transform_pos_rot_l2g(ikreal pos[3], ikreal rot[4], const struct ik_node* tip
  * @note The nodes tip and base must be in local space for this to work.
  */
 IK_PUBLIC_API void
-ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4],  const struct ik_node* tip, const struct ik_node* base);
+ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4], const struct ik_node* tip, const struct ik_node* base);
 
 /*!
  * Transforms a position from the node space of "tip" into the node space of
