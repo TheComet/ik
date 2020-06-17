@@ -98,11 +98,14 @@ ik_node_child_count(const struct ik_node* node) {
     return btree_count(&node->children);
 }
 
+IK_PUBLIC_API uint32_t
+ik_node_count(const struct ik_node* node);
+
 /*!
  * @brief Reallocates all nodes and attachments into a flat array.
  */
 IK_PUBLIC_API struct ik_node*
-ik_node_pack(struct ik_node* root);
+ik_node_pack(const struct ik_node* root);
 
 /*!
  * @brief Searches recursively for a node in a tree with the specified global

@@ -7,11 +7,10 @@
 static void
 Constraint_dealloc(ik_Constraint* self)
 {
+    Py_TYPE(self)->tp_dealloc((PyObject*)self);
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Constraint_set_type(ik_Constraint* self, PyObject* args);
 static PyObject*
 Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
@@ -19,7 +18,6 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     ik_Constraint* self;
     ik_Solver* pySolver;
     PyObject* constraint_name;
-    PyObject* result;
 
     /* We require the algorithm to know which derived constraint object to create,
      * and we need a string identifying the type of the constraint */
@@ -31,58 +29,13 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         goto alloc_self_failed;
 
-    result = Constraint_set_type(self, constraint_name);
-    if (result == NULL)
-        goto set_constraint_type_failed;
-    Py_DECREF(result);
-
     return (PyObject*)self;
 
-    set_constraint_type_failed : Py_DECREF(self);
     alloc_self_failed          : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Constraint_set_type(ik_Constraint* self, PyObject* arg)
-{
-    PyObject* ascii_name;
-
-    if ((ascii_name = PyUnicode_AsASCIIString(arg)) == NULL)
-        goto convert_to_ascii_failed;
-
-    /* Map string to ik_constraint_type_e enumeration and create appropriate
-     * constraint */
-    if (0) {}
-#define X(type) \
-            else if (strcmp(PyBytes_AS_STRING(ascii_name), #type) == 0) { \
-                if (ik_constraint_set_type((struct ik_constraint*)self->super.attachment, IK_CONSTRAINT_##type) != IK_OK) { \
-                    PyErr_SetString(PyExc_TypeError, "Failed to set constraint type. Did you use the correct method?"); \
-                    goto set_constraint_type_failed; \
-                } \
-            }
-    IK_CONSTRAINT_LIST
-#undef X
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "Unknown constraint type. Exepected one of the following: "
-#define X(type) #type ", "
-        IK_CONSTRAINT_LIST
-#undef X
-        );
-        goto set_constraint_type_failed;
-    }
-
-    Py_DECREF(ascii_name);
-    Py_RETURN_NONE;
-
-    set_constraint_type_failed : Py_DECREF(ascii_name);
-    convert_to_ascii_failed    : return NULL;
-}
-
-/* ------------------------------------------------------------------------- */
 static PyMethodDef Constraint_methods[] = {
-    {"set_type", (PyCFunction)Constraint_set_type, METH_O,      "Sets the type of the constraint"},
     {NULL}
 };
 

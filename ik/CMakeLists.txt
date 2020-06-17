@@ -30,6 +30,7 @@ string (TOUPPER ${IK_PRECISION_CAPS_AND_NO_SPACES} IK_PRECISION_CAPS_AND_NO_SPAC
 if (IK_BENCHMARKS OR IK_TESTS)
     set (CXX_LANGUAGE "CXX")
 endif ()
+
 project ("ik"
     VERSION 0.2.0
     LANGUAGES C ${CXX_LANGUAGE})
@@ -117,8 +118,8 @@ configure_file ("templates/info.c.in" "src/info.c")
 ###############################################################################
 
 # Update build info every time the project is compiled
-set (UPDATE_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/ik/info_for_every_compile.h")
-add_custom_target (ik_ifec_header
+set (UPDATE_INFO_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/ik/build_info.h")
+add_custom_target (ik_build_info_header
     COMMAND ${CMAKE_COMMAND}
             -DOUTPUT_FILE=${UPDATE_INFO_HEADER}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -127,14 +128,13 @@ add_custom_target (ik_ifec_header
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
     COMMENT "Updating build information"
     VERBATIM)
-add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_ifec_header)
+add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_build_info_header)
 
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
 set (IK_SOURCES
     "src/algorithm.c"
     "src/attachment.c"
-    "src/callbacks.c"
     "src/chain_tree.c"
     "src/constraint.c"
     "src/effector.c"
@@ -186,6 +186,7 @@ set (IK_PYTHON_SOURCES
     "src/python/ik_type_Pole.c"
     "src/python/ik_type_Node.c"
     "src/python/ik_type_Quat.c"
+    "src/python/ik_type_Solver.c"
     "src/python/ik_type_Vec3.c")
 set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
@@ -240,12 +241,12 @@ target_compile_options (ik_obj
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
         -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
-        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math -flto
+        -fno-strict-aliasing -ffast-math -flto
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
         -W -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
-        -pedantic -pedantic-errors -fno-strict-aliasing -ffast-math
+        -fno-strict-aliasing -ffast-math
         $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
     >
 )
@@ -257,7 +258,7 @@ target_link_libraries (ik_obj PUBLIC cstructures)
 ###############################################################################
 
 if (IK_PYTHON)
-    find_package (Python3 COMPONENTS Development REQUIRED)
+    find_package (Python COMPONENTS Development REQUIRED)
     add_library (ik_python_obj OBJECT
         ${IK_PYTHON_SOURCES}
         ${IK_PYTHON_HEADERS})
@@ -282,7 +283,7 @@ if (IK_PYTHON)
             $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
     )
-    target_link_libraries (ik_python_obj PRIVATE Python3::Python)
+    target_link_libraries (ik_python_obj PRIVATE Python::Python)
     target_link_libraries (ik_python_obj PRIVATE ik_obj)
 endif ()
 
@@ -335,7 +336,7 @@ if (IK_TESTS)
     target_link_libraries (ik_tests_obj PRIVATE gmock)
     if (IK_PYTHON)
         add_dependencies (ik_tests_obj ik_generate_unit_tests)
-        target_link_libraries (ik_tests_obj PRIVATE Python3::Python)
+        target_link_libraries (ik_tests_obj PRIVATE Python::Python)
     endif ()
 endif ()
 

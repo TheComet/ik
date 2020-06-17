@@ -30,7 +30,7 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
      */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "This solver does not support multiple end effectors. You will need to switch to another solver (e.g. FABRIK)");
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Multiple end effectors were found in the subtree. This is most likely a bug and should be reported. Recommended quick fix: Use a more general algorithm (e.g. FABRIK)", solver->impl.name);
         return -1;
     }
 
@@ -38,10 +38,23 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     solver->mid = solver->tip->parent;
     solver->base = solver->mid ? solver->mid->parent : NULL;
 
-    if (solver->base == NULL || solver->base != subtree->root)
+    if (solver->base == NULL)
     {
-        ik_log_printf(IK_ERROR, "Your tree has chains that are longer than 2 bones. The \"two bone\" solver only supports two bones.");
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly two bones, but only one bone was found in the subtree.", solver->impl.name);
         return -1;
+    }
+    if (solver->base != subtree->root)
+    {
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly two bones, but a chain with more than 2 bones was found in the subtree.", solver->impl.name);
+        return -1;
+    }
+
+    if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
+    {
+        if (solver->tip->constraint == NULL && solver->mid->constraint == NULL)
+        {
+            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes.. Flag will be ignored. ",solver->impl.name);
+        }
     }
 
     IK_INCREF(solver->base);
@@ -206,6 +219,15 @@ solver_b2_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+solver_b2_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+{
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+
+    cb(solver->tip);
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_TWO_BONE = {
     "two bone",
     sizeof(struct ik_solver_b2),
@@ -213,5 +235,6 @@ struct ik_solver_interface ik_solver_TWO_BONE = {
     solver_b2_deinit,
     solver_b2_update_translations,
     solver_b2_solve,
-    solver_b2_iterate_nodes
+    solver_b2_iterate_nodes,
+    solver_b2_iterate_effector_nodes
 };

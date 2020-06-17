@@ -1,8 +1,8 @@
 #include "cstructures/memory.h"
 #include "ik/init.h"
 #include "ik/solver.h"
-#include "ik/callbacks.h"
 #include <stddef.h>
+#include <stdio.h>
 
 static int g_init_counter;
 
@@ -11,7 +11,7 @@ int
 ik_init(void)
 {
     if (g_init_counter++ != 0)
-        return 0;
+        return 1;
 
     if (memory_init() != 0)
         goto memory_init_failed;
@@ -19,12 +19,11 @@ ik_init(void)
     if (ik_solver_init_interfaces() != 0)
         goto solver_init_interfaces_failed;
 
-    ik_callbacks_init();
-
     return 0;
 
     solver_init_interfaces_failed : memory_deinit();
-    memory_init_failed            : return -1;
+    memory_init_failed            : g_init_counter--;
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */

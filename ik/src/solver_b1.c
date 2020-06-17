@@ -25,24 +25,39 @@ solver_b1_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     /* We need to assert that the subtree only contains a chain of length 1 */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "This solver does not support multiple end effectors. You will need to switch to another solver (e.g. FABRIK)");
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Multiple end effectors were found in the subtree. This is most likely a bug and should be reported. Recommended quick fix: Use a more general algorithm (e.g. FABRIK)", solver->impl.name);
         return -1;
     }
 
     solver->tip = subtree_get_leaf(subtree, 0);
     solver->base = solver->tip->parent;
 
-    if (solver->base == NULL || solver->base != subtree->root)
+    if (solver->base == NULL)
     {
-        ik_log_printf(IK_ERROR, "Your tree has chains that are longer than 1 bone. The \"one bone\" solver only supports one bone.");
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly one bone, but zero were found in the subtree.", solver->impl.name);
+        return -1;
+    }
+    if (solver->base != subtree->root)
+    {
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly one bone, but a chain with more than 1 bone was found in the subtree.", solver->impl.name);
         return -1;
     }
 
     if (solver->algorithm->features & IK_ALGORITHM_TARGET_ROTATIONS)
     {
-        ik_log_printf(IK_WARN, "\"one bone\" solver does not support target rotations. Flag will be ignored.");
+        ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_TARGET_ROTATIONS is set, but target rotations are not supported. Flag will be ignored.", solver->impl.name);
     }
 
+    if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
+    {
+        if (solver->tip->constraint == NULL)
+        {
+            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but the tip node does not have a constraint attached. Flag will be ignored. ",solver->impl.name);
+        }
+    }
+
+    /* Grab references to the nodes we access later, in case nothing else
+     * references them */
     IK_INCREF(solver->base);
     IK_INCREF(solver->tip);
 
@@ -70,82 +85,74 @@ solver_b1_update_translations(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static int
-solver_b1_solve_no_joint_rotations(struct ik_solver* solver_base)
+solver_b1_solve_no_constraints(struct ik_solver* solver_base)
 {
+    union ik_quat delta;
+    union ik_vec3 target;
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
     struct ik_node* base = s->base;
     struct ik_node* tip = s->tip;
     struct ik_effector* e = s->tip->effector;
 
-    /*
-     * Effector target position is in local space (tip node space) but we need
-     * it relative to the base node.
-     */
-    ik_transform_pos_l2g(e->target_position.f, tip, base);
+    /* Transform target into base-node space */
+    target = e->target_position;
+    ik_vec3_sub_vec3(target.f, base->position.f);
+    ik_vec3_rotate_quat(target.f, base->rotation.f);
 
+    /*
+     * Need to calculate the angle between where the bone is pointing, and the
+     * target position. Because by convention the bone will always be Z-axis
+     * aligned, we only have to calculate the angle of the target position to
+     * [0, 0, 1].
+     */
+    ik_quat_angle_of(delta.f, target.f);
+    ik_quat_mul_quat_conj(base->rotation.f, delta.f);
+
+    /* Rotate tip node with same rotation so it keeps its global orientation */
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
-    {
-        union ik_quat delta;
-        ik_quat_angle_between(delta.f, e->target_position.f, tip->position.f);
         ik_quat_mul_quat(tip->rotation.f, delta.f);
-    }
-
-    /* Point tip node to target position */
-    ik_vec3_copy(tip->position.f, e->target_position.f);
-    ik_vec3_normalize(tip->position.f);
-    ik_vec3_mul_scalar(tip->position.f, tip->dist_to_parent);
-
-    /*
-     * Transform effector target position back into local space. We
-     * don't know if the user will update the target position between solver
-     * calls so this is necessary
-     */
-    ik_transform_pos_g2l(e->target_position.f, tip, base);
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 static int
-solver_b1_solve_joint_rotations(struct ik_solver* solver_base)
+solver_b1_solve_constraints(struct ik_solver* solver_base)
 {
     union ik_quat delta;
-    ikreal target_distance;
+    union ik_quat constraint_delta;
+    union ik_vec3 target;
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
     struct ik_node* base = s->base;
     struct ik_node* tip = s->tip;
     struct ik_effector* e = s->tip->effector;
+    struct ik_constraint* c = tip->constraint;
 
-    ikreal* target_pos = e->target_position.f;
-
-    /*
-     * Effector target position is in local space (tip node space) but we need
-     * it relative to the base node.
-     */
-    ik_transform_pos_l2g(target_pos, tip, base);
+    /* Transform target into base-node space */
+    target = e->target_position;
+    ik_vec3_sub_vec3(target.f, base->position.f);
+    ik_vec3_rotate_quat(target.f, base->rotation.f);
 
     /*
-     * Rotating the target position and then rotating the base node in the
-     * opposite direction has the same effect as pointing the tip node
-     * to the target position and then calculating the base node angle.
+     * Need to calculate the angle between where the bone is pointing, and the
+     * target position. Because by convention the bone will always be Z-axis
+     * aligned, we only have to calculate the angle of the target position to
+     * [0, 0, 1].
      */
-    ik_quat_angle_between(delta.f, tip->position.f, target_pos);
-    ik_quat_mul_quat(base->rotation.f, delta.f);
+    ik_quat_angle_of(delta.f, target.f);
+    ik_quat_mul_quat_conj(base->rotation.f, delta.f);
 
-    target_distance = ik_vec3_length(target_pos);
-    ik_vec3_copy(target_pos, tip->position.f);
-    ik_vec3_normalize(target_pos);
-    ik_vec3_mul_scalar(target_pos, target_distance);
+    /* Apply constraint to base node */
+    assert(c);
+    c->apply(c, constraint_delta.f, base->rotation.f);
+    ik_quat_mul_quat(base->rotation.f, constraint_delta.f);
 
+    /* Rotate tip node with same rotation so it keeps its global orientation */
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
-        ik_quat_mul_quat_conj(tip->rotation.f, delta.f);
-
-    /*
-     * Transform effector target position back into local space. We
-     * don't know if the user will update the target position between solver
-     * calls so this is necessary
-     */
-    ik_transform_pos_g2l(target_pos, tip, base);
+    {
+        ik_quat_mul_quat(tip->rotation.f, delta.f);
+        ik_quat_mul_quat_conj(delta.f, constraint_delta.f);
+    }
 
     return 0;
 }
@@ -155,12 +162,16 @@ static int
 solver_b1_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
-    const struct ik_algorithm* a = solver_base->algorithm;
 
-    if (a->features & IK_ALGORITHM_JOINT_ROTATIONS)
-        s->impl.solve = solver_b1_solve_joint_rotations;
+    if ((s->algorithm->features & IK_ALGORITHM_CONSTRAINTS) &&
+        s->base->constraint != NULL)
+    {
+        s->impl.solve = solver_b1_solve_constraints;
+    }
     else
-        s->impl.solve = solver_b1_solve_no_joint_rotations;
+    {
+        s->impl.solve = solver_b1_solve_no_constraints;
+    }
 
     return s->impl.solve(solver_base);
 }
@@ -176,6 +187,16 @@ solver_b1_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+solver_b1_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+{
+    struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
+
+
+    cb(solver->tip);
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_ONE_BONE = {
     "one bone",
     sizeof(struct ik_solver_b1),
@@ -183,5 +204,6 @@ struct ik_solver_interface ik_solver_ONE_BONE = {
     solver_b1_deinit,
     solver_b1_update_translations,
     solver_b1_solve,
-    solver_b1_iterate_nodes
+    solver_b1_iterate_nodes,
+    solver_b1_iterate_effector_nodes
 };

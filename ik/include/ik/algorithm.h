@@ -4,11 +4,18 @@
 #include "ik/config.h"
 #include "ik/attachment.h"
 
-#define IK_ONE_BONE "one bone"
-#define IK_TWO_BONE "two bone"
-#define IK_FABRIK   "fabrik"
-#define IK_MSS      "mss"
+/*
+ * Every available algorithm is registered using a unique name stored as a
+ * string. Defining them like this is just for convenience.
+ */
+#define IK_ONE_BONE    "one bone"
+#define IK_TWO_BONE    "two bone"
+#define IK_FABRIK      "fabrik"
+#define IK_MSS         "mss"
 
+/*
+ *
+ */
 #define IK_ALGORITHM_LIST \
     X(ONE_BONE)           \
     X(TWO_BONE)           \
@@ -18,7 +25,7 @@
 #define IK_ALGORITHM_FEATURES_LIST \
     X(CONSTRAINTS,      0x0001) \
     X(TARGET_ROTATIONS, 0x0002) \
-    X(JOINT_ROTATIONS,  0x0004)
+    X(INTEGRATE_RK45,   0x0004)
 
 C_BEGIN
 

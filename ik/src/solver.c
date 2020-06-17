@@ -28,7 +28,7 @@ deinit_solver(struct ik_solver* solver)
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-create_solver(struct ik_algorithm* algorithm)
+create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree)
 {
     VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
         if (strcmp((*p_iface)->name, algorithm->type) == 0)
@@ -42,14 +42,22 @@ create_solver(struct ik_algorithm* algorithm)
                 return NULL;
             }
 
-            IK_INCREF(algorithm);
             solver->algorithm = algorithm;
             solver->impl = *iface;
+
+            if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
+            {
+                ik_refcounted_free((struct ik_refcounted*)solver);
+                return NULL;
+            }
+
+            IK_INCREF(algorithm);
 
             return solver;
         }
     VECTOR_END_EACH
 
+    ik_log_printf(IK_ERROR, "Unknown algorithm \"%s\". failed to allocate solver", algorithm->type);
     return NULL;
 }
 
@@ -260,15 +268,9 @@ create_and_init_solver(struct ik_subtree* subtree)
         return NULL;
     }
 
-    solver = create_solver(algorithm);
+    solver = create_solver(algorithm, subtree);
     if (solver == NULL)
         return NULL;
-
-    if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
-    {
-        IK_DECREF(solver);
-        return NULL;
-    }
 
     return solver;
 }
@@ -432,8 +434,6 @@ ik_solver_build(const struct ik_node* root)
     btree_deinit(&marked_nodes);
     vector_deinit(&effector_nodes);
 
-    solver->impl.update_translations(solver);
-
     return solver;
 
     solver_group_create_failed     :
@@ -464,4 +464,11 @@ void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
 {
     solver->impl.iterate_nodes(solver, cb, 0);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_solver_iterate_effector_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
+{
+    solver->impl.iterate_effector_nodes(solver, cb);
 }

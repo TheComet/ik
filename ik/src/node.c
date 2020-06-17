@@ -104,12 +104,11 @@ ik_node_link(struct ik_node* node, struct ik_node* child)
      * for performance reasons */
 #ifdef DEBUG
     {
-        struct ik_node* found;
         struct ik_node* root = node;
         while (root->parent)
             root = root->parent;
-        if (ik_node_find_child(&found, root, GUID(child)) == IK_OK)
-            ik_log_warning("Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", GUID(child));
+        if (ik_node_find(root, ik_guid(GUID(child))) != NULL)
+            ik_log_printf(IK_WARN, "Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", GUID(child));
     }
 #endif
 
@@ -139,6 +138,28 @@ ik_node_unlink(struct ik_node* node)
     btree_erase(&node->parent->children, GUID(node));
     node->parent = NULL;
     IK_DECREF(node);
+}
+
+/* ------------------------------------------------------------------------- */
+uint32_t
+ik_node_count(const struct ik_node* node)
+{
+    uint32_t count = 1;
+    NODE_FOR_EACH(node, user, child)
+        count += ik_node_count(child);
+    NODE_END_EACH
+    return count;
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_node*
+ik_node_pack(const struct ik_node* root)
+{
+    /*uint32_t node_count = ik_node_count(root);
+    struct ik_node* new_root = (struct ik_node*)
+        ik_refcounted_alloc_array(sizeof *new_root, (ik_deinit_func)ik_node_deinit, node_count);*/
+
+    return (struct ik_node*)root;
 }
 
 /* ------------------------------------------------------------------------- */

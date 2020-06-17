@@ -3,6 +3,7 @@
 #include "ik/quat.h"
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 /* ------------------------------------------------------------------------- */
 /* Constraint implementations */
@@ -24,8 +25,7 @@ apply_stiff(struct ik_constraint* constraint,
             const ikreal current_rotation[4])
 {
     ik_quat_copy(delta_rotation, current_rotation);
-    ik_quat_conj(delta_rotation);
-    ik_quat_mul_quat(delta_rotation, constraint->data.stiff.angle.f);
+    ik_quat_mul_quat_conj(delta_rotation, constraint->data.stiff.target_angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -43,6 +43,12 @@ apply_cone(struct ik_constraint* constraint,
            ikreal delta_rotation[4],
            const ikreal current_rotation[4])
 {
+    /* L2 distance between the constraint rotation and the node's rotation */
+    ikreal dot = ik_quat_dot(constraint->data.cone.angle.f, current_rotation);
+    dot = 2.0 * (1.0 - fabs(dot));
+
+
+
     ik_quat_set_identity(delta_rotation);
 }
 
@@ -71,36 +77,31 @@ ik_constraint_create(void)
 }
 
 /* ------------------------------------------------------------------------- */
-ikret
-ik_constraint_set_type(struct ik_constraint* constraint,
-                       enum ik_constraint_type type)
+void
+ik_constraint_set_stiff(struct ik_constraint* constraint)
 {
-    switch (type)
-    {
+    constraint->apply = apply_stiff;
+}
 
-        case IK_CONSTRAINT_STIFF:
-            constraint->apply = apply_stiff;
-            break;
+/* ------------------------------------------------------------------------- */
+void
+ik_constraint_set_hinge(struct ik_constraint* constraint,
+                        ikreal axis_x, ikreal axis_y, ikreal axis_z,
+                        ikreal min_angle, ikreal max_angle)
+{
+    constraint->apply = apply_hinge;
+}
 
-        case IK_CONSTRAINT_HINGE:
-            constraint->apply = apply_hinge;
-            break;
-
-        case IK_CONSTRAINT_CONE:
-            constraint->apply = apply_cone;
-            break;
-
-        case IK_CONSTRAINT_CUSTOM:
-            ik_log_printf(IK_ERROR, "Use ik_constraint_set_custom() for type IK_CUSTOM. Constraint will have no effect.");
-            return IK_ERR_WRONG_FUNCTION_FOR_CUSTOM_CONSTRAINT;
-
-        default:
-            ik_log_printf(IK_ERROR, "ik_constraint_set_type(): Unknown type %d, ignoring...", type);
-            break;
-    }
-
-    constraint->type = type;
-    return IK_OK;
+/* ------------------------------------------------------------------------- */
+void
+ik_constraint_set_cone(struct ik_constraint* constraint,
+                       ikreal qx, ikreal qy, ikreal qz, ikreal qw,
+                       ikreal min_angle, ikreal max_angle)
+{
+    constraint->apply = apply_cone;
+    constraint->data.cone.min_angle = min_angle;
+    constraint->data.cone.max_angle = max_angle;
+    ik_quat_set(constraint->data.cone.angle.f, qx, qy, qz, qw);
 }
 
 /* ------------------------------------------------------------------------- */

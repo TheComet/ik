@@ -46,6 +46,8 @@ struct ik_solver_interface
      * If skip_base is non-zero, then the solver should call cb on every node
      * except for the base node. */
     void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func cb, int skip_base);
+
+    void (*iterate_effector_nodes)(const struct ik_solver*, ik_solver_callback_func cb);
 };
 
 IK_PUBLIC_API int
@@ -120,6 +122,9 @@ ik_solver_solve(struct ik_solver* solver);
 
 IK_PUBLIC_API void
 ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
+
+IK_PUBLIC_API void
+ik_solver_iterate_effector_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
 
 #if defined(IK_BUILDING)
 

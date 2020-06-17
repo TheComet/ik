@@ -7,7 +7,6 @@
 static void
 Attachment_dealloc(ik_Attachment* self)
 {
-    IK_XDECREF(self->attachment);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

@@ -136,6 +136,7 @@ PyDoc_STRVAR(NODE_PACK_DOC, "");
 static PyObject*
 Node_pack(ik_Node* self, PyObject* arg)
 {
+    ik_node_pack(self->node);
     Py_RETURN_NONE;
 }
 

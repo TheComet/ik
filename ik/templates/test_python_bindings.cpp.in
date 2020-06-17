@@ -8,45 +8,48 @@ PyMODINIT_FUNC PyInit_ik(void);
 
 using namespace ::testing;
 
-static void init_python()
+void init_python(void)
 {
     PyImport_AppendInittab("ik", PyInit_ik);
-        Py_Initialize();
-        // "module 'sys' has no attribute 'argv'"
-        PyRun_SimpleString("import sys\nsys.argv = ['./iktests']");
-        // sys.exit() would cause the program to exit. Raise an exception instead so PyRun_SimpleString() returns non-zero if exit was called
-        PyRun_SimpleString(
-            "import sys\n"
-            "def stub(x):\n"
-            "    if x:\n"
-            "        raise RuntimeError(\"sys.exit({})\".format(x))\n"
-            "sys.exit = stub");
+    Py_Initialize();
+    // "module 'sys' has no attribute 'argv'"
+    PyRun_SimpleString("import sys\nsys.argv = ['']");
+    // sys.exit() would cause the program to exit. Raise an exception instead so PyRun_SimpleString() returns non-zero if exit was called
+    PyRun_SimpleString(
+        "import sys\n"
+        "def stub(x):\n"
+        "    if x:\n"
+        "        raise RuntimeError(\"sys.exit({})\".format(x))\n"
+        "sys.exit = stub");
 }
 
-static void deinit_python()
+int deinit_python()
 {
-    EXPECT_THAT(Py_FinalizeEx(), Eq(0));
+    return Py_FinalizeEx();
 }
 
-class NAME : public Test
+class PythonEnvironment : public testing::Environment
 {
 public:
-    virtual void SetUp()
+    virtual void SetUp() override
     {
         init_python();
     }
 
-    virtual void TearDown()
+    virtual void TearDown() override
     {
-        deinit_python();
+        EXPECT_THAT(deinit_python(), Eq(0));
     }
 };
 
-TEST_F(NAME, module_import_many_times)
+const testing::Environment* const pythonEnvironment =
+        testing::AddGlobalTestEnvironment(new PythonEnvironment);
+
+TEST(NAME, module_import_many_times)
 {
     for (int i = 0; i != 20; ++i)
     {
-        PyRun_SimpleString("import ik\nimport unittest\n");
+        PyRun_SimpleString("import ik");
         deinit_python();
         init_python();
     }

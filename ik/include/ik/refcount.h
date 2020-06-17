@@ -142,7 +142,7 @@ ik_refcounted_alloc_array(uintptr_t obj_size,
                           ik_deinit_func deinit,
                           uint32_t obj_count);
 
-IK_PRIVATE_API void
+IK_PUBLIC_API void
 ik_refcounted_free(struct ik_refcounted* refcounted_obj);
 
 C_END

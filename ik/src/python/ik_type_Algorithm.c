@@ -42,7 +42,8 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ALGORITHM_TYPE_DOC, "");
+PyDoc_STRVAR(ALGORITHM_TYPE_DOC,
+"");
 static PyObject*
 Algorithm_gettype(ik_Algorithm* self, void* closure)
 {

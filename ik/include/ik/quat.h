@@ -21,15 +21,6 @@ union ik_quat
     ikreal f[4];
 };
 
-static inline union ik_quat ik_quat(ikreal x, ikreal y, ikreal z, ikreal w) {
-    union ik_quat q;
-    q.q.x = x;
-    q.q.y = y;
-    q.q.z = z;
-    q.q.w = w;
-    return q;
-}
-
 /*!
  * @brief Copies x, y, z, w components from another quaternion.
  * @param[out] q Destination quaternion.
@@ -233,7 +224,7 @@ IK_PUBLIC_API void
 ik_quat_mul_angle_of(ikreal q[4], const ikreal v[3]);
 
 IK_PUBLIC_API int
-ik_quat_print(char* buf, const ikreal q[4]);
+ik_quat_prints(char* buf, const ikreal q[4]);
 
 C_END
 

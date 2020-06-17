@@ -190,7 +190,7 @@ ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_vec3_nrotate_quat(ikreal v[3], const ikreal q[4])
+ik_vec3_rotate_quat_conj(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
     /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */

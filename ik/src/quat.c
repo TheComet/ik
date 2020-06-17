@@ -2,6 +2,7 @@
 #include "ik/vec3.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
 void
@@ -249,12 +250,10 @@ ik_quat_dot(const ikreal q1[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_ensure_positive_sign(ikreal q1[4])
+ik_quat_ensure_positive_sign(ikreal q[4])
 {
-    ikreal unit[4] = {0, 0, 0, 1};
-    ikreal dot = ik_quat_dot(q1, unit);
-    if (dot < 0.0)
-        ik_quat_negate(q1);
+    if (q[3] < 0.0)
+        ik_quat_negate(q);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -300,9 +299,13 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3])
         sin_a = sin(angle * 0.5);
 
         /* cross product of v with [0, 0, 1], store result into q */
-        q[0] = v[1]  * sin_a;
-        q[1] = -v[0] * sin_a;
+        q[0] = v[1];
+        q[1] = -v[0];
         q[2] = 0;
+        /* normalize/weight vector part of quaternion */
+        ik_vec3_normalize(q);
+        q[0] *= sin_a;
+        q[1] *= sin_a;
         /* w component */
         q[3] = cos(angle * 0.5);
     }
@@ -395,7 +398,7 @@ ik_quat_mul_angle_of(ikreal q[4], const ikreal v[3])
 
 /* ------------------------------------------------------------------------- */
 int
-ik_quat_print(char* buf, const ikreal q[4])
+ik_quat_prints(char* buf, const ikreal q[4])
 {
-    return 0;
+    return sprintf(buf, "(%.3f, %.3f, %.3f, %.3f)", q[0], q[1], q[2], q[3]);
 }

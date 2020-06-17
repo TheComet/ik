@@ -218,7 +218,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
     {
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            ik_quat_angle(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
+            ik_quat_angle_between(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -228,7 +228,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
             other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            ik_quat_angle(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
+            ik_quat_angle_between(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
         }
         else
         {
@@ -247,7 +247,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
 
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            ik_quat_angle(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
+            ik_quat_angle_between(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -257,7 +257,7 @@ Quat_angle(ik_Quat* self, PyObject* args)
             other2.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            ik_quat_angle(self->quat.f, other1.f, other2.f);
+            ik_quat_angle_between(self->quat.f, other1.f, other2.f);
         }
         else
         {
@@ -293,7 +293,7 @@ Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
     {
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            ik_quat_angle_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
+            ik_quat_angle_between_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -303,7 +303,7 @@ Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
             other.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            ik_quat_angle_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
+            ik_quat_angle_between_no_normalize(self->quat.f, ((ik_Vec3*)vec1)->vec.f, other.f);
         }
         else
         {
@@ -322,7 +322,7 @@ Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
 
         if (PyObject_TypeCheck(vec2, &ik_Vec3Type))
         {
-            ik_quat_angle_no_normalize(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
+            ik_quat_angle_between_no_normalize(self->quat.f, other1.f, ((ik_Vec3*)vec2)->vec.f);
         }
         else if (PySequence_Check(vec2) && PySequence_Fast_GET_SIZE(vec2) == 3)
         {
@@ -332,7 +332,7 @@ Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
             other2.v.z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(vec2, 2));
             if (PyErr_Occurred())
                 return NULL;
-            ik_quat_angle_no_normalize(self->quat.f, other1.f, other2.f);
+            ik_quat_angle_between_no_normalize(self->quat.f, other1.f, other2.f);
         }
         else
         {
@@ -363,7 +363,7 @@ Quat_repr(ik_Quat* self)
     PyTuple_SET_ITEM(args, 2, y);
     if ((z = PyFloat_FromDouble(self->quat.q.z)) == NULL) goto insert_failed;
     PyTuple_SET_ITEM(args, 3, z);
-    if ((fmt = PyUnicode_FromString("Quat(%f, %f, %f, %f)")) == NULL) goto fmt_failed;
+    if ((fmt = PyUnicode_FromString("ik.Quat(%f, %f, %f, %f)")) == NULL) goto fmt_failed;
     if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
 
     Py_DECREF(fmt);
@@ -453,4 +453,71 @@ init_ik_QuatType(void)
     if (PyType_Ready(&ik_QuatType) < 0)
         return -1;
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+quat_python_to_ik(PyObject* qpy, ikreal qik[4])
+{
+    if (ikVec3_CheckExact(qpy))
+    {
+        ik_Quat* q = (ik_Quat*)qpy;
+        ik_quat_copy(qik, q->quat.f);
+    }
+    else if(PySequence_Check(qpy))
+    {
+        if (PySequence_Fast_GET_SIZE(qpy) != 4)
+        {
+            PyErr_Format(PyExc_TypeError, "Expected an array of 4 values, but got %d", PySequence_Fast_GET_SIZE(qpy));
+            return -1;
+        }
+
+        PyObject* x = PySequence_Fast_GET_ITEM(qpy, 0);
+        PyObject* y = PySequence_Fast_GET_ITEM(qpy, 1);
+        PyObject* z = PySequence_Fast_GET_ITEM(qpy, 2);
+        PyObject* w = PySequence_Fast_GET_ITEM(qpy, 3);
+        if (!PyFloat_Check(x))
+        {
+            PyErr_SetString(PyExc_TypeError, "x component is not a float");
+            return -1;
+        }
+        if (!PyFloat_Check(y))
+        {
+            PyErr_SetString(PyExc_TypeError, "y component is not a float");
+            return -1;
+        }
+        if (!PyFloat_Check(z))
+        {
+            PyErr_SetString(PyExc_TypeError, "z component is not a float");
+            return -1;
+        }
+        if (!PyFloat_Check(w))
+        {
+            PyErr_SetString(PyExc_TypeError, "w component is not a float");
+            return -1;
+        }
+
+        qik[0] = PyFloat_AsDouble(x);
+        qik[1] = PyFloat_AsDouble(y);
+        qik[2] = PyFloat_AsDouble(z);
+        qik[3] = PyFloat_AsDouble(w);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected either a ik.Quat type or an array of 4 floats");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+ik_Quat*
+quat_ik_to_python(ikreal q[4])
+{
+    ik_Quat* qpy = (ik_Quat*)PyObject_CallObject((PyObject*)&ik_QuatType, NULL);
+    if (qpy == NULL)
+        return NULL;
+    ik_quat_copy(qpy->quat.f, q);
+    return qpy;
 }

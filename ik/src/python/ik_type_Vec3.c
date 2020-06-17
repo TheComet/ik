@@ -283,7 +283,7 @@ Vec3_repr(ik_Vec3* self)
     PyTuple_SET_ITEM(args, 1, y);
     if ((z = PyFloat_FromDouble(self->vec.v.z)) == NULL) goto insert_failed;
     PyTuple_SET_ITEM(args, 2, z);
-    if ((fmt = PyUnicode_FromString("Vec3(%f, %f, %f)")) == NULL) goto fmt_failed;
+    if ((fmt = PyUnicode_FromString("ik.Vec3(%f, %f, %f)")) == NULL) goto fmt_failed;
     if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
 
     Py_DECREF(fmt);
@@ -371,4 +371,64 @@ init_ik_Vec3Type(void)
     if (PyType_Ready(&ik_Vec3Type) < 0)
         return -1;
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+vec3_python_to_ik(PyObject* vpy, ikreal vik[3])
+{
+    if (ikVec3_CheckExact(vpy))
+    {
+        ik_Vec3* v = (ik_Vec3*)vpy;
+        ik_vec3_copy(vik, v->vec.f);
+    }
+    else if(PySequence_Check(vpy))
+    {
+        if (PySequence_Fast_GET_SIZE(vpy) != 3)
+        {
+            PyErr_Format(PyExc_TypeError, "Expected an array of 3 values, but got %d", PySequence_Fast_GET_SIZE(vpy));
+            return -1;
+        }
+
+        PyObject* x = PySequence_Fast_GET_ITEM(vpy, 0);
+        PyObject* y = PySequence_Fast_GET_ITEM(vpy, 1);
+        PyObject* z = PySequence_Fast_GET_ITEM(vpy, 2);
+        if (!PyFloat_Check(x))
+        {
+            PyErr_SetString(PyExc_TypeError, "x component is not a float");
+            return -1;
+        }
+        if (!PyFloat_Check(y))
+        {
+            PyErr_SetString(PyExc_TypeError, "y component is not a float");
+            return -1;
+        }
+        if (!PyFloat_Check(z))
+        {
+            PyErr_SetString(PyExc_TypeError, "z component is not a float");
+            return -1;
+        }
+
+        vik[0] = PyFloat_AsDouble(x);
+        vik[1] = PyFloat_AsDouble(y);
+        vik[2] = PyFloat_AsDouble(z);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected either a ik.Vec3 type or an array of 3 floats");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+ik_Vec3*
+vec3_ik_to_python(ikreal v[3])
+{
+    ik_Vec3* vpy = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
+    if (vpy == NULL)
+        return NULL;
+    ik_vec3_copy(vpy->vec.f, v);
+    return vpy;
 }

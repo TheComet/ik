@@ -1,5 +1,5 @@
 #include "ik/info.h"
-#include "ik/info_for_every_compile.h"
+#include "ik/build_info.h"
 
 #define QUOTE(str) #str
 #define EXPAND_AND_QUOTE(str) QUOTE(str)

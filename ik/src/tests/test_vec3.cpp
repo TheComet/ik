@@ -173,7 +173,7 @@ TEST(NAME, normalize_positive_numbers)
 {
     union ik_vec3 v;
     ik_vec3_set(v.f, 1, 2, 3);
-    ik_vec3_normalize(v.f);
+    EXPECT_THAT(ik_vec3_normalize(v.f), Eq(1));
     EXPECT_THAT(v.v.x, DoubleEq(1.0 / sqrt(14)));
     EXPECT_THAT(v.v.y, DoubleEq(2.0 / sqrt(14)));
     EXPECT_THAT(v.v.z, DoubleEq(3.0 / sqrt(14)));
@@ -183,7 +183,7 @@ TEST(NAME, normalize_negative_numbers)
 {
     union ik_vec3 v;
     ik_vec3_set(v.f, -1, -2, -3);
-    ik_vec3_normalize(v.f);
+    EXPECT_THAT(ik_vec3_normalize(v.f), Eq(1));
     EXPECT_THAT(v.v.x, DoubleEq(-1.0 / sqrt(14)));
     EXPECT_THAT(v.v.y, DoubleEq(-2.0 / sqrt(14)));
     EXPECT_THAT(v.v.z, DoubleEq(-3.0 / sqrt(14)));
@@ -191,11 +191,10 @@ TEST(NAME, normalize_negative_numbers)
 
 TEST(NAME, normalize_zero)
 {
-    // Due to vectors being used as directions, make the default direction 1,0,0
     union ik_vec3 v;
     ik_vec3_set(v.f, 0, 0, 0);
-    ik_vec3_normalize(v.f);
-    EXPECT_THAT(v.v.x, DoubleEq(1));
+    EXPECT_THAT(ik_vec3_normalize(v.f), Eq(0));
+    EXPECT_THAT(v.v.x, DoubleEq(0));
     EXPECT_THAT(v.v.y, DoubleEq(0));
     EXPECT_THAT(v.v.z, DoubleEq(0));
 }
@@ -233,6 +232,60 @@ TEST(NAME, ncross)
     EXPECT_THAT(v1.v.z, DoubleEq(3));
 }
 
+TEST(NAME, rotate_vector_90_x_axis)
+{
+    // By convention, looking in a positive direction (in this case left to right)
+    // a positive rotation about 1, 0, 0 should cause a counter-clockwise
+    // rotation
+
+    union ik_quat q;
+    ik_quat_set_axis_angle(q.f, 1, 0, 0, 90.0*pi/180);
+
+    union ik_vec3 v;
+    ik_vec3_set(v.f, 0, 0, 1);
+    ik_vec3_rotate_quat(v.f, q.f);
+
+    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(-1, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
+}
+
+TEST(NAME, rotate_vector_90_y_axis)
+{
+    // By convention, looking in a positive direction (in this case bottom to top)
+    // a positive rotation about 0, 1, 0 should cause a counter-clockwise
+    // rotation
+
+    union ik_quat q;
+    ik_quat_set_axis_angle(q.f, 0, 1, 0, 90.0*pi/180);
+
+    union ik_vec3 v;
+    ik_vec3_set(v.f, 0, 0, 1);
+    ik_vec3_rotate_quat(v.f, q.f);
+
+    EXPECT_THAT(v.v.x, DoubleNear(1, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
+}
+
+TEST(NAME, rotate_vector_90_z_axis)
+{
+    // By convention, looking in a positive direction (in this case back to front)
+    // a positive rotation about 0, 0, 1 should cause a counter-clockwise
+    // rotation
+
+    union ik_quat q;
+    ik_quat_set_axis_angle(q.f, 0, 0, 1, 90.0*pi/180);
+
+    union ik_vec3 v;
+    ik_vec3_set(v.f, 0, 1, 0);
+    ik_vec3_rotate_quat(v.f, q.f);
+
+    EXPECT_THAT(v.v.x, DoubleNear(-1, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
+}
+
 TEST(NAME, rotate_vector_45_degree)
 {
     union ik_quat q;
@@ -255,19 +308,19 @@ TEST(NAME, rotate_vector_120_degree_steps)
     ik_quat_set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
 
     ik_vec3_rotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(1, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(1, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
 
     ik_vec3_rotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(1, 1e-15));
+    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(1, 1e-7));
 
     ik_vec3_rotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(1, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
+    EXPECT_THAT(v.v.x, DoubleNear(1, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
 }
 
 TEST(NAME, rotate_vector_there_and_back)
@@ -279,9 +332,9 @@ TEST(NAME, rotate_vector_there_and_back)
     ik_vec3_rotate_quat(v.f, q.f);
     ik_quat_conj(q.f);
     ik_vec3_rotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(3, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(7, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(4, 1e-15));
+    EXPECT_THAT(v.v.x, DoubleNear(3, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(7, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(4, 1e-7));
 }
 
 TEST(NAME, nrotate_vector_45_degree)
@@ -291,7 +344,7 @@ TEST(NAME, nrotate_vector_45_degree)
 
     union ik_vec3 v;
     ik_vec3_set(v.f, 1, 0, 0);
-    ik_vec3_nrotate_quat(v.f, q.f);
+    ik_vec3_rotate_quat_conj(v.f, q.f);
 
     EXPECT_THAT(v.v.x, DoubleEq(1/sqrt(2)));
     EXPECT_THAT(v.v.y, DoubleEq(0));
@@ -305,20 +358,20 @@ TEST(NAME, nrotate_vector_120_degree_steps)
     ik_vec3_set(v.f, 1, 0, 0);
     ik_quat_set_axis_angle(q.f, 1, 1, 1, 120 * pi / 180);
 
-    ik_vec3_nrotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(1, 1e-15));
+    ik_vec3_rotate_quat_conj(v.f, q.f);
+    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(1, 1e-7));
 
-    ik_vec3_nrotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(1, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
+    ik_vec3_rotate_quat_conj(v.f, q.f);
+    EXPECT_THAT(v.v.x, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(1, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
 
-    ik_vec3_nrotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(1, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-15));
+    ik_vec3_rotate_quat_conj(v.f, q.f);
+    EXPECT_THAT(v.v.x, DoubleNear(1, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(0, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(0, 1e-7));
 }
 
 TEST(NAME, nrotate_vector_there_and_back)
@@ -327,12 +380,12 @@ TEST(NAME, nrotate_vector_there_and_back)
     union ik_vec3 v;
     ik_vec3_set(v.f, 3, 7, 4);
     ik_quat_set_axis_angle(q.f, 63, 9679, 34, 48.32 * pi / 180);
-    ik_vec3_nrotate_quat(v.f, q.f);
+    ik_vec3_rotate_quat_conj(v.f, q.f);
     ik_quat_conj(q.f);
-    ik_vec3_nrotate_quat(v.f, q.f);
-    EXPECT_THAT(v.v.x, DoubleNear(3, 1e-15));
-    EXPECT_THAT(v.v.y, DoubleNear(7, 1e-15));
-    EXPECT_THAT(v.v.z, DoubleNear(4, 1e-15));
+    ik_vec3_rotate_quat_conj(v.f, q.f);
+    EXPECT_THAT(v.v.x, DoubleNear(3, 1e-7));
+    EXPECT_THAT(v.v.y, DoubleNear(7, 1e-7));
+    EXPECT_THAT(v.v.z, DoubleNear(4, 1e-7));
 }
 
 
@@ -343,5 +396,5 @@ TEST(NAME, project)
     union ik_vec3 v;
     ik_vec3_set(v.f, 7, 0, 7);
     ik_vec3_project_from_vec3(v.f, u.f);
-    EXPECT_THAT(v.v.x, DoubleNear(7.0 * 28 / 98, 1e-15));
+    EXPECT_THAT(v.v.x, DoubleNear(7.0 * 28 / 98, 1e-7));
 }

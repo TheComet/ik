@@ -92,7 +92,7 @@ ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4]);
 
 /*! Rotates vector v by the conjugate of the quaternion q. */
 IK_PUBLIC_API void
-ik_vec3_nrotate_quat(ikreal v[3], const ikreal q[4]);
+ik_vec3_rotate_quat_conj(ikreal v[3], const ikreal q[4]);
 
 /*! Rotates vector v by the angle between v1 and v2 */
 IK_PUBLIC_API void
