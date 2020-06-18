@@ -153,7 +153,7 @@ set (IK_SOURCES
     #"src/solver_update.c"
     "src/solver_b1.c"
     "src/solver_b2.c"
-    #"src/solver_fabrik.c"
+    "src/solver_fabrik.c"
     #"src/solver_mss.c"
     "src/solver_subtrees.c"
     "src/solver_subsolvers.c"
