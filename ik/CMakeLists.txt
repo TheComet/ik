@@ -194,7 +194,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_chain_tree.cpp"
     #"src/tests/test_constraint.cpp"
     "src/tests/test_effector.cpp"
-    #"src/tests/test_FABRIK.cpp"
+    "src/tests/test_FABRIK.cpp"
     #"src/tests/test_mat3x3.cpp"
     "src/tests/test_node.cpp"
     #"src/tests/test_pole.cpp"
@@ -214,6 +214,13 @@ set (IK_TESTS_SOURCES
    # "src/tests/test_TWO_BONE.cpp"
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
+set (IK_PYTHON_TESTS_SOURCES
+    "src/tests/python/test_info.py"
+    "src/tests/python/test_log.py"
+    "src/tests/python/test_Node.py"
+    #"src/tests/python/test_Quat.py"
+    #"src/tests/python/test_Vec3.py"
+    )
 set (IK_BENCHMARK_SOURCES
     "src/benchmarks/bench_FABRIK_solver.cpp"
     "src/benchmarks/bench_solver.cpp")
@@ -296,13 +303,14 @@ if (IK_TESTS)
         set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
             -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -DIK_PYTHON_TESTS_SOURCES="${IK_PYTHON_TESTS_SOURCES}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
         add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"
             COMMAND ${GENERATE_PYTHON_TESTS_CMD}
             DEPENDS
                 "cmake/generate_python_unit_tests.cmake"
                 "templates/test_python_bindings.cpp.in"
-                ${PYTHON_TEST_SOURCE_FILES})
+                ${IK_PYTHON_TESTS_SOURCES})
         add_custom_target (ik_generate_unit_tests ALL
             DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp")
     endif ()

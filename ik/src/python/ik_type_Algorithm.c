@@ -6,6 +6,7 @@
 static void
 Algorithm_dealloc(ik_Algorithm* self)
 {
+    IK_DECREF(self->super.attachment);
     Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 
@@ -13,6 +14,8 @@ Algorithm_dealloc(ik_Algorithm* self)
 static PyObject*
 Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
+    ik_Algorithm* self;
+    struct ik_algorithm* algorithm;
     const char* name;
 
     static char* kwds_names[] = {
@@ -23,22 +26,23 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", kwds_names, &name))
         return NULL;
 
-    ik_Algorithm* self = (ik_Algorithm*)type->tp_base->tp_new(type, args, kwds);
-    if (self == NULL)
-        goto alloc_self_failed;
-
-    self->super.attachment = (struct ik_attachment*)ik_algorithm_create(name);
-    if (self->super.attachment == NULL)
+    if ((algorithm = ik_algorithm_create(name)) == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to allocate algorithm. Check the log for more info. Possibly out of memory, or the name is too long.");
         goto alloc_algorithm_failed;
     }
-    Py_INCREF(self->super.attachment);
+    IK_INCREF(algorithm);
+
+    self = (ik_Algorithm*)type->tp_base->tp_new(type, args, kwds);
+    if (self == NULL)
+        goto alloc_self_failed;
+
+    self->super.attachment = (struct ik_attachment*)algorithm;
 
     return (PyObject*)self;
 
-    alloc_algorithm_failed : type->tp_base->tp_dealloc((PyObject*)self);
-    alloc_self_failed      : return NULL;
+    alloc_self_failed      : IK_DECREF(algorithm);
+    alloc_algorithm_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -20,7 +20,7 @@ struct ik_solver_group
 {
     IK_SOLVER_HEAD
 
-    struct vector_t solver_list;
+    struct cs_vector solver_list;
 };
 
 static int dummy_init(struct ik_solver* solver_base, const struct ik_subtree* subtree) {

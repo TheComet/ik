@@ -38,10 +38,10 @@ chain_tree_destroy(struct ik_chain* chain)
 int
 chain_tree_init(struct ik_chain* chain)
 {
-    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) != VECTOR_OK)
+    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) != 0)
         return -1;
 
-    if (vector_init(&chain->children, sizeof(struct ik_chain)) != VECTOR_OK)
+    if (vector_init(&chain->children, sizeof(struct ik_chain)) != 0)
     {
         vector_deinit(&chain->nodes);
         return -1;
@@ -61,6 +61,7 @@ chain_tree_deinit(struct ik_chain* chain)
     CHAIN_FOR_EACH_NODE(chain, node)
         IK_DECREF(node);
     CHAIN_END_EACH
+    IK_DECREF(chain_get_base_node(chain));
 
     vector_deinit(&chain->children);
     vector_deinit(&chain->nodes);
@@ -70,7 +71,7 @@ chain_tree_deinit(struct ik_chain* chain)
 void
 chain_tree_clear_recursive(struct ik_chain* chain)
 {
-    vec_size_t node_idx;
+    cs_vec_size node_idx;
 
     CHAIN_FOR_EACH_CHILD(chain, child_chain)
         chain_tree_clear_recursive(child_chain);
@@ -103,6 +104,7 @@ chain_tree_clear(struct ik_chain* chain)
     CHAIN_FOR_EACH_NODE(chain, node)
         IK_DECREF(node);
     CHAIN_END_EACH
+    IK_DECREF(chain_get_base_node(chain));
 
     vector_clear_compact(&chain->children);
     vector_clear_compact(&chain->nodes);
@@ -129,7 +131,7 @@ chain_create_child(struct ik_chain* chain)
 int
 chain_add_node(struct ik_chain* chain, const struct ik_node* node)
 {
-    if (vector_push(&chain->nodes, &node) == VECTOR_OK)
+    if (vector_push(&chain->nodes, &node) == 0)
     {
         IK_INCREF(node);
         return 0;

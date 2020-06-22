@@ -10,7 +10,7 @@
 static void
 Effector_dealloc(ik_Effector* self)
 {
-    IK_XDECREF(self->super.attachment);
+    IK_DECREF(self->super.attachment);
     Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
 }
 
@@ -19,21 +19,25 @@ static PyObject*
 Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Effector* self;
+    struct ik_effector* effector;
 
     /* Allocate effector */
+    if ((effector = ik_effector_create()) == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate internal effector");
+        goto alloc_effector_failed;
+    }
+    IK_INCREF(effector);
+
     self = (ik_Effector*)type->tp_base->tp_new(type, args, kwds);
     if (self == NULL)
-        return NULL;
+        goto alloc_self_failed;
 
-    self->super.attachment = (struct ik_attachment*)ik_effector_create();
-    if (self->super.attachment == NULL)
-    {
-        Py_DECREF(self);
-        return NULL;
-    }
-    IK_INCREF(self->super.attachment);
-
+    self->super.attachment = (struct ik_attachment*)effector;
     return (PyObject*)self;
+
+    alloc_self_failed     : IK_DECREF(effector);
+    alloc_effector_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */

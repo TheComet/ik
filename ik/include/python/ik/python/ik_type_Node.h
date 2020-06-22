@@ -8,13 +8,14 @@ struct ik_node;
 typedef struct ik_Node
 {
     PyObject_HEAD
+
+    struct ik_node* node;
+
+    /* These can by Py_None */
     PyObject* algorithm;
     PyObject* constraint;
     PyObject* effector;
     PyObject* pole;
-    PyObject* user;
-    struct ik_node* node;
-    int guid;
 } ik_Node;
 
 extern PyTypeObject ik_NodeType;

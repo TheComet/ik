@@ -2,10 +2,10 @@ execute_process (COMMAND ${CMAKE_COMMAND} -E copy
     "${IK_SOURCE_DIR}/templates/test_python_bindings.cpp.in"
     "${IK_BINARY_DIR}/src/test_python_bindings.cpp")
 
-file (GLOB PYTHON_TEST_SOURCE_FILES "${IK_SOURCE_DIR}/src/tests/python/*.py")
+separate_arguments (IK_PYTHON_TESTS_SOURCES)
 
-foreach (f ${PYTHON_TEST_SOURCE_FILES})
-    file (READ ${f} TEST_SRC)
+foreach (f ${IK_PYTHON_TESTS_SOURCES})
+    file (READ ${IK_SOURCE_DIR}/${f} TEST_SRC)
     string (CONCAT TEST_SRC ${TEST_SRC} "\n"
         "test_results = unittest.main(exit=False).result\n"
         "if len(test_results.errors) > 0 or len(test_results.failures) > 0:\n"

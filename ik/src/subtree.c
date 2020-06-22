@@ -9,7 +9,7 @@ int
 subtree_init(struct ik_subtree* st)
 {
     st->root = NULL;
-    if (vector_init(&st->leaves, sizeof(struct ik_node*)) != VECTOR_OK)
+    if (vector_init(&st->leaves, sizeof(struct ik_node*)) != 0)
     {
         ik_log_out_of_memory("ik_subtree_init()");
         return -1;
@@ -35,7 +35,7 @@ subtree_set_root(struct ik_subtree* st, const struct ik_node* root)
 int
 subtree_add_leaf(struct ik_subtree* st, const struct ik_node* leaf)
 {
-    if (vector_push(&st->leaves, &leaf) != VECTOR_OK)
+    if (vector_push(&st->leaves, &leaf) != 0)
     {
         ik_log_out_of_memory("ik_subtree_add_leaf()");
         return -1;

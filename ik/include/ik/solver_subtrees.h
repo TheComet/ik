@@ -9,7 +9,7 @@ C_BEGIN
 struct ik_solver;
 
 IK_PRIVATE_API struct ik_solver*
-ik_solver_subtrees_create(struct vector_t solver_list);
+ik_solver_subtrees_create(struct cs_vector solver_list);
 
 C_END
 

@@ -10,8 +10,11 @@
 static void
 Node_dealloc(ik_Node* self)
 {
-    Py_XDECREF(self->user);
     IK_DECREF(self->node);
+    Py_DECREF(self->algorithm);
+    Py_DECREF(self->constraint);
+    Py_DECREF(self->effector);
+    Py_DECREF(self->pole);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -20,10 +23,50 @@ static PyObject*
 Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Node* self;
+    struct ik_node* node;
+
+    (void)args; (void)kwds;
+
+    node = ik_node_create(ik_ptr(0));
+    if (node == NULL)
+        goto alloc_node_failed;
+    IK_INCREF(node);
+
+    self = (ik_Node*)type->tp_alloc(type, 0);
+    if (self == NULL)
+        goto alloc_self_failed;
+
+    /*
+     * Store the python object in node's user data so we don't have to store
+     * child nodes in a python list.
+     */
+    node->user.ptr = self;
+
+    /* store node */
+    self->node = node;
+
+    /* Set all attachments to None */
+    Py_INCREF(Py_None); self->algorithm = Py_None;
+    Py_INCREF(Py_None); self->constraint = Py_None;
+    Py_INCREF(Py_None); self->effector = Py_None;
+    Py_INCREF(Py_None); self->pole = Py_None;
+
+    return (PyObject*)self;
+
+    alloc_self_failed : IK_DECREF(node);
+    alloc_node_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
+{
+    ik_Algorithm* algorithm = NULL;
+    ik_Constraint* constraint = NULL;
+    ik_Effector* effector = NULL;
+    ik_Pole* pole = NULL;
 
     static char* kwds_str[] = {
-        "guid",
-        "user",
         "algorithm",
         "constraint",
         "effector",
@@ -31,51 +74,33 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         NULL
     };
 
-    static int guid_counter = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!", kwds_str,
+            &ik_AlgorithmType, &algorithm,
+            &ik_ConstraintType, &constraint,
+            &ik_EffectorType, &effector,
+            &ik_PoleType, &pole))
+        return -1;
 
-    self = (ik_Node*)type->tp_alloc(type, 0);
-    if (self == NULL)
-        goto alloc_self_failed;
+    #define X1(upper, lower, arg) X(upper, lower)
+    #define X(upper, lower)                                                   \
+        if (lower != NULL) {                                                  \
+            PyObject* tmp;                                                    \
+                                                                              \
+            /* Attach to internal node */                                     \
+            ik_Attachment* py_attachment = (ik_Attachment*)self->lower;       \
+            ik_node_attach_##lower(self->node, (struct ik_##lower*)py_attachment->attachment); \
+                                                                              \
+            /* Set attachment on python object */                             \
+            tmp = self->lower;                                                \
+            Py_INCREF(py_attachment);                                         \
+            self->lower = (PyObject*)py_attachment;                           \
+            Py_DECREF(tmp);                                                   \
+        }
+        IK_ATTACHMENT_LIST
+    #undef X
+    #undef X1
 
-    self->guid = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|IOO!O!O!O!", kwds_str,
-            &self->guid,
-            &self->user,
-            &ik_AlgorithmType, &self->algorithm,
-            &ik_ConstraintType, &self->constraint,
-            &ik_EffectorType, &self->effector,
-            &ik_PoleType, &self->pole))
-        goto parse_args_failed;
-
-    self->node = ik_node_create(ik_ptr(self));
-    if (self->node == NULL)
-        goto alloc_ik_node_failed;
-    IK_INCREF(self->node);
-
-    if (self->guid < 0)
-        self->guid = guid_counter++;
-
-    if (self->user == NULL)
-        self->user = Py_None;
-
-#define X1(upper, lower, arg) X(upper, lower)
-#define X(upper, lower) \
-    if (self->lower) \
-        ik_node_attach_##lower(self->node, (struct ik_##lower*)(((ik_Attachment*)self->lower)->attachment)); \
-    else \
-        self->lower = Py_None; \
-    Py_INCREF(self->lower);
-    IK_ATTACHMENT_LIST
-#undef X
-#undef X1
-
-    Py_INCREF(self->user);
-
-    return (PyObject*)self;
-
-    alloc_ik_node_failed :
-    parse_args_failed    : type->tp_free((PyObject*)self);
-    alloc_self_failed    : return NULL;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -84,7 +109,7 @@ static PyObject*
 Node_create_child(ik_Node* self, PyObject* args, PyObject* kwds)
 {
     (void)args;
-    ik_Node* child = (ik_Node*)Node_new(&ik_NodeType, args, kwds);
+    ik_Node* child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
     if (child == NULL)
         return NULL;
 
@@ -136,39 +161,11 @@ PyDoc_STRVAR(NODE_PACK_DOC, "");
 static PyObject*
 Node_pack(ik_Node* self, PyObject* arg)
 {
+    (void)arg;
     ik_node_pack(self->node);
     Py_RETURN_NONE;
 }
 
-/* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_FIND_DOC, "");
-static PyObject*
-Node_find_recursive(ik_Node* self, int guid)
-{
-    if (self->guid == guid)
-        return Py_INCREF(self), (PyObject*)self;
-
-    NODE_FOR_EACH(self->node, node_data, child)
-        PyObject* result;
-        ik_Node* py_child = child->user.ptr;
-        assert(py_child != NULL);
-        if ((result = Node_find_recursive(py_child, guid)))
-            return result;
-    NODE_END_EACH
-
-    Py_RETURN_NONE;
-}
-static PyObject*
-Node_find(ik_Node* self, PyObject* guid)
-{
-    if (!PyLong_Check(guid))
-    {
-        PyErr_SetString(PyExc_TypeError, "Argument must be an integer (guid)");
-        return NULL;
-    }
-
-    return (PyObject*)Node_find_recursive(self, PyLong_AS_LONG(guid));
-}
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
@@ -176,41 +173,8 @@ static PyMethodDef Node_methods[] = {
     {"link",              (PyCFunction)Node_link,              METH_O,                       NODE_LINK_DOC},
     {"unlink",            (PyCFunction)Node_unlink,            METH_NOARGS,                  NODE_UNLINK_DOC},
     {"pack",              (PyCFunction)Node_pack,              METH_NOARGS,                  NODE_PACK_DOC},
-    {"find",              (PyCFunction)Node_find,              METH_O,                       NODE_FIND_DOC},
     {NULL}
 };
-
-/* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_GUID_DOC,"");
-static PyObject*
-Node_getguid(ik_Node* self, void* closure)
-{
-    (void)closure;
-    return PyLong_FromLong(self->guid);
-}
-static int
-Node_setguid(ik_Node* self, PyObject* value, void* closure)
-{
-    (void)self; (void)value; (void)closure;
-    PyErr_SetString(PyExc_AttributeError, "GUID can't be changed after node construction");
-    return -1;
-}
-
-/* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_USER_DOC,"");
-static PyObject*
-Node_getuser(ik_Node* self, void* closure)
-{
-    (void)closure;
-    return Py_INCREF(self->user), self->user;
-}
-static int
-Node_setuser(ik_Node* self, PyObject* value, void* closure)
-{
-    (void)self; (void)value; (void)closure;
-    PyErr_SetString(PyExc_AttributeError, "User object can't be changed after node construction");
-    return -1;
-}
 
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_CHILD_COUNT_DOC,"");
@@ -218,7 +182,7 @@ static PyObject*
 Node_getchild_count(ik_Node* self, void* closure)
 {
     (void)closure;
-    return Py_INCREF(self->user), self->user;
+    return PyLong_FromLong(ik_node_child_count(self->node));
 }
 static int
 Node_setchild_count(ik_Node* self, PyObject* value, void* closure)
@@ -250,8 +214,8 @@ PyDoc_STRVAR(NODE_POLE_DOC,"");
         if (ik_##lower##_CheckExact(value))                                   \
         {                                                                     \
             PyObject* tmp;                                                    \
-            ik_Attachment* lower = (ik_Attachment*)value;                     \
-            ik_node_attach_##lower(self->node, (struct ik_##lower*)lower->attachment); \
+            ik_Attachment* py_attachment = (ik_Attachment*)value;             \
+            ik_node_attach_##lower(self->node, (struct ik_##lower*)py_attachment->attachment); \
                                                                               \
             tmp = self->lower;                                                \
             Py_INCREF(value);                                                 \
@@ -283,13 +247,13 @@ PyDoc_STRVAR(NODE_POLE_DOC,"");
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
-    {"guid",        (getter)Node_getguid,        (setter)Node_setguid,        NODE_GUID_DOC,        NULL},
-    {"user",        (getter)Node_getuser,        (setter)Node_setuser,        NODE_USER_DOC,        NULL},
     {"child_count", (getter)Node_getchild_count, (setter)Node_setchild_count, NODE_CHILD_COUNT_DOC, NULL},
-    {"algorithm",   (getter)Node_getalgorithm,   (setter)Node_setalgorithm,   NODE_ALGORITHM_DOC,   NULL},
-    {"constraint",  (getter)Node_getconstraint,  (setter)Node_setconstraint,  NODE_CONSTRAINT_DOC,  NULL},
-    {"effector",    (getter)Node_geteffector,    (setter)Node_seteffector,    NODE_EFFECTOR_DOC,    NULL},
-    {"pole",        (getter)Node_getpole,        (setter)Node_setpole,        NODE_POLE_DOC,        NULL},
+#define X1(upper, lower, arg) X(upper, lower)
+#define X(upper, lower) \
+    {#lower,        (getter)Node_get##lower,     (setter)Node_set##lower,     NODE_##upper##_DOC,   NULL},
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
     {NULL}
 };
 
@@ -297,7 +261,7 @@ static PyGetSetDef Node_getset[] = {
 static PyObject*
 Node_repr(ik_Node* self)
 {
-    return PyUnicode_FromFormat("Node(guid=%d, user=%R)", self->guid, self->user);
+    return PyUnicode_FromFormat("ik.Node()");
 }
 
 /* ------------------------------------------------------------------------- */
@@ -321,7 +285,8 @@ PyTypeObject ik_NodeType = {
     .tp_doc = NODE_DOC,
     .tp_methods = Node_methods,
     .tp_getset = Node_getset,
-    .tp_new = Node_new
+    .tp_new = Node_new,
+    .tp_init = (initproc)Node_init
 };
 
 /* ------------------------------------------------------------------------- */

@@ -1,3 +1,4 @@
+#include "ik/solver.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Node.h"
 #include "structmember.h"
@@ -6,6 +7,7 @@
 static void
 Solver_dealloc(ik_Solver* self)
 {
+    IK_DECREF(self->solver);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -13,56 +15,80 @@ Solver_dealloc(ik_Solver* self)
 static PyObject*
 Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    (void)kwds;
+    struct ik_solver* solver;
     ik_Solver* self;
-    const char* algorithmName;
+    ik_Node* root;
 
-    if (!PyArg_ParseTuple(args, "s", &algorithmName))
+    static char* kwds_names[] = {
+        "root",
+        NULL
+    };
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwds_names,
+            &ik_NodeType, &root))
         return NULL;
+
+    if ((solver = ik_solver_build(root->node)) == NULL)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to build solver(s). Check log output for more information.");
+        goto build_solvers_failed;
+    }
+    IK_INCREF(solver);
 
     self = (ik_Solver*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
 
-    /*self->algorithm = IKAPI.algorithm.create(algorithmName);*/
-    if (self->algorithm == NULL)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to create requested algorithm!");
-        goto create_algorithm_failed;
-    }
+    self->solver = solver;
 
     return (PyObject*)self;
 
-    create_algorithm_failed : Py_DECREF(self);
-    alloc_self_failed    : return NULL;
+    alloc_self_failed    : IK_DECREF(solver);
+    build_solvers_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(SOLVER_UPDATE_TRANSLATIONS_DOC, "");
 static PyObject*
-Solver_rebuild_data(ik_Solver* self, PyObject* arg)
+Solver_update_translations(ik_Solver* self, PyObject* arg)
 {
-    Py_RETURN_FALSE;
+    (void)arg;
+    ik_solver_update_translations(self->solver);
+    Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(SOLVER_SOLVE_DOC, "");
 static PyObject*
-Solver_calculate_segment_lengths(ik_Solver* self, PyObject* arg)
+Solver_solve(ik_Solver* self, PyObject* arg)
+{
+    (void)arg;
+    return PyLong_FromLong(
+        ik_solver_solve(self->solver));
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(SOLVER_ITERATE_NODES_DOC, "");
+static PyObject*
+Solver_iterate_nodes(ik_Solver* self, PyObject* callback)
 {
     Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(SOLVER_ITERATE_EFFECTOR_NODES_DOC, "");
 static PyObject*
-Solver_solve(ik_Solver* self, PyObject* arg)
+Solver_iterate_effector_nodes(ik_Solver* self, PyObject* callback)
 {
-    Py_RETURN_FALSE;
+    Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Solver_methods[] = {
-    {"rebuild_data",              (PyCFunction)Solver_rebuild_data,              METH_NOARGS, "Rebuilds internal structures in the algorithm"},
-    {"calculate_segment_lengths", (PyCFunction)Solver_calculate_segment_lengths, METH_NOARGS, "Updates calculated segment lenghts"},
-    {"solve",                     (PyCFunction)Solver_solve,                     METH_NOARGS, "Executes the algorithm"},
+    {"update_translations",    (PyCFunction)Solver_update_translations,    METH_NOARGS, SOLVER_UPDATE_TRANSLATIONS_DOC},
+    {"solve",                  (PyCFunction)Solver_solve,                  METH_NOARGS, SOLVER_SOLVE_DOC},
+    {"iterate_nodes",          (PyCFunction)Solver_iterate_nodes,          METH_O,      SOLVER_ITERATE_NODES_DOC},
+    {"iterate_effector_nodes", (PyCFunction)Solver_iterate_effector_nodes, METH_O,      SOLVER_ITERATE_EFFECTOR_NODES_DOC},
     {NULL}
 };
 

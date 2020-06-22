@@ -10,7 +10,7 @@ C_BEGIN
 struct ik_subtree
 {
     const struct ik_node* root;
-    struct vector_t leaves;  /* list of ik_node* */
+    struct cs_vector leaves;  /* list of ik_node* */
 };
 
 IK_PRIVATE_API int

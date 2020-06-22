@@ -1,13 +1,11 @@
 #include "Python.h"
 
-struct ik_algorithm;
-struct ik_Node;
+struct ik_solver;
 
 typedef struct ik_Solver
 {
     PyObject_HEAD
-    struct ik_algorithm* algorithm;
-    struct ik_Node* tree;
+    struct ik_solver* solver;
 } ik_Solver;
 
 extern PyTypeObject ik_SolverType;

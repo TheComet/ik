@@ -21,9 +21,9 @@ struct ik_chain
      * NOTE: The nodes are in "reverse", i.e. the first node in this list is
      * the effector node.
      */
-    struct vector_t nodes;
+    struct cs_vector nodes;
     /* list of ik_chain objects */
-    struct vector_t children;
+    struct cs_vector children;
 };
 
 IK_PRIVATE_API struct ik_chain*
@@ -103,8 +103,18 @@ count_chains(const struct ik_chain* chains);
 #define CHAIN_FOR_EACH_CHILD(chain_var, var_name) \
     VECTOR_FOR_EACH(&(chain_var)->children, struct ik_chain, var_name) {
 
+/*!
+ * Iterates over each node from tip to base, excluding the base node.
+ */
 #define CHAIN_FOR_EACH_NODE(chain_var, var_name) \
-    VECTOR_FOR_EACH(&(chain_var)->nodes, struct ik_node*, chain_##var_name) \
+    VECTOR_FOR_EACH_RANGE(&(chain_var)->nodes, struct ik_node*, chain_##var_name, 0, chain_length(chain_var) - 1) \
+    struct ik_node* var_name = *(chain_##var_name); {
+
+/*!
+ * Iterates over each node from base to tip, excluding the base node.
+ */
+#define CHAIN_FOR_EACH_NODE_R(chain_var, var_name) \
+    VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node* chain_##var_name, 0, chain_length(chain_var) - 1) \
     struct ik_node* var_name = *(chain_##var_name); {
 
 #define CHAIN_END_EACH VECTOR_END_EACH }
@@ -121,7 +131,7 @@ count_chains(const struct ik_chain* chains);
  * @param[in] file_name The name of the file to dump to.
  */
 IK_PRIVATE_API void
-dump_to_dot(const struct ik_node* node, const struct vector_t* chains, const char* file_name);
+dump_to_dot(const struct ik_node* node, const struct cs_vector* chains, const char* file_name);
 #endif /* IK_DOT_OUTPUT */
 
 C_END

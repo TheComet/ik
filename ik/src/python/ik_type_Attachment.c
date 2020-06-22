@@ -51,7 +51,7 @@ static int
 Attachment_setnode(ik_Attachment* self, PyObject* value, void* closure)
 {
     (void)self; (void)value; (void)closure;
-    PyErr_SetString(PyExc_AttributeError, "Node is read-only. Use node.attach_xxx() to attach to a node.");
+    PyErr_SetString(PyExc_AttributeError, "Node is read-only. Use node.attach() to attach to a node.");
     return -1;
 }
 

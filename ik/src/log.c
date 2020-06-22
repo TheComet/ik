@@ -9,7 +9,7 @@
 
 static struct log
 {
-    struct vector_t message_buffer;
+    struct cs_vector message_buffer;
     void (*write_message)(enum ik_log_severity severity, const char* msg);
     enum ik_log_severity severity;
     int8_t timestamps;
@@ -88,7 +88,7 @@ write_stderr(enum ik_log_severity severity, const char* msg)
         fprintf(stderr, "[%s] ", timestamp);
     }
 
-    fprintf(stderr, "%s: %s", severities[severity], msg);
+    fprintf(stderr, "%s: %s\n", severities[severity], msg);
 }
 
 /* ------------------------------------------------------------------------- */

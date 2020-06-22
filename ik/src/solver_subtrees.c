@@ -8,7 +8,7 @@ struct ik_solver_subtrees
 {
     IK_SOLVER_HEAD
 
-    struct vector_t solver_list;  /* list of ik_solver* */
+    struct cs_vector solver_list;  /* list of ik_solver* */
 };
 
 /* ------------------------------------------------------------------------- */
@@ -104,7 +104,7 @@ struct ik_solver_interface ik_solver_subtrees = {
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver*
-ik_solver_subtrees_create(struct vector_t solver_list)
+ik_solver_subtrees_create(struct cs_vector solver_list)
 {
     struct ik_solver_subtrees* subtrees = (struct ik_solver_subtrees*)
         ik_refcounted_alloc(sizeof *subtrees, (ik_deinit_func)solver_subtrees_deinit);
