@@ -218,9 +218,8 @@ set (IK_PYTHON_TESTS_SOURCES
     "src/tests/python/test_info.py"
     "src/tests/python/test_log.py"
     "src/tests/python/test_Node.py"
-    #"src/tests/python/test_Quat.py"
-    #"src/tests/python/test_Vec3.py"
-    )
+    "src/tests/python/test_Quat.py"
+    "src/tests/python/test_Vec3.py")
 set (IK_BENCHMARK_SOURCES
     "src/benchmarks/bench_FABRIK_solver.cpp"
     "src/benchmarks/bench_solver.cpp")

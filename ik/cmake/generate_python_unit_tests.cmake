@@ -14,7 +14,7 @@ foreach (f ${IK_PYTHON_TESTS_SOURCES})
     string (REPLACE "\n" "\\n\"\n\"" TEST_SRC ${TEST_SRC})
     get_filename_component (TEST_NAME ${f} NAME_WE)
     string (CONCAT TEST_SRC
-        "TEST(NAME, ${TEST_NAME})\n"
+        "TEST_F(NAME, ${TEST_NAME})\n"
         "{\n"
         "    int pythonRunResult = PyRun_SimpleString(\"${TEST_SRC}\")\;\n"
         "    EXPECT_THAT(pythonRunResult, Eq(0))\;\n"

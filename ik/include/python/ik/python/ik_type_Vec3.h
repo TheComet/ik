@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "ik/vec3.h"
 
-#define ikVec3_CheckExact(op) \
+#define ik_Vec3_CheckExact(op) \
     (Py_TYPE(op) == &ik_Vec3Type)
 
 typedef struct ik_Vec3

@@ -8,6 +8,131 @@
 
 /* ------------------------------------------------------------------------- */
 static void
+NodeChildrenView_dealloc(ik_NodeChildrenView* self)
+{
+    IK_DECREF(self->node);
+    Py_TYPE(self)->tp_free(self);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+{
+    ik_NodeChildrenView* self;
+    PyObject* node_capsule;
+
+    (void)kwds;
+
+    if (!PyArg_ParseTuple(args, "O!", &PyCapsule_Type, &node_capsule))
+        return NULL;
+
+    self = (ik_NodeChildrenView*)type->tp_alloc(type, 0);
+    if (self == NULL)
+        goto alloc_self_failed;
+
+    self->node = PyCapsule_GetPointer(node_capsule, NULL);
+    IK_INCREF(self->node);
+
+    return (PyObject*)self;
+
+    alloc_self_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_repr(PyObject* myself)
+{
+    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+    return PyUnicode_FromFormat("ik.NodeChildrenView()");
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_str(PyObject* myself)
+{
+    return NodeChildrenView_repr(myself);
+}
+
+/* ------------------------------------------------------------------------- */
+static Py_ssize_t
+NodeChildrenView_length(PyObject* myself)
+{
+    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+
+    return ik_node_child_count(self->node);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_item(PyObject* myself, Py_ssize_t index)
+{
+    ik_Node* node;
+    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+
+    if (index < 0 || index >= ik_node_child_count(self->node))
+    {
+        PyErr_SetString(PyExc_IndexError, "Node child index out of range");
+        return NULL;
+    }
+
+    node = ik_node_get_child(self->node, index)->user.ptr;
+    return Py_INCREF(node), (PyObject*)node;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_subscript(PyObject* self, PyObject* item)
+{
+    if (PyIndex_Check(item))
+    {
+        Py_ssize_t idx = PyNumber_AsSsize_t(item, PyExc_IndexError);
+        if (idx == -1 && PyErr_Occurred())
+            return NULL;
+        return NodeChildrenView_item(self, idx);
+    }
+    else if (PySlice_Check(item))
+    {
+        PyErr_SetString(PyExc_TypeError, "Node children can't be sliced (they're not ordered)");
+        return NULL;
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Node child index must be an integer");
+        return NULL;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+static PyMappingMethods NodeChildrenView_as_mapping = {
+    .mp_length = NodeChildrenView_length,
+    .mp_subscript = NodeChildrenView_subscript
+};
+
+/* ------------------------------------------------------------------------- */
+static PySequenceMethods NodeChildrenView_as_sequence = {
+    .sq_length = NodeChildrenView_length,
+    .sq_item = NodeChildrenView_item
+};
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_CHILDREN_VIEW_DOC,
+"");
+PyTypeObject ik_NodeChildrenViewType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ik.NodeChildrenView",
+    .tp_basicsize = sizeof(ik_NodeChildrenView),
+    .tp_dealloc = (destructor)NodeChildrenView_dealloc,
+    .tp_repr = NodeChildrenView_repr,
+    .tp_str = NodeChildrenView_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = NODE_CHILDREN_VIEW_DOC,
+    .tp_new = NodeChildrenView_new,
+    .tp_as_mapping = &NodeChildrenView_as_mapping,
+    .tp_as_sequence = &NodeChildrenView_as_sequence
+};
+
+/* ------------------------------------------------------------------------- */
+static void
 Node_dealloc(ik_Node* self)
 {
     IK_DECREF(self->node);
@@ -15,7 +140,8 @@ Node_dealloc(ik_Node* self)
     Py_DECREF(self->constraint);
     Py_DECREF(self->effector);
     Py_DECREF(self->pole);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    Py_DECREF(self->children);
+    Py_TYPE(self)->tp_free(self);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -23,15 +149,40 @@ static PyObject*
 Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Node* self;
+    ik_NodeChildrenView* children_view;
     struct ik_node* node;
+    PyObject* node_capsule;
+    PyObject* constructor_args;
 
     (void)args; (void)kwds;
 
+    /* Allocate the internal node */
     node = ik_node_create(ik_ptr(0));
     if (node == NULL)
         goto alloc_node_failed;
     IK_INCREF(node);
 
+    /* Add node to capsule so we can construct a NodeChildrenView object */
+    node_capsule = PyCapsule_New(node, NULL, NULL);
+    if (node_capsule == NULL)
+        goto alloc_children_view_failed;
+
+    /* Add capsule to arglist tuple */
+    constructor_args = PyTuple_New(1);
+    if (constructor_args == NULL)
+    {
+        Py_DECREF(node_capsule);
+        goto alloc_children_view_failed;
+    }
+    PyTuple_SET_ITEM(constructor_args, 0, node_capsule); /* steals ref */
+
+    /* create children view object */
+    children_view = (ik_NodeChildrenView*)PyObject_CallObject((PyObject*)&ik_NodeChildrenViewType, constructor_args);
+    Py_DECREF(constructor_args); /* destroys arglist and capsule */
+    if (children_view == NULL)
+        goto alloc_children_view_failed;
+
+    /* Finally, alloc self */
     self = (ik_Node*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
@@ -42,8 +193,9 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
      */
     node->user.ptr = self;
 
-    /* store node */
+    /* store other objects we successfully allocated */
     self->node = node;
+    self->children = children_view;
 
     /* Set all attachments to None */
     Py_INCREF(Py_None); self->algorithm = Py_None;
@@ -53,8 +205,9 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     return (PyObject*)self;
 
-    alloc_self_failed : IK_DECREF(node);
-    alloc_node_failed : return NULL;
+    alloc_self_failed          : Py_DECREF(children_view);
+    alloc_children_view_failed : IK_DECREF(node);
+    alloc_node_failed          : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -106,10 +259,14 @@ Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_CREATE_CHILD_DOC, "");
 static PyObject*
-Node_create_child(ik_Node* self, PyObject* args, PyObject* kwds)
+Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
 {
+    ik_Node* child;
+    ik_Node* self = (ik_Node*)myself;
+
     (void)args;
-    ik_Node* child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
+
+    child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
     if (child == NULL)
         return NULL;
 
@@ -126,9 +283,10 @@ Node_create_child(ik_Node* self, PyObject* args, PyObject* kwds)
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_LINK_DOC, "");
 static PyObject*
-Node_link(ik_Node* self, PyObject* node)
+Node_link(PyObject* myself, PyObject* node)
 {
     ik_Node* other;
+    ik_Node* self = (ik_Node*)myself;
 
     if (!ik_Node_CheckExact(node))
     {
@@ -149,9 +307,11 @@ Node_link(ik_Node* self, PyObject* node)
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_UNLINK_DOC, "");
 static PyObject*
-Node_unlink(ik_Node* self, PyObject* args)
+Node_unlink(PyObject* myself, PyObject* args)
 {
+    ik_Node* self = (ik_Node*)myself;
     (void)args;
+
     ik_node_unlink(self->node);
     Py_RETURN_NONE;
 }
@@ -159,8 +319,9 @@ Node_unlink(ik_Node* self, PyObject* args)
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_PACK_DOC, "");
 static PyObject*
-Node_pack(ik_Node* self, PyObject* arg)
+Node_pack(PyObject* myself, PyObject* arg)
 {
+    ik_Node* self = (ik_Node*)myself;
     (void)arg;
     ik_node_pack(self->node);
     Py_RETURN_NONE;
@@ -169,27 +330,156 @@ Node_pack(ik_Node* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
-    {"create_child",      (PyCFunction)Node_create_child,      METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
-    {"link",              (PyCFunction)Node_link,              METH_O,                       NODE_LINK_DOC},
-    {"unlink",            (PyCFunction)Node_unlink,            METH_NOARGS,                  NODE_UNLINK_DOC},
-    {"pack",              (PyCFunction)Node_pack,              METH_NOARGS,                  NODE_PACK_DOC},
+    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
+    {"link",         Node_link,                      METH_O,                       NODE_LINK_DOC},
+    {"unlink",       Node_unlink,                    METH_NOARGS,                  NODE_UNLINK_DOC},
+    {"pack",         Node_pack,                      METH_NOARGS,                  NODE_PACK_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_COUNT_DOC,"");
+static PyObject*
+Node_getcount(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return PyLong_FromLong(ik_node_count(self->node));
+}
+static int
+Node_setcount(PyObject* myself, PyObject* value, void* closure)
+{
+    (void)myself; (void)value; (void)closure;
+    PyErr_SetString(PyExc_AttributeError, "Count is read-only");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_CHILD_COUNT_DOC,"");
 static PyObject*
-Node_getchild_count(ik_Node* self, void* closure)
+Node_getchild_count(PyObject* myself, void* closure)
 {
+    ik_Node* self = (ik_Node*)myself;
     (void)closure;
     return PyLong_FromLong(ik_node_child_count(self->node));
 }
 static int
-Node_setchild_count(ik_Node* self, PyObject* value, void* closure)
+Node_setchild_count(PyObject* myself, PyObject* value, void* closure)
 {
-    (void)self; (void)value; (void)closure;
+    (void)myself; (void)value; (void)closure;
     PyErr_SetString(PyExc_AttributeError, "Child count is read-only");
     return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_CHILDREN_DOC,"");
+static PyObject*
+Node_getchildren(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->children), (PyObject*)self->children;
+}
+static int
+Node_setchildren(PyObject* myself, PyObject* value, void* closure)
+{
+    (void)myself; (void)value; (void)closure;
+    PyErr_SetString(PyExc_AttributeError, "children property is read-only");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_PARENT_DOC,"");
+static PyObject*
+Node_getparent(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    if (self->node->parent != NULL)
+    {
+        ik_Node* parent = self->node->parent->user.ptr;
+        return Py_INCREF(parent), (PyObject*)parent;
+    }
+    else
+    {
+        Py_RETURN_NONE;
+    }
+}
+static int
+Node_setparent(PyObject* myself, PyObject* value, void* closure)
+{
+    (void)myself; (void)value; (void)closure;
+    PyErr_SetString(PyExc_AttributeError, "parent property is read-only");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_POSITION_DOC,"");
+static PyObject*
+Node_getposition(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_setposition(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)myself; (void)value; (void)closure;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_ROTATION_DOC,"");
+static PyObject*
+Node_getrotation(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_setrotation(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)myself; (void)value; (void)closure;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_MASS_DOC,"");
+static PyObject*
+Node_getmass(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_setmass(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)myself; (void)value; (void)closure;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_ROTATION_WEIGHT_DOC,"");
+static PyObject*
+Node_getrotation_weight(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)myself; (void)value; (void)closure;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -247,7 +537,14 @@ PyDoc_STRVAR(NODE_POLE_DOC,"");
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
-    {"child_count", (getter)Node_getchild_count, (setter)Node_setchild_count, NODE_CHILD_COUNT_DOC, NULL},
+    {"count",           Node_getcount,           Node_setcount,           NODE_COUNT_DOC, NULL},
+    {"child_count",     Node_getchild_count,     Node_setchild_count,     NODE_CHILD_COUNT_DOC, NULL},
+    {"children",        Node_getchildren,        Node_setchildren,        NODE_CHILDREN_DOC, NULL},
+    {"parent",          Node_getparent,          Node_setparent,          NODE_PARENT_DOC, NULL},
+    {"position",        Node_getposition,        Node_setposition,        NODE_POSITION_DOC, NULL},
+    {"rotation",        Node_getrotation,        Node_setrotation,        NODE_ROTATION_DOC, NULL},
+    {"mass",            Node_getmass,            Node_setmass,            NODE_MASS_DOC, NULL},
+    {"rotation_weight", Node_getrotation_weight, Node_setrotation_weight, NODE_ROTATION_WEIGHT_DOC, NULL},
 #define X1(upper, lower, arg) X(upper, lower)
 #define X(upper, lower) \
     {#lower,        (getter)Node_get##lower,     (setter)Node_set##lower,     NODE_##upper##_DOC,   NULL},
@@ -272,6 +569,22 @@ Node_str(ik_Node* self)
 }
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+Node_richcompare(PyObject* myself, PyObject* other, int op)
+{
+    if (ik_Node_CheckExact(other))
+    {
+        ik_Node* self = (ik_Node*)myself;
+        ik_Node* ikother = (ik_Node*)other;
+        Py_RETURN_RICHCOMPARE(self->node->user.ptr, ikother->node->user.ptr, op);
+    }
+    else
+    {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_DOC,
 "");
 PyTypeObject ik_NodeType = {
@@ -286,7 +599,8 @@ PyTypeObject ik_NodeType = {
     .tp_methods = Node_methods,
     .tp_getset = Node_getset,
     .tp_new = Node_new,
-    .tp_init = (initproc)Node_init
+    .tp_init = (initproc)Node_init,
+    .tp_richcompare = Node_richcompare
 };
 
 /* ------------------------------------------------------------------------- */
@@ -294,6 +608,8 @@ int
 init_ik_NodeType(void)
 {
     if (PyType_Ready(&ik_NodeType) < 0)
+        return -1;
+    if (PyType_Ready(&ik_NodeChildrenViewType) < 0)
         return -1;
     return 0;
 }

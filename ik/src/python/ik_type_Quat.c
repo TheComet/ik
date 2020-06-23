@@ -4,7 +4,6 @@
 #include "structmember.h"
 
 #if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define FMT "d"
 #   define MEMBER_TYPE T_DOUBLE
 #elif defined(IK_PRECISION_FLOAT)
 #   define FMT "f"
@@ -14,26 +13,53 @@
 #endif
 
 /* ------------------------------------------------------------------------- */
+static void
+Quat_dealloc(PyObject* myself)
+{
+    Py_TYPE(myself)->tp_free(myself);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Quat_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+{
+    ik_Quat* self;
+    (void)args; (void)kwds;
+
+    self = (ik_Quat*)type->tp_alloc(type, 0);
+    if (self == NULL)
+        return NULL;
+
+    ik_quat_set_identity(self->quat.f);
+
+    return (PyObject*)self;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Quat_set(PyObject* myself, PyObject* arg);
 static int
-Quat_init(ik_Quat* self, PyObject* args, PyObject* kwds)
+Quat_init(PyObject* self, PyObject* args, PyObject* kwds)
 {
     (void)kwds;
-    if (PyTuple_GET_SIZE(args) > 0)
+
+    assert(PySequence_Check(args));
+    if (PySequence_Fast_GET_SIZE(args) > 0)
     {
-        if (!PyArg_ParseTuple(args, FMT FMT FMT FMT, &self->quat.q.w, &self->quat.q.x, &self->quat.q.y, &self->quat.q.z))
+        PyObject* result = Quat_set(self, args);
+        if (result == NULL)
             return -1;
+        Py_DECREF(result);
     }
-    else
-    {
-        ik_quat_set_identity(self->quat.f);
-    }
+
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_set_identity(ik_Quat* self, PyObject* arg)
+Quat_set_identity(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     ik_quat_set_identity(self->quat.f);
     Py_RETURN_NONE;
@@ -41,25 +67,51 @@ Quat_set_identity(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_copy(ik_Quat* self, PyObject* arg)
+Quat_set(PyObject* myself, PyObject* args)
 {
-    if (PyObject_TypeCheck(arg, &ik_QuatType))
+    ik_Quat* self = (ik_Quat*)myself;
+    assert(PySequence_Check(args));
+
+    if (PySequence_Fast_GET_SIZE(args) == 1)
     {
-        ik_quat_copy(self->quat.f, ((ik_Quat*)arg)->quat.f);
-        Py_RETURN_NONE;
+        PyObject* arg = PySequence_Fast_GET_ITEM(args, 0);
+        if (ik_Quat_CheckExact(arg))
+        {
+            ik_Quat* other = (ik_Quat*)arg;
+            ik_quat_copy(self->quat.f, other->quat.f);
+            Py_RETURN_NONE;
+        }
+        else if (PySequence_Check(arg))
+        {
+            double x, y, z, w;
+            if (!PyArg_ParseTuple(arg, "dddd", &x, &y, &z, &w))
+                return NULL;
+            ik_quat_set(self->quat.f, x, y, z, w);
+            Py_RETURN_NONE;
+        }
+
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type or a tuple/list with 3 values");
+        return NULL;
     }
-    else if (PyArg_ParseTuple(arg, FMT FMT FMT FMT, &self->quat.q.w, &self->quat.q.x, &self->quat.q.y, &self->quat.q.z))
+    else if (PySequence_Fast_GET_SIZE(args) == 4)
     {
+        double x, y, z, w;
+        if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &w))
+            return NULL;
+        ik_quat_set(self->quat.f, x, y, z, w);
         Py_RETURN_NONE;
     }
 
+    PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type or a tuple/list with 3 values");
     return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_add(ik_Quat* self, PyObject* arg)
+Quat_add(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
+
     if (PyObject_TypeCheck(arg, &ik_QuatType))
         ik_quat_add_quat(self->quat.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
@@ -84,16 +136,18 @@ Quat_add(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_mag(ik_Quat* self, PyObject* arg)
+Quat_mag(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     return PyFloat_FromDouble(ik_quat_mag(self->quat.f));
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_conj(ik_Quat* self, PyObject* arg)
+Quat_conj(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     ik_quat_conj(self->quat.f);
     Py_RETURN_NONE;
@@ -101,8 +155,9 @@ Quat_conj(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_invert_sign(ik_Quat* self, PyObject* arg)
+Quat_invert_sign(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     ik_quat_negate(self->quat.f);
     Py_RETURN_NONE;
@@ -110,8 +165,9 @@ Quat_invert_sign(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_normalize(ik_Quat* self, PyObject* arg)
+Quat_normalize(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     ik_quat_normalize(self->quat.f);
     Py_RETURN_NONE;
@@ -119,8 +175,10 @@ Quat_normalize(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_mul(ik_Quat* self, PyObject* arg)
+Quat_mul(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
+
     if (PyObject_TypeCheck(arg, &ik_QuatType))
         ik_quat_mul_quat(self->quat.f, ((ik_Quat*)arg)->quat.f);
     else if (PyFloat_Check(arg))
@@ -149,8 +207,10 @@ Quat_mul(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_div(ik_Quat* self, PyObject* arg)
+Quat_div(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
+
     if (PyFloat_Check(arg))
         ik_quat_div_scalar(self->quat.f, PyFloat_AS_DOUBLE(arg));
     else if (PyLong_Check(arg))
@@ -166,8 +226,10 @@ Quat_div(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_dot(ik_Quat* self, PyObject* arg)
+Quat_dot(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
+
     if (PyObject_TypeCheck(arg, &ik_QuatType))
         ik_quat_dot(self->quat.f, ((ik_Quat*)arg)->quat.f);
     else if (PySequence_Check(arg) && PySequence_Fast_GET_SIZE(arg) == 4)
@@ -192,8 +254,9 @@ Quat_dot(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_ensure_positive_sign(ik_Quat* self, PyObject* arg)
+Quat_ensure_positive_sign(PyObject* myself, PyObject* arg)
 {
+    ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
     ik_quat_ensure_positive_sign(self->quat.f);
     Py_RETURN_NONE;
@@ -201,9 +264,10 @@ Quat_ensure_positive_sign(ik_Quat* self, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_angle(ik_Quat* self, PyObject* args)
+Quat_angle(PyObject* myself, PyObject* args)
 {
     PyObject *vec1, *vec2;
+    ik_Quat* self = (ik_Quat*)myself;
 
     if (PyTuple_GET_SIZE(args) != 2)
     {
@@ -276,9 +340,10 @@ Quat_angle(ik_Quat* self, PyObject* args)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
+Quat_angle_no_normalize(PyObject* myself, PyObject* args)
 {
     PyObject *vec1, *vec2;
+    ik_Quat* self = (ik_Quat*)myself;
 
     if (PyTuple_GET_SIZE(args) != 2)
     {
@@ -351,9 +416,11 @@ Quat_angle_no_normalize(ik_Quat* self, PyObject* args)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Quat_repr(ik_Quat* self)
+Quat_repr(PyObject* myself)
 {
     PyObject *fmt, *args, *str, *w, *x, *y, *z;
+    ik_Quat* self = (ik_Quat*)myself;
+
     if ((args = PyTuple_New(4)) == NULL) goto tuple_failed;
     if ((w = PyFloat_FromDouble(self->quat.q.w)) == NULL) goto insert_failed;
     PyTuple_SET_ITEM(args, 0, w);
@@ -378,19 +445,19 @@ Quat_repr(ik_Quat* self)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Quat_methods[] = {
-    {"set_identity",        (PyCFunction)Quat_set_identity,        METH_NOARGS,  "Sets all components to 0.0"},
-    {"copy",                (PyCFunction)Quat_copy,                METH_O,       "Copies components from another vector or tuple"},
-    {"add",                 (PyCFunction)Quat_add,                 METH_O,       "Adds another vector or scalar to this vector"},
-    {"mag",                 (PyCFunction)Quat_mag,                 METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"conj",                (PyCFunction)Quat_conj,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"invert_sign",         (PyCFunction)Quat_invert_sign,         METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"normalize",           (PyCFunction)Quat_normalize,           METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"mul",                 (PyCFunction)Quat_mul,                 METH_O,       "Adds another vector or scalar to this vector"},
-    {"div",                 (PyCFunction)Quat_div,                 METH_O,       "Adds another vector or scalar to this vector"},
-    {"dot",                 (PyCFunction)Quat_dot,                 METH_O,       "Adds another vector or scalar to this vector"},
-    {"ensure_positive_sign",(PyCFunction)Quat_ensure_positive_sign,METH_NOARGS,  "Adds another vector or scalar to this vector"},
-    {"angle",               (PyCFunction)Quat_angle,               METH_VARARGS, "Adds another vector or scalar to this vector"},
-    {"angle_no_normalize",  (PyCFunction)Quat_angle_no_normalize,  METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"set_identity",        Quat_set_identity,        METH_NOARGS,  "Sets all components to 0.0"},
+    {"set",                 Quat_set,                 METH_VARARGS, "Copies components from another vector or tuple"},
+    {"add",                 Quat_add,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"mag",                 Quat_mag,                 METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"conj",                Quat_conj,                METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"invert_sign",         Quat_invert_sign,         METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"normalize",           Quat_normalize,           METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"mul",                 Quat_mul,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"div",                 Quat_div,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"dot",                 Quat_dot,                 METH_O,       "Adds another vector or scalar to this vector"},
+    {"ensure_positive_sign",Quat_ensure_positive_sign,METH_NOARGS,  "Adds another vector or scalar to this vector"},
+    {"angle",               Quat_angle,               METH_VARARGS, "Adds another vector or scalar to this vector"},
+    {"angle_no_normalize",  Quat_angle_no_normalize,  METH_VARARGS, "Adds another vector or scalar to this vector"},
     {NULL}
 };
 
@@ -404,52 +471,25 @@ static PyMemberDef Quat_members[] = {
 };
 
 /* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(QUAT_DOC, "");
 PyTypeObject ik_QuatType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ik.Quat",                                     /* tp_name */
-    sizeof(ik_Quat),                               /* tp_basicsize */
-    0,                                             /* tp_itemsize */
-    0,                                             /* tp_dealloc */
-    0,                                             /* tp_print */
-    0,                                             /* tp_getattr */
-    0,                                             /* tp_setattr */
-    0,                                             /* tp_reserved */
-    (reprfunc)Quat_repr,                           /* tp_repr */
-    0,                                             /* tp_as_number */
-    0,                                             /* tp_as_sequence */
-    0,                                             /* tp_as_mapping */
-    0,                                             /* tp_hash  */
-    0,                                             /* tp_call */
-    0,                                             /* tp_str */
-    0,                                             /* tp_getattro */
-    0,                                             /* tp_setattro */
-    0,                                             /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                            /* tp_flags */
-    "",                                            /* tp_doc */
-    0,                                             /* tp_traverse */
-    0,                                             /* tp_clear */
-    0,                                             /* tp_richcompare */
-    0,                                             /* tp_weaklistoffset */
-    0,                                             /* tp_iter */
-    0,                                             /* tp_iternext */
-    Quat_methods,                                  /* tp_methods */
-    Quat_members,                                  /* tp_members */
-    0,                                             /* tp_getset */
-    0,                                             /* tp_base */
-    0,                                             /* tp_dict */
-    0,                                             /* tp_descr_get */
-    0,                                             /* tp_descr_set */
-    0,                                             /* tp_dictoffset */
-    (initproc)Quat_init,                           /* tp_init */
-    0,                                             /* tp_alloc */
-    0                                              /* tp_new */
+    .tp_name = "ik.Quat",
+    .tp_basicsize = sizeof(ik_Quat),
+    .tp_dealloc = Quat_dealloc,
+    .tp_repr = Quat_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = QUAT_DOC,
+    .tp_methods = Quat_methods,
+    .tp_members = Quat_members,
+    .tp_init = Quat_init,
+    .tp_new = Quat_new
 };
 
 /* ------------------------------------------------------------------------- */
 int
 init_ik_QuatType(void)
 {
-    ik_QuatType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&ik_QuatType) < 0)
         return -1;
     return 0;
@@ -459,7 +499,7 @@ init_ik_QuatType(void)
 int
 quat_python_to_ik(PyObject* qpy, ikreal qik[4])
 {
-    if (ikVec3_CheckExact(qpy))
+    if (ik_Vec3_CheckExact(qpy))
     {
         ik_Quat* q = (ik_Quat*)qpy;
         ik_quat_copy(qik, q->quat.f);

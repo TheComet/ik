@@ -28,24 +28,21 @@ int deinit_python()
     return Py_FinalizeEx();
 }
 
-class PythonEnvironment : public testing::Environment
+class NAME : public testing::Test
 {
 public:
-    virtual void SetUp() override
+    void SetUp() override
     {
         init_python();
     }
 
-    virtual void TearDown() override
+    void TearDown() override
     {
         EXPECT_THAT(deinit_python(), Eq(0));
     }
 };
 
-const testing::Environment* const pythonEnvironment =
-        testing::AddGlobalTestEnvironment(new PythonEnvironment);
-
-TEST(NAME, module_import_many_times)
+TEST_F(NAME, module_import_many_times)
 {
     for (int i = 0; i != 20; ++i)
     {

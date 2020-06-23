@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "ik/quat.h"
 
-#define ikQuat_CheckExact(op) \
+#define ik_Quat_CheckExact(op) \
     (Py_TYPE(op) == &ik_QuatType)
 
 typedef struct ik_Quat

@@ -98,6 +98,11 @@ ik_node_child_count(const struct ik_node* node) {
     return btree_count(&node->children);
 }
 
+static inline struct ik_node*
+ik_node_get_child(struct ik_node* node, uint32_t idx) {
+    return *(struct ik_node**)BTREE_VALUE(&node->children, idx);
+}
+
 IK_PUBLIC_API uint32_t
 ik_node_count(const struct ik_node* node);
 

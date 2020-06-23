@@ -5,6 +5,12 @@
 
 struct ik_node;
 
+typedef struct ik_NodeChildrenView
+{
+    PyObject_HEAD
+    struct ik_node* node;
+} ik_NodeChildrenView;
+
 typedef struct ik_Node
 {
     PyObject_HEAD
@@ -16,6 +22,9 @@ typedef struct ik_Node
     PyObject* constraint;
     PyObject* effector;
     PyObject* pole;
+
+    /* Accesses node children */
+    ik_NodeChildrenView* children;
 } ik_Node;
 
 extern PyTypeObject ik_NodeType;
