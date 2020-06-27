@@ -15,8 +15,5 @@ extern PyTypeObject ik_QuatType;
 int
 init_ik_QuatType(void);
 
-int
-quat_python_to_ik(PyObject* vpy, ikreal vik[4]);
-
 ik_Quat*
 quat_ik_to_python(ikreal q[4]);

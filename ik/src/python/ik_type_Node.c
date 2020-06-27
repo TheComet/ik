@@ -3,6 +3,8 @@
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Pole.h"
+#include "ik/python/ik_type_Quat.h"
+#include "ik/python/ik_type_Vec3.h"
 #include "ik/node.h"
 #include "structmember.h"
 
@@ -218,20 +220,26 @@ Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
     ik_Constraint* constraint = NULL;
     ik_Effector* effector = NULL;
     ik_Pole* pole = NULL;
+    ik_Vec3* position = NULL;
+    ik_Quat* rotation = NULL;
 
     static char* kwds_str[] = {
         "algorithm",
         "constraint",
         "effector",
         "pole",
+        "position",
+        "rotation",
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!", kwds_str,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!O!O!", kwds_str,
             &ik_AlgorithmType, &algorithm,
             &ik_ConstraintType, &constraint,
             &ik_EffectorType, &effector,
-            &ik_PoleType, &pole))
+            &ik_PoleType, &pole,
+            &ik_Vec3Type, &position,
+            &ik_QuatType, &rotation))
         return -1;
 
     #define X1(upper, lower, arg) X(upper, lower)
@@ -252,6 +260,11 @@ Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
         IK_ATTACHMENT_LIST
     #undef X
     #undef X1
+
+    if (position != NULL)
+        ik_vec3_copy(self->node->position.f, position->vec.f);
+    if (rotation != NULL)
+        ik_quat_copy(self->node->rotation.f, rotation->quat.f);
 
     return 0;
 }
@@ -421,13 +434,19 @@ Node_getposition(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    Py_RETURN_NONE;
+    return (PyObject*)vec3_ik_to_python(self->node->position.f);
 }
 static int
 Node_setposition(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
-    (void)myself; (void)value; (void)closure;
+    (void)closure;
+    if (!ik_Vec3_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type for position");
+        return -1;
+    }
+    ik_vec3_copy(self->node->position.f, ((ik_Vec3*)value)->vec.f);
     return 0;
 }
 
@@ -438,13 +457,19 @@ Node_getrotation(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    Py_RETURN_NONE;
+    return (PyObject*)quat_ik_to_python(self->node->rotation.f);
 }
 static int
 Node_setrotation(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
-    (void)myself; (void)value; (void)closure;
+    (void)closure;
+    if (!ik_Quat_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for rotation");
+        return -1;
+    }
+    ik_quat_copy(self->node->rotation.f, ((ik_Quat*)value)->quat.f);
     return 0;
 }
 
@@ -455,14 +480,30 @@ Node_getmass(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    Py_RETURN_NONE;
+    return PyFloat_FromDouble(self->node->mass);
 }
 static int
 Node_setmass(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
-    (void)myself; (void)value; (void)closure;
-    return 0;
+    (void)myself; (void)closure;
+
+    if (PyFloat_Check(value))
+    {
+        self->node->mass = PyFloat_AS_DOUBLE(value);
+        return 0;
+    }
+    if (PyLong_Check(value))
+    {
+        double d = PyLong_AsDouble(value);
+        if (d == -1 && PyErr_Occurred())
+            return -1;
+        self->node->mass = d;
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Expected a float value");
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -472,14 +513,30 @@ Node_getrotation_weight(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    Py_RETURN_NONE;
+    return PyFloat_FromDouble(self->node->rotation_weight);
 }
 static int
 Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
-    (void)myself; (void)value; (void)closure;
-    return 0;
+    (void)myself; (void)closure;
+
+    if (PyFloat_Check(value))
+    {
+        self->node->mass = PyFloat_AS_DOUBLE(value);
+        return 0;
+    }
+    if (PyLong_Check(value))
+    {
+        double d = PyLong_AsDouble(value);
+        if (d == -1 && PyErr_Occurred())
+            return -1;
+        self->node->mass = d;
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Expected a float value");
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -64,7 +64,14 @@ Effector_settarget_rotation(ik_Effector* self, PyObject* value, void* closure)
 {
     struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
-    return quat_python_to_ik(value, eff->target_rotation.f);
+    if (!ik_Quat_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type");
+        return -1;
+    }
+
+    ik_quat_copy(eff->target_rotation.f, ((ik_Quat*)value)->quat.f);
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -53,6 +53,9 @@ ik_quat_set_axis_angle(ikreal q[4], ikreal x, ikreal y, ikreal z, ikreal a);
 IK_PUBLIC_API void
 ik_quat_add_quat(ikreal q1[4], const ikreal q2[4]);
 
+IK_PUBLIC_API void
+ik_quat_sub_quat(ikreal q1[4], const ikreal q2[4]);
+
 /*!
  * @brief Calculates the magnitude of a quaternion.
  */
