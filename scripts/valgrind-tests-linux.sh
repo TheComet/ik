@@ -9,5 +9,5 @@ valgrind --num-callers=50 \
 	--time-stamp=yes \
     --gen-suppressions=all \
 	--suppressions=../../scripts/valgrind-suppressions.supp \
-	./iktests -- --gtest_filter="solvers.check_refcounts_are_correct" 2>&1 | tee ../../tests.grind
+	./iktests -- 2>&1 | tee ../../tests.grind
 cd .. && cd ..

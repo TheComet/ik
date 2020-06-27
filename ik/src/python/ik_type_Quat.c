@@ -12,6 +12,38 @@
 #   error Dont know how to wrap this precision type
 #endif
 
+/* Macro and helper that convert PyObject obj to a C double and store
+   the value in dbl.  If conversion to double raises an exception, obj is
+   set to NULL, and the function invoking this macro returns NULL.  If
+   obj is not of float or int type, Py_NotImplemented is incref'ed,
+   stored in obj, and returned from the function invoking this macro.
+*/
+#define CONVERT_TO_DOUBLE(obj, dbl)                     \
+    if (PyFloat_Check(obj))                             \
+        dbl = PyFloat_AS_DOUBLE(obj);                   \
+    else if (convert_to_double(&(obj), &(dbl)) < 0)     \
+        return obj;
+
+static int
+convert_to_double(PyObject **v, double *dbl)
+{
+    PyObject *obj = *v;
+
+    if (PyLong_Check(obj)) {
+        *dbl = PyLong_AsDouble(obj);
+        if (*dbl == -1.0 && PyErr_Occurred()) {
+            *v = NULL;
+            return -1;
+        }
+    }
+    else {
+        Py_INCREF(Py_NotImplemented);
+        *v = Py_NotImplemented;
+        return -1;
+    }
+    return 0;
+}
+
 /* ------------------------------------------------------------------------- */
 static void
 Quat_dealloc(PyObject* myself)
@@ -43,8 +75,8 @@ Quat_init(PyObject* self, PyObject* args, PyObject* kwds)
 {
     (void)kwds;
 
-    assert(PySequence_Check(args));
-    if (PySequence_Fast_GET_SIZE(args) > 0)
+    assert(PyTuple_CheckExact(args));
+    if (PyTuple_GET_SIZE(args) > 0)
     {
         PyObject* result = Quat_set(self, args);
         if (result == NULL)
@@ -69,13 +101,14 @@ Quat_set_identity(PyObject* myself, PyObject* arg)
 static PyObject*
 Quat_set(PyObject* myself, PyObject* args)
 {
+    double x, y, z, w;
     ik_Quat* self = (ik_Quat*)myself;
-    assert(PySequence_Check(args));
+    assert(PyTuple_CheckExact(args));
 
     /* Can be single vector or single quaternion */
-    if (PySequence_Fast_GET_SIZE(args) == 1)
+    if (PyTuple_GET_SIZE(args) == 1)
     {
-        PyObject* arg = PySequence_Fast_GET_ITEM(args, 0);
+        PyObject* arg = PyTuple_GET_ITEM(args, 0);
         if (ik_Quat_CheckExact(arg))
         {
             ik_Quat* other = (ik_Quat*)arg;
@@ -88,68 +121,62 @@ Quat_set(PyObject* myself, PyObject* args)
             ik_quat_angle_of(self->quat.f, v->vec.f);
             Py_RETURN_NONE;
         }
-        else if (PySequence_Check(arg))
+
+        arg = PySequence_Tuple(arg);
+        if (arg == NULL)
+            return NULL;
+        if (PyTuple_GET_SIZE(arg) == 4)
         {
-            if (PySequence_Fast_GET_SIZE(arg) == 4)
+            if (!PyArg_ParseTuple(arg, "dddd", &x, &y, &z, &w))
             {
-                double x, y, z, w;
-                if (!PyArg_ParseTuple(arg, "dddd", &x, &y, &z, &w))
-                    return NULL;
-                ik_quat_set(self->quat.f, x, y, z, w);
-                Py_RETURN_NONE;
+                Py_DECREF(arg);
+                return NULL;
             }
-            else if (PySequence_Fast_GET_SIZE(arg) == 3)
+            ik_quat_set(self->quat.f, x, y, z, w);
+        }
+        else
+        {
+            ikreal v[3];
+            if (!PyArg_ParseTuple(arg, "ddd", &x, &y, &z))
             {
-                double x, y, z;
-                ikreal v[3];
-                if (!PyArg_ParseTuple(arg, "ddd", &x, &y, &z))
-                    return NULL;
-                ik_vec3_set(v, x, y, z);
-                ik_quat_angle_of(self->quat.f, v);
-                Py_RETURN_NONE;
+                Py_DECREF(arg);
+                return NULL;
             }
+            ik_vec3_set(v, x, y, z);
+            ik_quat_angle_of(self->quat.f, v);
         }
 
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type, ik.Vec3() type or a tuple/list with 4 or 3 values");
-        return NULL;
+        Py_DECREF(arg);
+        Py_RETURN_NONE;
     }
     /* Can be a vector+angle or two vectors */
-    else if (PySequence_Fast_GET_SIZE(args) == 2)
+    else if (PyTuple_GET_SIZE(args) == 2)
     {
         ikreal v1[3];
-        PyObject* arg1 = PySequence_Fast_GET_ITEM(args, 0);
-        PyObject* arg2 = PySequence_Fast_GET_ITEM(args, 1);
+        PyObject* arg1 = PyTuple_GET_ITEM(args, 0);
+        PyObject* arg2 = PyTuple_GET_ITEM(args, 1);
 
         if (ik_Vec3_CheckExact(arg1))
         {
             ik_vec3_copy(v1, ((ik_Vec3*)arg1)->vec.f);
         }
-        else if (PySequence_Check(arg1) && PySequence_Fast_GET_SIZE(arg1) == 3)
-        {
-            double x, y, z;
-            if (!PyArg_ParseTuple(arg1, "ddd", &x, &y, &z))
-                return NULL;
-            ik_vec3_set(v1, x, y, z);
-        }
         else
         {
-            PyErr_SetString(PyExc_TypeError, "Expected either a vector+angle or two vectors. Vectors can be a ik.Vec3() type or a tuple of 3 values.");
-            return NULL;
+            arg1 = PySequence_Tuple(arg1);
+            if (arg1 == NULL)
+                return NULL;
+            if (!PyArg_ParseTuple(arg1, "ddd", &x, &y, &z))
+            {
+                Py_DECREF(arg1);
+                return NULL;
+            }
+            ik_vec3_set(v1, x, y, z);
+            Py_DECREF(arg1);
         }
 
         if (ik_Vec3_CheckExact(arg2))
         {
             ik_quat_angle_between(self->quat.f, v1, ((ik_Vec3*)arg2)->vec.f);
-            Py_RETURN_NONE;
-        }
-        else if (PySequence_Check(arg2) && PySequence_Fast_GET_SIZE(arg2) == 3)
-        {
-            ikreal v2[3];
-            double x, y, z;
-            if (!PyArg_ParseTuple(arg2, "ddd", &x, &y, &z))
-                return NULL;
-            ik_vec3_set(v2, x, y, z);
-            ik_quat_angle_between(self->quat.f, v1, v2);
             Py_RETURN_NONE;
         }
         else if (PyFloat_Check(arg2))
@@ -166,14 +193,26 @@ Quat_set(PyObject* myself, PyObject* args)
             ik_quat_set_axis_angle(self->quat.f, v1[0], v1[1], v1[2], angle);
             Py_RETURN_NONE;
         }
-
-        PyErr_SetString(PyExc_TypeError, "Expected either a vector+angle or two vectors. Vectors can be a ik.Vec3() type or a tuple of 3 values.");
-        return NULL;
+        else
+        {
+            ikreal v2[3];
+            arg2 = PySequence_Tuple(arg2);
+            if (arg2 == NULL)
+                return NULL;
+            if (!PyArg_ParseTuple(arg2, "ddd", &x, &y, &z))
+            {
+                Py_DECREF(arg2);
+                return NULL;
+            }
+            ik_vec3_set(v2, x, y, z);
+            ik_quat_angle_between(self->quat.f, v1, v2);
+            Py_DECREF(arg2);
+            Py_RETURN_NONE;
+        }
     }
     /* Has to be a tuple of 3 values representing a vector */
-    else if (PySequence_Fast_GET_SIZE(args) == 3)
+    else if (PyTuple_GET_SIZE(args) == 3)
     {
-        double x, y, z;
         ikreal v[3];
         if (!PyArg_ParseTuple(args, "ddd", &x, &y, &z))
             return NULL;
@@ -181,50 +220,11 @@ Quat_set(PyObject* myself, PyObject* args)
         ik_quat_angle_of(self->quat.f, v);
         Py_RETURN_NONE;
     }
-    /* Has to be a tuple of 4 values, one for each quaternion component */
-    else if (PySequence_Fast_GET_SIZE(args) == 4)
-    {
-        double x, y, z, w;
-        if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &w))
-            return NULL;
-        ik_quat_set(self->quat.f, x, y, z, w);
-        Py_RETURN_NONE;
-    }
 
-    PyErr_SetString(PyExc_TypeError, "Expected either 1 quaternion, or 1 vector, or axis+angle, or vector+vector");
-    return NULL;
-}
-
-/* Macro and helper that convert PyObject obj to a C double and store
-   the value in dbl.  If conversion to double raises an exception, obj is
-   set to NULL, and the function invoking this macro returns NULL.  If
-   obj is not of float or int type, Py_NotImplemented is incref'ed,
-   stored in obj, and returned from the function invoking this macro.
-*/
-#define CONVERT_TO_DOUBLE(obj, dbl)                     \
-    if (PyFloat_Check(obj))                             \
-        dbl = PyFloat_AS_DOUBLE(obj);                   \
-    else if (convert_to_double(&(obj), &(dbl)) < 0)     \
-        return obj;
-
-static int
-convert_to_double(PyObject **v, double *dbl)
-{
-    PyObject *obj = *v;
-
-    if (PyLong_Check(obj)) {
-        *dbl = PyLong_AsDouble(obj);
-        if (*dbl == -1.0 && PyErr_Occurred()) {
-            *v = NULL;
-            return -1;
-        }
-    }
-    else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
-        return -1;
-    }
-    return 0;
+    if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &w))
+        return NULL;
+    ik_quat_set(self->quat.f, x, y, z, w);
+    Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -606,7 +606,7 @@ Quat_repr(PyObject* myself)
     PyTuple_SET_ITEM(args, 2, z);
     if ((w = PyFloat_FromDouble(self->quat.q.w)) == NULL) goto insert_failed;
     PyTuple_SET_ITEM(args, 3, w);
-    if ((fmt = PyUnicode_FromString("ik.Quat(x=%f, y=%f, z=%f, w=%f)")) == NULL) goto fmt_failed;
+    if ((fmt = PyUnicode_FromString("ik.Quat(%f, %f, %f, %f)")) == NULL) goto fmt_failed;
     if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
 
     Py_DECREF(fmt);

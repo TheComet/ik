@@ -46,7 +46,14 @@ Effector_settarget_position(ik_Effector* self, PyObject* value, void* closure)
 {
     struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
-    return vec3_python_to_ik(value, eff->target_position.f);
+    if (!ik_Vec3_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type");
+        return -1;
+    }
+
+    ik_vec3_copy(eff->target_position.f, ((ik_Vec3*)value)->vec.f);
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */

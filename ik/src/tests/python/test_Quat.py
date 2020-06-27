@@ -90,6 +90,8 @@ class TestQuat(unittest.TestCase, CustomAssertions):
     def test_construct_with_invalid_types_fails(self):
         with self.assertRaises(TypeError):
             q = ik.Quat("haha", "b", "c", "d")
+        with self.assertRaises(TypeError):
+            q = ik.Quat("haha")
 
     def test_construct_with_two_values_fails(self):
         with self.assertRaises(TypeError):
