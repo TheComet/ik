@@ -215,6 +215,7 @@ set (IK_TESTS_SOURCES
     "src/tests/test_vec3.cpp"
     $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
 set (IK_PYTHON_TESTS_SOURCES
+    "src/tests/python/test_Effector.py"
     "src/tests/python/test_info.py"
     "src/tests/python/test_log.py"
     "src/tests/python/test_Node.py"

@@ -8,6 +8,14 @@
 #include "ik/node.h"
 #include "structmember.h"
 
+#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
+#   define FMT "d"
+#elif defined(IK_PRECISION_FLOAT)
+#   define FMT "f"
+#else
+#   error Dont know how to wrap this precision type
+#endif
+
 /* ------------------------------------------------------------------------- */
 static void
 NodeChildrenView_dealloc(ik_NodeChildrenView* self)
@@ -42,10 +50,67 @@ NodeChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_repr(PyObject* myself)
+NodeChildrenView_repr_build_arglist_list(PyObject* myself)
 {
     ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
-    return PyUnicode_FromFormat("ik.NodeChildrenView()");
+    PyObject* args = PyList_New(0);
+    if (args == NULL)
+        return NULL;
+
+    NODE_FOR_EACH(self->node, user, child)
+        int append_result;
+        ik_Node* pychild = child->user.ptr;
+        PyObject* arg = PyUnicode_FromFormat("%R", pychild);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    NODE_END_EACH
+
+    return args;
+
+    addarg_failed : Py_DECREF(args);
+    return NULL;
+}
+static PyObject*
+NodeChildrenView_repr_build_arglist_string(PyObject* myself)
+{
+    PyObject* separator;
+    PyObject* arglist;
+    PyObject* string;
+
+    separator = PyUnicode_FromString(", ");
+    if (separator == NULL)
+        return NULL;
+
+    arglist = NodeChildrenView_repr_build_arglist_list(myself);
+    if (arglist == NULL)
+    {
+        Py_DECREF(separator);
+        return NULL;
+    }
+
+    string = PyUnicode_Join(separator, arglist);
+    Py_DECREF(separator);
+    Py_DECREF(arglist);
+    return string;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+NodeChildrenView_repr(PyObject* myself)
+{
+    PyObject* repr;
+    PyObject* argstring = NodeChildrenView_repr_build_arglist_string(myself);
+    if (argstring == NULL)
+        return NULL;
+
+    repr = PyUnicode_FromFormat("(%U)", argstring);
+    Py_DECREF(argstring);
+    return repr;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -135,9 +200,16 @@ PyTypeObject ik_NodeChildrenViewType = {
 
 /* ------------------------------------------------------------------------- */
 static void
-Node_dealloc(ik_Node* self)
+Node_dealloc(PyObject* myself)
 {
+    ik_Node* self = (ik_Node*)myself;
+
+    /* Release references to all child python nodes */
+    NODE_FOR_EACH(self->node, user, child)
+        Py_DECREF(child->user.ptr);
+    NODE_END_EACH
     IK_DECREF(self->node);
+
     Py_DECREF(self->algorithm);
     Py_DECREF(self->constraint);
     Py_DECREF(self->effector);
@@ -214,7 +286,7 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static int
-Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
+Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     ik_Algorithm* algorithm = NULL;
     ik_Constraint* constraint = NULL;
@@ -222,24 +294,29 @@ Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
     ik_Pole* pole = NULL;
     ik_Vec3* position = NULL;
     ik_Quat* rotation = NULL;
+    ik_Node* self = (ik_Node*)myself;
 
     static char* kwds_str[] = {
+        "position",
+        "rotation",
         "algorithm",
         "constraint",
         "effector",
         "pole",
-        "position",
-        "rotation",
+        "mass",
+        "rotation_weight",
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!O!O!", kwds_str,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!O!O!" FMT FMT, kwds_str,
+            &ik_Vec3Type, &position,
+            &ik_QuatType, &rotation,
             &ik_AlgorithmType, &algorithm,
             &ik_ConstraintType, &constraint,
             &ik_EffectorType, &effector,
             &ik_PoleType, &pole,
-            &ik_Vec3Type, &position,
-            &ik_QuatType, &rotation))
+            &self->node->mass,
+            &self->node->rotation_weight))
         return -1;
 
     #define X1(upper, lower, arg) X(upper, lower)
@@ -248,13 +325,12 @@ Node_init(ik_Node* self, PyObject* args, PyObject* kwds)
             PyObject* tmp;                                                    \
                                                                               \
             /* Attach to internal node */                                     \
-            ik_Attachment* py_attachment = (ik_Attachment*)self->lower;       \
-            ik_node_attach_##lower(self->node, (struct ik_##lower*)py_attachment->attachment); \
+            ik_node_attach_##lower(self->node, (struct ik_##lower*)lower->super.attachment); \
                                                                               \
             /* Set attachment on python object */                             \
             tmp = self->lower;                                                \
-            Py_INCREF(py_attachment);                                         \
-            self->lower = (PyObject*)py_attachment;                           \
+            Py_INCREF(lower);                                                 \
+            self->lower = (PyObject*)lower;                                   \
             Py_DECREF(tmp);                                                   \
         }
         IK_ATTACHMENT_LIST
@@ -290,6 +366,10 @@ Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
         return NULL;
     }
 
+    /* NOTE: With the child linked, we now own the reference to the python child
+     * node. Therefore, incref the child before returning it because we have to
+     * return a new reference */
+    Py_INCREF(child);
     return (PyObject*)child;
 }
 
@@ -547,15 +627,17 @@ PyDoc_STRVAR(NODE_POLE_DOC,"");
 #define X1(upper, lower, arg) X(upper, lower)
 #define X(upper, lower)                                                       \
     static PyObject*                                                          \
-    Node_get##lower(ik_Node* self, void* closure)                             \
+    Node_get##lower(PyObject* myself, void* closure)                          \
     {                                                                         \
+        ik_Node* self = (ik_Node*)myself;                                     \
         (void)closure;                                                        \
         return Py_INCREF(self->lower), self->lower;                           \
     }                                                                         \
                                                                               \
     static int                                                                \
-    Node_set##lower(ik_Node* self, PyObject* value, void* closure)            \
+    Node_set##lower(PyObject* myself, PyObject* value, void* closure)         \
     {                                                                         \
+        ik_Node* self = (ik_Node*)myself;                                     \
         (void)closure;                                                        \
                                                                               \
         if (ik_##lower##_CheckExact(value))                                   \
@@ -613,16 +695,181 @@ static PyGetSetDef Node_getset[] = {
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_repr(ik_Node* self)
+Node_repr_build_arglist_list(PyObject* myself)
 {
-    return PyUnicode_FromFormat("ik.Node()");
+    ik_Node* self = (ik_Node*)myself;
+
+    PyObject* args = PyList_New(0);
+    if (args == NULL)
+        return NULL;
+
+    /* Attachments */
+#define X1(upper, lower, arg) X(upper, lower)
+#define X(upper, lower)                                                       \
+    if (self->lower != Py_None)                                               \
+    {                                                                         \
+        int append_result;                                                    \
+        PyObject* arg = PyUnicode_FromFormat(#lower "=%R", self->lower);      \
+        if (arg == NULL)                                                      \
+            goto addarg_failed;                                               \
+                                                                              \
+        append_result = PyList_Append(args, arg);                             \
+        Py_DECREF(arg);                                                       \
+        if (append_result == -1)                                              \
+            goto addarg_failed;                                               \
+    }
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+
+    /* Position */
+    {
+        int append_result;
+        PyObject* position;
+        PyObject* arg;
+
+        position = Node_getposition(myself, NULL);
+        if (position == NULL)
+            goto addarg_failed;
+
+        arg = PyUnicode_FromFormat("position=%R", position);
+        Py_DECREF(position);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Rotation */
+    {
+        int append_result;
+        PyObject* rotation;
+        PyObject* arg;
+
+        rotation = Node_getposition(myself, NULL);
+        if (rotation == NULL)
+            goto addarg_failed;
+
+        arg = PyUnicode_FromFormat("rotation=%R", rotation);
+        Py_DECREF(rotation);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Mass */
+    if (self->node->mass != 1.0)
+    {
+        int append_result;
+        PyObject* mass;
+        PyObject* arg;
+
+        mass = PyFloat_FromDouble(self->node->mass);
+        if (mass == NULL)
+            goto addarg_failed;
+
+        arg = PyUnicode_FromFormat("mass=%R", mass);
+        Py_DECREF(mass);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Rotation weight */
+    if (self->node->rotation_weight != 1.0)
+    {
+        int append_result;
+        PyObject* rotation_weight;
+        PyObject* arg;
+
+        rotation_weight = PyFloat_FromDouble(self->node->rotation_weight);
+        if (rotation_weight == NULL)
+            goto addarg_failed;
+
+        arg = PyUnicode_FromFormat("rotation_weight=%R", rotation_weight);
+        Py_DECREF(rotation_weight);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Child nodes */
+    if (NodeChildrenView_length((PyObject*)self->children) > 0)
+    {
+        int append_result;
+        PyObject* arg = PyUnicode_FromFormat("children=%R", (PyObject*)self->children);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    return args;
+
+    addarg_failed : Py_DECREF(args);
+    return NULL;
+}
+static PyObject*
+Node_repr_build_arglist_string(PyObject* myself)
+{
+    PyObject* separator;
+    PyObject* arglist;
+    PyObject* string;
+
+    separator = PyUnicode_FromString(", ");
+    if (separator == NULL)
+        return NULL;
+
+    arglist = Node_repr_build_arglist_list(myself);
+    if (arglist == NULL)
+    {
+        Py_DECREF(separator);
+        return NULL;
+    }
+
+    string = PyUnicode_Join(separator, arglist);
+    Py_DECREF(separator);
+    Py_DECREF(arglist);
+    return string;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_str(ik_Node* self)
+Node_repr(PyObject* myself)
 {
-    return Node_repr(self);
+    PyObject* repr;
+    PyObject* argstring = Node_repr_build_arglist_string(myself);
+    if (argstring == NULL)
+        return NULL;
+
+    repr = PyUnicode_FromFormat("ik.Node(%U)", argstring);
+    Py_DECREF(argstring);
+    return repr;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_str(PyObject* myself)
+{
+    return Node_repr(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -648,15 +895,15 @@ PyTypeObject ik_NodeType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Node",
     .tp_basicsize = sizeof(ik_Node),
-    .tp_dealloc = (destructor)Node_dealloc,
-    .tp_repr = (reprfunc)Node_repr,
-    .tp_str = (reprfunc)Node_str,
+    .tp_dealloc = Node_dealloc,
+    .tp_repr = Node_repr,
+    .tp_str = Node_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = NODE_DOC,
     .tp_methods = Node_methods,
     .tp_getset = Node_getset,
     .tp_new = Node_new,
-    .tp_init = (initproc)Node_init,
+    .tp_init = Node_init,
     .tp_richcompare = Node_richcompare
 };
 

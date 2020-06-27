@@ -18,6 +18,28 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.rotation.z, 0.0)
         self.assertEqual(n.rotation.w, 1.0)
 
+    def test_construct_with_position(self):
+        n = ik.Node(position=ik.Vec3(1, 2, 3))
+        self.assertEqual(n.position.x, 1.0)
+        self.assertEqual(n.position.y, 2.0)
+        self.assertEqual(n.position.z, 3.0)
+
+    def test_construct_with_rotation(self):
+        n = ik.Node(rotation=ik.Quat(1, 2, 3, 4))
+        self.assertEqual(n.rotation.x, 1.0)
+        self.assertEqual(n.rotation.y, 2.0)
+        self.assertEqual(n.rotation.z, 3.0)
+        self.assertEqual(n.rotation.w, 4.0)
+
+    def test_construct_with_effector(self):
+        n = ik.Node(effector=ik.Effector())
+
+    def test_repr(self):
+        n1 = ik.Node()
+        n2 = n1.create_child()
+        n3 = n2.create_child()
+        s = repr(n1)
+
     def test_create_child(self):
         n1 = ik.Node()
         n2 = n1.create_child()
@@ -126,16 +148,3 @@ class TestNode(unittest.TestCase):
             n2.parent = ik.Node()
         with self.assertRaises(AttributeError):
             del n2.parent
-
-    def test_construct_with_position(self):
-        n = ik.Node(position=ik.Vec3(1, 2, 3))
-        self.assertEqual(n.position.x, 1.0)
-        self.assertEqual(n.position.y, 2.0)
-        self.assertEqual(n.position.z, 3.0)
-
-    def test_construct_with_rotation(self):
-        n = ik.Node(rotation=ik.Quat(1, 2, 3, 4))
-        self.assertEqual(n.rotation.x, 1.0)
-        self.assertEqual(n.rotation.y, 2.0)
-        self.assertEqual(n.rotation.z, 3.0)
-        self.assertEqual(n.rotation.w, 4.0)
