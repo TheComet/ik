@@ -470,27 +470,19 @@ Vec3_rotate(PyObject* myself, PyObject* arg)
 static PyObject*
 Vec3_repr(PyObject* myself)
 {
-    PyObject *fmt, *args, *str, *x, *y, *z;
+    PyObject *x, *y, *z;
+    PyObject* str = NULL;
     ik_Vec3* self = (ik_Vec3*)myself;
 
-    if ((args = PyTuple_New(3)) == NULL) goto tuple_failed;
-    if ((x = PyFloat_FromDouble(self->vec.v.x)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 0, x);
-    if ((y = PyFloat_FromDouble(self->vec.v.y)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 1, y);
-    if ((z = PyFloat_FromDouble(self->vec.v.z)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 2, z);
-    if ((fmt = PyUnicode_FromString("ik.Vec3(%f, %f, %f)")) == NULL) goto fmt_failed;
-    if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
+    if ((x = PyFloat_FromDouble(self->vec.v.x)) == NULL) goto x_failed;
+    if ((y = PyFloat_FromDouble(self->vec.v.y)) == NULL) goto y_failed;
+    if ((z = PyFloat_FromDouble(self->vec.v.z)) == NULL) goto z_failed;
+    str = PyUnicode_FromFormat("ik.Vec3(%S, %S, %S)", x, y, z);
 
-    Py_DECREF(fmt);
-    Py_DECREF(args);
-    return str;
-
-    str_failed    : Py_DECREF(fmt);
-    fmt_failed    :
-    insert_failed : Py_DECREF(args);
-    tuple_failed  : return NULL;
+               Py_DECREF(z);
+    z_failed : Py_DECREF(y);
+    y_failed : Py_DECREF(x);
+    x_failed : return str;
 }
 
 /* ------------------------------------------------------------------------- */

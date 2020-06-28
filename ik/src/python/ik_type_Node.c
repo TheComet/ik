@@ -346,53 +346,24 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CREATE_CHILD_DOC, "");
-static PyObject*
-Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
-{
-    ik_Node* child;
-    ik_Node* self = (ik_Node*)myself;
-
-    (void)args;
-
-    child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
-    if (child == NULL)
-        return NULL;
-
-    if (ik_node_link(self->node, child->node) != 0)
-    {
-        Py_DECREF(child);
-        PyErr_SetString(PyExc_RuntimeError, "Failed to link new node (out of memory?) Check log for more info.");
-        return NULL;
-    }
-
-    /* NOTE: With the child linked, we now own the reference to the python child
-     * node. Therefore, incref the child before returning it because we have to
-     * return a new reference */
-    Py_INCREF(child);
-    return (PyObject*)child;
-}
-
-/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_LINK_DOC, "");
 static PyObject*
-Node_link(PyObject* myself, PyObject* node)
+Node_link(PyObject* myself, PyObject* child)
 {
-    ik_Node* other;
     ik_Node* self = (ik_Node*)myself;
 
-    if (!ik_Node_CheckExact(node))
+    if (!ik_Node_CheckExact(child))
     {
         PyErr_SetString(PyExc_TypeError, "Argument must be of type ik.Node");
         return NULL;
     }
 
-    other = (ik_Node*)node;
-    if (ik_node_link(self->node, other->node) != 0)
+    if (ik_node_link(self->node, ((ik_Node*)child)->node) != 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to link node (out of memory?) Check log for more info.");
         return NULL;
     }
+    Py_INCREF(child);
 
     Py_RETURN_NONE;
 }
@@ -405,8 +376,39 @@ Node_unlink(PyObject* myself, PyObject* args)
     ik_Node* self = (ik_Node*)myself;
     (void)args;
 
+
+    /* Parent is holding a reference to this python object, need to decref that
+     * when unlinking */
+    if (self->node->parent)
+        Py_DECREF(self);
+
     ik_node_unlink(self->node);
+
     Py_RETURN_NONE;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_CREATE_CHILD_DOC, "");
+static PyObject*
+Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
+{
+    PyObject* link_result;
+    ik_Node* child;
+    (void)args;
+
+    child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
+    if (child == NULL)
+        return NULL;
+
+    link_result = Node_link(myself, (PyObject*)child);
+    if (link_result == NULL)
+    {
+        Py_DECREF(child);
+        return NULL;
+    }
+    Py_DECREF(link_result);
+
+    return (PyObject*)child;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -423,9 +425,9 @@ Node_pack(PyObject* myself, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
-    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
     {"link",         Node_link,                      METH_O,                       NODE_LINK_DOC},
     {"unlink",       Node_unlink,                    METH_NOARGS,                  NODE_UNLINK_DOC},
+    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
     {"pack",         Node_pack,                      METH_NOARGS,                  NODE_PACK_DOC},
     {NULL}
 };
@@ -749,7 +751,7 @@ Node_repr_build_arglist_list(PyObject* myself)
         PyObject* rotation;
         PyObject* arg;
 
-        rotation = Node_getposition(myself, NULL);
+        rotation = Node_getrotation(myself, NULL);
         if (rotation == NULL)
             goto addarg_failed;
 

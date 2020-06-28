@@ -3,4 +3,9 @@
    Memcheck:Cond
    fun:mutated_string_and_hex_dump
 }
-
+{
+   ignore_libpython_leaks
+   Memcheck:Leak
+   ...
+   obj:*/libpython3.8d.so.*
+}

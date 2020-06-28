@@ -2,12 +2,22 @@
 #include "ik/algorithm.h"
 #include "structmember.h"
 
+#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
+#   define FMT "d"
+#elif defined(IK_PRECISION_FLOAT)
+#   define FMT "f"
+#else
+#   error Dont know how to wrap this precision type
+#endif
+
 /* ------------------------------------------------------------------------- */
 static void
-Algorithm_dealloc(ik_Algorithm* self)
+Algorithm_dealloc(PyObject* myself)
 {
+    ik_Algorithm* self = (ik_Algorithm*)myself;
+
     IK_DECREF(self->super.attachment);
-    Py_TYPE(self)->tp_base->tp_dealloc((PyObject*)self);
+    Py_TYPE(myself)->tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -16,19 +26,10 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Algorithm* self;
     struct ik_algorithm* algorithm;
-    const char* name;
 
-    static char* kwds_names[] = {
-        "type",
-        NULL
-    };
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", kwds_names, &name))
-        return NULL;
-
-    if ((algorithm = ik_algorithm_create(name)) == NULL)
+    if ((algorithm = ik_algorithm_create("invalid")) == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate algorithm. Check the log for more info. Possibly out of memory, or the name is too long.");
+        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate algorithm. Check the log for more info. Possibly out of memory.");
         goto alloc_algorithm_failed;
     }
     IK_INCREF(algorithm);
@@ -43,6 +44,70 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     alloc_self_failed      : IK_DECREF(algorithm);
     alloc_algorithm_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+Algorithm_init(PyObject* myself, PyObject* args, PyObject* kwds)
+{
+    const char* name;
+    int constraints = -1;
+    int poles = -1;
+    int target_rotations = -1;
+    int integrate_rk45 = -1;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
+    struct ik_algorithm* alg = (struct ik_algorithm*)self->super.attachment;
+
+    static char* kwds_names[] = {
+        "type",
+        "max_iterations",
+        "tolerance",
+        "constraints",
+        "poles",
+        "target_rotations",
+        "integrate_rk45",
+        NULL
+    };
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|H" FMT "pppp", kwds_names,
+                                     &name,
+                                     &alg->max_iterations,
+                                     &alg->tolerance,
+                                     &constraints,
+                                     &poles,
+                                     &target_rotations,
+                                     &integrate_rk45))
+    {
+        return -1;
+    }
+
+    if (ik_algorithm_set_type(alg, name) != 0)
+    {
+        PyErr_Format(PyExc_ValueError, "Invalid algorithm name was specified: `%s`");
+        return -1;
+    }
+
+    if (constraints == 1)
+        alg->features |= IK_ALGORITHM_CONSTRAINTS;
+    else if (constraints == 0)
+        alg->features &= ~IK_ALGORITHM_CONSTRAINTS;
+
+    if (poles == 1)
+        alg->features |= IK_ALGORITHM_POLES;
+    else if (poles == 0)
+        alg->features &= ~IK_ALGORITHM_POLES;
+
+    if (target_rotations == 1)
+        alg->features |= IK_ALGORITHM_TARGET_ROTATIONS;
+    else if (target_rotations == 0)
+        alg->features &= ~IK_ALGORITHM_TARGET_ROTATIONS;
+
+    if (integrate_rk45 == 1)
+        alg->features |= IK_ALGORITHM_INTEGRATE_RK45;
+    else if (integrate_rk45 == 0)
+        alg->features &= ~IK_ALGORITHM_INTEGRATE_RK45;
+
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -146,16 +211,93 @@ static PyGetSetDef Algorithm_getset[] = {
 };
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+Algorithm_repr_build_arglist_list(PyObject* myself)
+{
+    ik_Algorithm* self = (ik_Algorithm*)myself;
+    struct ik_algorithm* alg = (struct ik_algorithm*)self->super.attachment;
+
+    PyObject* args = PyList_New(0);
+    if (args == NULL)
+        return NULL;
+
+    /* Type */
+    {
+        int append_result;
+        PyObject* arg = PyUnicode_FromFormat("\"%s\"", alg->type);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    return args;
+
+    addarg_failed : Py_DECREF(args);
+    return NULL;
+}
+static PyObject*
+Algorithm_repr_build_arglist_string(PyObject* myself)
+{
+    PyObject* separator;
+    PyObject* arglist;
+    PyObject* string;
+
+    separator = PyUnicode_FromString(", ");
+    if (separator == NULL)
+        return NULL;
+
+    arglist = Algorithm_repr_build_arglist_list(myself);
+    if (arglist == NULL)
+    {
+        Py_DECREF(separator);
+        return NULL;
+    }
+
+    string = PyUnicode_Join(separator, arglist);
+    Py_DECREF(separator);
+    Py_DECREF(arglist);
+    return string;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Algorithm_repr(PyObject* myself)
+{
+    PyObject* repr;
+    PyObject* argstring = Algorithm_repr_build_arglist_string(myself);
+    if (argstring == NULL)
+        return NULL;
+
+    repr = PyUnicode_FromFormat("ik.Algorithm(%U)", argstring);
+    Py_DECREF(argstring);
+    return repr;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Algorithm_str(PyObject* myself)
+{
+    return Algorithm_repr(myself);
+}
+
+/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(ALGORITHM_DOC, "");
 PyTypeObject ik_AlgorithmType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Algorithm",
     .tp_basicsize = sizeof(ik_Algorithm),
-    .tp_dealloc = (destructor)Algorithm_dealloc,
+    .tp_dealloc = Algorithm_dealloc,
+    .tp_repr = Algorithm_repr,
+    .tp_str = Algorithm_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = ALGORITHM_DOC,
     .tp_getset = Algorithm_getset,
-    .tp_new = Algorithm_new
+    .tp_new = Algorithm_new,
+    .tp_init = Algorithm_init
 };
 
 /* ------------------------------------------------------------------------- */

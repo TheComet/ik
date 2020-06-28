@@ -43,7 +43,7 @@ ik_algorithm_create(const char* type)
         return NULL;
 
     strcpy(alg->type, type);
-    alg->tolerance = 1e-2;
+    alg->tolerance = 0.0;
     alg->max_iterations = 20;
     alg->features = 0;
 

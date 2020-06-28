@@ -2,6 +2,15 @@ import ik
 import unittest
 
 class TestNode(unittest.TestCase):
+    def test_unlink_when_not_linked(self):
+        n1 = ik.Node()
+        n2 = n1.create_child()
+        n2.unlink()
+        n2.unlink()
+        n1.unlink()
+        self.assertEqual(len(n1.children), 0)
+        self.assertEqual(len(n2.children), 0)
+
     def test_default_construct(self):
         n = ik.Node()
         self.assertIsNone(n.algorithm)

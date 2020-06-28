@@ -594,29 +594,21 @@ Quat_ensure_positive_sign(PyObject* myself, PyObject* arg)
 static PyObject*
 Quat_repr(PyObject* myself)
 {
-    PyObject *fmt, *args, *str, *w, *x, *y, *z;
+    PyObject *w, *x, *y, *z;
+    PyObject* str = NULL;
     ik_Quat* self = (ik_Quat*)myself;
 
-    if ((args = PyTuple_New(4)) == NULL) goto tuple_failed;
-    if ((x = PyFloat_FromDouble(self->quat.q.x)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 0, x);
-    if ((y = PyFloat_FromDouble(self->quat.q.y)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 1, y);
-    if ((z = PyFloat_FromDouble(self->quat.q.z)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 2, z);
-    if ((w = PyFloat_FromDouble(self->quat.q.w)) == NULL) goto insert_failed;
-    PyTuple_SET_ITEM(args, 3, w);
-    if ((fmt = PyUnicode_FromString("ik.Quat(%f, %f, %f, %f)")) == NULL) goto fmt_failed;
-    if ((str = PyUnicode_Format(fmt, args)) == NULL) goto str_failed;
+    if ((x = PyFloat_FromDouble(self->quat.q.x)) == NULL) goto x_failed;
+    if ((y = PyFloat_FromDouble(self->quat.q.y)) == NULL) goto y_failed;
+    if ((z = PyFloat_FromDouble(self->quat.q.z)) == NULL) goto z_failed;
+    if ((w = PyFloat_FromDouble(self->quat.q.w)) == NULL) goto w_failed;
+    str = PyUnicode_FromFormat("ik.Quat(%S, %S, %S, %S)", x, y, z, w);
 
-    Py_DECREF(fmt);
-    Py_DECREF(args);
-    return str;
-
-    str_failed    : Py_DECREF(fmt);
-    fmt_failed    :
-    insert_failed : Py_DECREF(args);
-    tuple_failed  : return NULL;
+               Py_DECREF(w);
+    w_failed : Py_DECREF(z);
+    z_failed : Py_DECREF(y);
+    y_failed : Py_DECREF(x);
+    x_failed : return str;
 }
 
 /* ------------------------------------------------------------------------- */

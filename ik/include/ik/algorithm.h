@@ -24,7 +24,7 @@
 
 #define IK_ALGORITHM_FEATURES_LIST \
     X(CONSTRAINTS,      0x0001) \
-    X(POLE_TARGETS,     0x0002) \
+    X(POLES,            0x0002) \
     X(TARGET_ROTATIONS, 0x0004) \
     X(INTEGRATE_RK45,   0x0008)
 
