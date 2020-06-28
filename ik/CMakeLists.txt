@@ -165,24 +165,24 @@ set (IK_SOURCES
     "${CMAKE_CURRENT_BINARY_DIR}/src/info.c"
     "templates/info.c.in")
 set (IK_PYTHON_HEADERS
-    "include/python/ik/python/ik_module_info.h"
     "include/python/ik/python/ik_module_log.h"
     "include/python/ik/python/ik_type_Attachment.h"
     "include/python/ik/python/ik_type_Algorithm.h"
     "include/python/ik/python/ik_type_Constraint.h"
     "include/python/ik/python/ik_type_Effector.h"
+    "include/python/ik/python/ik_type_Info.h"
     "include/python/ik/python/ik_type_Pole.h"
     "include/python/ik/python/ik_type_Node.h"
     "include/python/ik/python/ik_type_Quat.h"
     "include/python/ik/python/ik_type_Vec3.h")
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
-    "src/python/ik_module_info.c"
     #"src/python/ik_module_log.c"
     "src/python/ik_type_Attachment.c"
     "src/python/ik_type_Algorithm.c"
     "src/python/ik_type_Constraint.c"
     "src/python/ik_type_Effector.c"
+    "src/python/ik_type_Info.c"
     "src/python/ik_type_Pole.c"
     "src/python/ik_type_Node.c"
     "src/python/ik_type_Quat.c"

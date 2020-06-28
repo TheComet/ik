@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "ik/init.h"
-#include "ik/python/ik_module_info.h"
+#include "ik/algorithm.h"
 #include "ik/python/ik_module_log.h"
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_type_Effector.h"
+#include "ik/python/ik_type_Info.h"
 #include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Solver.h"
@@ -39,6 +40,7 @@ init_builtin_types(void)
     if (init_ik_AttachmentType() != 0) return -1;
     if (init_ik_AlgorithmType() != 0)  return -1;
     if (init_ik_EffectorType() != 0)   return -1;
+    if (init_ik_InfoType() != 0)       return -1;
     if (init_ik_NodeType() != 0)       return -1;
     if (init_ik_QuatType() != 0)       return -1;
     if (init_ik_SolverType() != 0)     return -1;
@@ -64,7 +66,11 @@ add_builtin_types_to_module(PyObject* m)
 static int
 add_constants_to_module(PyObject* m)
 {
-    (void)m;
+    /* Built in algorithm names */
+#define X(algo) if (PyModule_AddStringConstant(m, #algo, IK_##algo) == -1) return -1;
+    IK_ALGORITHM_LIST
+#undef X
+
     /* Log constants *
 #define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_LOG_##arg) != 0) return -1;
     IK_LOG_SEVERITY_LIST
@@ -75,27 +81,13 @@ add_constants_to_module(PyObject* m)
 
 /* ------------------------------------------------------------------------- */
 static int
-add_submodules_to_module(PyObject* m)
+add_builtin_objects_to_module(PyObject* m)
 {
-    PyObject* submodule;
-
-    submodule = ik_module_info_create();
-    if (submodule == NULL)
+    PyObject* o = PyObject_CallObject((PyObject*)&ik_InfoType, NULL);
+    if (o == NULL)
         return -1;
-    if (PyModule_AddObject(m, "info", submodule) != 0)
-    {
-        Py_DECREF(submodule);
+    if (PyModule_AddObject(m, "info", o) != 0)
         return -1;
-    }
-/*
-    submodule = ik_module_log_create();
-    if (submodule == NULL)
-        return -1;
-    if (PyModule_AddObject(m, "log", submodule) != 0)
-    {
-        Py_DECREF(submodule);
-        return -1;
-    }*/
 
     return 0;
 }
@@ -115,10 +107,10 @@ PyMODINIT_FUNC PyInit_ik(void)
     if (m == NULL)
         goto module_alloc_failed;
 
-    if (init_builtin_types() != 0)            goto init_module_failed;
-    if (add_builtin_types_to_module(m) != 0)  goto init_module_failed;
-    if (add_submodules_to_module(m) != 0)     goto init_module_failed;
-    if (add_constants_to_module(m) != 0)      goto init_module_failed;
+    if (init_builtin_types() != 0)             goto init_module_failed;
+    if (add_builtin_types_to_module(m) != 0)   goto init_module_failed;
+    if (add_builtin_objects_to_module(m) != 0) goto init_module_failed;
+    if (add_constants_to_module(m) != 0)       goto init_module_failed;
 
     return m;
 
