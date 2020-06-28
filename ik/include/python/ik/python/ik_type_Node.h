@@ -1,4 +1,4 @@
-#include "Python.h"
+#include "ik/python/ik_type_ModuleRef.h"
 
 #define ik_Node_CheckExact(o) \
     (Py_TYPE(o) == &ik_NodeType)
@@ -13,7 +13,7 @@ typedef struct ik_NodeChildrenView
 
 typedef struct ik_Node
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
 
     struct ik_node* node;
 

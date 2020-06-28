@@ -1,10 +1,10 @@
-#include "Python.h"
+#include "ik/python/ik_type_ModuleRef.h"
 
 struct ik_solver;
 
 typedef struct ik_Solver
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
     struct ik_solver* solver;
 } ik_Solver;
 

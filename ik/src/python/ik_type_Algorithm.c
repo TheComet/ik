@@ -15,9 +15,8 @@ static void
 Algorithm_dealloc(PyObject* myself)
 {
     ik_Algorithm* self = (ik_Algorithm*)myself;
-
     IK_DECREF(self->super.attachment);
-    Py_TYPE(myself)->tp_base->tp_dealloc(myself);
+    ik_AlgorithmType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -34,7 +33,7 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     }
     IK_INCREF(algorithm);
 
-    self = (ik_Algorithm*)type->tp_base->tp_new(type, args, kwds);
+    self = (ik_Algorithm*)ik_AlgorithmType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 

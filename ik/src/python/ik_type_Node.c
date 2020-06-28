@@ -1,7 +1,8 @@
-#include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
+#include "ik/python/ik_type_ModuleRef.h"
+#include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Vec3.h"
@@ -215,7 +216,8 @@ Node_dealloc(PyObject* myself)
     Py_DECREF(self->effector);
     Py_DECREF(self->pole);
     Py_DECREF(self->children);
-    Py_TYPE(self)->tp_free(self);
+
+    ik_NodeType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -257,7 +259,7 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_children_view_failed;
 
     /* Finally, alloc self */
-    self = (ik_Node*)type->tp_alloc(type, 0);
+    self = (ik_Node*)ik_NodeType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -913,6 +915,7 @@ PyTypeObject ik_NodeType = {
 int
 init_ik_NodeType(void)
 {
+    ik_NodeType.tp_base = &ik_ModuleRefType;
     if (PyType_Ready(&ik_NodeType) < 0)
         return -1;
     if (PyType_Ready(&ik_NodeChildrenViewType) < 0)

@@ -21,9 +21,8 @@ static void
 Effector_dealloc(PyObject* myself)
 {
     ik_Effector* self = (ik_Effector*)myself;
-
     IK_DECREF(self->super.attachment);
-    Py_TYPE(myself)->tp_base->tp_dealloc(myself);
+    ik_EffectorType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -41,7 +40,7 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     }
     IK_INCREF(effector);
 
-    self = (ik_Effector*)type->tp_base->tp_new(type, args, kwds);
+    self = (ik_Effector*)ik_EffectorType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 

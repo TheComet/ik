@@ -5,9 +5,10 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-Constraint_dealloc(ik_Constraint* self)
+Constraint_dealloc(PyObject* myself)
 {
-    Py_TYPE(self)->tp_dealloc((PyObject*)self);
+    ik_Constraint* self = (ik_Constraint*)myself;
+    ik_ConstraintType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -25,7 +26,7 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         return NULL;
 
     /* Allocate constraint */
-    self = (ik_Constraint*)type->tp_alloc(type, 0);
+    self = (ik_Constraint*)ik_ConstraintType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
