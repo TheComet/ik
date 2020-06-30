@@ -118,9 +118,9 @@ ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat(ikreal q1[4], const ikreal q2[4])
+ik_quat_rmul_quat(ikreal q1[4], const ikreal q2[4])
 {
-    ik_quat_nmul_quat_no_normalize(q1, q2);
+    ik_quat_rmul_quat_no_normalize(q1, q2);
     ik_quat_normalize(q1);
 }
 
@@ -134,9 +134,9 @@ ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat_conj(ikreal q1[4], const ikreal q2[4])
+ik_quat_rmul_quat_conj(ikreal q1[4], const ikreal q2[4])
 {
-    ik_quat_nmul_quat_conj_no_normalize(q1, q2);
+    ik_quat_rmul_quat_conj_no_normalize(q1, q2);
     ik_quat_normalize(q1);
 }
 
@@ -173,7 +173,7 @@ ik_quat_mul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_rmul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
     ik_quat_copy(q1, q);
@@ -235,7 +235,7 @@ ik_quat_mul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_nmul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_rmul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
     ik_quat_copy(q1, q);

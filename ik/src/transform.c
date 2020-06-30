@@ -229,7 +229,7 @@ ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4],  const struct ik_node* ti
     if (tip != base)
         ik_transform_pos_rot_g2l(pos, rot, tip->parent, base);
 
-    ik_quat_nmul_quat(rot, tip->rotation.f);
+    ik_quat_rmul_quat(rot, tip->rotation.f);
     ik_vec3_sub_vec3(pos, tip->position.f);
     ik_vec3_rotate_quat(pos, tip->rotation.f);
 }
@@ -289,7 +289,7 @@ ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
 
         ik_vec3_sub_vec3(tip->position.f, parent->position.f);
         ik_vec3_rotate_quat(tip->position.f, parent->rotation.f);
-        ik_quat_nmul_quat(tip->rotation.f, parent->rotation.f);
+        ik_quat_rmul_quat(tip->rotation.f, parent->rotation.f);
 
         tip = tip->parent;
         assert(tip != NULL);

@@ -115,7 +115,7 @@ convert_rotations_to_segments_recursive(const struct ik_chain* chain,
         struct ik_node* parent = chain_get_node(chain, chain_length(chain) - 1);
 
         ik_quat_angle_of(child->rotation.f, child->position.f);
-        ik_quat_nmul_quat(child->rotation.f, parent->rotation.f);
+        ik_quat_rmul_quat(child->rotation.f, parent->rotation.f);
         ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
     }
     else
@@ -143,8 +143,6 @@ convert_rotations_to_segments(struct ik_solver_fabrik* solver)
     convert_rotations_to_segments_recursive(&solver->chain_tree, 1);
 }
 
-#include <stdio.h>
-
 /* ------------------------------------------------------------------------- */
 static void
 convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
@@ -166,7 +164,7 @@ convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
         struct ik_node* tip_node = chain_get_tip_node(chain);
         ikreal* tip_rot = tip_node->rotation.f;
 
-        /* restore rotation by averaging all child rotations */
+        /* restore base node rotation by averaging all child rotations */
         ik_quat_set(tip_rot, 0, 0, 0, 0);
         CHAIN_FOR_EACH_CHILD(chain, child)
             struct ik_node* first_child_node = chain_get_node(child, chain_length(child) - 2);
@@ -178,12 +176,13 @@ convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
         ik_quat_normalize(tip_rot);
 
         /* restore translations */
+        ik_quat_conj(tip_rot);
         CHAIN_FOR_EACH_CHILD(chain, child)
             struct ik_node* first_child_node = chain_get_node(child, chain_length(child) - 2);
-            ik_quat_conj(first_child_node->rotation.f);
-            ik_quat_mul_quat(first_child_node->rotation.f, tip_rot);
-            ik_vec3_rotate_quat_conj(first_child_node->position.f, first_child_node->rotation.f);
+            ik_quat_rmul_quat(first_child_node->rotation.f, tip_rot);
+            ik_vec3_rotate_quat(first_child_node->position.f, first_child_node->rotation.f);
         CHAIN_END_EACH
+        ik_quat_conj(tip_rot);
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)

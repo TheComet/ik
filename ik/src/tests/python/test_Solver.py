@@ -15,7 +15,7 @@ class TestSolver(unittest.TestCase, CustomAssertions):
 
     def test_fabrik(self):
         rn = ik.Node()
-        mid = rn.create_child(position=ik.Vec3(0, 0, 1)).create_child(position=ik.Vec3(0, 0, 1), rotation=ik.Quat((0, 1, 0), pi/2))
+        mid = rn.create_child(position=ik.Vec3(0, 0, 1)).create_child(position=ik.Vec3(0, 0, 1), rotation=ik.Quat((2, 6, 1), pi/5))
         tip1 = mid.create_child(position=ik.Vec3(0, 1, 1)).create_child(position=ik.Vec3(0, 0, 1))
         tip2 = mid.create_child(position=ik.Vec3(0, -1, 1)).create_child(position=ik.Vec3(0, 0, 1))
 
