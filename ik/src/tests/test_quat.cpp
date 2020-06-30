@@ -158,19 +158,29 @@ TEST(NAME, mul_conj)
 
 }
 
+TEST(NAME, nmul_conj)
+{
+
+}
+
 TEST(NAME, mul_no_normalize)
 {
 
 }
 
 
-TEST(NAME, numl_no_normalize)
+TEST(NAME, nmul_no_normalize)
 {
 
 }
 
 
 TEST(NAME, mul_conj_no_normalize)
+{
+
+}
+
+TEST(NAME, nmul_conj_no_normalize)
 {
 
 }
@@ -213,7 +223,12 @@ TEST(NAME, angle_between)
 
 TEST(NAME, angle_of)
 {
+    union ik_quat q;
+    union ik_vec3 v;
 
+    ik_vec3_set(v.f, 0, 1, 0);
+    ik_quat_angle_of(q.f, v.f);
+    EXPECT_QUAT_EQ(q, -1/sqrt(2), 0, 0, 1/sqrt(2));
 }
 
 TEST(NAME, angle_between_no_normalize)

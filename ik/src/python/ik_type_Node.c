@@ -77,7 +77,7 @@ NodeChildrenView_repr_build_arglist_list(PyObject* myself)
     return NULL;
 }
 static PyObject*
-NodeChildrenView_repr_build_arglist_string(PyObject* myself)
+NodeChildrenView_repr_build_arglist_string(PyObject* myself, int* need_comma)
 {
     PyObject* separator;
     PyObject* arglist;
@@ -94,6 +94,8 @@ NodeChildrenView_repr_build_arglist_string(PyObject* myself)
         return NULL;
     }
 
+    *need_comma = (PyList_GET_SIZE(arglist) == 1);
+
     string = PyUnicode_Join(separator, arglist);
     Py_DECREF(separator);
     Py_DECREF(arglist);
@@ -104,12 +106,16 @@ NodeChildrenView_repr_build_arglist_string(PyObject* myself)
 static PyObject*
 NodeChildrenView_repr(PyObject* myself)
 {
+    int need_comma;
     PyObject* repr;
-    PyObject* argstring = NodeChildrenView_repr_build_arglist_string(myself);
+    PyObject* argstring = NodeChildrenView_repr_build_arglist_string(myself, &need_comma);
     if (argstring == NULL)
         return NULL;
 
-    repr = PyUnicode_FromFormat("(%U)", argstring);
+    if (need_comma)
+        repr = PyUnicode_FromFormat("(%U,)", argstring);
+    else
+        repr = PyUnicode_FromFormat("(%U)", argstring);
     Py_DECREF(argstring);
     return repr;
 }

@@ -134,6 +134,14 @@ ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4])
 
 /* ------------------------------------------------------------------------- */
 void
+ik_quat_nmul_quat_conj(ikreal q1[4], const ikreal q2[4])
+{
+    ik_quat_nmul_quat_conj_no_normalize(q1, q2);
+    ik_quat_normalize(q1);
+}
+
+/* ------------------------------------------------------------------------- */
+void
 ik_quat_mul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
@@ -209,6 +217,37 @@ ik_quat_mul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
 #define x2 q2[0]
 #define y2 q2[1]
 #define z2 q2[2]
+
+    q[3] =  w1*w2 + x1*x2 + y1*y2 + z1*z2;
+    q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
+    q[1] = -w1*y2 + y1*w2 - z1*x2 + x1*z2;
+    q[2] = -w1*z2 + z1*w2 - x1*y2 + y1*x2;
+
+#undef w1
+#undef x1
+#undef y1
+#undef z1
+#undef w2
+#undef x2
+#undef y2
+#undef z2
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_nmul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
+{
+    ikreal q1[4];
+    ik_quat_copy(q1, q);
+
+#define w1 q2[3]
+#define x1 q2[0]
+#define y1 q2[1]
+#define z1 q2[2]
+#define w2 q1[3]
+#define x2 q1[0]
+#define y2 q1[1]
+#define z2 q1[2]
 
     q[3] =  w1*w2 + x1*x2 + y1*y2 + z1*z2;
     q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
@@ -308,9 +347,9 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3])
         angle = acos(cos_a);
         sin_a = sin(angle * 0.5);
 
-        /* cross product of v with [0, 0, 1], store result into q */
-        q[0] = v[1];
-        q[1] = -v[0];
+        /* cross product of [0, 0, 1] with v, store result into q */
+        q[0] = -v[1];
+        q[1] = v[0];
         q[2] = 0;
         /* normalize/weight vector part of quaternion */
         ik_vec3_normalize(q);
@@ -321,6 +360,7 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3])
     }
     else
     {
+        /* Important! otherwise garbage happens when applying initial rotations */
         ik_quat_set_identity(q);
     }
 }

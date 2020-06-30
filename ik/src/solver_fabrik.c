@@ -29,7 +29,7 @@ validate_poles_recursive(const struct ik_solver_fabrik* solver, const struct ik_
 
     /* Pole target constraints should only be attached to the tip node of each
      * chain. */
-    CHAIN_FOR_EACH_NODE(chain, node)
+    CHAIN_FOR_EACH_NODE_RANGE(chain, node, 0, chain_length(chain) - 1)
         if (node == chain_get_tip_node(chain))
             continue;
         if (node->pole != NULL)
@@ -52,29 +52,48 @@ validate_poles(const struct ik_solver_fabrik* solver, const struct ik_chain* cha
 
 /* ------------------------------------------------------------------------- */
 static void
-canonicalize_rotations_recursive(union ik_quat** rotations_store,
-                                 const struct ik_chain* chain,
-                                 unsigned int sibling_count)
+store_effector_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
 {
-    unsigned int idx;
-
     CHAIN_FOR_EACH_CHILD(chain, child)
-        canonicalize_rotations_recursive(rotations_store, child, chain_child_count(chain));
+        store_effector_node_rotations(rotations_store, child);
     CHAIN_END_EACH
 
-    /*
-     * Copy all effector node rotations into a pre-allocated array stored in the
-     * solver object so we can restore them later. They will be overwritten
-     * by the parent node rotation in the next section of code.
-     */
     if (chain_child_count(chain) == 0)
     {
         ik_quat_copy((*rotations_store)->f, chain_get_tip_node(chain)->rotation.f);
         (*rotations_store)++;
     }
+}
 
-    /* Copy all rotations from parent to child node */
-    for (idx = 0; idx < chain_length(chain) - 2; ++idx)
+/* ------------------------------------------------------------------------- */
+static void
+restore_effector_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
+{
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        restore_effector_node_rotations(rotations_store, child);
+    CHAIN_END_EACH
+
+    if (chain_child_count(chain) == 0)
+    {
+        ik_quat_copy(chain_get_tip_node(chain)->rotation.f, (*rotations_store)->f);
+        (*rotations_store)++;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+convert_rotations_to_segments_recursive(const struct ik_chain* chain,
+                                        unsigned int sibling_count)
+{
+    int idx;
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        convert_rotations_to_segments_recursive(child, chain_child_count(chain));
+    CHAIN_END_EACH
+
+    /* Copy all rotations from parent to child node, excluding base node. Base
+     * node requires special attention (see below) */
+    for (idx = 0; idx < (int)chain_length(chain) - 2; ++idx)
     {
         struct ik_node* child  = chain_get_node(chain, idx + 0);
         struct ik_node* parent = chain_get_node(chain, idx + 1);
@@ -96,7 +115,8 @@ canonicalize_rotations_recursive(union ik_quat** rotations_store,
         struct ik_node* parent = chain_get_node(chain, chain_length(chain) - 1);
 
         ik_quat_angle_of(child->rotation.f, child->position.f);
-        ik_quat_mul_quat(child->rotation.f, parent->rotation.f);
+        ik_quat_nmul_quat(child->rotation.f, parent->rotation.f);
+        ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
     }
     else
     {
@@ -107,61 +127,93 @@ canonicalize_rotations_recursive(union ik_quat** rotations_store,
     }
 }
 static void
-canonicalize_rotations(struct ik_solver_fabrik* solver)
+convert_rotations_to_segments(struct ik_solver_fabrik* solver)
 {
-    union ik_quat* rotations_store = solver->effector_rotations;
-    canonicalize_rotations_recursive(&rotations_store, &solver->chain_tree, 0);
+    union ik_quat* rotations_store;
+
+    /*
+     * Copy all effector node rotations into a pre-allocated array stored in the
+     * solver object so we can restore them later. They will be overwritten
+     * by the parent node rotation in the next section of code.
+     */
+    rotations_store = solver->effector_rotations;
+    store_effector_node_rotations(&rotations_store, &solver->chain_tree);
+
+    /* Do conversion */
+    convert_rotations_to_segments_recursive(&solver->chain_tree, 1);
 }
+
+#include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
 static void
-uncanonicalize_rotations_recursive(union ik_quat** rotations_store, const struct ik_chain* chain)
+convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
 {
-    unsigned idx;
+    int idx;  /* must be signed, because chain_length(chain) - 3 can be negative */
 
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        uncanonicalize_rotations_recursive(rotations_store, child);
-    CHAIN_END_EACH
-
-    /* Copy all rotations from parent to child node */
-    for (idx = chain_length(chain) - 2; idx > 0; idx--)
+    /* Copy all rotations from child back to parent node excluding the base node
+     * and tip node */
+    for (idx = (int)chain_length(chain) - 3; idx >= 0; idx--)
     {
-        struct ik_node* parent = chain_get_node(chain, idx - 0);
-        struct ik_node* child  = chain_get_node(chain, idx - 1);
+        struct ik_node* parent = chain_get_node(chain, idx + 1);
+        struct ik_node* child  = chain_get_node(chain, idx + 0);
 
         ik_quat_copy(parent->rotation.f, child->rotation.f);
     }
 
-    /* Restore effector node rotations */
-    if (chain_child_count(chain) == 0)
+    if (chain_child_count(chain) > 1)
     {
-        ik_quat_copy((*rotations_store)->f, chain_get_tip_node(chain)->rotation.f);
-        (*rotations_store)++;
-    }
-    else
-    {
-        union ik_quat avg_rot;
-        ik_quat_set(avg_rot.f, 0, 0, 0, 0);
+        struct ik_node* tip_node = chain_get_tip_node(chain);
+        ikreal* tip_rot = tip_node->rotation.f;
 
+        /* restore rotation by averaging all child rotations */
+        ik_quat_set(tip_rot, 0, 0, 0, 0);
         CHAIN_FOR_EACH_CHILD(chain, child)
             struct ik_node* first_child_node = chain_get_node(child, chain_length(child) - 2);
-            union ik_quat rot = first_child_node->rotation;
-            ik_quat_ensure_positive_sign(rot.f);
-            ik_quat_add_quat(avg_rot.f, rot.f);
+            ik_quat_ensure_positive_sign(first_child_node->rotation.f);
+            ik_quat_add_quat(tip_rot, first_child_node->rotation.f);
         CHAIN_END_EACH
 
-        ik_quat_div_scalar(avg_rot.f, chain_child_count(chain));
-        ik_quat_normalize(avg_rot.f);
-        /*chain_get_tip_node(chain)*/
-    }
-}
+        ik_quat_div_scalar(tip_rot, chain_child_count(chain));
+        ik_quat_normalize(tip_rot);
 
-/* ------------------------------------------------------------------------- */
+        /* restore translations */
+        CHAIN_FOR_EACH_CHILD(chain, child)
+            struct ik_node* first_child_node = chain_get_node(child, chain_length(child) - 2);
+            ik_quat_conj(first_child_node->rotation.f);
+            ik_quat_mul_quat(first_child_node->rotation.f, tip_rot);
+            ik_vec3_rotate_quat_conj(first_child_node->position.f, first_child_node->rotation.f);
+        CHAIN_END_EACH
+    }
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        convert_rotations_to_nodes_recursive(child);
+    CHAIN_END_EACH
+}
 static void
-uncanonicalize_rotations(struct ik_solver_fabrik* solver)
+convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
 {
-    union ik_quat* rotations_store = solver->effector_rotations;
-    uncanonicalize_rotations_recursive(&rotations_store, &solver->chain_tree);
+    union ik_quat* rotations_store;
+    struct ik_node* base;
+    struct ik_node* child;
+
+    /*
+     * The recursive function copies everything except for the base node. Copy
+     * base node rotation here.
+     */
+    base = chain_get_node(&solver->chain_tree, chain_length(&solver->chain_tree) - 1);
+    child = chain_get_node(&solver->chain_tree, chain_length(&solver->chain_tree) - 1);
+    ik_quat_copy(base->rotation.f, child->rotation.f);
+
+    /* Do conversion */
+    convert_rotations_to_nodes_recursive(&solver->chain_tree);
+
+    /*
+     * Copy original effector node rotations back from pre-allocated buffer into
+     * the tree.
+     */
+    rotations_store = solver->effector_rotations;
+    restore_effector_node_rotations(&rotations_store, &solver->chain_tree);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -195,6 +247,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_deinit(&solver->chain_tree);
+    FREE(solver->effector_rotations);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -209,8 +262,8 @@ fabrik_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
-    canonicalize_rotations(solver);
-    uncanonicalize_rotations(solver);
+    convert_rotations_to_segments(solver);
+    convert_rotations_to_nodes(solver);
     return 0;
 }
 

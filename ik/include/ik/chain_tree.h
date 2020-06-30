@@ -107,14 +107,22 @@ count_chains(const struct ik_chain* chains);
  * Iterates over each node from tip to base, excluding the base node.
  */
 #define CHAIN_FOR_EACH_NODE(chain_var, var_name) \
-    VECTOR_FOR_EACH_RANGE(&(chain_var)->nodes, struct ik_node*, chain_##var_name, 0, chain_length(chain_var) - 1) \
+    VECTOR_FOR_EACH(&(chain_var)->nodes, struct ik_node*, chain_##var_name) \
     struct ik_node* var_name = *(chain_##var_name); {
 
 /*!
  * Iterates over each node from base to tip, excluding the base node.
  */
 #define CHAIN_FOR_EACH_NODE_R(chain_var, var_name) \
-    VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node* chain_##var_name, 0, chain_length(chain_var) - 1) \
+    VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node* chain_##var_name) \
+    struct ik_node* var_name = *(chain_##var_name); {
+
+#define CHAIN_FOR_EACH_NODE_RANGE(chain_var, var_name, begin, end) \
+    VECTOR_FOR_EACH_RANGE(&(chain_var)->nodes, struct ik_node*, chain_##var_name, begin, end) \
+    struct ik_node* var_name = *(chain_##var_name); {
+
+#define CHAIN_FOR_EACH_NODE_RANGE_R(chain_var, var_name, begin, end) \
+    VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node*, chain_##var_name, begin, end) \
     struct ik_node* var_name = *(chain_##var_name); {
 
 #define CHAIN_END_EACH VECTOR_END_EACH }

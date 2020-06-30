@@ -61,7 +61,6 @@ chain_tree_deinit(struct ik_chain* chain)
     CHAIN_FOR_EACH_NODE(chain, node)
         IK_DECREF(node);
     CHAIN_END_EACH
-    IK_DECREF(chain_get_base_node(chain));
 
     vector_deinit(&chain->children);
     vector_deinit(&chain->nodes);
@@ -104,7 +103,6 @@ chain_tree_clear(struct ik_chain* chain)
     CHAIN_FOR_EACH_NODE(chain, node)
         IK_DECREF(node);
     CHAIN_END_EACH
-    IK_DECREF(chain_get_base_node(chain));
 
     vector_clear_compact(&chain->children);
     vector_clear_compact(&chain->nodes);
