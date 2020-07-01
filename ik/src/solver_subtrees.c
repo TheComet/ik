@@ -32,17 +32,6 @@ solver_subtrees_deinit(struct ik_solver* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solver_subtrees_update_translations(struct ik_solver* solver)
-{
-    struct ik_solver_subtrees* subtrees = (struct ik_solver_subtrees*)solver;
-
-    VECTOR_FOR_EACH(&subtrees->solver_list, struct ik_solver*, child_solver)
-        (*child_solver)->impl.update_translations(*child_solver);
-    VECTOR_END_EACH
-}
-
-/* ------------------------------------------------------------------------- */
 static int
 solver_subtrees_solve(struct ik_solver* solver)
 {
@@ -96,7 +85,6 @@ struct ik_solver_interface ik_solver_subtrees = {
     sizeof(struct ik_solver_subtrees),
     solver_subtrees_init,
     solver_subtrees_deinit,
-    solver_subtrees_update_translations,
     solver_subtrees_solve,
     solver_subtrees_iterate_nodes,
     solver_subtrees_iterate_effector_nodes

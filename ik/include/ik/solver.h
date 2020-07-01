@@ -35,9 +35,6 @@ struct ik_solver_interface
     /*! Called before the solver is freed. */
     void (*deinit)(struct ik_solver*);
 
-    /*! Called when the distances between nodes have changed. */
-    void (*update_translations)(struct ik_solver*);
-
     /*! Called when it's time to solve */
     int (*solve)(struct ik_solver*);
 
@@ -100,22 +97,6 @@ struct ik_solver
  */
 IK_PUBLIC_API struct ik_solver*
 ik_solver_build(const struct ik_node* root);
-
-/*!
- * @brief Computes the distances between the nodes and stores them in
- * node->dist_to_parent. The positions used for this computation are those of
- * the active pose (node->position). For this reason, make sure that you've
- * correctly initialized the active pose before calling this function.
- *
- * The segment lengths are typically computed once during initialisation and
- * then never again. Of course, there are exceptions, such as when your tree
- * has translational motions. In this case, you will have to recalculate the
- * segment lengths every time node positions change.
- *
- * @note This function gets called by ik_solver_prepare().
- */
-IK_PUBLIC_API void
-ik_solver_update_translations(struct ik_solver* solver);
 
 IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);

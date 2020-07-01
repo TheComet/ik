@@ -46,7 +46,6 @@ struct ik_node
     union ik_quat rotation;
     union ik_vec3 position;
 
-    ikreal dist_to_parent;
     ikreal rotation_weight;
     ikreal mass;
 

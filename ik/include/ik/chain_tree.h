@@ -79,23 +79,25 @@ count_chains(const struct ik_chain* chains);
 /*!
  * @brief Helper macro for retrieving the number of nodes in a chain.
  */
-#define chain_length(chain_var) \
-    vector_count(&(chain_var)->nodes)
+#define chain_node_count(chain_var) \
+    (vector_count(&(chain_var)->nodes))
+
+#define chain_segment_count(chain_var) \
+    (vector_count(&(chain_var)->nodes) - 1)
 
 /*!
  * @brief Helper macro for retrieving the base node in the chain.
  * @note Does no error checking at all.
  */
 #define chain_get_base_node(chain_var) \
-    (*(struct ik_node**)vector_get_element(&(chain_var)->nodes, \
-                                chain_length(chain_var) - 1))
+    (*(struct ik_node**)vector_get_element(&(chain_var)->nodes, chain_node_count(chain_var) - 1))
 
 /*!
  * @brief Helper macro for retrieving the last node in the chain.
  * @note Does no error checking at all.
  */
 #define chain_get_tip_node(chain_var) \
-    chain_get_node(chain_var, 0)
+    (chain_get_node(chain_var, 0))
 
 #define chain_child_count(chain_var) \
     (vector_count(&(chain_var)->children))
@@ -104,14 +106,14 @@ count_chains(const struct ik_chain* chains);
     VECTOR_FOR_EACH(&(chain_var)->children, struct ik_chain, var_name) {
 
 /*!
- * Iterates over each node from tip to base, excluding the base node.
+ * Iterates over each node from tip to base.
  */
 #define CHAIN_FOR_EACH_NODE(chain_var, var_name) \
     VECTOR_FOR_EACH(&(chain_var)->nodes, struct ik_node*, chain_##var_name) \
     struct ik_node* var_name = *(chain_##var_name); {
 
 /*!
- * Iterates over each node from base to tip, excluding the base node.
+ * Iterates over each node from base to tip.
  */
 #define CHAIN_FOR_EACH_NODE_R(chain_var, var_name) \
     VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node* chain_##var_name) \
@@ -124,6 +126,24 @@ count_chains(const struct ik_chain* chains);
 #define CHAIN_FOR_EACH_NODE_RANGE_R(chain_var, var_name, begin, end) \
     VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node*, chain_##var_name, begin, end) \
     struct ik_node* var_name = *(chain_##var_name); {
+
+#define CHAIN_FOR_EACH_SEGMENT(chain_var, parent, child) { \
+    CHAIN_FOR_EACH_SEGMENT_RANGE(chain_var, parent, child, 0, chain_segments(chain_var))
+
+#define CHAIN_FOR_EACH_SEGMENT_R(chain_var, parent, child) \
+    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain_var, parent, child, 0, chain_segments(chain_var))
+
+#define CHAIN_FOR_EACH_SEGMENT_RANGE(chain_var, parent, child, begin, end) {    \
+    cs_vec_idx var_name##_idx;                                                  \
+    for (var_name##_idx = (begin); var_name##_idx < (end); ++var_name##_idx) {  \
+        struct ik_node* parent = chain_get_node(chain_var, var_name##_idx + 1); \
+        struct ik_node* child = chain_get_node(chain_var, var_name##_idx + 0); {
+
+#define CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain_var, parent, child, begin, end) {      \
+    cs_vec_idx var_name##_idx;                                                      \
+    for (var_name##_idx = (end) - 1; var_name##_idx >= (begin); --var_name##_idx) { \
+        struct ik_node* parent = chain_get_node(chain_var, var_name##_idx + 1);     \
+        struct ik_node* child = chain_get_node(chain_var, var_name##_idx + 0); {
 
 #define CHAIN_END_EACH VECTOR_END_EACH }
 

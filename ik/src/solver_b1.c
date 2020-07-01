@@ -75,15 +75,6 @@ solver_b1_deinit(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solver_b1_update_translations(struct ik_solver* solver_base)
-{
-    struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
-
-    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->position.f);
-}
-
-/* ------------------------------------------------------------------------- */
 static int
 solver_b1_solve_no_constraints(struct ik_solver* solver_base)
 {
@@ -102,15 +93,14 @@ solver_b1_solve_no_constraints(struct ik_solver* solver_base)
     /*
      * Need to calculate the angle between where the bone is pointing, and the
      * target position. Because by convention the bone will always be Z-axis
-     * aligned, we only have to calculate the angle of the target position to
-     * [0, 0, 1].
+     * aligned, we only have to calculate the angle of the target position.
      */
     ik_quat_angle_of(delta.f, target.f);
-    ik_quat_mul_quat_conj(base->rotation.f, delta.f);
+    ik_quat_mul_quat(base->rotation.f, delta.f);
 
     /* Rotate tip node with same rotation so it keeps its global orientation */
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
-        ik_quat_mul_quat(tip->rotation.f, delta.f);
+        ik_quat_mul_quat_conj(tip->rotation.f, delta.f);
 
     return 0;
 }
@@ -136,11 +126,10 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
     /*
      * Need to calculate the angle between where the bone is pointing, and the
      * target position. Because by convention the bone will always be Z-axis
-     * aligned, we only have to calculate the angle of the target position to
-     * [0, 0, 1].
+     * aligned, we only have to calculate the angle of the target position.
      */
     ik_quat_angle_of(delta.f, target.f);
-    ik_quat_mul_quat_conj(base->rotation.f, delta.f);
+    ik_quat_mul_quat(base->rotation.f, delta.f);
 
     /* Apply constraint to base node */
     assert(c);
@@ -150,7 +139,7 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
     /* Rotate tip node with same rotation so it keeps its global orientation */
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
     {
-        ik_quat_mul_quat(tip->rotation.f, delta.f);
+        ik_quat_mul_quat_conj(tip->rotation.f, delta.f);
         ik_quat_mul_quat_conj(delta.f, constraint_delta.f);
     }
 
@@ -202,7 +191,6 @@ struct ik_solver_interface ik_solver_ONE_BONE = {
     sizeof(struct ik_solver_b1),
     solver_b1_init,
     solver_b1_deinit,
-    solver_b1_update_translations,
     solver_b1_solve,
     solver_b1_iterate_nodes,
     solver_b1_iterate_effector_nodes

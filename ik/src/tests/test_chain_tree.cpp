@@ -36,7 +36,7 @@ TEST_F(NAME, single_node)
 
     EXPECT_THAT(chain_tree_build(&chain_tree, &subtree), Eq(0));
 
-    EXPECT_THAT(chain_length(&chain_tree), Eq(1));
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(1));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(node));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(node));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
@@ -53,7 +53,7 @@ TEST_F(NAME, two_nodes)
     int result = chain_tree_build(&chain_tree, &subtree);
     EXPECT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_length(&chain_tree), Eq(2));
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(2));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n1));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
@@ -73,7 +73,7 @@ TEST_F(NAME, omit_first_and_last)
     int result = chain_tree_build(&chain_tree, &subtree);
     EXPECT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_length(&chain_tree), Eq(3));
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n1));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n3));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
@@ -100,7 +100,7 @@ TEST_F(NAME, ignore_branch_not_part_of_subtree)
     int result = chain_tree_build(&chain_tree, &subtree);
     EXPECT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_length(&chain_tree), Eq(4));
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(4));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n3));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
@@ -121,7 +121,7 @@ TEST_F(NAME, two_arms)
     int result = chain_tree_build(&chain_tree, &subtree);
     EXPECT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_length(&chain_tree), Eq(3));
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n2));
 

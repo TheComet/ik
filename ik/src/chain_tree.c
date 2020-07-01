@@ -80,7 +80,7 @@ chain_tree_clear_recursive(struct ik_chain* chain)
      * Decref all nodes except for the base node, because the base node is
      * stored as part of the parent chain's leaf node
      */
-    for (node_idx = 0; node_idx < chain_length(chain) - 1; ++node_idx)
+    for (node_idx = 0; node_idx < chain_node_count(chain) - 1; ++node_idx)
     {
         struct ik_node* node  = chain_get_node(chain, node_idx);
         IK_DECREF(node);

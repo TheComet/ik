@@ -76,16 +76,6 @@ solver_b2_deinit(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solver_b2_update_translations(struct ik_solver* solver_base)
-{
-    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
-
-    solver->tip->dist_to_parent = ik_vec3_length(solver->tip->position.f);
-    solver->mid->dist_to_parent = ik_vec3_length(solver->mid->position.f);
-}
-
-/* ------------------------------------------------------------------------- */
 static int
 solver_b2_solve(struct ik_solver* solver_base)
 {
@@ -117,8 +107,8 @@ solver_b2_solve(struct ik_solver* solver_base)
      *            base
      *
      */
-    a = s->tip->dist_to_parent;
-    b = s->mid->dist_to_parent;
+    a = s->tip->position.v.z;
+    b = s->mid->position.v.z;
     aa = a*a;
     bb = b*b;
     cc = ik_vec3_length_squared(target_pos.f);
@@ -233,7 +223,6 @@ struct ik_solver_interface ik_solver_TWO_BONE = {
     sizeof(struct ik_solver_b2),
     solver_b2_init,
     solver_b2_deinit,
-    solver_b2_update_translations,
     solver_b2_solve,
     solver_b2_iterate_nodes,
     solver_b2_iterate_effector_nodes

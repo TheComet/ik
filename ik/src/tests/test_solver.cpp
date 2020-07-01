@@ -32,7 +32,6 @@ static void dummy_deinit(struct ik_solver* solver_base) {
     struct ik_solver_dummy* solver = (struct ik_solver_dummy*)solver_base;
     chain_tree_deinit(&solver->chain_tree);
 }
-static void dummy_update_translations(struct ik_solver* solver_base) {}
 static int  dummy_solve(struct ik_solver* solver_base) { return 0; }
 static void dummy_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base) {}
 
@@ -41,7 +40,6 @@ const struct ik_solver_interface ik_solver_DUMMY1 = {
     sizeof(struct ik_solver_dummy),
     dummy_init,
     dummy_deinit,
-    dummy_update_translations,
     dummy_solve,
     dummy_iterate_nodes
 };
@@ -51,7 +49,6 @@ const struct ik_solver_interface ik_solver_DUMMY2 = {
     sizeof(struct ik_solver_dummy),
     dummy_init,
     dummy_deinit,
-    dummy_update_translations,
     dummy_solve,
     dummy_iterate_nodes
 };
@@ -413,17 +410,17 @@ TEST_F(NAME, split_trees_on_effectors)
     ik_solver_dummy* s3 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->solver_list, 2);
 
     EXPECT_THAT(s1->algorithm, Eq(a3));
-    EXPECT_THAT(chain_length(&s1->chain_tree), Eq(3));
+    EXPECT_THAT(chain_node_count(&s1->chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&s1->chain_tree), Eq(tree));
     EXPECT_THAT(chain_get_tip_node(&s1->chain_tree), Eq(n2));
 
     EXPECT_THAT(s2->algorithm, Eq(a2));
-    EXPECT_THAT(chain_length(&s2->chain_tree), Eq(2));
+    EXPECT_THAT(chain_node_count(&s2->chain_tree), Eq(2));
     EXPECT_THAT(chain_get_base_node(&s2->chain_tree), Eq(n2));
     EXPECT_THAT(chain_get_tip_node(&s2->chain_tree), Eq(n3));
 
     EXPECT_THAT(s3->algorithm, Eq(a1));
-    EXPECT_THAT(chain_length(&s3->chain_tree), Eq(3));
+    EXPECT_THAT(chain_node_count(&s3->chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&s3->chain_tree), Eq(n3));
     EXPECT_THAT(chain_get_tip_node(&s3->chain_tree), Eq(n5));
 }

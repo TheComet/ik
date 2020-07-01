@@ -446,13 +446,6 @@ ik_solver_build(const struct ik_node* root)
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_solver_update_translations(struct ik_solver* solver)
-{
-    solver->impl.update_translations(solver);
-}
-
-/* ------------------------------------------------------------------------- */
 int
 ik_solver_solve(struct ik_solver* solver)
 {

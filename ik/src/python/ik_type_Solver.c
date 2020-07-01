@@ -50,16 +50,6 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(SOLVER_UPDATE_TRANSLATIONS_DOC, "");
-static PyObject*
-Solver_update_translations(ik_Solver* self, PyObject* arg)
-{
-    (void)arg;
-    ik_solver_update_translations(self->solver);
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(SOLVER_SOLVE_DOC, "");
 static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
@@ -87,7 +77,6 @@ Solver_iterate_effector_nodes(ik_Solver* self, PyObject* callback)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Solver_methods[] = {
-    {"update_translations",    (PyCFunction)Solver_update_translations,    METH_NOARGS, SOLVER_UPDATE_TRANSLATIONS_DOC},
     {"solve",                  (PyCFunction)Solver_solve,                  METH_NOARGS, SOLVER_SOLVE_DOC},
     {"iterate_nodes",          (PyCFunction)Solver_iterate_nodes,          METH_O,      SOLVER_ITERATE_NODES_DOC},
     {"iterate_effector_nodes", (PyCFunction)Solver_iterate_effector_nodes, METH_O,      SOLVER_ITERATE_EFFECTOR_NODES_DOC},
