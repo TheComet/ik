@@ -1,9 +1,13 @@
 #include "gmock/gmock.h"
+
 #include "ik/node.h"
 #include "ik/solver.h"
 #include "ik/algorithm.h"
 #include "ik/effector.h"
 #include "ik/cpputils.hpp"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #define NAME solver_b1
 

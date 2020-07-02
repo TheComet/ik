@@ -1,5 +1,7 @@
 #include "gmock/gmock.h"
 #include "ik/ik.h"
+
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #define NAME quat

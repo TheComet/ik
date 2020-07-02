@@ -197,7 +197,7 @@ Algorithm_setmax_iterations(ik_Algorithm* self, PyObject* value, void* closure)
         return -1;
     }
 
-    algo->max_iterations = PyLong_AS_LONG(value);
+    algo->max_iterations = (uint16_t)PyLong_AS_LONG(value);
     return 0;
 }
 
