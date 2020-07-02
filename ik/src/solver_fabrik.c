@@ -18,6 +18,7 @@ struct ik_solver_fabrik
     struct ik_chain chain_tree;
     struct ik_node* effector_nodes;
     union ik_quat* effector_rotations;
+    union ik_vec3* target_positions;
 
     int num_effectors;
 };
@@ -64,7 +65,7 @@ store_effector_nodes_recursive(struct ik_node** effector_nodes_store, const stru
 
     if (chain_child_count(chain) == 0)
     {
-        (*effector_nodes_store) = chain_get_tip_node(chain);
+        *effector_nodes_store = chain_get_tip_node(chain);
         (*effector_nodes_store)++;
     }
 }
@@ -233,16 +234,85 @@ convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-solve_chain_forwards(struct ik_chain* chain)
+update_target_data(struct ik_solver_fabrik* solver)
 {
 
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solve_chain_backwards(struct ik_chain* chain)
+static union ik_vec3
+solve_chain_forwards_recurse(struct ik_chain* chain, union ik_vec3** target_store)
 {
+    union ik_vec3 target;
+    int avg_count;
 
+    /* Target position for the tip of each chain is the average position of all
+     * solved base node positions */
+    avg_count = 0;
+    ik_vec3_set_zero(target.f);
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store);
+        ik_vec3_add_vec3(target.f, base_pos.f);
+        ++avg_count;
+    CHAIN_END_EACH
+
+    if (avg_count == 0)
+        target = *(*target_store)++;
+    else
+        ik_vec3_div_scalar(target.f, avg_count);
+
+    CHAIN_FOR_EACH_SEGMENT(chain, parent, child)
+        ikreal tdist;
+        union ik_vec3 tdir;
+        union ik_quat delta;
+
+        /* Calculate target direction */
+        tdist = ik_vec3_length(target.f);
+        tdir = target;
+        ik_vec3_div_scalar(tdir.f, tdist);
+
+        /* Point segment to target */
+        ik_quat_angle_of_no_normalize(delta.f, tdir.f);
+        ik_quat_mul_quat(child->rotation.f, delta.f);
+
+        /* Calculate segment base node position if the tip were attached to
+         * the target position, which becomes the next segment's target
+         * position. */
+        ik_vec3_set(target.f, 0, 0, tdist - child->position.v.z);
+
+        /* Transform target into parent space */
+        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
+        ik_vec3_add_vec3(target.f, parent->position.f);
+    CHAIN_END_EACH
+
+    return target;
+}
+static union ik_vec3
+solve_chain_forwards(struct ik_solver_fabrik* solver)
+{
+    union ik_vec3* target_store = solver->target_positions;
+    return solve_chain_forwards_recurse(&solver->chain_tree, &target_store);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
+{
+    CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
+        union ik_vec3 dir;
+        union ik_quat delta;
+        ik_vec3_sub_vec3(target.f, parent->position.f);
+        ik_vec3_rotate_quat(target.f, child->rotation.f);
+
+        dir = child->position;
+        ik_vec3_sub_vec3(dir.f, target.f);
+        ik_quat_angle_of(delta.f, dir.f);
+    CHAIN_END_EACH
+}
+static void
+solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
+{
+    solve_chain_backwards_recurse(&solver->chain_tree, target);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -261,6 +331,10 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     if (solver->effector_nodes == NULL)
         goto alloc_effector_nodes_failed;
 
+    solver->target_positions = MALLOC(sizeof(*solver->target_positions) * solver->num_effectors);
+    if (solver->target_positions == NULL)
+        goto alloc_target_positions_failed;
+
     if (chain_tree_init(&solver->chain_tree) != 0)
         goto chain_tree_init_failed;
     if (chain_tree_build(&solver->chain_tree, subtree) != 0)
@@ -272,7 +346,8 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     return 0;
 
     build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
-    chain_tree_init_failed          : FREE(solver->effector_nodes);
+    chain_tree_init_failed          : FREE(solver->target_positions);
+    alloc_target_positions_failed   : FREE(solver->effector_nodes);
     alloc_effector_nodes_failed     : FREE(solver->effector_rotations);
     alloc_effector_rotations_failed : return -1;
 }
@@ -284,6 +359,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_deinit(&solver->chain_tree);
+    FREE(solver->target_positions);
     FREE(solver->effector_nodes);
     FREE(solver->effector_rotations);
 }
@@ -308,7 +384,7 @@ all_targets_reached(struct ik_solver_fabrik* solver, ikreal tol_squared)
 }
 
 /* ------------------------------------------------------------------------- */
-static int
+static void
 fabrik_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
@@ -317,18 +393,17 @@ fabrik_solve(struct ik_solver* solver_base)
     ikreal tol_squared = alg->tolerance * alg->tolerance;
 
     convert_rotations_to_segments(solver);
+    update_target_data(solver);
 
     while (iteration-- > 0)
     {
         if (all_targets_reached(solver, tol_squared))
             break;
 
-        solve_chain_forwards(&solver->chain_tree);
-        solve_chain_backwards(&solver->chain_tree);
+        solve_chain_backwards(solver, solve_chain_forwards(solver));
     }
 
     convert_rotations_to_nodes(solver);
-    return 0;
 }
 
 /* ------------------------------------------------------------------------- */

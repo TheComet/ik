@@ -75,7 +75,7 @@ solver_b1_deinit(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
-static int
+static void
 solver_b1_solve_no_constraints(struct ik_solver* solver_base)
 {
     union ik_quat delta;
@@ -101,12 +101,10 @@ solver_b1_solve_no_constraints(struct ik_solver* solver_base)
     /* Rotate tip node with same rotation so it keeps its global orientation */
     if (e->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
         ik_quat_mul_quat_conj(tip->rotation.f, delta.f);
-
-    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-static int
+static void
 solver_b1_solve_constraints(struct ik_solver* solver_base)
 {
     union ik_quat delta;
@@ -142,12 +140,10 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
         ik_quat_mul_quat_conj(tip->rotation.f, delta.f);
         ik_quat_mul_quat_conj(delta.f, constraint_delta.f);
     }
-
-    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-static int
+static void
 solver_b1_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
@@ -162,7 +158,7 @@ solver_b1_solve(struct ik_solver* solver_base)
         s->impl.solve = solver_b1_solve_no_constraints;
     }
 
-    return s->impl.solve(solver_base);
+    s->impl.solve(solver_base);
 }
 
 /* ------------------------------------------------------------------------- */

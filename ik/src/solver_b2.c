@@ -76,7 +76,7 @@ solver_b2_deinit(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
-static int
+static void
 solver_b2_solve(struct ik_solver* solver_base)
 {
     ikreal a, b, c, aa, bb, cc;
@@ -191,8 +191,6 @@ solver_b2_solve(struct ik_solver* solver_base)
 
     /* Transform back to local space */
     ik_transform_node_section_g2l(s->tip, s->base);
-
-    return 0;
 }
 
 /* ------------------------------------------------------------------------- */

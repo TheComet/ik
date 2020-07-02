@@ -190,14 +190,6 @@ IK_PUBLIC_API void
 ik_quat_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
 /*!
- * @brief Calculates the absolute angle of the vector. By convention bones are
- * aligned to the Z axis, so this will return the angle between the specified
- * vector and the vector [0, 0, 1].
- */
-IK_PUBLIC_API void
-ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
-
-/*!
  * @brief Calculates the angle between two **normalized** vectors. If the
  * angle is 0 or 180, the delta rotation is set to identity.
  * @param[out] q A contiguous array of 4 ik_floats representing a quaternion.
@@ -207,6 +199,17 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
  */
 IK_PUBLIC_API void
 ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+
+/*!
+ * @brief Calculates the absolute angle of the vector. By convention bones are
+ * aligned to the Z axis, so this will return the angle between the specified
+ * vector and the vector [0, 0, 1].
+ */
+IK_PUBLIC_API void
+ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
+
+IK_PUBLIC_API void
+ik_quat_angle_of_no_normalize(ikreal q[4], const ikreal v[3]);
 
 /*!
  * @brief Multiplies q by the rotation between two vectors. Equivalent to calling

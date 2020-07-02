@@ -336,6 +336,36 @@ ik_quat_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
+ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
+{
+    ikreal cos_a, sin_a, angle;
+
+    cos_a = ik_vec3_dot(v1, v2);
+    if (cos_a >= -1.0 && cos_a <= 1.0)
+    {
+        /* calculate axis of rotation and write it to the quaternion's vector section */
+        ik_vec3_copy(q, v1);
+        ik_vec3_cross(q, v2);
+        /* would usually normalize here, but cross product of two normalized
+         * vectors is already normalized*/
+
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(cos_a);
+        cos_a = cos(angle * 0.5);
+        sin_a = sin(angle * 0.5);
+        ik_vec3_mul_scalar(q, sin_a);
+        q[3] = cos_a; /* w component */
+    }
+    else
+    {
+        /* Important! otherwise garbage happens when applying initial rotations */
+        ik_quat_set_identity(q);
+    }
+}
+
+
+/* ------------------------------------------------------------------------- */
+void
 ik_quat_angle_of(ikreal q[4], const ikreal v[3])
 {
     ikreal cos_a, sin_a, angle;
@@ -367,25 +397,24 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
+ik_quat_angle_of_no_normalize(ikreal q[4], const ikreal v[3])
 {
-    ikreal cos_a, sin_a, angle;
+    ikreal sin_a, angle;
 
-    cos_a = ik_vec3_dot(v1, v2);
-    if (cos_a >= -1.0 && cos_a <= 1.0)
+    if (v[2] >= -1.0 && v[2] <= 1.0)
     {
-        /* calculate axis of rotation and write it to the quaternion's vector section */
-        ik_vec3_copy(q, v1);
-        ik_vec3_cross(q, v2);
+        /* cross product of [0, 0, 1] with v, store result into q */
+        q[0] = -v[1];
+        q[1] = v[0];
+        q[2] = 0;
         /* would usually normalize here, but cross product of two normalized
          * vectors is already normalized*/
 
-        /* quaternion's vector needs to be weighted with sin_a */
-        angle = acos(cos_a);
-        cos_a = cos(angle * 0.5);
+        angle = acos(v[2]);
         sin_a = sin(angle * 0.5);
-        ik_vec3_mul_scalar(q, sin_a);
-        q[3] = cos_a; /* w component */
+        q[0] *= sin_a;
+        q[1] *= sin_a;
+        q[3] = cos(angle * 0.5);
     }
     else
     {

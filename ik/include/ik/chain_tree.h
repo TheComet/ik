@@ -127,11 +127,11 @@ count_chains(const struct ik_chain* chains);
     VECTOR_FOR_EACH_RANGE_R(&(chain_var)->nodes, struct ik_node*, chain_##var_name, begin, end) \
     struct ik_node* var_name = *(chain_##var_name); {
 
-#define CHAIN_FOR_EACH_SEGMENT(chain_var, parent, child) { \
-    CHAIN_FOR_EACH_SEGMENT_RANGE(chain_var, parent, child, 0, chain_segments(chain_var))
+#define CHAIN_FOR_EACH_SEGMENT(chain_var, parent, child) \
+    CHAIN_FOR_EACH_SEGMENT_RANGE(chain_var, parent, child, 0, chain_segment_count(chain_var))
 
 #define CHAIN_FOR_EACH_SEGMENT_R(chain_var, parent, child) \
-    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain_var, parent, child, 0, chain_segments(chain_var))
+    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain_var, parent, child, 0, chain_segment_count(chain_var))
 
 #define CHAIN_FOR_EACH_SEGMENT_RANGE(chain_var, parent, child, begin, end) {    \
     cs_vec_idx var_name##_idx;                                                  \

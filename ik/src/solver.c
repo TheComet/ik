@@ -446,10 +446,10 @@ ik_solver_build(const struct ik_node* root)
 }
 
 /* ------------------------------------------------------------------------- */
-int
+void
 ik_solver_solve(struct ik_solver* solver)
 {
-    return solver->impl.solve(solver);
+    solver->impl.solve(solver);
 }
 
 /* ------------------------------------------------------------------------- */
