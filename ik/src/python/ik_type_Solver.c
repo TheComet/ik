@@ -55,8 +55,8 @@ static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
-    ik_solver_solve(self->solver);
-    Py_RETURN_NONE;
+    return PyLong_FromLong(
+        ik_solver_solve(self->solver));
 }
 
 /* ------------------------------------------------------------------------- */

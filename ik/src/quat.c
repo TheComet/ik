@@ -108,160 +108,103 @@ ik_quat_normalize(ikreal q[4])
     q[3] *= r_mag;
 }
 
-/* ------------------------------------------------------------------------- */
-void
-ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4])
-{
-    ik_quat_mul_quat_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
-}
+#define OPL_NORM(name)                                 \
+    void ik_##name(ikreal q1[4], const ikreal q2[4]) { \
+        ik_##name##_nn(q1, q2);                        \
+        ik_quat_normalize(q1);                         \
+    }
+#define OPR_NORM(name)                                 \
+    void ik_##name(const ikreal q1[4], ikreal q2[4]) { \
+        ik_##name##_nn(q1, q2);                        \
+        ik_quat_normalize(q2);                         \
+    }
+
+OPL_NORM(quat_mul_quat)
+OPR_NORM(quat_rmul_quat)
+OPL_NORM(quat_mul_quat_conj)
+OPR_NORM(quat_rmul_quat_conj)
+OPL_NORM(quat_conj_mul_quat)
+OPR_NORM(quat_conj_rmul_quat)
+
+#undef OPL_NORM
+#undef OPR_NORM
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_rmul_quat(ikreal q1[4], const ikreal q2[4])
-{
-    ik_quat_rmul_quat_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4])
-{
-    ik_quat_mul_quat_conj_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_quat_rmul_quat_conj(ikreal q1[4], const ikreal q2[4])
-{
-    ik_quat_rmul_quat_conj_no_normalize(q1, q2);
-    ik_quat_normalize(q1);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_quat_mul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_mul_quat_nn(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
     ik_quat_copy(q1, q);
 
-#define w1 q1[3]
-#define x1 q1[0]
-#define y1 q1[1]
-#define z1 q1[2]
-#define w2 q2[3]
-#define x2 q2[0]
-#define y2 q2[1]
-#define z2 q2[2]
-
-    q[3] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
-    q[0] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
-    q[1] = w1*y2 + y1*w2 + z1*x2 - x1*z2;
-    q[2] = w1*z2 + z1*w2 + x1*y2 - y1*x2;
-
-#undef w1
-#undef x1
-#undef y1
-#undef z1
-#undef w2
-#undef x2
-#undef y2
-#undef z2
+    q[3] =  q1[3]*q2[3] - q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2];
+    q[0] =  q1[3]*q2[0] + q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1];
+    q[1] =  q1[3]*q2[1] + q1[1]*q2[3] + q1[2]*q2[0] - q1[0]*q2[2];
+    q[2] =  q1[3]*q2[2] + q1[2]*q2[3] + q1[0]*q2[1] - q1[1]*q2[0];
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_rmul_quat_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_rmul_quat_nn(const ikreal q1[4], ikreal q[4])
 {
-    ikreal q1[4];
-    ik_quat_copy(q1, q);
+    ikreal q2[4];
+    ik_quat_copy(q2, q);
 
-#define w1 q2[3]
-#define x1 q2[0]
-#define y1 q2[1]
-#define z1 q2[2]
-#define w2 q1[3]
-#define x2 q1[0]
-#define y2 q1[1]
-#define z2 q1[2]
-
-    q[3] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
-    q[0] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
-    q[1] = w1*y2 + y1*w2 + z1*x2 - x1*z2;
-    q[2] = w1*z2 + z1*w2 + x1*y2 - y1*x2;
-
-#undef w1
-#undef x1
-#undef y1
-#undef z1
-#undef w2
-#undef x2
-#undef y2
-#undef z2
+    q[3] =  q1[3]*q2[3] - q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2];
+    q[0] =  q1[3]*q2[0] + q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1];
+    q[1] =  q1[3]*q2[1] + q1[1]*q2[3] + q1[2]*q2[0] - q1[0]*q2[2];
+    q[2] =  q1[3]*q2[2] + q1[2]*q2[3] + q1[0]*q2[1] - q1[1]*q2[0];
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_mul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_mul_quat_conj_nn(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
     ik_quat_copy(q1, q);
 
-#define w1 q1[3]
-#define x1 q1[0]
-#define y1 q1[1]
-#define z1 q1[2]
-#define w2 q2[3]
-#define x2 q2[0]
-#define y2 q2[1]
-#define z2 q2[2]
-
-    q[3] =  w1*w2 + x1*x2 + y1*y2 + z1*z2;
-    q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
-    q[1] = -w1*y2 + y1*w2 - z1*x2 + x1*z2;
-    q[2] = -w1*z2 + z1*w2 - x1*y2 + y1*x2;
-
-#undef w1
-#undef x1
-#undef y1
-#undef z1
-#undef w2
-#undef x2
-#undef y2
-#undef z2
+    q[3] =  q1[3]*q2[3] + q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2];
+    q[0] = -q1[3]*q2[0] + q1[0]*q2[3] - q1[1]*q2[2] + q1[2]*q2[1];
+    q[1] = -q1[3]*q2[1] + q1[1]*q2[3] - q1[2]*q2[0] + q1[0]*q2[2];
+    q[2] = -q1[3]*q2[2] + q1[2]*q2[3] - q1[0]*q2[1] + q1[1]*q2[0];
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_rmul_quat_conj_no_normalize(ikreal q[4], const ikreal q2[4])
+ik_quat_rmul_quat_conj_nn(const ikreal q1[4], ikreal q[4])
+{
+    ikreal q2[4];
+    ik_quat_copy(q2, q);
+
+    q[3] =  q1[3]*q2[3] + q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2];
+    q[0] = -q1[3]*q2[0] + q1[0]*q2[3] - q1[1]*q2[2] + q1[2]*q2[1];
+    q[1] = -q1[3]*q2[1] + q1[1]*q2[3] - q1[2]*q2[0] + q1[0]*q2[2];
+    q[2] = -q1[3]*q2[2] + q1[2]*q2[3] - q1[0]*q2[1] + q1[1]*q2[0];
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_conj_mul_quat_nn(ikreal q[4], const ikreal q2[4])
 {
     ikreal q1[4];
     ik_quat_copy(q1, q);
 
-#define w1 q2[3]
-#define x1 q2[0]
-#define y1 q2[1]
-#define z1 q2[2]
-#define w2 q1[3]
-#define x2 q1[0]
-#define y2 q1[1]
-#define z2 q1[2]
+    q[3] =  q1[3]*q2[3] + q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2];
+    q[0] =  q1[3]*q2[0] - q1[0]*q2[3] - q1[1]*q2[2] + q1[2]*q2[1];
+    q[1] =  q1[3]*q2[1] - q1[1]*q2[3] - q1[2]*q2[0] + q1[0]*q2[2];
+    q[2] =  q1[3]*q2[2] - q1[2]*q2[3] - q1[0]*q2[1] + q1[1]*q2[0];
+}
 
-    q[3] =  w1*w2 + x1*x2 + y1*y2 + z1*z2;
-    q[0] = -w1*x2 + x1*w2 - y1*z2 + z1*y2;
-    q[1] = -w1*y2 + y1*w2 - z1*x2 + x1*z2;
-    q[2] = -w1*z2 + z1*w2 - x1*y2 + y1*x2;
+/* ------------------------------------------------------------------------- */
+void
+ik_quat_conj_rmul_quat_nn(const ikreal q1[4], ikreal q[4])
+{
+    ikreal q2[4];
+    ik_quat_copy(q2, q);
 
-#undef w1
-#undef x1
-#undef y1
-#undef z1
-#undef w2
-#undef x2
-#undef y2
-#undef z2
+    q[3] =  q1[3]*q2[3] + q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2];
+    q[0] =  q1[3]*q2[0] - q1[0]*q2[3] - q1[1]*q2[2] + q1[2]*q2[1];
+    q[1] =  q1[3]*q2[1] - q1[1]*q2[3] - q1[2]*q2[0] + q1[0]*q2[2];
+    q[2] =  q1[3]*q2[2] - q1[2]*q2[3] - q1[0]*q2[1] + q1[1]*q2[0];
 }
 
 /* ------------------------------------------------------------------------- */
@@ -336,7 +279,7 @@ ik_quat_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
+ik_quat_angle_between_nn(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
 {
     ikreal cos_a, sin_a, angle;
 
@@ -346,8 +289,7 @@ ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal
         /* calculate axis of rotation and write it to the quaternion's vector section */
         ik_vec3_copy(q, v1);
         ik_vec3_cross(q, v2);
-        /* would usually normalize here, but cross product of two normalized
-         * vectors is already normalized*/
+        ik_vec3_normalize(q);
 
         /* quaternion's vector needs to be weighted with sin_a */
         angle = acos(cos_a);
@@ -397,23 +339,26 @@ ik_quat_angle_of(ikreal q[4], const ikreal v[3])
 
 /* ------------------------------------------------------------------------- */
 void
-ik_quat_angle_of_no_normalize(ikreal q[4], const ikreal v[3])
+ik_quat_angle_of_nn(ikreal q[4], const ikreal v[3])
 {
     ikreal sin_a, angle;
 
     if (v[2] >= -1.0 && v[2] <= 1.0)
     {
+        /* quaternion's vector needs to be weighted with sin_a */
+        angle = acos(v[2]);
+        sin_a = sin(angle * 0.5);
+
         /* cross product of [0, 0, 1] with v, store result into q */
         q[0] = -v[1];
         q[1] = v[0];
         q[2] = 0;
-        /* would usually normalize here, but cross product of two normalized
-         * vectors is already normalized*/
-
-        angle = acos(v[2]);
-        sin_a = sin(angle * 0.5);
+        /* normalize/weight vector part of quaternion */
+        if (!ik_vec3_normalize(q))
+            ik_vec3_set(q, 1, 0, 0);  /* we are forced to choose an axis */
         q[0] *= sin_a;
         q[1] *= sin_a;
+        /* w component */
         q[3] = cos(angle * 0.5);
     }
     else
@@ -446,7 +391,7 @@ ik_quat_mul_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3])
         ik_vec3_mul_scalar(delta, sin_a);
         delta[3] = cos_a; /* w component */
 
-        ik_quat_mul_quat_no_normalize(q, delta);
+        ik_quat_mul_quat_nn(q, delta);
     }
 }
 
@@ -471,7 +416,7 @@ ik_quat_mul_angle_of(ikreal q[4], const ikreal v[3])
         /* w component */
         delta[3] = cos(angle * 0.5);
 
-        ik_quat_mul_quat_no_normalize(q, delta);
+        ik_quat_mul_quat_nn(q, delta);
     }
 }
 

@@ -103,6 +103,15 @@ ik_vec3_div_vec3(ikreal v1[3], const ikreal v2[3])
 }
 
 /* ------------------------------------------------------------------------- */
+void
+ik_vec3_negate(ikreal v[3])
+{
+    v[0] = -v[0];
+    v[1] = -v[1];
+    v[2] = -v[2];
+}
+
+/* ------------------------------------------------------------------------- */
 ikreal
 ik_vec3_length_squared(const ikreal v[3])
 {
@@ -171,7 +180,7 @@ void
 ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
-    /* more optimal: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
+    /* https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
     union ik_vec3 tmp;
     ikreal dot_qv = ik_vec3_dot(q, v);
     ikreal dot_qq = ik_vec3_dot(q, q);

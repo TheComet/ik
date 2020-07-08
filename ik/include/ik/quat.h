@@ -90,63 +90,53 @@ ik_quat_invert(ikreal q[4]);
 IK_PUBLIC_API void
 ik_quat_normalize(ikreal q[4]);
 
-/*!
- * @brief Multiplies two quaternions q1*q2 and stores the result into q1.
- * This operation is not commutative. The resulting quaternion is
- * normalized. See mul_no_normalize() for a version of this function that
- * doesn't normalize the result.
- */
+/*! @brief q1.q2 -> q1 with normalization of the result. */
 IK_PUBLIC_API void
 ik_quat_mul_quat(ikreal q1[4], const ikreal q2[4]);
 
-/*!
- * @brief Multiplies q2*q1 and stores the result into q1.
- * This operation is not commutative. The resulting quaternion is
- * normalized. See rmul_no_normalize() for a version of this function that
- * doesn't normalize the result.
- */
+/*! @brief q1*q2 -> q2 with normalization of the result. */
 IK_PUBLIC_API void
-ik_quat_rmul_quat(ikreal q1[4], const ikreal q2[4]);
+ik_quat_rmul_quat(const ikreal q1[4], ikreal q2[4]);
 
-/*!
- * @brief Multiplies the conjugate of the specified quaternion, combining
- * the rotations. This operation is not commutative. The resulting quaternion is
- * normalized. See rmul_no_normalize() for a version of this function that
- * doesn't normalize the result.
- */
+/*! @brief q1.q2* -> q1 with normalization of the result.  */
 IK_PUBLIC_API void
 ik_quat_mul_quat_conj(ikreal q1[4], const ikreal q2[4]);
 
+/*! @brief q1.q2* -> q2 with normalization of the result.  */
 IK_PUBLIC_API void
-ik_quat_rmul_quat_conj(ikreal q1[4], const ikreal q2[4]);
+ik_quat_rmul_quat_conj(const ikreal q1[4], ikreal q2[4]);
 
-/*!
- * @brief Multiplies q1*q2 and stores the result in q1. The result is not
- * normalized. This operation is not commutative.
- */
+/*! @brief q1*.q2 -> q1 with normalization of the result.  */
 IK_PUBLIC_API void
-ik_quat_mul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
+ik_quat_conj_mul_quat(ikreal q1[4], const ikreal q2[4]);
 
-/*!
- * @brief Multiplies q2*q1 and stores the result in q1. The result is not
- * normalized. This operation is not commutative.
- */
+/*! @brief q1*.q2 -> q2 with normalization of the result.  */
 IK_PUBLIC_API void
-ik_quat_rmul_quat_no_normalize(ikreal q1[4], const ikreal q2[4]);
+ik_quat_conj_rmul_quat(const ikreal q1[4], ikreal q2[4]);
 
-/*!
- * @brief Multiplies q1*q2^1 and stores the result in q1. The result is not
- * normalized. This operation is not commutative.
- */
+/*! @brief q1.q2 -> q1 without normalization of the result. */
 IK_PUBLIC_API void
-ik_quat_mul_quat_conj_no_normalize(ikreal q1[4], const ikreal q2[4]);
+ik_quat_mul_quat_nn(ikreal q1[4], const ikreal q2[4]);
 
-/*!
- * @brief Multiplies q2*q1^-1 and stores the result in q1. The result is not
- * normalized. This operation is not commutative.
- */
+/*! @brief q1*q2 -> q2 without normalization of the result. */
 IK_PUBLIC_API void
-ik_quat_rmul_quat_conj_no_normalize(ikreal q1[4], const ikreal q2[4]);
+ik_quat_rmul_quat_nn(const ikreal q1[4], ikreal q2[4]);
+
+/*! @brief q1.q2* -> q1 without normalization of the result.  */
+IK_PUBLIC_API void
+ik_quat_mul_quat_conj_nn(ikreal q1[4], const ikreal q2[4]);
+
+/*! @brief q1.q2* -> q2 without normalization of the result.  */
+IK_PUBLIC_API void
+ik_quat_rmul_quat_conj_nn(const ikreal q1[4], ikreal q2[4]);
+
+/*! @brief q1*.q2 -> q1 without normalization of the result.  */
+IK_PUBLIC_API void
+ik_quat_conj_mul_quat_nn(ikreal q1[4], const ikreal q2[4]);
+
+/*! @brief q1*.q2 -> q2 without normalization of the result.  */
+IK_PUBLIC_API void
+ik_quat_conj_rmul_quat_nn(const ikreal q1[4], ikreal q2[4]);
 
 /*!
  * @brief Multiplies each component by a scalar value.
@@ -198,7 +188,7 @@ ik_quat_angle_between(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
  * @param[in] v2 The second vector (must be normalized).
  */
 IK_PUBLIC_API void
-ik_quat_angle_between_no_normalize(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
+ik_quat_angle_between_nn(ikreal q[4], const ikreal v1[3], const ikreal v2[3]);
 
 /*!
  * @brief Calculates the absolute angle of the vector. By convention bones are
@@ -209,7 +199,7 @@ IK_PUBLIC_API void
 ik_quat_angle_of(ikreal q[4], const ikreal v[3]);
 
 IK_PUBLIC_API void
-ik_quat_angle_of_no_normalize(ikreal q[4], const ikreal v[3]);
+ik_quat_angle_of_nn(ikreal q[4], const ikreal v[3]);
 
 /*!
  * @brief Multiplies q by the rotation between two vectors. Equivalent to calling

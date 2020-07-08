@@ -35,8 +35,9 @@ struct ik_solver_interface
     /*! Called before the solver is freed. */
     void (*deinit)(struct ik_solver*);
 
-    /*! Called when it's time to solve */
-    void (*solve)(struct ik_solver*);
+    /*! Called when it's time to solve. Returns the number of iterations that
+     * were required to reach the solution */
+    int (*solve)(struct ik_solver*);
 
     /*! Call the specified callback function for every node that the solver
      * affects. The order must be from base node to leaf node(s), depth first.
@@ -98,7 +99,7 @@ struct ik_solver
 IK_PUBLIC_API struct ik_solver*
 ik_solver_build(const struct ik_node* root);
 
-IK_PUBLIC_API void
+IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);
 
 IK_PUBLIC_API void

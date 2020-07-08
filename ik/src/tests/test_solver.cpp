@@ -32,7 +32,7 @@ static void dummy_deinit(struct ik_solver* solver_base) {
     struct ik_solver_dummy* solver = (struct ik_solver_dummy*)solver_base;
     chain_tree_deinit(&solver->chain_tree);
 }
-static void  dummy_solve(struct ik_solver* solver_base) {}
+static int  dummy_solve(struct ik_solver* solver_base) { return 1; }
 static void dummy_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base) {}
 
 const struct ik_solver_interface ik_solver_DUMMY1 = {

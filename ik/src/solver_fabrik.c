@@ -16,7 +16,7 @@ struct ik_solver_fabrik
     IK_SOLVER_HEAD
 
     struct ik_chain chain_tree;
-    struct ik_node* effector_nodes;
+    struct ik_node** effector_nodes;
     union ik_quat* effector_rotations;
     union ik_vec3* target_positions;
 
@@ -57,7 +57,7 @@ validate_poles(const struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-store_effector_nodes_recursive(struct ik_node** effector_nodes_store, const struct ik_chain* chain)
+store_effector_nodes_recursive(struct ik_node*** effector_nodes_store, const struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
         store_effector_nodes_recursive(effector_nodes_store, child);
@@ -65,14 +65,14 @@ store_effector_nodes_recursive(struct ik_node** effector_nodes_store, const stru
 
     if (chain_child_count(chain) == 0)
     {
-        *effector_nodes_store = chain_get_tip_node(chain);
+        **effector_nodes_store = chain_get_tip_node(chain);
         (*effector_nodes_store)++;
     }
 }
 static void
 store_effector_nodes(struct ik_solver_fabrik* solver)
 {
-    struct ik_node* effector_nodes_store = solver->effector_nodes;
+    struct ik_node** effector_nodes_store = solver->effector_nodes;
     store_effector_nodes_recursive(&effector_nodes_store, &solver->chain_tree);
 
     /* sanity check */
@@ -131,6 +131,8 @@ convert_rotations_to_segments_recursive(const struct ik_chain* chain,
      *
      * Need to calculate the parent node rotation that would place the child
      * node at [0, 0, 1] and store that rotation in the child node.
+     *
+     *
      */
     if (sibling_count > 1)
     {
@@ -138,6 +140,11 @@ convert_rotations_to_segments_recursive(const struct ik_chain* chain,
         struct ik_node* parent = chain_get_node(chain, chain_node_count(chain) - 1);
 
         ik_quat_angle_of(child->rotation.f, child->position.f);
+        if (chain_node_count(chain) > 2)
+        {
+            struct ik_node* grandchild = chain_get_node(chain, chain_node_count(chain) - 3);
+            ik_quat_mul_quat_conj(grandchild->rotation.f, child->rotation.f);
+        }
         ik_quat_rmul_quat(child->rotation.f, parent->rotation.f);
         ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
     }
@@ -193,13 +200,17 @@ convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
         ik_quat_normalize(tip_rot);
 
         /* restore translations */
-        ik_quat_conj(tip_rot);
-        CHAIN_FOR_EACH_CHILD(chain, child)
-            struct ik_node* first_child_node = chain_get_node(child, chain_node_count(child) - 2);
-            ik_quat_rmul_quat(first_child_node->rotation.f, tip_rot);
+        CHAIN_FOR_EACH_CHILD(chain, child_chain)
+            struct ik_node* first_child_node = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+            ik_quat_conj_rmul_quat(tip_rot, first_child_node->rotation.f);
             ik_vec3_rotate_quat(first_child_node->position.f, first_child_node->rotation.f);
+
+            if (chain_node_count(child_chain) > 2)
+            {
+                struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
+                ik_quat_mul_quat(grandchild->rotation.f, first_child_node->rotation.f);
+            }
         CHAIN_END_EACH
-        ik_quat_conj(tip_rot);
     }
 
     CHAIN_FOR_EACH_CHILD(chain, child)
@@ -218,7 +229,7 @@ convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
      * base node rotation here.
      */
     base = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
-    child = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
+    child = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 2);
     ik_quat_copy(base->rotation.f, child->rotation.f);
 
     /* Do conversion */
@@ -236,14 +247,55 @@ convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
 static void
 update_target_data(struct ik_solver_fabrik* solver)
 {
+    int i;
+    const struct ik_node* root = chain_get_base_node(&solver->chain_tree);
 
+    for (i = 0; i != solver->num_effectors; ++i)
+    {
+        struct ik_node* tip = solver->effector_nodes[i];
+        struct ik_effector* eff = tip->effector;
+        union ik_vec3 tip_pos = tip->position;
+        ikreal* target = solver->target_positions[i].f;
+
+        /* Transform tip node position into same space as the effector target
+         * position so weight can be applied. */
+        while (tip != root)
+        {
+            ik_vec3_rotate_quat_conj(tip_pos.f, tip->rotation.f);
+            tip = tip->parent; assert(tip != NULL);
+            ik_vec3_add_vec3(tip_pos.f, tip->position.f);
+        }
+
+        /* lerp by effector weight to get weighted target position */
+        ik_vec3_copy(target, eff->target_position.f);
+        ik_vec3_sub_vec3(target, tip_pos.f);
+        ik_vec3_mul_scalar(target, eff->weight);
+        ik_vec3_add_vec3(target, tip_pos.f);
+
+        /* TODO nlerp, need base node for that */
+    }
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+transform_target_to_local_space(ikreal target[3],
+                                const struct ik_node* node,
+                                const struct ik_node* root)
+{
+    const struct ik_node* parent = node->parent;
+    if (parent != root)
+        transform_target_to_local_space(target, parent, root);
+
+    ik_vec3_sub_vec3(target, parent->position.f);
+    ik_vec3_rotate_quat_conj(target, node->rotation.f);
+}
 static union ik_vec3
-solve_chain_forwards_recurse(struct ik_chain* chain, union ik_vec3** target_store)
+solve_chain_forwards_recurse(struct ik_chain* chain,
+                             union ik_vec3** target_store,
+                             const struct ik_node* root)
 {
     union ik_vec3 target;
+    struct ik_node* prev_segment_child;
     int avg_count;
 
     /* Target position for the tip of each chain is the average position of all
@@ -251,37 +303,77 @@ solve_chain_forwards_recurse(struct ik_chain* chain, union ik_vec3** target_stor
     avg_count = 0;
     ik_vec3_set_zero(target.f);
     CHAIN_FOR_EACH_CHILD(chain, child)
-        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store);
+        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store, root);
         ik_vec3_add_vec3(target.f, base_pos.f);
         ++avg_count;
     CHAIN_END_EACH
 
     if (avg_count == 0)
+    {
         target = *(*target_store)++;
+        transform_target_to_local_space(target.f, chain_get_tip_node(chain), root);
+    }
     else
         ik_vec3_div_scalar(target.f, avg_count);
 
-    CHAIN_FOR_EACH_SEGMENT(chain, parent, child)
-        ikreal tdist;
-        union ik_vec3 tdir;
+    {
+        ikreal dist;
+        union ik_vec3 dir;
         union ik_quat delta;
+        struct ik_node* child = chain_get_node(chain, 0);
+        struct ik_node* parent = chain_get_node(chain, 1);
 
         /* Calculate target direction */
-        tdist = ik_vec3_length(target.f);
-        tdir = target;
-        ik_vec3_div_scalar(tdir.f, tdist);
+        dist = ik_vec3_length(target.f);
+        dir = target;
+        ik_vec3_div_scalar(dir.f, dist);
 
         /* Point segment to target */
-        ik_quat_angle_of_no_normalize(delta.f, tdir.f);
+        ik_quat_angle_of_nn(delta.f, dir.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
+        CHAIN_FOR_EACH_CHILD(chain, child_chain)
+            struct ik_node* first_child_node = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+            ik_quat_mul_quat_conj(first_child_node->rotation.f, delta.f);
+        CHAIN_END_EACH
 
         /* Calculate segment base node position if the tip were attached to
          * the target position, which becomes the next segment's target
          * position. */
-        ik_vec3_set(target.f, 0, 0, tdist - child->position.v.z);
+        ik_vec3_set(target.f, 0, 0, dist - child->position.v.z);
 
         /* Transform target into parent space */
-        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
+        ik_vec3_rotate_quat(target.f, child->rotation.f);
+        ik_vec3_add_vec3(target.f, parent->position.f);
+
+        prev_segment_child = child;
+    }
+
+    CHAIN_FOR_EACH_SEGMENT_RANGE(chain, parent, child, 1, chain_segment_count(chain))
+        ikreal dist;
+        union ik_vec3 dir;
+        union ik_quat delta;
+
+        /* Calculate target direction */
+        dist = ik_vec3_length(target.f);
+        dir = target;
+        ik_vec3_div_scalar(dir.f, dist);
+
+        /* Point segment to target */
+        ik_quat_angle_of_nn(delta.f, dir.f);
+        ik_quat_mul_quat(child->rotation.f, delta.f);
+        ik_quat_mul_quat_conj(prev_segment_child->rotation.f, delta.f);
+        prev_segment_child = child;
+
+        /* Calculate segment base node position if the tip were attached to
+         * the target position, which becomes the next segment's target
+         * position. NOTE: We assume the segment is pointing directly at the
+         * target position here and therefore are alined with the Z axis in
+         * local space. If in the future constraints are applied during forward
+         * iteration, then this is no longer true. */
+        ik_vec3_set(target.f, 0, 0, dist - child->position.v.z);
+
+        /* Transform target into parent space */
+        ik_vec3_rotate_quat(target.f, child->rotation.f);
         ik_vec3_add_vec3(target.f, parent->position.f);
     CHAIN_END_EACH
 
@@ -291,7 +383,8 @@ static union ik_vec3
 solve_chain_forwards(struct ik_solver_fabrik* solver)
 {
     union ik_vec3* target_store = solver->target_positions;
-    return solve_chain_forwards_recurse(&solver->chain_tree, &target_store);
+    struct ik_node* root = chain_get_base_node(&solver->chain_tree);
+    return solve_chain_forwards_recurse(&solver->chain_tree, &target_store, root);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -299,14 +392,38 @@ static void
 solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
 {
     CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
+        ikreal dist;
         union ik_vec3 dir;
         union ik_quat delta;
-        ik_vec3_sub_vec3(target.f, parent->position.f);
-        ik_vec3_rotate_quat(target.f, child->rotation.f);
 
+        /* Transform target into this segment's space */
+        ik_vec3_sub_vec3(target.f, parent->position.f);
+        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
+
+        /* Determine direction vector to child node position */
         dir = child->position;
         ik_vec3_sub_vec3(dir.f, target.f);
-        ik_quat_angle_of(delta.f, dir.f);
+        dist = ik_vec3_length(dir.f);
+        ik_vec3_div_scalar(dir.f, dist);
+
+        /* Calculate angle of that direction vector and rotate the segment by
+         * that amount */
+        ik_quat_angle_of_nn(delta.f, dir.f);
+        ik_quat_mul_quat(child->rotation.f, delta.f);
+
+        delta = child->rotation;
+        dir = child->position;
+        if (child->constraint)
+        {
+            child->constraint->apply(child->constraint, child->rotation.f);
+            ik_quat_conj_mul_quat(delta.f, child->rotation.f);
+            ik_vec3_rotate_quat(dir.f, delta.f);
+        }
+        ik_vec3_add_vec3(target.f, dir.f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        solve_chain_backwards_recurse(child, target);
     CHAIN_END_EACH
 }
 static void
@@ -368,23 +485,24 @@ fabrik_deinit(struct ik_solver* solver_base)
 static int
 all_targets_reached(struct ik_solver_fabrik* solver, ikreal tol_squared)
 {
+    /* TODO broken
     int i;
     for (i = 0; i != solver->num_effectors; ++i)
     {
-        struct ik_node* node = &solver->effector_nodes[i];
+        struct ik_node* node = solver->effector_nodes[i];
         struct ik_effector* eff = node->effector;
         union ik_vec3 diff = node->position;
 
         ik_vec3_sub_vec3(diff.f, eff->target_position.f);
-        if (ik_vec3_length_squared(diff.f) <= tol_squared)
+        if (ik_vec3_length_squared(diff.f) > tol_squared)
             return 0;
-    }
+    }*/
 
-    return 1;
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-static void
+static int
 fabrik_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
@@ -397,13 +515,17 @@ fabrik_solve(struct ik_solver* solver_base)
 
     while (iteration-- > 0)
     {
+        union ik_vec3 base_pos = solve_chain_forwards(solver);
+        ik_vec3_negate(base_pos.f);
+        solve_chain_backwards(solver, base_pos);
+
         if (all_targets_reached(solver, tol_squared))
             break;
-
-        solve_chain_backwards(solver, solve_chain_forwards(solver));
     }
 
     convert_rotations_to_nodes(solver);
+
+    return alg->max_iterations - iteration;
 }
 
 /* ------------------------------------------------------------------------- */

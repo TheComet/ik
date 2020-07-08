@@ -12,8 +12,7 @@ struct ik_constraint;
 struct ik_node_data_t;
 
 typedef void (*ik_constraint_apply_func)(struct ik_constraint* constraint,
-                                         ikreal delta_rotation[4],
-                                         const ikreal current_rotation[4]);
+                                         ikreal rotation[4]);
 
 struct ik_constraint
 {

@@ -349,7 +349,7 @@ Quat_inplace_pow(PyObject* self, PyObject* arg, PyObject* mod)
         do_normalize = 10;
         while (pow--)
         {
-            ik_quat_mul_quat_no_normalize(q, qorig.f);
+            ik_quat_mul_quat_nn(q, qorig.f);
             if (do_normalize-- == 0)
             {
                 do_normalize = 10;

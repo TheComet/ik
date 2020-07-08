@@ -11,45 +11,30 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_dummy(struct ik_constraint* constraint,
-            ikreal delta_rotation[4],
-            const ikreal current_rotation[4])
+apply_dummy(struct ik_constraint* constraint, ikreal rotation[4])
 {
-    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_stiff(struct ik_constraint* constraint,
-            ikreal delta_rotation[4],
-            const ikreal current_rotation[4])
+apply_stiff(struct ik_constraint* constraint, ikreal rotation[4])
 {
-    ik_quat_copy(delta_rotation, current_rotation);
-    ik_quat_mul_quat_conj(delta_rotation, constraint->data.stiff.target_angle.f);
+    ik_quat_copy(rotation, constraint->data.stiff.target_angle.f);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_hinge(struct ik_constraint* constraint,
-            ikreal delta_rotation[4],
-            const ikreal current_rotation[4])
+apply_hinge(struct ik_constraint* constraint, ikreal rotation[4])
 {
-    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-apply_cone(struct ik_constraint* constraint,
-           ikreal delta_rotation[4],
-           const ikreal current_rotation[4])
+apply_cone(struct ik_constraint* constraint, ikreal rotation[4])
 {
     /* L2 distance between the constraint rotation and the node's rotation */
-    ikreal dot = ik_quat_dot(constraint->data.cone.angle.f, current_rotation);
+    ikreal dot = ik_quat_dot(constraint->data.cone.angle.f, rotation);
     dot = 2.0 * (1.0 - fabs(dot));
-
-
-
-    ik_quat_set_identity(delta_rotation);
 }
 
 /* ------------------------------------------------------------------------- */

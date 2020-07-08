@@ -59,6 +59,10 @@ ik_vec3_div_scalar(ikreal v[3], ikreal scalar);
 IK_PUBLIC_API void
 ik_vec3_div_vec3(ikreal v[3], const ikreal v2[3]);
 
+/*! Negate each vector component, 1-v */
+IK_PUBLIC_API void
+ik_vec3_negate(ikreal v[3]);
+
 /*! Compute squared length of a vector */
 IK_PUBLIC_API ikreal
 ik_vec3_length_squared(const ikreal v[3]);

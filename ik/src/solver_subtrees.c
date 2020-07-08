@@ -32,14 +32,17 @@ solver_subtrees_deinit(struct ik_solver* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
+static int
 solver_subtrees_solve(struct ik_solver* solver)
 {
     struct ik_solver_subtrees* subtrees = (struct ik_solver_subtrees*)solver;
 
+    int iterations = 0;
     VECTOR_FOR_EACH(&subtrees->solver_list, struct ik_solver*, child_solver)
-        subtrees->impl.solve(*child_solver);
+        iterations += subtrees->impl.solve(*child_solver);
     VECTOR_END_EACH
+
+    return iterations;
 }
 
 /* ------------------------------------------------------------------------- */

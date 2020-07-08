@@ -147,7 +147,11 @@ TEST(NAME, normalize)
 
 TEST(NAME, mul)
 {
-
+    union ik_quat q1, q2;
+    ik_quat_set(q1.f, 1.0/sqrt(2), 0, 0, 1.0/sqrt(2));
+    ik_quat_set(q2.f, 0, 1.0/sqrt(2), 0, 1.0/sqrt(2));
+    ik_quat_mul_quat(q1.f, q2.f);
+    EXPECT_QUAT_NEAR(q1, 0.5, 0.5, 0.5, 0.5, 1e-7);
 }
 
 TEST(NAME, nmul)
