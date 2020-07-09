@@ -1,7 +1,7 @@
 #include "ik/algorithm.h"
 #include "ik/node.h"
 #include "ik/solver.h"
-#include "ik/solver_subtrees.h"
+#include "ik/solver_list.h"
 #include "ik/subtree.h"
 #include "ik/log.h"
 #include "cstructures/btree.h"
@@ -24,6 +24,14 @@ deinit_solver(struct ik_solver* solver)
 {
     solver->impl.deinit((struct ik_solver*)solver);
     IK_DECREF(solver->algorithm);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+destroy_solver(struct ik_solver* solver)
+{
+    deinit_solver(solver);
+    ik_refcounted_free((struct ik_refcounted*)solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -72,12 +80,15 @@ ik_solver_init_interfaces()
     if (vector_init(&g_solvers, sizeof(struct ik_solver_interface*)) != 0)
         goto solver_vector_init_failed;
 
-#define X(name) ik_solver_register(&ik_solver_##name);
+#define X(name) \
+    if (ik_solver_register(&ik_solver_##name) != 0) \
+        goto register_solver_failed;
     IK_ALGORITHM_LIST
 #undef X
 
     return 0;
 
+    register_solver_failed    : vector_deinit(&g_solvers);
     solver_vector_init_failed : return -1;
 }
 
@@ -143,7 +154,9 @@ find_all_effector_nodes(struct cs_vector* result, const struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 static int
-mark_reachable_nodes(struct btree_t* marked, const struct cs_vector* effector_nodes)
+mark_reachable_nodes(struct btree_t* marked,
+                     const struct cs_vector* effector_nodes,
+                     const struct ik_node* root)
 {
     /*
      * Iterate the chain of nodes starting at each effector node and ending
@@ -167,7 +180,7 @@ mark_reachable_nodes(struct btree_t* marked, const struct cs_vector* effector_no
         while (1)
         {
 #define is_end_of_chain() \
-            (chain_length_counter == 0 || node->parent == NULL)
+            (chain_length_counter == 0 || node == root)
 #define has_children() \
             (ik_node_child_count(node) > 0)
 #define has_algorithm() \
@@ -247,14 +260,13 @@ mark_reachable_nodes(struct btree_t* marked, const struct cs_vector* effector_no
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-create_and_init_solver(struct ik_subtree* subtree)
+find_algorithm_and_create_solver(struct ik_subtree* subtree, const struct ik_node* root)
 {
     const struct ik_node* node;
     struct ik_algorithm* algorithm;
-    struct ik_solver* solver;
 
     algorithm = NULL;
-    for (node = subtree->root; node != NULL; node = node->parent)
+    for (node = subtree->root; node != root->parent; node = node->parent)
         if (node->algorithm != NULL)
         {
             algorithm = node->algorithm;
@@ -262,27 +274,25 @@ create_and_init_solver(struct ik_subtree* subtree)
         }
     if (algorithm == NULL)
     {
-        ik_log_printf(IK_ERROR, "No algorithm assigned to subtree with root node %zu (0x%p)",
+        ik_log_printf(IK_ERROR, "No algorithm assigned to subtree with root node %zu (%p)",
                       subtree->root->user.guid,
                       subtree->root->user.ptr);
         return NULL;
     }
 
-    solver = create_solver(algorithm, subtree);
-    if (solver == NULL)
-        return NULL;
-
-    return solver;
+    return create_solver(algorithm, subtree);
 }
 
 /* ------------------------------------------------------------------------- */
 static int
 create_solver_for_each_subtree(struct cs_vector* solver_list,
                                struct ik_subtree* current_subtree,
+                               const struct ik_node* root,
                                const struct ik_node* node,
                                const struct btree_t* marked_nodes);
 static int
 recurse_with_new_subtree(struct cs_vector* solver_list,
+                         const struct ik_node* root,
                          const struct ik_node* node,
                          const struct btree_t* marked_nodes)
 {
@@ -294,14 +304,14 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
             goto subtree_init_failed;
 
         subtree_set_root(&subtree, node);
-        if (create_solver_for_each_subtree(solver_list, &subtree, child, marked_nodes) != 0)
+        if (create_solver_for_each_subtree(solver_list, &subtree, root, child, marked_nodes) != 0)
             goto recurse_failed;
 
         /* Handle empty subtree */
         if (subtree_leaves(&subtree) == 0)
             continue;
 
-        solver = create_and_init_solver(&subtree);
+        solver = find_algorithm_and_create_solver(&subtree, root);
         if (solver == NULL)
             goto new_solver_failed;
 
@@ -313,7 +323,7 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
 
     return 0;
 
-    add_solver_to_solver_failed  : IK_DECREF(solver);
+    add_solver_to_solver_failed  : destroy_solver(solver);
     new_solver_failed            :
     recurse_failed               : subtree_deinit(&subtree);
     subtree_init_failed          : return -1;
@@ -323,6 +333,7 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
 static int
 create_solver_for_each_subtree(struct cs_vector* solver_list,
                                struct ik_subtree* current_subtree,
+                               const struct ik_node* root,
                                const struct ik_node* node,
                                const struct btree_t* marked_nodes)
 {
@@ -340,7 +351,7 @@ create_solver_for_each_subtree(struct cs_vector* solver_list,
 
             case MARK_SECTION:
                 NODE_FOR_EACH(node, user_data, child)
-                    if (create_solver_for_each_subtree(solver_list, current_subtree, child, marked_nodes) != 0)
+                    if (create_solver_for_each_subtree(solver_list, current_subtree, root, child, marked_nodes) != 0)
                         return -1;
                 NODE_END_EACH
                 break;
@@ -353,13 +364,13 @@ create_solver_for_each_subtree(struct cs_vector* solver_list,
             /* fallthrough */
 
             case MARK_BEGIN:
-                return recurse_with_new_subtree(solver_list, node, marked_nodes);
+                return recurse_with_new_subtree(solver_list, root, node, marked_nodes);
         }
     }
     else
     {
         NODE_FOR_EACH(node, user_data, child)
-            if (create_solver_for_each_subtree(solver_list, NULL, child, marked_nodes) != 0)
+            if (create_solver_for_each_subtree(solver_list, NULL, root, child, marked_nodes) != 0)
                 return -1;
         NODE_END_EACH
     }
@@ -398,7 +409,7 @@ ik_solver_build(const struct ik_node* root)
         ik_log_out_of_memory("btree_init()");
         goto init_marked_nodes_failed;
     }
-    if (mark_reachable_nodes(&marked_nodes, &effector_nodes) != 0)
+    if (mark_reachable_nodes(&marked_nodes, &effector_nodes, root) != 0)
         goto mark_nodes_failed;
 
     /*
@@ -411,7 +422,7 @@ ik_solver_build(const struct ik_node* root)
         ik_log_out_of_memory("vector_init()");
         goto init_solver_list_failed;
     }
-    if (create_solver_for_each_subtree(&solver_list, NULL, root, &marked_nodes) != 0)
+    if (create_solver_for_each_subtree(&solver_list, NULL, root, root, &marked_nodes) != 0)
         goto split_into_subtrees_failed;
     vector_reverse(&solver_list);
 
@@ -421,7 +432,7 @@ ik_solver_build(const struct ik_node* root)
     if (vector_count(&solver_list) > 1)
     {
         /* NOTE: solver_list ownership is moved to the islands solver. */
-        solver = ik_solver_subtrees_create(solver_list);
+        solver = ik_solver_list_create(solver_list);
         if (solver == NULL)
             goto solver_group_create_failed;
     }
@@ -437,7 +448,10 @@ ik_solver_build(const struct ik_node* root)
     return solver;
 
     solver_group_create_failed     :
-    split_into_subtrees_failed     : vector_deinit(&solver_list);
+    split_into_subtrees_failed     : VECTOR_FOR_EACH(&solver_list, struct ik_solver*, psolver)
+                                         destroy_solver(*psolver);
+                                     VECTOR_END_EACH
+                                     vector_deinit(&solver_list);
     init_solver_list_failed        :
     mark_nodes_failed              : btree_deinit(&marked_nodes);
     init_marked_nodes_failed       :

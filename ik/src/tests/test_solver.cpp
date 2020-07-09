@@ -43,9 +43,16 @@ const struct ik_solver_interface ik_solver_DUMMY1 = {
     dummy_solve,
     dummy_iterate_nodes
 };
-
 const struct ik_solver_interface ik_solver_DUMMY2 = {
     "dummy2",
+    sizeof(struct ik_solver_dummy),
+    dummy_init,
+    dummy_deinit,
+    dummy_solve,
+    dummy_iterate_nodes
+};
+const struct ik_solver_interface ik_solver_DUMMY3 = {
+    "dummy3",
     sizeof(struct ik_solver_dummy),
     dummy_init,
     dummy_deinit,
@@ -175,10 +182,12 @@ public:
     {
         ik_solver_register(&ik_solver_DUMMY1);
         ik_solver_register(&ik_solver_DUMMY2);
+        ik_solver_register(&ik_solver_DUMMY3);
     }
 
     virtual void TearDown() override
     {
+        ik_solver_unregister(&ik_solver_DUMMY3);
         ik_solver_unregister(&ik_solver_DUMMY2);
         ik_solver_unregister(&ik_solver_DUMMY1);
     }
@@ -279,7 +288,7 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     //             0 <- a1
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl.name, StrEq("subtrees"));
+    ASSERT_THAT(solver->impl.name, StrEq("combine"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(2));
 
     // We expect algorithm 2 to be chosen because it is the next available
@@ -325,7 +334,7 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     //             0 <- a1
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl.name, StrEq("subtrees"));
+    ASSERT_THAT(solver->impl.name, StrEq("list"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(2));
 
     // We expect algorithm 2 to be chosen because it is the next available
@@ -380,8 +389,8 @@ TEST_F(NAME, split_trees_on_effectors)
     ik_effector* e3 = ik_node_create_effector(n5);
 
     ik_algorithm* a1 = ik_node_create_algorithm(n3, "dummy1");
-    ik_algorithm* a2 = ik_node_create_algorithm(n2, "dummy1");
-    ik_algorithm* a3 = ik_node_create_algorithm(tree, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n2, "dummy2");
+    ik_algorithm* a3 = ik_node_create_algorithm(tree, "dummy3");
 
     ik::Ref<ik_solver> solver = ik_solver_build(tree);
 
@@ -402,7 +411,7 @@ TEST_F(NAME, split_trees_on_effectors)
     //
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
-    ASSERT_THAT(solver->impl.name, StrEq("subtrees"));
+    ASSERT_THAT(solver->impl.name, StrEq("list"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->solver_list), Eq(3));
 
     ik_solver_dummy* s1 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->solver_list, 0);
@@ -423,6 +432,69 @@ TEST_F(NAME, split_trees_on_effectors)
     EXPECT_THAT(chain_node_count(&s3->chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&s3->chain_tree), Eq(n3));
     EXPECT_THAT(chain_get_tip_node(&s3->chain_tree), Eq(n5));
+}
+
+TEST_F(NAME, missing_root_algorithm)
+{
+    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3,   ik_guid(4));
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4,   ik_guid(5));
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5,   ik_guid(6));
+
+    ik_effector* e1 = ik_node_create_effector(n2);
+    ik_effector* e2 = ik_node_create_effector(n3);
+    ik_effector* e3 = ik_node_create_effector(n5);
+
+    ik_algorithm* a1 = ik_node_create_algorithm(n3, "dummy1");
+    ik_algorithm* a2 = ik_node_create_algorithm(n2, "dummy2");
+
+    ik::Ref<ik_solver> solver = ik_solver_build(tree);
+
+    //
+    //       6
+    //       |
+    //       5 <- e3
+    //       |
+    //       4
+    //       |
+    //       3 <- e2, a1
+    //       |
+    //       2 <- e1, a2
+    //       |
+    //       1
+    //       |
+    //       0
+    //
+    //
+    ASSERT_THAT(solver.isNull(), IsTrue());
+}
+
+TEST_F(NAME, ignore_parents_of_root_node)
+{
+    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
+
+    ik_effector* e = ik_node_create_effector(n3);
+    ik_algorithm* a = ik_node_create_algorithm(tree, "dummy1");
+
+    // Build from n1 instead of from root node
+    ik::Ref<ik_solver> solver = ik_solver_build(n1);
+
+    //
+    //      3 <- e
+    //      |
+    //      2
+    //      |
+    //      1
+    //      |
+    //      0 <- a
+    //
+    ASSERT_THAT(solver.isNull(), IsTrue());
 }
 
 /*
