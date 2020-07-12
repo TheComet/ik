@@ -1,0 +1,140 @@
+\usepackage{gensymb}
+\usepackage[T1]{fontenc}
+\usepackage{lipsum}
+\usepackage{titling}       % Abstract on titlepage
+\usepackage{changepage}    % Change width of abstract text
+\usepackage[flushleft]{threeparttable}
+\usepackage{booktabs}  % Required for \toprule, \midrule, \bottomrule
+\usepackage[backend=bibtex,bibstyle=numeric,sorting=nyt]{biblatex}
+\usepackage[toc,page]{appendix}
+\usepackage{siunitx}
+\usepackage{subcaption}
+\usepackage{todonotes}
+\usepackage{grffile}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{varwidth} % Required for putting tables next to figures
+\usepackage{cuted} % for "strip" environment to span figures over two columns
+\usepackage[labelsep=endash]{caption}
+\usepackage{xspace}
+\usepackage{makecell}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{mathtools}
+\usepackage{pdfpages}
+\usepackage{multirow}
+\usepackage{abstract}
+\renewcommand{\abstractnamefont}{\normalfont\Large\bfseries}
+
+% For creating blank pages
+\usepackage{afterpage}
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
+
+% We want figures and tables to be labeled according to the section they're in
+\usepackage{chngcntr}
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+
+\sisetup{
+    output-exponent-marker=\ensuremath{\mathrm{E}},
+    separate-uncertainty}
+
+% Required for matfig2pgf plots
+\usepackage{pgf}
+\usepgflibrary{plothandlers}
+\usepackage{pgffor}
+
+% Required for tikz plots
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepgfplotslibrary{patchplots}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{shapes,arrows}
+\usetikzlibrary{plotmarks}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{positioning}
+\usetikzlibrary{patterns}
+
+% Definition of blocks:
+\tikzset{%
+  block/.style    = {draw, thick, rectangle, minimum height = 3em,
+    minimum width = 3em},
+  sum/.style      = {draw, circle, node distance = 2cm}, % Adder
+  input/.style    = {coordinate}, % Input
+  output/.style   = {coordinate} % Output
+}
+% Defining string as labels of certain blocks.
+\newcommand{\sumnode}{\tiny$+$}
+\newcommand{\diffnode}{\tiny$-$}
+
+% Absolute value
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+% Swap the definition of \abs* and \norm*, so that \abs
+% and \norm resizes the size of the brackets, and the
+% starred version does not.
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+%
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+% Labels per section
+\numberwithin{equation}{section}
+
+% For MATLAB code and C code
+\usepackage{listings}
+\usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+\lstdefinestyle{cstyle}{
+    belowcaptionskip=1\baselineskip,
+    breaklines=true,
+    frame=L,
+    xleftmargin=\parindent,
+    language=C,
+    showstringspaces=false,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\bfseries\color{green!40!black},
+    commentstyle=\itshape\color{purple!40!black},
+    identifierstyle=\color{blue},
+    stringstyle=\color{orange},
+    numbers=left,
+}
+\lstdefinestyle{matlabstyle}{language=Matlab,%
+    xleftmargin=0.5cm,%
+    basicstyle=\smaller,%
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{black}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol in the places where there is a space
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=9pt, % this defines how far the numbers are from the text
+    emph=[1]{for,end,break},emphstyle=[1]\color{red}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},
+}
+\lstdefinestyle{asmstyle}{
+  belowcaptionskip=1\baselineskip,
+  frame=L,
+  xleftmargin=\parindent,
+  language=[x86masm]Assembler,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\itshape\color{purple!40!black},
+}
+
+% Also required for tuning appearance of MATLAB code
+\usepackage{microtype}
+\usepackage[scaled]{beramono}
+\newcommand\smaller{\fontsize{8}{8.2}\selectfont}
+\newcommand*\LSTfont{\smaller\ttfamily\SetTracking{encoding=*}{-60}\lsstyle}
+

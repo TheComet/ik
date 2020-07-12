@@ -1,0 +1,41 @@
+\documentclass[notitlepage]{fhnwreport}
+
+\input{preamble/packages}
+\input{preamble/title}
+%\date{August 6, 2018}
+
+\addbibresource{bibliography/bibliography.bib}
+
+\begin{document}
+    \pagenumbering{gobble}
+    \maketitle
+
+%    \input{sections/abstract}
+%    \afterpage{\blankpage}
+%    \newpage
+
+%    \input{sections/acknowledgements}
+%    \afterpage{\blankpage}
+%    \newpage
+
+    \tableofcontents
+    \newpage
+    \pagenumbering{arabic}
+
+    \input{sections/introduction}
+    \input{sections/examples}
+%    \input{sections/theory}
+%    \input{sections/hardware}
+%    \input{sections/firmware}
+%    \input{sections/findings}
+%    \input{sections/discussion}
+%    \input{sections/conclusions}
+
+    \addcontentsline{toc}{section}{Literature}
+    \newpage\printbibliography
+
+    \clearpage
+
+    \appendix
+%    \input{sections/appendix.tex}
+\end{document}

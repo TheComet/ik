@@ -1,0 +1,27 @@
+!*
+
+# LaTeX stuff
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.dvi
+*-blx.bib
+*.bcf
+*.run.xml
+*.synctex.*
+ik-manual.pdf
+
+# libreoffice stuff
+*.ods#
+
+# temp files
+*.swp
+
+# qti temp files
+*.qti~
+
