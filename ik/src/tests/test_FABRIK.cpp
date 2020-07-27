@@ -161,6 +161,46 @@ TEST_F(NAME, two_bone_target_initial_angles)
     EXPECT_QUAT_EQ(tip->rotation, 0, 0, 0, 1);
 }
 
+TEST_F(NAME, one_bone_target)
+{
+    ik::Ref<ik_node> root = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> tip = ik_node_create_child(root, ik_guid(1));
+    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+
+    ik_vec3_set(root->position.f, 0, 0, 0);
+    ik_vec3_set(tip->position.f, 0, 0, 2);
+    ik_vec3_set(e->target_position.f, 0, 2.5, 0); // target is slightly out of reach
+
+    a->max_iterations = 20;
+    ik::Ref<ik_solver> s = ik_solver_build(root);
+    ik_solver_solve(s);
+
+    ik_quat_ensure_positive_sign(root->rotation.f);
+    EXPECT_QUAT_NEAR(root->rotation, -1.0/sqrt(2), 0, 0, 1.0/sqrt(2), 1e-4);
+    EXPECT_QUAT_EQ(tip->rotation, 0, 0, 0, 1);
+}
+
+TEST_F(NAME, one_bone_target_with_root_offset)
+{
+    ik::Ref<ik_node> root = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> tip = ik_node_create_child(root, ik_guid(1));
+    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+
+    ik_vec3_set(root->position.f, 3, 3, 3);
+    ik_vec3_set(tip->position.f, 0, 0, 2);
+    ik_vec3_set(e->target_position.f, 3, 5.5, 3); // target is slightly out of reach
+
+    a->max_iterations = 20;
+    ik::Ref<ik_solver> s = ik_solver_build(root);
+    ik_solver_solve(s);
+
+    ik_quat_ensure_positive_sign(root->rotation.f);
+    EXPECT_QUAT_NEAR(root->rotation, -1.0/sqrt(2), 0, 0, 1.0/sqrt(2), 1e-4);
+    EXPECT_QUAT_EQ(tip->rotation, 0, 0, 0, 1);
+}
+
 TEST_F(NAME, two_targets_already_reached)
 {
     ik::Ref<ik_node> root = ik_node_create(ik_guid(0));
@@ -205,7 +245,6 @@ TEST_F(NAME, two_targets_already_reached)
     EXPECT_QUAT_NEAR(midr->rotation, 0, 0, 0, 1, 1e-7);
     EXPECT_QUAT_NEAR(tipr->rotation, 0, 0, 0, 1, 1e-7);
 }
-
 
 TEST_F(NAME, two_targets)
 {

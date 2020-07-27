@@ -37,8 +37,8 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        PyErr_SetString(PyExc_TypeError, "Operation not supported");
+        *v = NULL;
         return -1;
     }
     return 0;
@@ -258,7 +258,8 @@ Quat_inplace_add(PyObject* self, PyObject* arg)
     }
     else
     {
-        return Py_INCREF(Py_NotImplemented), Py_NotImplemented;
+        PyErr_SetString(PyExc_TypeError, "Operation not supported");
+        return NULL;
     }
 }
 
@@ -273,7 +274,8 @@ Quat_inplace_sub(PyObject* self, PyObject* arg)
     }
     else
     {
-        return Py_INCREF(Py_NotImplemented), Py_NotImplemented;
+        PyErr_SetString(PyExc_TypeError, "Operation not supported");
+        return NULL;
     }
 }
 

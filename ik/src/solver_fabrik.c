@@ -376,7 +376,10 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
 
         /* Calculate segment base node position if the tip were attached to
          * the target position, which becomes the next segment's target
-         * position. */
+         * position. NOTE: We assume the segment is pointing directly at the
+         * target position here and therefore are alined with the Z axis in
+         * local space. If in the future constraints are applied during forward
+         * iteration, then this is no longer true. */
         ik_vec3_set(target.f, 0, 0, dist - child->position.v.z);
 
         /* Transform target into parent space */
@@ -422,7 +425,14 @@ solve_chain_forwards(struct ik_solver_fabrik* solver)
 {
     union ik_vec3* target_store = solver->target_positions;
     struct ik_node* root = chain_get_base_node(&solver->chain_tree);
-    return solve_chain_forwards_recurse(&solver->chain_tree, &target_store, root);
+    union ik_vec3 target = solve_chain_forwards_recurse(&solver->chain_tree, &target_store, root);
+
+    /* This sets up the target position correctly for backwards iteration */
+    ik_vec3_sub_vec3(target.f, root->position.f);
+    ik_vec3_negate(target.f);
+    ik_vec3_add_vec3(target.f, root->position.f);
+
+    return target;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -464,7 +474,7 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         solve_chain_backwards_recurse(child, target);
     CHAIN_END_EACH
 }
-static void
+void
 solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
 {
     solve_chain_backwards_recurse(&solver->chain_tree, target);
@@ -553,9 +563,8 @@ fabrik_solve(struct ik_solver* solver_base)
 
     while (iteration-- > 0)
     {
-        union ik_vec3 base_pos = solve_chain_forwards(solver);
-        ik_vec3_negate(base_pos.f);
-        solve_chain_backwards(solver, base_pos);
+        union ik_vec3 base_pos = solve_chain_forwards(solver); (void)base_pos;
+        /*solve_chain_backwards(solver, base_pos);*/
 
         if (all_targets_reached(solver, tol_squared))
             break;

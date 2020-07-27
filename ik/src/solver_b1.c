@@ -88,7 +88,7 @@ solver_b1_solve_no_constraints(struct ik_solver* solver_base)
     /* Transform target into base-node space */
     target = e->target_position;
     ik_vec3_sub_vec3(target.f, base->position.f);
-    ik_vec3_rotate_quat(target.f, base->rotation.f);
+    ik_vec3_rotate_quat_conj(target.f, base->rotation.f);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the
@@ -121,7 +121,7 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
     /* Transform target into base-node space */
     target = e->target_position;
     ik_vec3_sub_vec3(target.f, base->position.f);
-    ik_vec3_rotate_quat(target.f, base->rotation.f);
+    ik_vec3_rotate_quat_conj(target.f, base->rotation.f);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the

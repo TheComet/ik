@@ -235,6 +235,10 @@ TEST(NAME, angle_of)
     ik_vec3_set(v.f, 0, 1, 0);
     ik_quat_angle_of(q.f, v.f);
     EXPECT_QUAT_EQ(q, -1/sqrt(2), 0, 0, 1/sqrt(2));
+
+    ik_vec3_set(v.f, 1, 0, 0);
+    ik_quat_angle_of(q.f, v.f);
+    EXPECT_QUAT_EQ(q, 0, 1/sqrt(2), 0, 1/sqrt(2));
 }
 
 TEST(NAME, angle_between_no_normalize)

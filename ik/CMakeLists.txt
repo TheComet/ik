@@ -188,6 +188,7 @@ set (IK_PYTHON_SOURCES
 set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
     "src/tests/tests_run.cpp"
+    "src/tests/test_build_solver.cpp"
     "src/tests/test_chain_tree.cpp"
     #"src/tests/test_constraint.cpp"
     "src/tests/test_effector.cpp"
@@ -197,7 +198,6 @@ set (IK_TESTS_SOURCES
     #"src/tests/test_pole.cpp"
     "src/tests/test_quat.cpp"
     "src/tests/test_refcount.cpp"
-    "src/tests/test_solver.cpp"
     "src/tests/test_solver_b1.cpp"
     "src/tests/test_solver_b2.cpp"
     #"src/tests/test_solver_prepare.cpp"

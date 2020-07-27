@@ -140,7 +140,7 @@ count_chains(const struct ik_chain* chains);
         struct ik_node* child = chain_get_node(chain_var, var_name##_idx + 0); {
 
 #define CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain_var, parent, child, begin, end) {      \
-    cs_vec_idx var_name##_idx;                                                      \
+    int var_name##_idx;                                                             \
     for (var_name##_idx = (end) - 1; var_name##_idx >= (begin); --var_name##_idx) { \
         struct ik_node* parent = chain_get_node(chain_var, var_name##_idx + 1);     \
         struct ik_node* child = chain_get_node(chain_var, var_name##_idx + 0); {

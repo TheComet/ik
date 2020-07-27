@@ -5,7 +5,7 @@
 #include "ik/node.h"
 #include "ik/solver.h"
 
-#define NAME solver
+#define NAME build_solver
 
 using namespace ::testing;
 
@@ -482,8 +482,9 @@ TEST_F(NAME, ignore_parents_of_root_node)
     ik_effector* e = ik_node_create_effector(n3);
     ik_algorithm* a = ik_node_create_algorithm(tree, "dummy1");
 
-    // Build from n1 instead of from root node
-    ik::Ref<ik_solver> solver = ik_solver_build(n1);
+    ik::Ref<ik_solver> s1 = ik_solver_build(tree);
+    ik::Ref<ik_solver> s2 = ik_solver_build(n1);
+    ik::Ref<ik_solver> s3 = ik_solver_build(n2);
 
     //
     //      3 <- e
@@ -494,7 +495,10 @@ TEST_F(NAME, ignore_parents_of_root_node)
     //      |
     //      0 <- a
     //
-    ASSERT_THAT(solver.isNull(), IsTrue());
+    ASSERT_THAT(s1.isNull(), IsFalse());
+    ASSERT_THAT(s1->impl.name, StrEq("dummy1"));
+    ASSERT_THAT(s2.isNull(), IsTrue());
+    ASSERT_THAT(s3.isNull(), IsTrue());
 }
 
 /*
