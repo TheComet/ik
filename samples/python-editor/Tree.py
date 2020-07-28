@@ -64,7 +64,6 @@ class Tree(Updateable):
         color = self.root_color if node is self.root else self.node_color
 
         pos = parent_pos + node.position * acc_rot
-        acc_rot *= node.rotation
 
         # ik lib uses 3D coordinates; we're storing our 2D coordinates in the Y and Z components.
         pygame.draw.circle(surface, color, (int(pos.y), int(pos.z)), 5, 1)
@@ -74,7 +73,7 @@ class Tree(Updateable):
             pygame.draw.line(surface, color, (int(pos.y), int(pos.z)), (int(parent_pos.y), int(parent_pos.z)), 1)
 
         for child in node.children:
-            self.__draw_tree(surface, child, pos, acc_rot)
+            self.__draw_tree(surface, child, pos, acc_rot * node.rotation)
 
     def __draw_effectors(self, surface):
         for e in self.effectors:

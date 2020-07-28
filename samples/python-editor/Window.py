@@ -24,17 +24,17 @@ def two_bone_example(pos):
     mid = root.create_child(position=ik.Vec3(0, 0, 50))
     tip = mid.create_child(position=ik.Vec3(0, 0, 50))
 
-    root.algorithm = ik.Algorithm(ik.TWO_BONE)
+    root.algorithm = ik.Algorithm(ik.FABRIK)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 100), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
-def long_chain_example(pos, chain_len):
+def long_chain_example(pos, chain_len, segment_len):
     tip = root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
     for i in range(chain_len):
-        tip = tip.create_child(position=ik.Vec3(0, 0, 20*(random.random()+0.5)))
+        tip = tip.create_child(position=ik.Vec3(0, 0, segment_len*(random.random()+0.5)))
 
     root.algorithm = ik.Algorithm(ik.FABRIK)
-    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 20*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
+    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
 def double_effectors_example(pos, chain_len):
@@ -51,8 +51,8 @@ def double_effectors_example(pos, chain_len):
         tip2 = tip2.create_child(position=ik.Vec3(0, 0, 50))
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
-    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-100, pos[1]-300))
-    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+100, pos[1]-300))
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-chain_len*12, pos[1]-chain_len*50*2))
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+chain_len*12, pos[1]-chain_len*50*2))
 
     return root
 
@@ -78,9 +78,9 @@ def multiple_effectors_example(pos, chain_len):
         tip3 = tip3.create_child(position=ik.Vec3(0, 0, 50))
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
-    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-100, pos[1]-300))
-    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+100, pos[1]-300))
-    tip3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+200, pos[1]-300))
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-100, pos[1]-chain_len*50*3))
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+100, pos[1]-chain_len*50*3))
+    tip3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+200, pos[1]-chain_len*50*3))
 
     return root
 
@@ -93,9 +93,9 @@ class Window(Updateable):
             self,
             Tree(one_bone_example((100, height - 200))),
             Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((500, height - 200), 24)),
-            Tree(double_effectors_example((700, height - 200), 1))
-            #Tree(multiple_effectors_example((900, height - 200), 4))
+            Tree(long_chain_example((500, height - 200), 8, 50)),
+            Tree(double_effectors_example((700, height - 200), 3)),
+            Tree(multiple_effectors_example((900, height - 200), 4))
         ]
 
         self.__last_time_updated = None

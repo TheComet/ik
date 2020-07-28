@@ -454,11 +454,11 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         dist = ik_vec3_length(dir.f);
         ik_vec3_div_scalar(dir.f, dist);
 
-        /* Calculate angle of that direction vector and rotate the segment by
-         * that amount */
+        /* Point segment at target */
         ik_quat_angle_of_nn(delta.f, dir.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
 
+        /*
         delta = child->rotation;
         dir = child->position;
         if (child->constraint)
@@ -466,7 +466,9 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
             child->constraint->apply(child->constraint, child->rotation.f);
             ik_quat_conj_mul_quat(delta.f, child->rotation.f);
             ik_vec3_rotate_quat(dir.f, delta.f);
-        }
+        }*/
+
+        ik_vec3_mul_scalar(dir.f, dist);
         ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
 
@@ -474,7 +476,7 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         solve_chain_backwards_recurse(child, target);
     CHAIN_END_EACH
 }
-void
+static void
 solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
 {
     solve_chain_backwards_recurse(&solver->chain_tree, target);
@@ -563,8 +565,8 @@ fabrik_solve(struct ik_solver* solver_base)
 
     while (iteration-- > 0)
     {
-        union ik_vec3 base_pos = solve_chain_forwards(solver); (void)base_pos;
-        /*solve_chain_backwards(solver, base_pos);*/
+        union ik_vec3 base_pos = solve_chain_forwards(solver);
+        solve_chain_backwards(solver, base_pos);
 
         if (all_targets_reached(solver, tol_squared))
             break;
