@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ik/python/ik_type_ModuleRef.h"
 
 struct ik_solver;

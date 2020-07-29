@@ -19,7 +19,7 @@ apply_dummy(struct ik_constraint* constraint, ikreal rotation[4])
 static void
 apply_stiff(struct ik_constraint* constraint, ikreal rotation[4])
 {
-    ik_quat_copy(rotation, constraint->data.stiff.target_angle.f);
+    ik_quat_copy(rotation, constraint->data.stiff.rotation.f);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -51,21 +51,34 @@ deinit_constraint(struct ik_constraint* con)
 struct ik_constraint*
 ik_constraint_create(void)
 {
-    struct ik_constraint* con = (struct ik_constraint*)
-        ik_attachment_alloc(sizeof *con, (ik_deinit_func)deinit_constraint);
-    if (con == NULL)
+    struct ik_constraint* constraint = (struct ik_constraint*)
+        ik_attachment_alloc(sizeof *constraint, (ik_deinit_func)deinit_constraint);
+    if (constraint == NULL)
         return NULL;
 
-    ik_constraint_set_custom(con, apply_dummy);
+    constraint->next = NULL;
+    ik_constraint_set_custom(constraint, apply_dummy, NULL);
 
-    return con;
+    return constraint;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_set_stiff(struct ik_constraint* constraint)
+ik_constraint_append(struct ik_constraint* first_constraint,
+                     struct ik_constraint* constraint)
+{
+    while (first_constraint->next)
+        first_constraint = first_constraint->next;
+    first_constraint->next = constraint;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_constraint_set_stiff(struct ik_constraint* constraint,
+                        ikreal qx, ikreal qy, ikreal qz, ikreal qw)
 {
     constraint->apply = apply_stiff;
+    ik_quat_set(constraint->data.stiff.rotation.f, qx, qy, qz, qw);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -75,6 +88,9 @@ ik_constraint_set_hinge(struct ik_constraint* constraint,
                         ikreal min_angle, ikreal max_angle)
 {
     constraint->apply = apply_hinge;
+    constraint->data.hinge.min_angle = min_angle;
+    constraint->data.hinge.max_angle = max_angle;
+    ik_vec3_set(constraint->data.hinge.axis.f, axis_x, axis_y, axis_z);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -91,7 +107,10 @@ ik_constraint_set_cone(struct ik_constraint* constraint,
 
 /* ------------------------------------------------------------------------- */
 void
-ik_constraint_set_custom(struct ik_constraint* constraint, ik_constraint_apply_func callback)
+ik_constraint_set_custom(struct ik_constraint* constraint,
+                         ik_constraint_apply_func callback,
+                         void* data)
 {
     constraint->apply = callback;
+    constraint->data.custom.data = data;
 }

@@ -1,6 +1,8 @@
+#pragma once
+
 #include "ik/python/ik_type_Attachment.h"
 
-#define ik_algorithm_CheckExact(o) \
+#define ik_Algorithm_CheckExact(o) \
     (Py_TYPE(o) == &ik_AlgorithmType)
 
 typedef struct ik_Algorithm

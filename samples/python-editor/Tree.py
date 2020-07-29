@@ -28,12 +28,14 @@ class Tree(Updateable):
         if event.type == pygame.MOUSEBUTTONDOWN:
             self.grabbed_effector = self.__find_grabbable_effector(event.pos[0], event.pos[1])
             if self.grabbed_effector is not None:
-                self.grabbed_effector.target_position = ik.Vec3(0, event.pos[0],event.pos[1])
+                self.grabbed_effector.target_position.y = event.pos[0]
+                self.grabbed_effector.target_position.z = event.pos[1]
                 return True
 
             if (self.root.position.y - event.pos[0])**2 + (self.root.position.z - event.pos[1])**2 < 300:
                 self.grabbed_root_node = self.root
-                self.grabbed_root_node.position = ik.Vec3(0, event.pos[0],event.pos[1])
+                self.grabbed_root_node.position.y = event.pos[0]
+                self.grabbed_root_node.position.z = event.pos[1]
                 return True
 
         if event.type == pygame.MOUSEBUTTONUP:
@@ -41,11 +43,11 @@ class Tree(Updateable):
             self.grabbed_root_node = None
         if event.type == pygame.MOUSEMOTION:
             if self.grabbed_effector is not None:
-                #self.grabbed_effector.target_position.y = event.pos[0]
-                #self.grabbed_effector.target_position.z = event.pos[1]
-                self.grabbed_effector.target_position = ik.Vec3(0, event.pos[0],event.pos[1])
+                self.grabbed_effector.target_position.y = event.pos[0]
+                self.grabbed_effector.target_position.z = event.pos[1]
             if self.grabbed_root_node is not None:
-                self.grabbed_root_node.position = ik.Vec3(0, event.pos[0],event.pos[1])
+                self.grabbed_root_node.position.y = event.pos[0]
+                self.grabbed_root_node.position.z = event.pos[1]
 
     def __find_grabbable_effector(self, y, z):
         for e in self.effectors:

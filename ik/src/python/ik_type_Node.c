@@ -6,21 +6,16 @@
 #include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Vec3.h"
+#include "ik/python/ik_helpers.h"
 #include "ik/node.h"
 #include "structmember.h"
 
-#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define FMT "d"
-#elif defined(IK_PRECISION_FLOAT)
-#   define FMT "f"
-#else
-#   error Dont know how to wrap this precision type
-#endif
-
 /* ------------------------------------------------------------------------- */
 static void
-NodeChildrenView_dealloc(ik_NodeChildrenView* self)
+NodeChildrenView_dealloc(PyObject* myself)
 {
+    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+
     IK_DECREF(self->node);
     Py_TYPE(self)->tp_free(self);
 }
@@ -195,7 +190,7 @@ PyTypeObject ik_NodeChildrenViewType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.NodeChildrenView",
     .tp_basicsize = sizeof(ik_NodeChildrenView),
-    .tp_dealloc = (destructor)NodeChildrenView_dealloc,
+    .tp_dealloc = NodeChildrenView_dealloc,
     .tp_repr = NodeChildrenView_repr,
     .tp_str = NodeChildrenView_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -217,8 +212,13 @@ Node_dealloc(PyObject* myself)
     NODE_END_EACH
     IK_DECREF(self->node);
 
+    UNREF_VEC3_DATA(self->position);
+    UNREF_QUAT_DATA(self->rotation);
+    Py_DECREF(self->position);
+    Py_DECREF(self->rotation);
+
     Py_DECREF(self->algorithm);
-    Py_DECREF(self->constraint);
+    Py_DECREF(self->constraints);
     Py_DECREF(self->effector);
     Py_DECREF(self->pole);
     Py_DECREF(self->children);
@@ -232,6 +232,8 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Node* self;
     ik_NodeChildrenView* children_view;
+    ik_Vec3* position;
+    ik_Quat* rotation;
     struct ik_node* node;
     PyObject* node_capsule;
     PyObject* constructor_args;
@@ -264,10 +266,30 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (children_view == NULL)
         goto alloc_children_view_failed;
 
+    /* Allocate other attributes */
+    position = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
+    if (position == NULL)
+        goto alloc_position_failed;
+    rotation = (ik_Quat*)PyObject_CallObject((PyObject*)&ik_QuatType, NULL);
+    if (rotation == NULL)
+        goto alloc_rotation_failed;
+
     /* Finally, alloc self */
     self = (ik_Node*)ik_NodeType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
+
+    /* Set up position/rotation */
+    self->position = position;
+    self->rotation = rotation;
+    REF_VEC3_DATA(self->position, &node->position);
+    REF_QUAT_DATA(self->rotation, &node->rotation);
+
+    /* Set all attachments to None */
+    Py_INCREF(Py_None); self->algorithm = Py_None;
+    Py_INCREF(Py_None); self->constraints = Py_None;
+    Py_INCREF(Py_None); self->effector = Py_None;
+    Py_INCREF(Py_None); self->pole = Py_None;
 
     /*
      * Store the python object in node's user data so we don't have to store
@@ -279,25 +301,23 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     self->node = node;
     self->children = children_view;
 
-    /* Set all attachments to None */
-    Py_INCREF(Py_None); self->algorithm = Py_None;
-    Py_INCREF(Py_None); self->constraint = Py_None;
-    Py_INCREF(Py_None); self->effector = Py_None;
-    Py_INCREF(Py_None); self->pole = Py_None;
-
     return (PyObject*)self;
 
-    alloc_self_failed          : Py_DECREF(children_view);
-    alloc_children_view_failed : IK_DECREF(node);
-    alloc_node_failed          : return NULL;
+    alloc_self_failed             : Py_DECREF(rotation);
+    alloc_rotation_failed         : Py_DECREF(position);
+    alloc_position_failed         : Py_DECREF(children_view);
+    alloc_children_view_failed    : IK_DECREF(node);
+    alloc_node_failed             : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 static int
+Node_setconstraints(PyObject* myself, PyObject* value, void* closure);
+static int
 Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     ik_Algorithm* algorithm = NULL;
-    ik_Constraint* constraint = NULL;
+    PyObject* constraint_list = NULL;
     ik_Effector* effector = NULL;
     ik_Pole* pole = NULL;
     ik_Vec3* position = NULL;
@@ -308,7 +328,7 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
         "position",
         "rotation",
         "algorithm",
-        "constraint",
+        "constraints",
         "effector",
         "pole",
         "mass",
@@ -316,39 +336,67 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!O!O!O!" FMT FMT, kwds_str,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!OO!O!" FMT FMT, kwds_str,
             &ik_Vec3Type, &position,
             &ik_QuatType, &rotation,
             &ik_AlgorithmType, &algorithm,
-            &ik_ConstraintType, &constraint,
+            &constraint_list,
             &ik_EffectorType, &effector,
             &ik_PoleType, &pole,
             &self->node->mass,
             &self->node->rotation_weight))
         return -1;
 
-    #define X1(upper, lower, arg) X(upper, lower)
-    #define X(upper, lower)                                                   \
-        if (lower != NULL) {                                                  \
-            PyObject* tmp;                                                    \
-                                                                              \
-            /* Attach to internal node */                                     \
-            ik_node_attach_##lower(self->node, (struct ik_##lower*)lower->super.attachment); \
-                                                                              \
-            /* Set attachment on python object */                             \
-            tmp = self->lower;                                                \
-            Py_INCREF(lower);                                                 \
-            self->lower = (PyObject*)lower;                                   \
-            Py_DECREF(tmp);                                                   \
-        }
-        IK_ATTACHMENT_LIST
-    #undef X
-    #undef X1
+    if (constraint_list != NULL)
+    {
+        if (Node_setconstraints(myself, constraint_list, NULL) != 0)
+            return -1;
+    }
+
+    if (algorithm != NULL)
+    {
+        PyObject* tmp;
+
+        /* Attach to internal node */
+        ik_node_attach_algorithm(self->node, (struct ik_algorithm*)algorithm->super.attachment);
+
+        /* Set attachment on python object */
+        tmp = (PyObject*)self->algorithm;
+        Py_INCREF(algorithm);
+        self->algorithm = (PyObject*)algorithm;
+        Py_DECREF(tmp);
+    }
+    if (effector != NULL)
+    {
+        PyObject* tmp;
+
+        /* Attach to internal node */
+        ik_node_attach_effector(self->node, (struct ik_effector*)effector->super.attachment);
+
+        /* Set attachment on python object */
+        tmp = (PyObject*)self->effector;
+        Py_INCREF(effector);
+        self->effector = (PyObject*)effector;
+        Py_DECREF(tmp);
+    }
+    if (pole != NULL)
+    {
+        PyObject* tmp;
+
+        /* Attach to internal node */
+        ik_node_attach_pole(self->node, (struct ik_pole*)pole->super.attachment);
+
+        /* Set attachment on python object */
+        tmp = (PyObject*)self->pole;
+        Py_INCREF(pole);
+        self->pole = (PyObject*)pole;
+        Py_DECREF(tmp);
+    }
 
     if (position != NULL)
-        ik_vec3_copy(self->node->position.f, position->vec.f);
+        ASSIGN_VEC3(self->position, position);
     if (rotation != NULL)
-        ik_quat_copy(self->node->rotation.f, rotation->quat.f);
+        ASSIGN_QUAT(self->rotation, rotation);
 
     return 0;
 }
@@ -524,7 +572,7 @@ Node_getposition(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    return (PyObject*)vec3_ik_to_python(self->node->position.f);
+    return Py_INCREF(self->position), (PyObject*)self->position;
 }
 static int
 Node_setposition(PyObject* myself, PyObject* value, void* closure)
@@ -536,7 +584,8 @@ Node_setposition(PyObject* myself, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type for position");
         return -1;
     }
-    ik_vec3_copy(self->node->position.f, ((ik_Vec3*)value)->vec.f);
+
+    ASSIGN_VEC3(self->position, (ik_Vec3*)value);
     return 0;
 }
 
@@ -547,7 +596,7 @@ Node_getrotation(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)closure;
-    return (PyObject*)quat_ik_to_python(self->node->rotation.f);
+    return Py_INCREF(self->rotation), (PyObject*)self->rotation;
 }
 static int
 Node_setrotation(PyObject* myself, PyObject* value, void* closure)
@@ -559,7 +608,8 @@ Node_setrotation(PyObject* myself, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for rotation");
         return -1;
     }
-    ik_quat_copy(self->node->rotation.f, ((ik_Quat*)value)->quat.f);
+
+    ASSIGN_QUAT(self->rotation, (ik_Quat*)value);
     return 0;
 }
 
@@ -631,58 +681,291 @@ Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 PyDoc_STRVAR(NODE_ALGORITHM_DOC,"");
-PyDoc_STRVAR(NODE_CONSTRAINT_DOC,"");
-PyDoc_STRVAR(NODE_EFFECTOR_DOC,"");
-PyDoc_STRVAR(NODE_POLE_DOC,"");
-#define X1(upper, lower, arg) X(upper, lower)
-#define X(upper, lower)                                                       \
-    static PyObject*                                                          \
-    Node_get##lower(PyObject* myself, void* closure)                          \
-    {                                                                         \
-        ik_Node* self = (ik_Node*)myself;                                     \
-        (void)closure;                                                        \
-        return Py_INCREF(self->lower), self->lower;                           \
-    }                                                                         \
-                                                                              \
-    static int                                                                \
-    Node_set##lower(PyObject* myself, PyObject* value, void* closure)         \
-    {                                                                         \
-        ik_Node* self = (ik_Node*)myself;                                     \
-        (void)closure;                                                        \
-                                                                              \
-        if (ik_##lower##_CheckExact(value))                                   \
-        {                                                                     \
-            PyObject* tmp;                                                    \
-            ik_Attachment* py_attachment = (ik_Attachment*)value;             \
-            ik_node_attach_##lower(self->node, (struct ik_##lower*)py_attachment->attachment); \
-                                                                              \
-            tmp = self->lower;                                                \
-            Py_INCREF(value);                                                 \
-            self->lower = value;                                              \
-            Py_DECREF(tmp);                                                   \
-                                                                              \
-            return 0;                                                         \
-        }                                                                     \
-                                                                              \
-        if (value == Py_None)                                                 \
-        {                                                                     \
-            PyObject* tmp;                                                    \
-            ik_node_detach_##lower(self->node);                               \
-                                                                              \
-            tmp = self->lower;                                                \
-            Py_INCREF(Py_None);                                               \
-            self->lower = Py_None;                                            \
-            Py_DECREF(tmp);                                                   \
-                                                                              \
-            return 0;                                                         \
-        }                                                                     \
-                                                                              \
-        PyErr_SetString(PyExc_TypeError, "Must assign an instance of type " #lower " or None"); \
-        return -1; \
+static PyObject*
+Node_getalgorithm(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->algorithm), self->algorithm;
+}
+static int
+Node_setalgorithm(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    if (ik_Algorithm_CheckExact(value))
+    {
+        PyObject* tmp;
+        ik_Attachment* py_attachment = (ik_Attachment*)value;
+        ik_node_attach_algorithm(self->node, (struct ik_algorithm*)py_attachment->attachment);
+
+        tmp = self->algorithm;
+        Py_INCREF(value);
+        self->algorithm = value;
+        Py_DECREF(tmp);
+
+        return 0;
     }
-    IK_ATTACHMENT_LIST
-#undef X
-#undef X1
+
+    if (value == Py_None)
+    {
+        PyObject* tmp;
+        ik_node_detach_algorithm(self->node);
+
+        tmp = self->algorithm;
+        Py_INCREF(Py_None);
+        self->algorithm = Py_None;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Must assign an instance of type ik.Algorithm or None");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_CONSTRAINTS_DOC,"");
+static PyObject*
+Node_getconstraints(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->constraints), (PyObject*)self->constraints;
+}
+static void
+unlink_internal_constraints(ik_Node* self)
+{
+    int i;
+
+    if (!PyTuple_CheckExact(self->constraints))
+        return;
+
+    for (i = 0; i != PyTuple_GET_SIZE(self->constraints); ++i)
+    {
+        ik_Constraint* py_constraint = (ik_Constraint*)PyTuple_GET_ITEM(self->constraints, i);
+        struct ik_constraint* constraint = (struct ik_constraint*)py_constraint->super.attachment;
+        constraint->next = NULL;
+    }
+
+    ik_node_detach_constraint(self->node);
+}
+static void
+link_internal_constraints(ik_Node* self)
+{
+    int i;
+    ik_Constraint* first_constraint;
+
+    if (!PyTuple_CheckExact(self->constraints))
+        return;
+
+    for (i = 0; i != PyTuple_GET_SIZE(self->constraints); ++i)
+    {
+        ik_Constraint* py_constraint = (ik_Constraint*)PyTuple_GET_ITEM(self->constraints, i);
+        struct ik_constraint* constraint = (struct ik_constraint*)py_constraint->super.attachment;
+
+        if (i == 0)
+            first_constraint = py_constraint;
+        else
+            ik_constraint_append((struct ik_constraint*)first_constraint->super.attachment, constraint);
+    }
+
+    ik_node_attach_constraint(self->node, (struct ik_constraint*)first_constraint->super.attachment);
+}
+static int
+Node_setconstraints(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    if (PySequence_Check(value))
+    {
+        int i;
+        PyObject* tmp;
+        PyObject* seq = PySequence_Tuple(value);
+        if (seq == NULL)
+            return -1;
+
+        /* unlinking internal constraints allows the same constraint objects to
+         * be assigned in a different order */
+        unlink_internal_constraints(self);
+
+        /* If sequence is empty just assign None */
+        if (PySequence_Fast_GET_SIZE(seq) == 0)
+        {
+            tmp = self->constraints;
+            Py_INCREF(Py_None);
+            self->constraints = Py_None;
+            Py_DECREF(tmp);
+
+            Py_DECREF(seq);
+            return 0;
+        }
+
+        /* Check that all objects in the sequence are constraint instances and
+         * aren't already linked to one another internally */
+        for (i = 0; i != PySequence_Fast_GET_SIZE(seq); ++i)
+        {
+            ik_Constraint* py_constraint;
+            struct ik_constraint* constraint;
+
+            PyObject* item = PySequence_Fast_GET_ITEM(seq, i);
+            if (!ik_Constraint_Check(item))
+            {
+                PyErr_Format(PyExc_TypeError, "Item %d in list is not an instance of ik.Constraint", i);
+                Py_DECREF(seq);
+                return -1;
+            }
+
+            py_constraint = (ik_Constraint*)item;
+            constraint = (struct ik_constraint*)py_constraint->super.attachment;
+            if (constraint->next)
+            {
+                PyErr_Format(PyExc_RuntimeError, "Constraint at index %d in list is already part of another constraint chain. Make sure you aren't assigning the same constraint object to multiple nodes, as this is not supported.", i);
+                Py_DECREF(seq);
+                return -1;
+            }
+        }
+
+        /* Assign tuple as attachment */
+        tmp = self->constraints;
+        self->constraints = seq;
+        link_internal_constraints(self);
+        Py_DECREF(tmp);
+
+        /* Finally, link all internal structures */
+
+        return 0;
+    }
+
+    if (ik_Constraint_Check(value))
+    {
+        PyObject* tmp;
+        PyObject* constraints = PyTuple_New(1);
+        if (constraints == NULL)
+            return -1;
+
+        unlink_internal_constraints(self);
+        Py_INCREF(value);
+        PyTuple_SET_ITEM(constraints, 0, value);
+
+        tmp = self->constraints;
+        self->constraints = constraints;
+        link_internal_constraints(self);
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    if (value == Py_None)
+    {
+        PyObject* tmp;
+        unlink_internal_constraints(self);
+
+        tmp = self->constraints;
+        Py_INCREF(Py_None);
+        self->constraints = Py_None;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Must assign an instance of type ik.Constraint, a list of ik.Constraint instances, or None");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_EFFECTOR_DOC,"");
+static PyObject*
+Node_geteffector(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->effector), self->effector;
+}
+static int
+Node_seteffector(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    if (ik_Effector_CheckExact(value))
+    {
+        PyObject* tmp;
+        ik_Attachment* py_attachment = (ik_Attachment*)value;
+        ik_node_attach_effector(self->node, (struct ik_effector*)py_attachment->attachment);
+
+        tmp = self->effector;
+        Py_INCREF(value);
+        self->effector = value;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    if (value == Py_None)
+    {
+        PyObject* tmp;
+        ik_node_detach_effector(self->node);
+
+        tmp = self->effector;
+        Py_INCREF(Py_None);
+        self->effector = Py_None;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Must assign an instance of type ik.Effector or None");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+PyDoc_STRVAR(NODE_POLE_DOC,"");
+static PyObject*
+Node_getpole(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->pole), self->pole;
+}
+static int
+Node_setpole(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    if (ik_Pole_CheckExact(value))
+    {
+        PyObject* tmp;
+        ik_Attachment* py_attachment = (ik_Attachment*)value;
+        ik_node_attach_pole(self->node, (struct ik_pole*)py_attachment->attachment);
+
+        tmp = self->pole;
+        Py_INCREF(value);
+        self->pole = value;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    if (value == Py_None)
+    {
+        PyObject* tmp;
+        ik_node_detach_pole(self->node);
+
+        tmp = self->pole;
+        Py_INCREF(Py_None);
+        self->pole = Py_None;
+        Py_DECREF(tmp);
+
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Must assign an instance of type ik.Pole or None");
+    return -1;
+}
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
@@ -694,12 +977,10 @@ static PyGetSetDef Node_getset[] = {
     {"rotation",        Node_getrotation,        Node_setrotation,        NODE_ROTATION_DOC, NULL},
     {"mass",            Node_getmass,            Node_setmass,            NODE_MASS_DOC, NULL},
     {"rotation_weight", Node_getrotation_weight, Node_setrotation_weight, NODE_ROTATION_WEIGHT_DOC, NULL},
-#define X1(upper, lower, arg) X(upper, lower)
-#define X(upper, lower) \
-    {#lower,        (getter)Node_get##lower,     (setter)Node_set##lower,     NODE_##upper##_DOC,   NULL},
-    IK_ATTACHMENT_LIST
-#undef X
-#undef X1
+    {"algorithm",       Node_getalgorithm,       Node_setalgorithm,       NODE_ALGORITHM_DOC, NULL},
+    {"constraints",     Node_getconstraints,     Node_setconstraints,     NODE_CONSTRAINTS_DOC, NULL},
+    {"effector",        Node_geteffector,        Node_seteffector,        NODE_EFFECTOR_DOC, NULL},
+    {"pole",            Node_getpole,            Node_setpole,            NODE_POLE_DOC, NULL},
     {NULL}
 };
 
@@ -714,12 +995,11 @@ Node_repr_build_arglist_list(PyObject* myself)
         return NULL;
 
     /* Attachments */
-#define X1(upper, lower, arg) X(upper, lower)
-#define X(upper, lower)                                                       \
-    if (self->lower != Py_None)                                               \
+#define APPEND_ATTACHMENT(name)                                               \
+    if (self->name != Py_None)                                                \
     {                                                                         \
         int append_result;                                                    \
-        PyObject* arg = PyUnicode_FromFormat(#lower "=%R", self->lower);      \
+        PyObject* arg = PyUnicode_FromFormat(#name "=%R", self->name);        \
         if (arg == NULL)                                                      \
             goto addarg_failed;                                               \
                                                                               \
@@ -728,9 +1008,11 @@ Node_repr_build_arglist_list(PyObject* myself)
         if (append_result == -1)                                              \
             goto addarg_failed;                                               \
     }
-    IK_ATTACHMENT_LIST
-#undef X
-#undef X1
+    APPEND_ATTACHMENT(algorithm)
+    APPEND_ATTACHMENT(constraints)
+    APPEND_ATTACHMENT(effector)
+    APPEND_ATTACHMENT(pole)
+#undef APPEND_ATTACHMENT
 
     /* Position */
     {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Python.h"
 #include "ik/quat.h"
 
@@ -7,6 +9,7 @@
 typedef struct ik_Quat
 {
     PyObject_HEAD
+    union ik_quat* quatref;
     union ik_quat quat;
 } ik_Quat;
 

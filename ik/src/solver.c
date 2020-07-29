@@ -431,7 +431,7 @@ ik_solver_build(const struct ik_node* root)
      * solver can be returned directly. */
     if (vector_count(&solver_list) > 1)
     {
-        /* NOTE: solver_list ownership is moved to the islands solver. */
+        /* NOTE: solver_list ownership is moved here. */
         solver = ik_solver_list_create(solver_list);
         if (solver == NULL)
             goto solver_group_create_failed;

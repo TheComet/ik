@@ -3,24 +3,22 @@
 #include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
-#include "ik/ik.h"
+#include "ik/python/ik_helpers.h"
+#include "ik/effector.h"
 #include "structmember.h"
-
-#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define FMT "d"
-#   define MEMBER_TYPE T_DOUBLE
-#elif defined(IK_PRECISION_FLOAT)
-#   define FMT "f"
-#   define MEMBER_TYPE T_FLOAT
-#else
-#   error Dont know how to wrap this precision type
-#endif
 
 /* ------------------------------------------------------------------------- */
 static void
 Effector_dealloc(PyObject* myself)
 {
     ik_Effector* self = (ik_Effector*)myself;
+
+    /* Unref data, as it is being destroyed */
+    UNREF_VEC3_DATA(self->target_position);
+    UNREF_QUAT_DATA(self->target_rotation);
+
+    Py_DECREF(self->target_position);
+    Py_DECREF(self->target_rotation);
     IK_DECREF(self->super.attachment);
     ik_EffectorType.tp_base->tp_dealloc(myself);
 }
@@ -30,9 +28,11 @@ static PyObject*
 Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_Effector* self;
+    ik_Vec3* target_position;
+    ik_Quat* target_rotation;
     struct ik_effector* effector;
 
-    /* Allocate effector */
+    /* Allocate internal effector */
     if ((effector = ik_effector_create()) == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to allocate internal effector");
@@ -40,15 +40,32 @@ Effector_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     }
     IK_INCREF(effector);
 
+    /* Allocate members */
+    target_position = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
+    if (target_position == NULL)
+        goto alloc_target_position_failed;
+    target_rotation = (ik_Quat*)PyObject_CallObject((PyObject*)&ik_QuatType, NULL);
+    if (target_rotation == NULL)
+        goto alloc_target_rotation_failed;
+
+    /* Allocate self */
     self = (ik_Effector*)ik_EffectorType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
     self->super.attachment = (struct ik_attachment*)effector;
+    self->target_position = target_position;
+    self->target_rotation = target_rotation;
+
+    REF_VEC3_DATA(self->target_position, &effector->target_position);
+    REF_QUAT_DATA(self->target_rotation, &effector->target_rotation);
+
     return (PyObject*)self;
 
-    alloc_self_failed     : IK_DECREF(effector);
-    alloc_effector_failed : return NULL;
+    alloc_self_failed            : Py_DECREF(target_rotation);
+    alloc_target_rotation_failed : Py_DECREF(target_position);
+    alloc_target_position_failed : IK_DECREF(effector);
+    alloc_effector_failed        : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -88,9 +105,9 @@ Effector_init(PyObject* myself, PyObject* args, PyObject* kwds)
     }
 
     if (target_position)
-        ik_vec3_copy(eff->target_position.f, target_position->vec.f);
+        ASSIGN_VEC3(self->target_position, target_position);
     if (target_rotation)
-        ik_quat_copy(eff->target_rotation.f, target_rotation->quat.f);
+        ASSIGN_QUAT(self->target_rotation, target_rotation);
 
     if (weight_nlerp == 0)
         eff->features &= ~IK_EFFECTOR_WEIGHT_NLERP;
@@ -133,15 +150,13 @@ static PyObject*
 Effector_gettarget_position(PyObject* myself, void* closure)
 {
     ik_Effector* self = (ik_Effector*)myself;
-    struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
-    return (PyObject*)vec3_ik_to_python(eff->target_position.f);
+    return Py_INCREF(self->target_position), (PyObject*)self->target_position;
 }
 static int
 Effector_settarget_position(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Effector* self = (ik_Effector*)myself;
-    struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
     if (!ik_Vec3_CheckExact(value))
     {
@@ -149,7 +164,8 @@ Effector_settarget_position(PyObject* myself, PyObject* value, void* closure)
         return -1;
     }
 
-    ik_vec3_copy(eff->target_position.f, ((ik_Vec3*)value)->vec.f);
+    ASSIGN_VEC3(self->target_position, (ik_Vec3*)value);
+
     return 0;
 }
 
@@ -158,15 +174,13 @@ static PyObject*
 Effector_gettarget_rotation(PyObject* myself, void* closure)
 {
     ik_Effector* self = (ik_Effector*)myself;
-    struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
-    return (PyObject*)quat_ik_to_python(eff->target_rotation.f);
+    return Py_INCREF(self->target_rotation), (PyObject*)self->target_rotation;
 }
 static int
 Effector_settarget_rotation(PyObject* myself, PyObject* value, void* closure)
 {
     ik_Effector* self = (ik_Effector*)myself;
-    struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     (void)closure;
     if (!ik_Quat_CheckExact(value))
     {
@@ -174,7 +188,7 @@ Effector_settarget_rotation(PyObject* myself, PyObject* value, void* closure)
         return -1;
     }
 
-    ik_quat_copy(eff->target_rotation.f, ((ik_Quat*)value)->quat.f);
+    ASSIGN_QUAT(self->target_rotation, (ik_Quat*)value);
     return 0;
 }
 

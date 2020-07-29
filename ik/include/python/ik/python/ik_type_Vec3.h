@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Python.h"
 #include "ik/vec3.h"
 
@@ -7,6 +9,7 @@
 typedef struct ik_Vec3
 {
     PyObject_HEAD
+    union ik_vec3* vecref;
     union ik_vec3 vec;
 } ik_Vec3;
 

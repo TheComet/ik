@@ -17,6 +17,7 @@ typedef void (*ik_constraint_apply_func)(struct ik_constraint* constraint,
 struct ik_constraint
 {
     IK_ATTACHMENT_HEAD
+    struct ik_constraint* next;
 
     /*!
      *
@@ -25,7 +26,7 @@ struct ik_constraint
 
     union {
         struct {
-            union ik_quat target_angle;
+            union ik_quat rotation;
         } stiff;
         struct {
             union ik_vec3 axis;
@@ -37,7 +38,9 @@ struct ik_constraint
             ikreal min_angle;
             ikreal max_angle;
         } cone;
-        ikreal custom[6];
+        struct {
+            void* data;
+        } custom;
     } data;
 };
 
@@ -49,7 +52,12 @@ IK_PUBLIC_API struct ik_constraint*
 ik_constraint_create(void);
 
 IK_PUBLIC_API void
-ik_constraint_set_stiff(struct ik_constraint* constraint);
+ik_constraint_append(struct ik_constraint* first_constraint,
+                     struct ik_constraint* constraint);
+
+IK_PUBLIC_API void
+ik_constraint_set_stiff(struct ik_constraint* constraint,
+                        ikreal qx, ikreal qy, ikreal qz, ikreal qw);
 
 IK_PUBLIC_API void
 ik_constraint_set_hinge(struct ik_constraint* constraint,
@@ -61,12 +69,18 @@ ik_constraint_set_cone(struct ik_constraint* constraint,
                        ikreal qx, ikreal qy, ikreal qz, ikreal qw,
                        ikreal min_angle, ikreal max_angle);
 
+IK_PUBLIC_API void
+ik_constraint_set_roll(struct ik_constraint* constraint,
+                       ikreal min_angle, ikreal max_angle);
+
 /*!
  * @brief Allows the user to specify a custom callback function for enforcing
  * a constraint.
  */
 IK_PUBLIC_API void
-ik_constraint_set_custom(struct ik_constraint* constraint, ik_constraint_apply_func callback);
+ik_constraint_set_custom(struct ik_constraint* constraint,
+                         ik_constraint_apply_func callback,
+                         void* data);
 
 C_END
 

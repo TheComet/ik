@@ -3,15 +3,6 @@
 #include "ik/vec3.h"
 #include "structmember.h"
 
-#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define MEMBER_TYPE T_DOUBLE
-#elif defined(IK_PRECISION_FLOAT)
-#   define FMT "f"
-#   define MEMBER_TYPE T_FLOAT
-#else
-#   error Dont know how to wrap this precision type
-#endif
-
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl.  If conversion to double raises an exception, obj is
    set to NULL, and the function invoking this macro returns NULL.  If
@@ -37,8 +28,8 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        PyErr_SetString(PyExc_TypeError, "Operation not supported");
+        *v = NULL;
         return -1;
     }
     return 0;
@@ -62,7 +53,8 @@ Vec3_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         return NULL;
 
-    ik_vec3_set_zero(self->vec.f);
+    self->vecref = &self->vec;
+    ik_vec3_set_zero(self->vecref->f);
 
     return (PyObject*)self;
 }
@@ -93,7 +85,7 @@ Vec3_set_zero(PyObject* myself, PyObject* args)
 {
     ik_Vec3* self = (ik_Vec3*)myself;
     (void)args;
-    ik_vec3_set_zero(self->vec.f);
+    ik_vec3_set_zero(self->vecref->f);
     Py_RETURN_NONE;
 }
 
@@ -112,13 +104,13 @@ Vec3_set(PyObject* myself, PyObject* args)
         if (ik_Vec3_CheckExact(arg))
         {
             ik_Vec3* other = (ik_Vec3*)arg;
-            ik_vec3_copy(self->vec.f, other->vec.f);
+            ik_vec3_copy(self->vecref->f, other->vecref->f);
             Py_RETURN_NONE;
         }
         else if (ik_Quat_CheckExact(arg))
         {
-            ik_vec3_set(self->vec.f, 0, 0, 1);
-            ik_vec3_rotate_quat(self->vec.f, ((ik_Quat*)arg)->quat.f);
+            ik_vec3_set(self->vecref->f, 0, 0, 1);
+            ik_vec3_rotate_quat(self->vecref->f, ((ik_Quat*)arg)->quatref->f);
             Py_RETURN_NONE;
         }
 
@@ -132,7 +124,7 @@ Vec3_set(PyObject* myself, PyObject* args)
                 Py_DECREF(arg);
                 return NULL;
             }
-            ik_vec3_set(self->vec.f, x, y, z);
+            ik_vec3_set(self->vecref->f, x, y, z);
             Py_RETURN_NONE;
         }
         else
@@ -143,8 +135,8 @@ Vec3_set(PyObject* myself, PyObject* args)
                 return NULL;
             }
             ik_quat_set(rot.f, x, y, z, w);
-            ik_vec3_set(self->vec.f, 0, 0, 1);
-            ik_vec3_rotate_quat(self->vec.f, rot.f);
+            ik_vec3_set(self->vecref->f, 0, 0, 1);
+            ik_vec3_rotate_quat(self->vecref->f, rot.f);
         }
 
         Py_DECREF(arg);
@@ -154,15 +146,15 @@ Vec3_set(PyObject* myself, PyObject* args)
     {
         if (!PyArg_ParseTuple(args, "ddd", &x, &y, &z))
             return NULL;
-        ik_vec3_set(self->vec.f, x, y, z);
+        ik_vec3_set(self->vecref->f, x, y, z);
         Py_RETURN_NONE;
     }
 
     if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &w))
         return NULL;
     ik_quat_set(rot.f, x, y, z, w);
-    ik_vec3_set(self->vec.f, 0, 0, 1);
-    ik_vec3_rotate_quat(self->vec.f, rot.f);
+    ik_vec3_set(self->vecref->f, 0, 0, 1);
+    ik_vec3_rotate_quat(self->vecref->f, rot.f);
     Py_RETURN_NONE;
 }
 
@@ -192,13 +184,13 @@ Vec3_inplace_add(PyObject* myself, PyObject* arg)
 {
     if (ik_Vec3_CheckExact(arg))
     {
-        ik_vec3_add_vec3(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f);
+        ik_vec3_add_vec3(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f);
     }
     else
     {
         double v;
         CONVERT_TO_DOUBLE(arg, v)
-        ik_vec3_add_scalar(((ik_Vec3*)myself)->vec.f, v);
+        ik_vec3_add_scalar(((ik_Vec3*)myself)->vecref->f, v);
     }
 
     return Py_INCREF(myself), myself;
@@ -210,13 +202,13 @@ Vec3_inplace_sub(PyObject* myself, PyObject* arg)
 {
     if (ik_Vec3_CheckExact(arg))
     {
-        ik_vec3_sub_vec3(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f);
+        ik_vec3_sub_vec3(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f);
     }
     else
     {
         double v;
         CONVERT_TO_DOUBLE(arg, v)
-        ik_vec3_sub_scalar(((ik_Vec3*)myself)->vec.f, v);
+        ik_vec3_sub_scalar(((ik_Vec3*)myself)->vecref->f, v);
     }
 
     return Py_INCREF(myself), myself;
@@ -228,17 +220,17 @@ Vec3_inplace_mul(PyObject* myself, PyObject* arg)
 {
     if (ik_Vec3_CheckExact(arg))
     {
-        ik_vec3_mul_vec3(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f);
+        ik_vec3_mul_vec3(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f);
     }
     else if (ik_Quat_CheckExact(arg))
     {
-        ik_vec3_rotate_quat(((ik_Vec3*)myself)->vec.f, ((ik_Quat*)arg)->quat.f);
+        ik_vec3_rotate_quat(((ik_Vec3*)myself)->vecref->f, ((ik_Quat*)arg)->quatref->f);
     }
     else
     {
         double v;
         CONVERT_TO_DOUBLE(arg, v)
-        ik_vec3_mul_scalar(((ik_Vec3*)myself)->vec.f, v);
+        ik_vec3_mul_scalar(((ik_Vec3*)myself)->vecref->f, v);
     }
 
     return Py_INCREF(myself), myself;
@@ -250,13 +242,13 @@ Vec3_inplace_div(PyObject* myself, PyObject* arg)
 {
     if (ik_Vec3_CheckExact(arg))
     {
-        ik_vec3_div_vec3(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f);
+        ik_vec3_div_vec3(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f);
     }
     else
     {
         double v;
         CONVERT_TO_DOUBLE(arg, v)
-        ik_vec3_div_scalar(((ik_Vec3*)myself)->vec.f, v);
+        ik_vec3_div_scalar(((ik_Vec3*)myself)->vecref->f, v);
     }
 
     return Py_INCREF(myself), myself;
@@ -266,7 +258,7 @@ Vec3_inplace_div(PyObject* myself, PyObject* arg)
 static PyObject*
 Vec3_inplace_negate(PyObject* myself, PyObject* none)
 {
-    ikreal* v = ((ik_Vec3*)myself)->vec.f;
+    ikreal* v = ((ik_Vec3*)myself)->vecref->f;
     (void)none;
 
     v[0] = -v[0];
@@ -281,7 +273,7 @@ static PyObject*
 Vec3_inplace_normalize(PyObject* myself, PyObject* none)
 {
     (void)none;
-    ik_vec3_normalize(((ik_Vec3*)myself)->vec.f);
+    ik_vec3_normalize(((ik_Vec3*)myself)->vecref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -295,7 +287,7 @@ Vec3_inplace_cross(PyObject* myself, PyObject* arg)
         return NULL;
     }
 
-    ik_vec3_cross(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f);
+    ik_vec3_cross(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -309,7 +301,7 @@ Vec3_inplace_rotate(PyObject* myself, PyObject* arg)
         return NULL;
     }
 
-    ik_vec3_rotate_quat(((ik_Vec3*)myself)->vec.f, ((ik_Quat*)arg)->quat.f);
+    ik_vec3_rotate_quat(((ik_Vec3*)myself)->vecref->f, ((ik_Quat*)arg)->quatref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -395,20 +387,20 @@ static PyObject*
 Vec3_length_squared(PyObject* myself, PyObject* none)
 {
     (void)none;
-    return PyFloat_FromDouble(ik_vec3_length_squared(((ik_Vec3*)myself)->vec.f));
+    return PyFloat_FromDouble(ik_vec3_length_squared(((ik_Vec3*)myself)->vecref->f));
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
 Vec3_length(PyObject* myself)
 {
-    return PyFloat_FromDouble(ik_vec3_length(((ik_Vec3*)myself)->vec.f));
+    return PyFloat_FromDouble(ik_vec3_length(((ik_Vec3*)myself)->vecref->f));
 }
 static PyObject*
 Vec3_length_meth(PyObject* myself, PyObject* none)
 {
     (void)none;
-    return PyFloat_FromDouble(ik_vec3_length(((ik_Vec3*)myself)->vec.f));
+    return PyFloat_FromDouble(ik_vec3_length(((ik_Vec3*)myself)->vecref->f));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -421,7 +413,7 @@ Vec3_dot(PyObject* myself, PyObject* arg)
         return NULL;
     }
 
-    return PyFloat_FromDouble(ik_vec3_dot(((ik_Vec3*)myself)->vec.f, ((ik_Vec3*)arg)->vec.f));
+    return PyFloat_FromDouble(ik_vec3_dot(((ik_Vec3*)myself)->vecref->f, ((ik_Vec3*)arg)->vecref->f));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -474,9 +466,9 @@ Vec3_repr(PyObject* myself)
     PyObject* str = NULL;
     ik_Vec3* self = (ik_Vec3*)myself;
 
-    if ((x = PyFloat_FromDouble(self->vec.v.x)) == NULL) goto x_failed;
-    if ((y = PyFloat_FromDouble(self->vec.v.y)) == NULL) goto y_failed;
-    if ((z = PyFloat_FromDouble(self->vec.v.z)) == NULL) goto z_failed;
+    if ((x = PyFloat_FromDouble(self->vecref->v.x)) == NULL) goto x_failed;
+    if ((y = PyFloat_FromDouble(self->vecref->v.y)) == NULL) goto y_failed;
+    if ((z = PyFloat_FromDouble(self->vecref->v.z)) == NULL) goto z_failed;
     str = PyUnicode_FromFormat("ik.Vec3(%S, %S, %S)", x, y, z);
 
                Py_DECREF(z);
@@ -521,10 +513,47 @@ static PyMethodDef Vec3_methods[] = {
 };
 
 /* ------------------------------------------------------------------------- */
-static PyMemberDef Vec3_members[] = {
-    {"x", MEMBER_TYPE, offsetof(ik_Vec3, vec.v.x), 0, "X component"},
-    {"y", MEMBER_TYPE, offsetof(ik_Vec3, vec.v.y), 0, "Y component"},
-    {"z", MEMBER_TYPE, offsetof(ik_Vec3, vec.v.z), 0, "Z component"},
+#define GETSET_COMPONENT(comp)                                                \
+    static PyObject*                                                          \
+    Vec3_get##comp(PyObject* myself, void* closure)                           \
+    {                                                                         \
+        ik_Vec3* self = (ik_Vec3*)myself;                                     \
+        (void)closure;                                                        \
+        return PyFloat_FromDouble(self->vecref->v.comp);                      \
+    }                                                                         \
+    static int                                                                \
+    Vec3_set##comp(PyObject* myself, PyObject* value, void* closure)          \
+    {                                                                         \
+        ik_Vec3* self = (ik_Vec3*)myself;                                     \
+        (void)closure;                                                        \
+                                                                              \
+        if (PyFloat_Check(value))                                             \
+            self->vecref->v.comp = PyFloat_AS_DOUBLE(value);                  \
+        else if (PyLong_Check(value))                                         \
+        {                                                                     \
+            double v = PyLong_AsDouble(value);                                \
+            if (v == -1.0 && PyErr_Occurred())                                \
+                return -1;                                                    \
+            self->vecref->v.comp = v;                                         \
+        }                                                                     \
+        else                                                                  \
+        {                                                                     \
+            PyErr_SetString(PyExc_TypeError, "Expected a value type");        \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        return 0;                                                             \
+    }
+GETSET_COMPONENT(x)
+GETSET_COMPONENT(y)
+GETSET_COMPONENT(z)
+#undef GETSET_COMPONENT
+
+/* ------------------------------------------------------------------------- */
+static PyGetSetDef Vec3_getsetters[] = {
+    {"x", Vec3_getx, Vec3_setx, "X component"},
+    {"y", Vec3_gety, Vec3_sety, "Y component"},
+    {"z", Vec3_getz, Vec3_setz, "Z component"},
     {NULL}
 };
 
@@ -540,7 +569,7 @@ PyTypeObject ik_Vec3Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = VEC3_DOC,
     .tp_methods = Vec3_methods,
-    .tp_members = Vec3_members,
+    .tp_getset = Vec3_getsetters,
     .tp_init = Vec3_init,
     .tp_new = Vec3_new
 };
@@ -561,6 +590,6 @@ vec3_ik_to_python(ikreal v[3])
     ik_Vec3* vpy = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
     if (vpy == NULL)
         return NULL;
-    ik_vec3_copy(vpy->vec.f, v);
+    ik_vec3_copy(vpy->vecref->f, v);
     return vpy;
 }

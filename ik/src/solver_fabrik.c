@@ -437,7 +437,7 @@ solve_chain_forwards(struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
+solve_chain_backwards_constraints_recurse(struct ik_chain* chain, union ik_vec3 target)
 {
     CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
         ikreal dist;
@@ -468,6 +468,44 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
             ik_vec3_rotate_quat(dir.f, delta.f);
         }*/
 
+        ik_vec3_mul_scalar(dir.f, dist);
+        ik_vec3_add_vec3(target.f, dir.f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        solve_chain_backwards_constraints_recurse(child, target);
+    CHAIN_END_EACH
+}
+static void
+solve_chain_backwards_constraints(struct ik_solver_fabrik* solver, union ik_vec3 target)
+{
+    solve_chain_backwards_constraints_recurse(&solver->chain_tree, target);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
+{
+    CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
+        ikreal dist;
+        union ik_vec3 dir;
+        union ik_quat delta;
+
+        /* Transform target into this segment's space */
+        ik_vec3_sub_vec3(target.f, parent->position.f);
+        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
+
+        /* Determine direction vector to child node position */
+        dir = child->position;
+        ik_vec3_sub_vec3(dir.f, target.f);
+        dist = ik_vec3_length(dir.f);
+        ik_vec3_div_scalar(dir.f, dist);
+
+        /* Point segment at target */
+        ik_quat_angle_of_nn(delta.f, dir.f);
+        ik_quat_mul_quat(child->rotation.f, delta.f);
+
+        /* Calculate new target position */
         ik_vec3_mul_scalar(dir.f, dist);
         ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH

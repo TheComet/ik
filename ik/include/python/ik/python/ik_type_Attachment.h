@@ -1,5 +1,4 @@
-#ifndef IK_PYTHON_TYPE_ATTACHMENT_H
-#define IK_PYTHON_TYPE_ATTACHMENT_H
+#pragma once
 
 #include "ik/python/ik_type_ModuleRef.h"
 
@@ -15,5 +14,3 @@ extern PyTypeObject ik_AttachmentType;
 
 int
 init_ik_AttachmentType(void);
-
-#endif /* IK_PYTHON_TYPE_ATTACHMENT_H */

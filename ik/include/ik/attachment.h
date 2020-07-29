@@ -9,7 +9,7 @@
     struct ik_node* node;
 
 #define IK_ATTACHMENT_LIST                   \
-    X1(ALGORITHM,  algorithm, const char*)   \
+    X1(ALGORITHM, algorithm, const char*)    \
     X(CONSTRAINT, constraint)                \
     X(EFFECTOR,   effector)                  \
     X(POLE,       pole)

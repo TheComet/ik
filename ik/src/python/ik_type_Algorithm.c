@@ -1,14 +1,7 @@
 #include "ik/python/ik_type_Algorithm.h"
+#include "ik/python/ik_helpers.h"
 #include "ik/algorithm.h"
 #include "structmember.h"
-
-#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define FMT "d"
-#elif defined(IK_PRECISION_FLOAT)
-#   define FMT "f"
-#else
-#   error Dont know how to wrap this precision type
-#endif
 
 /* ------------------------------------------------------------------------- */
 static void
@@ -38,7 +31,6 @@ Algorithm_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_self_failed;
 
     self->super.attachment = (struct ik_attachment*)algorithm;
-
     return (PyObject*)self;
 
     alloc_self_failed      : IK_DECREF(algorithm);

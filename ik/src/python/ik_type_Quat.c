@@ -3,15 +3,6 @@
 #include "ik/quat.h"
 #include "structmember.h"
 
-#if defined(IK_PRECISION_DOUBLE) || defined(IK_PRECISION_LONG_DOUBLE)
-#   define MEMBER_TYPE T_DOUBLE
-#elif defined(IK_PRECISION_FLOAT)
-#   define FMT "f"
-#   define MEMBER_TYPE T_FLOAT
-#else
-#   error Dont know how to wrap this precision type
-#endif
-
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl.  If conversion to double raises an exception, obj is
    set to NULL, and the function invoking this macro returns NULL.  If
@@ -62,7 +53,8 @@ Quat_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     if (self == NULL)
         return NULL;
 
-    ik_quat_set_identity(self->quat.f);
+    self->quatref = &self->quat;
+    ik_quat_set_identity(self->quatref->f);
 
     return (PyObject*)self;
 }
@@ -93,7 +85,7 @@ Quat_set_identity(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_set_identity(self->quat.f);
+    ik_quat_set_identity(self->quatref->f);
     Py_RETURN_NONE;
 }
 
@@ -112,13 +104,13 @@ Quat_set(PyObject* myself, PyObject* args)
         if (ik_Quat_CheckExact(arg))
         {
             ik_Quat* other = (ik_Quat*)arg;
-            ik_quat_copy(self->quat.f, other->quat.f);
+            ik_quat_copy(self->quatref->f, other->quatref->f);
             Py_RETURN_NONE;
         }
         else if (ik_Vec3_CheckExact(arg))
         {
             ik_Vec3* v = (ik_Vec3*)arg;
-            ik_quat_angle_of(self->quat.f, v->vec.f);
+            ik_quat_angle_of(self->quatref->f, v->vecref->f);
             Py_RETURN_NONE;
         }
 
@@ -132,7 +124,7 @@ Quat_set(PyObject* myself, PyObject* args)
                 Py_DECREF(arg);
                 return NULL;
             }
-            ik_quat_set(self->quat.f, x, y, z, w);
+            ik_quat_set(self->quatref->f, x, y, z, w);
         }
         else
         {
@@ -143,7 +135,7 @@ Quat_set(PyObject* myself, PyObject* args)
                 return NULL;
             }
             ik_vec3_set(v, x, y, z);
-            ik_quat_angle_of(self->quat.f, v);
+            ik_quat_angle_of(self->quatref->f, v);
         }
 
         Py_DECREF(arg);
@@ -158,7 +150,7 @@ Quat_set(PyObject* myself, PyObject* args)
 
         if (ik_Vec3_CheckExact(arg1))
         {
-            ik_vec3_copy(v1, ((ik_Vec3*)arg1)->vec.f);
+            ik_vec3_copy(v1, ((ik_Vec3*)arg1)->vecref->f);
         }
         else
         {
@@ -176,13 +168,13 @@ Quat_set(PyObject* myself, PyObject* args)
 
         if (ik_Vec3_CheckExact(arg2))
         {
-            ik_quat_angle_between(self->quat.f, v1, ((ik_Vec3*)arg2)->vec.f);
+            ik_quat_angle_between(self->quatref->f, v1, ((ik_Vec3*)arg2)->vecref->f);
             Py_RETURN_NONE;
         }
         else if (PyFloat_Check(arg2))
         {
             double angle = PyFloat_AS_DOUBLE(arg2);
-            ik_quat_set_axis_angle(self->quat.f, v1[0], v1[1], v1[2], angle);
+            ik_quat_set_axis_angle(self->quatref->f, v1[0], v1[1], v1[2], angle);
             Py_RETURN_NONE;
         }
         else if (PyLong_Check(arg2))
@@ -190,7 +182,7 @@ Quat_set(PyObject* myself, PyObject* args)
             double angle = PyLong_AsDouble(arg2);
             if (angle == -1.0 && PyErr_Occurred())
                 return NULL;
-            ik_quat_set_axis_angle(self->quat.f, v1[0], v1[1], v1[2], angle);
+            ik_quat_set_axis_angle(self->quatref->f, v1[0], v1[1], v1[2], angle);
             Py_RETURN_NONE;
         }
         else
@@ -205,7 +197,7 @@ Quat_set(PyObject* myself, PyObject* args)
                 return NULL;
             }
             ik_vec3_set(v2, x, y, z);
-            ik_quat_angle_between(self->quat.f, v1, v2);
+            ik_quat_angle_between(self->quatref->f, v1, v2);
             Py_DECREF(arg2);
             Py_RETURN_NONE;
         }
@@ -217,13 +209,13 @@ Quat_set(PyObject* myself, PyObject* args)
         if (!PyArg_ParseTuple(args, "ddd", &x, &y, &z))
             return NULL;
         ik_vec3_set(v, x, y, z);
-        ik_quat_angle_of(self->quat.f, v);
+        ik_quat_angle_of(self->quatref->f, v);
         Py_RETURN_NONE;
     }
 
     if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &w))
         return NULL;
-    ik_quat_set(self->quat.f, x, y, z, w);
+    ik_quat_set(self->quatref->f, x, y, z, w);
     Py_RETURN_NONE;
 }
 
@@ -253,7 +245,7 @@ Quat_inplace_add(PyObject* self, PyObject* arg)
 {
     if (ik_Quat_CheckExact(arg))
     {
-        ik_quat_add_quat(((ik_Quat*)self)->quat.f, ((ik_Quat*)arg)->quat.f);
+        ik_quat_add_quat(((ik_Quat*)self)->quatref->f, ((ik_Quat*)arg)->quatref->f);
         return Py_INCREF(self), self;
     }
     else
@@ -269,7 +261,7 @@ Quat_inplace_sub(PyObject* self, PyObject* arg)
 {
     if (ik_Quat_CheckExact(arg))
     {
-        ik_quat_sub_quat(((ik_Quat*)self)->quat.f, ((ik_Quat*)arg)->quat.f);
+        ik_quat_sub_quat(((ik_Quat*)self)->quatref->f, ((ik_Quat*)arg)->quatref->f);
         return Py_INCREF(self), self;
     }
     else
@@ -285,13 +277,13 @@ Quat_inplace_mul(PyObject* self, PyObject* arg)
 {
     if (ik_Quat_CheckExact(arg))
     {
-        ik_quat_mul_quat(((ik_Quat*)self)->quat.f, ((ik_Quat*)arg)->quat.f);
+        ik_quat_mul_quat(((ik_Quat*)self)->quatref->f, ((ik_Quat*)arg)->quatref->f);
     }
     else
     {
         double v;
         CONVERT_TO_DOUBLE(arg, v)
-        ik_quat_mul_scalar(((ik_Quat*)self)->quat.f, v);
+        ik_quat_mul_scalar(((ik_Quat*)self)->quatref->f, v);
     }
 
     return Py_INCREF(self), self;
@@ -303,7 +295,7 @@ Quat_inplace_div(PyObject* self, PyObject* arg)
 {
     if (ik_Quat_CheckExact(arg))
     {
-        ik_quat_mul_quat_conj(((ik_Quat*)self)->quat.f, ((ik_Quat*)arg)->quat.f);
+        ik_quat_mul_quat_conj(((ik_Quat*)self)->quatref->f, ((ik_Quat*)arg)->quatref->f);
     }
     else
     {
@@ -314,7 +306,7 @@ Quat_inplace_div(PyObject* self, PyObject* arg)
             PyErr_SetString(PyExc_ZeroDivisionError, "Quaternion division by zero");
             return NULL;
         }
-        ik_quat_mul_scalar(((ik_Quat*)self)->quat.f, 1.0 / v);
+        ik_quat_mul_scalar(((ik_Quat*)self)->quatref->f, 1.0 / v);
     }
 
     return Py_INCREF(self), self;
@@ -335,7 +327,7 @@ Quat_inplace_pow(PyObject* self, PyObject* arg, PyObject* mod)
         union ik_quat qorig;
         int do_normalize;
         long int pow = PyLong_AS_LONG(arg);
-        ikreal* q = ((ik_Quat*)self)->quat.f;
+        ikreal* q = ((ik_Quat*)self)->quatref->f;
 
         if (pow < 1)
         {
@@ -378,7 +370,7 @@ Quat_inplace_conj(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_conj(self->quat.f);
+    ik_quat_conj(self->quatref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -388,7 +380,7 @@ Quat_inplace_negate(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_negate(self->quat.f);
+    ik_quat_negate(self->quatref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -398,7 +390,7 @@ Quat_inplace_invert(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_invert(self->quat.f);
+    ik_quat_invert(self->quatref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -408,7 +400,7 @@ Quat_inplace_normalize(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_normalize(self->quat.f);
+    ik_quat_normalize(self->quatref->f);
     return Py_INCREF(myself), myself;
 }
 
@@ -488,7 +480,7 @@ static PyObject*
 Quat_mag(PyObject* myself)
 {
     ik_Quat* self = (ik_Quat*)myself;
-    return PyFloat_FromDouble(ik_quat_mag(self->quat.f));
+    return PyFloat_FromDouble(ik_quat_mag(self->quatref->f));
 }
 static PyObject*
 Quat_mag_meth(PyObject* myself, PyObject* none)
@@ -509,7 +501,7 @@ Quat_dot(PyObject* myself, PyObject* arg)
     }
 
     return PyFloat_FromDouble(
-        ik_quat_dot(((ik_Quat*)myself)->quat.f, ((ik_Quat*)arg)->quat.f));
+        ik_quat_dot(((ik_Quat*)myself)->quatref->f, ((ik_Quat*)arg)->quatref->f));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -588,7 +580,7 @@ Quat_ensure_positive_sign(PyObject* myself, PyObject* arg)
 {
     ik_Quat* self = (ik_Quat*)myself;
     (void)arg;
-    ik_quat_ensure_positive_sign(self->quat.f);
+    ik_quat_ensure_positive_sign(self->quatref->f);
     Py_RETURN_NONE;
 }
 
@@ -600,10 +592,10 @@ Quat_repr(PyObject* myself)
     PyObject* str = NULL;
     ik_Quat* self = (ik_Quat*)myself;
 
-    if ((x = PyFloat_FromDouble(self->quat.q.x)) == NULL) goto x_failed;
-    if ((y = PyFloat_FromDouble(self->quat.q.y)) == NULL) goto y_failed;
-    if ((z = PyFloat_FromDouble(self->quat.q.z)) == NULL) goto z_failed;
-    if ((w = PyFloat_FromDouble(self->quat.q.w)) == NULL) goto w_failed;
+    if ((x = PyFloat_FromDouble(self->quatref->q.x)) == NULL) goto x_failed;
+    if ((y = PyFloat_FromDouble(self->quatref->q.y)) == NULL) goto y_failed;
+    if ((z = PyFloat_FromDouble(self->quatref->q.z)) == NULL) goto z_failed;
+    if ((w = PyFloat_FromDouble(self->quatref->q.w)) == NULL) goto w_failed;
     str = PyUnicode_FromFormat("ik.Quat(%S, %S, %S, %S)", x, y, z, w);
 
                Py_DECREF(w);
@@ -654,11 +646,49 @@ static PyMethodDef Quat_methods[] = {
 };
 
 /* ------------------------------------------------------------------------- */
-static PyMemberDef Quat_members[] = {
-    {"w", MEMBER_TYPE, offsetof(ik_Quat, quat.q.w), 0, "W component"},
-    {"x", MEMBER_TYPE, offsetof(ik_Quat, quat.q.x), 0, "X component"},
-    {"y", MEMBER_TYPE, offsetof(ik_Quat, quat.q.y), 0, "Y component"},
-    {"z", MEMBER_TYPE, offsetof(ik_Quat, quat.q.z), 0, "Z component"},
+#define GETSET_COMPONENT(comp)                                                \
+    static PyObject*                                                          \
+    Quat_get##comp(PyObject* myself, void* closure)                           \
+    {                                                                         \
+        ik_Quat* self = (ik_Quat*)myself;                                     \
+        (void)closure;                                                        \
+        return PyFloat_FromDouble(self->quatref->q.comp);                     \
+    }                                                                         \
+    static int                                                                \
+    Quat_set##comp(PyObject* myself, PyObject* value, void* closure)          \
+    {                                                                         \
+        ik_Quat* self = (ik_Quat*)myself;                                     \
+        (void)closure;                                                        \
+                                                                              \
+        if (PyFloat_Check(value))                                             \
+            self->quatref->q.comp = PyFloat_AS_DOUBLE(value);                 \
+        else if (PyLong_Check(value))                                         \
+        {                                                                     \
+            double v = PyLong_AsDouble(value);                                \
+            if (v == -1.0 && PyErr_Occurred())                                \
+                return -1;                                                    \
+            self->quatref->q.comp = v;                                        \
+        }                                                                     \
+        else                                                                  \
+        {                                                                     \
+            PyErr_SetString(PyExc_TypeError, "Expected a value type");        \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        return 0;                                                             \
+    }
+GETSET_COMPONENT(x)
+GETSET_COMPONENT(y)
+GETSET_COMPONENT(z)
+GETSET_COMPONENT(w)
+#undef GETSET_COMPONENT
+
+/* ------------------------------------------------------------------------- */
+static PyGetSetDef Quat_getsetters[] = {
+    {"x", Quat_getx, Quat_setx, "X component"},
+    {"y", Quat_gety, Quat_sety, "Y component"},
+    {"z", Quat_getz, Quat_setz, "Z component"},
+    {"w", Quat_getw, Quat_setw, "W component"},
     {NULL}
 };
 
@@ -674,7 +704,7 @@ PyTypeObject ik_QuatType = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = QUAT_DOC,
     .tp_methods = Quat_methods,
-    .tp_members = Quat_members,
+    .tp_getset = Quat_getsetters,
     .tp_init = Quat_init,
     .tp_new = Quat_new
 };
@@ -695,6 +725,6 @@ quat_ik_to_python(ikreal q[4])
     ik_Quat* qpy = (ik_Quat*)PyObject_CallObject((PyObject*)&ik_QuatType, NULL);
     if (qpy == NULL)
         return NULL;
-    ik_quat_copy(qpy->quat.f, q);
+    ik_quat_copy(qpy->quatref->f, q);
     return qpy;
 }
