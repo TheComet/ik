@@ -14,8 +14,9 @@ def one_bone_example(pos):
     root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
     tip = root.create_child(position=ik.Vec3(0, 0, 50))
 
-    root.algorithm = ik.Algorithm(ik.ONE_BONE)
+    root.algorithm = ik.Algorithm(ik.ONE_BONE, constraints=True)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 50), target_rotation=ik.Quat((1, 0, 0), pi))
+    tip.constraints = ik.HingeConstraint(axis=ik.Vec3(1, 0, 0), min_angle=-pi/4, max_angle=pi/4)
     return root
 
 
@@ -31,9 +32,11 @@ def two_bone_example(pos):
 def long_chain_example(pos, chain_len, segment_len):
     tip = root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
     for i in range(chain_len):
-        tip = tip.create_child(position=ik.Vec3(0, 0, segment_len*(random.random()+0.5)))
+        tip = tip.create_child(position=ik.Vec3(0, 0, segment_len))
 
-    root.algorithm = ik.Algorithm(ik.FABRIK)
+    root.children[0].children[0].constraints = ik.StiffConstraint()
+
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=5, constraints=False)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
@@ -93,7 +96,7 @@ class Window(Updateable):
             self,
             Tree(one_bone_example((100, height - 200))),
             Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((500, height - 200), 8, 50)),
+            Tree(long_chain_example((500, height - 200), 3, 80)),
             Tree(double_effectors_example((700, height - 200), 3)),
             Tree(multiple_effectors_example((900, height - 200), 4))
         ]

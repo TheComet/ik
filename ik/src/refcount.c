@@ -4,10 +4,6 @@
 #include <stddef.h>
 #include <assert.h>
 
-/* TODO: Move this somewhere else and don't fix it to 64-bit */
-#define IK_ALIGN_TO_CPU_WORD_SIZE(offset) \
-        (((offset) & 0x7) == 0 ? (offset) : ((offset) & ~0x7) + 8)
-
 /*!
  * Bytes to subtract from a refcount allocated memory block to get to the
  * refcount structure.

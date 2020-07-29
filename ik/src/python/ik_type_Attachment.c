@@ -15,10 +15,7 @@ Attachment_dealloc(PyObject* self)
 static PyObject*
 Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    ik_Attachment* self;
-    (void)args; (void)kwds;
-
-    self = (ik_Attachment*)ik_AttachmentType.tp_base->tp_new(type, args, kwds);
+    ik_Attachment* self = (ik_Attachment*)ik_AttachmentType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         return NULL;
 

@@ -53,6 +53,23 @@ struct ik_node
     struct btree_t children;  /* holds ik_node* objects */
 };
 
+struct ik_pose
+{
+    IK_REFCOUNTED_HEAD
+#ifdef DEBUG
+    int node_count;
+#endif
+};
+
+IK_PUBLIC_API struct ik_pose*
+ik_pose_alloc(const struct ik_node* root);
+
+IK_PUBLIC_API void
+ik_pose_save(struct ik_pose* state, const struct ik_node* root);
+
+IK_PUBLIC_API void
+ik_pose_apply(const struct ik_pose* state, struct ik_node* root);
+
 /*!
  * @brief Creates a new node and returns it. Each node requires a unique
  * identifier.

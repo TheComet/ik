@@ -152,7 +152,7 @@ solver_b1_solve(struct ik_solver* solver_base)
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
 
     if ((s->algorithm->features & IK_ALGORITHM_CONSTRAINTS) &&
-        s->base->constraint != NULL)
+        s->tip->constraint != NULL)
     {
         s->impl.solve = solver_b1_solve_constraints;
     }

@@ -6,6 +6,7 @@
     (Py_TYPE(o) == &ik_NodeType)
 
 struct ik_node;
+struct ik_pose;
 
 struct ik_ConstraintList;
 struct ik_Quat;
@@ -37,7 +38,14 @@ typedef struct ik_Node
     struct ik_node* node;
 } ik_Node;
 
+typedef struct ik_Pose
+{
+    ik_ModuleRef super;
+    struct ik_pose* pose;
+} ik_Pose;
+
 extern PyTypeObject ik_NodeType;
+extern PyTypeObject ik_PoseType;
 
 int
 init_ik_NodeType(void);

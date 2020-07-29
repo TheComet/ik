@@ -458,15 +458,13 @@ solve_chain_backwards_constraints_recurse(struct ik_chain* chain, union ik_vec3 
         ik_quat_angle_of_nn(delta.f, dir.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
 
-        /*
-        delta = child->rotation;
-        dir = child->position;
         if (child->constraint)
         {
+            delta = child->rotation;
             child->constraint->apply(child->constraint, child->rotation.f);
-            ik_quat_conj_mul_quat(delta.f, child->rotation.f);
-            ik_vec3_rotate_quat(dir.f, delta.f);
-        }*/
+            ik_quat_conj_rmul_quat(child->rotation.f, delta.f);
+            ik_vec3_rotate_quat_conj(dir.f, delta.f);
+        }
 
         ik_vec3_mul_scalar(dir.f, dist);
         ik_vec3_add_vec3(target.f, dir.f);
@@ -604,7 +602,11 @@ fabrik_solve(struct ik_solver* solver_base)
     while (iteration-- > 0)
     {
         union ik_vec3 base_pos = solve_chain_forwards(solver);
-        solve_chain_backwards(solver, base_pos);
+
+        if (alg->features & IK_ALGORITHM_CONSTRAINTS)
+            solve_chain_backwards_constraints(solver, base_pos);
+        else
+            solve_chain_backwards(solver, base_pos);
 
         if (all_targets_reached(solver, tol_squared))
             break;

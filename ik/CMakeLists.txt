@@ -217,6 +217,7 @@ set (IK_PYTHON_TESTS_SOURCES
     "src/tests/python/test_info.py"
     "src/tests/python/test_log.py"
     "src/tests/python/test_Node.py"
+    "src/tests/python/test_Pose.py"
     "src/tests/python/test_Quat.py"
     "src/tests/python/test_Solver.py"
     "src/tests/python/test_Vec3.py")

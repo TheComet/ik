@@ -63,6 +63,7 @@ add_builtin_types_to_module(PyObject* m)
     Py_INCREF(&ik_HingeConstraintType); if (PyModule_AddObject(m, "HingeConstraint", (PyObject*)&ik_HingeConstraintType) != 0) return -1;
     Py_INCREF(&ik_EffectorType);        if (PyModule_AddObject(m, "Effector",        (PyObject*)&ik_EffectorType) != 0)        return -1;
     Py_INCREF(&ik_NodeType);            if (PyModule_AddObject(m, "Node",            (PyObject*)&ik_NodeType) != 0)            return -1;
+    Py_INCREF(&ik_PoseType);            if (PyModule_AddObject(m, "Pose",            (PyObject*)&ik_PoseType) != 0)            return -1;
     Py_INCREF(&ik_QuatType);            if (PyModule_AddObject(m, "Quat",            (PyObject*)&ik_QuatType) != 0)            return -1;
     Py_INCREF(&ik_SolverType);          if (PyModule_AddObject(m, "Solver",          (PyObject*)&ik_SolverType) != 0)          return -1;
     Py_INCREF(&ik_Vec3Type);            if (PyModule_AddObject(m, "Vec3",            (PyObject*)&ik_Vec3Type) != 0)            return -1;

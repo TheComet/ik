@@ -8,6 +8,7 @@ from Updateable import Updateable
 class Tree(Updateable):
     def __init__(self, root):
         self.root = root
+        self.initial_pose = ik.Pose(root)
         self.solver = ik.Solver(root)
 
         self.root_color     = (255, 100, 255)
@@ -55,6 +56,7 @@ class Tree(Updateable):
                 return e
 
     def update(self, time_step):
+        self.initial_pose.apply(self.root)
         self.solver.solve()
 
     def draw(self, surface):

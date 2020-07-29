@@ -6,6 +6,10 @@
 
 C_BEGIN
 
+/* TODO: Move this somewhere else and don't fix it to 64-bit */
+#define IK_ALIGN_TO_CPU_WORD_SIZE(offset) \
+        (((offset) & 0x7) == 0 ? (offset) : ((offset) & ~0x7) + 8)
+
 /*!
  * All structures that are refcounted must have the following fields present.
  * This way, all refcounted objects can be cast to ik_refcounted_t.
@@ -36,8 +40,8 @@ C_BEGIN
         if (--((o)->refcount->refs) == 0)                                     \
         {                                                                     \
             uint32_t decref_i;                                                \
-            for (decref_i = 0; (o)->refcount->obj_count--; decref_i++)        \
-                if ((o)->refcount->deinit)                                    \
+            if ((o)->refcount->deinit)                                        \
+                for (decref_i = 0; (o)->refcount->obj_count--; decref_i++)    \
                     (o)->refcount->deinit((o) + decref_i);                    \
                     /* XXX: This only works if o is the correct type, which   \
                      * should be the case */                                  \
