@@ -128,7 +128,7 @@ add_custom_target (ik_build_info_header
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
     COMMENT "Updating build information"
     VERBATIM)
-add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND cmake -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_build_info_header)
+add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_build_info_header)
 
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
@@ -244,17 +244,17 @@ target_compile_definitions (ik_obj
     PRIVATE IK_BUILDING)
 target_compile_options (ik_obj
     PRIVATE $<$<C_COMPILER_ID:MSVC>:
-        /EHa /MTd /W4 /WX /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
+        /EHa /MTd /W4 /wd4305 /wd4201 /wd4706 /wd4100 /wd4244 /wd4477 /wd4003 /D_CRT_SECURE_NO_DEPRECATE
     >
     PRIVATE $<$<C_COMPILER_ID:GNU>:
         -W -Wall -Wextra -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
         -fno-strict-aliasing -ffast-math -flto
-        $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+        $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
     >
     PRIVATE $<$<C_COMPILER_ID:Clang>:
         -W -Wall -Wextra -Wshadow -Wconversion -Wno-unused-parameter -Wno-conversion -Wno-implicit-fallthrough -Wno-overlength-strings
         -fno-strict-aliasing -ffast-math
-        $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+        $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
     >
 )
 
@@ -279,7 +279,7 @@ if (IK_PYTHON)
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/python>)
     target_compile_options (ik_python_obj
         PUBLIC $<$<C_COMPILER_ID:MSVC>:
-            /EHa /MTd /W4 /WX /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
+            /EHa /MTd /W4 /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
             -Wall -Wextra -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -Wno-cast-function-type

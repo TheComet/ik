@@ -144,7 +144,7 @@ NodeChildrenView_item(PyObject* myself, Py_ssize_t index)
         return NULL;
     }
 
-    node = ik_node_get_child(self->node, index)->user.ptr;
+    node = ik_node_get_child(self->node, (uint32_t)index)->user.ptr;
     return Py_INCREF(node), (PyObject*)node;
 }
 
@@ -754,7 +754,7 @@ static void
 link_internal_constraints(ik_Node* self)
 {
     int i;
-    ik_Constraint* first_constraint;
+    ik_Constraint* first_constraint = NULL;
 
     if (!PyTuple_CheckExact(self->constraints))
         return;
@@ -770,7 +770,8 @@ link_internal_constraints(ik_Node* self)
             ik_constraint_append((struct ik_constraint*)first_constraint->super.attachment, constraint);
     }
 
-    ik_node_attach_constraint(self->node, (struct ik_constraint*)first_constraint->super.attachment);
+    if (first_constraint)
+        ik_node_attach_constraint(self->node, (struct ik_constraint*)first_constraint->super.attachment);
 }
 static int
 Node_setconstraints(PyObject* myself, PyObject* value, void* closure)

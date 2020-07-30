@@ -275,7 +275,7 @@ save_pose(const struct ik_node* node, struct ik_node_state** data)
 void
 ik_pose_save(struct ik_pose* state, const struct ik_node* root)
 {
-    struct ik_node_state* data = (uintptr_t)state + IK_POSE_OFFSET;
+    struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
 #ifdef DEBUG
     assert(state->node_count == ik_node_count(root));
 #endif
@@ -297,7 +297,7 @@ restore_pose(struct ik_node* node, struct ik_node_state** data)
 void
 ik_pose_apply(const struct ik_pose* state, struct ik_node* root)
 {
-    struct ik_node_state* data = (uintptr_t)state + IK_POSE_OFFSET;
+    struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
 #ifdef DEBUG
     assert(state->node_count == ik_node_count(root));
 #endif
