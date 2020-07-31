@@ -1,2 +1,54 @@
-test
+Algorithm objects let you choose which part of the  tree should be solved, and
+more importantly, which type  of algorithm should be used and what parameters.
+ 
+By  attaching an algorithm to a node, all nodes between the algorithm and  any
+child  nodes  with  effectors  attached  are  marked to be  solved  using  the
+parameters in the Algorithm object. For example:
+ 
+                              n4
+                              |          ____
+                              n3 <- e1       |
+                              |              | This section of
+                              n2             | the tree will
+                              |              | be solved.
+                              n1 <- a1   ____|
+                              |
+                              n0
+ 
+    >>> e1 = n3.effector = ik.Effector()
+    >>> a1 = n1.algorithm = ik.Algorithm(ik.TWO_BONE)
+ 
+By  attaching  an  algorithm  to  the node 'n1', nodes 'n1', 'n2' and 'n3' are
+marked  as  one chain to be solved by the 'TWO_BONE' algorithm. Nodes 'n0' and
+'n3' will be ignored.
+ 
+It is  also possible to change algorithms partway down the tree by attaching a
+different algorithm:
+ 
+                              n4
+                      ____    |
+                     |        n3 <- e2
+    This section is  |        |
+    solved by the    |        n2
+    TWO_BONE solver  |        |              ____
+                     |____    n1 <- e1, a2       | This section is
+                              |                  | solved by the
+                              n0 <- a1       ____| ONE_BONE solver
+ 
+    >>> a1 = n0.algorithm = ik.Algorithm(ik.ONE_BONE)
+    >>> a2 = n1.algorithm = ik.Algorithm(ik.TWO_BONE)
+    >>> e1 = n1.effector = ik.Effector()
+    >>> e2 = n3.effector = ik.Effector()
+ 
+All properties can be specified in the constructor. The only required argument
+is the algorithm type (see below).
+ 
+    >>> import ik
+    >>> ik.Algorithm(type=ik.FABRIK, 
+    ...              max_iterations=20,
+    ...              tolerance=1e-2,
+    ...              constraints=True,
+    ...              poles=True,
+    ...              target_rotations=True,
+    ...              integrate_rk45=True)
 

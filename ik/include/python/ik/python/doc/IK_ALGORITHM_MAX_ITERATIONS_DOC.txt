@@ -1,1 +1,7 @@
-todo
+How many times to iterate  the  algorithm.
+ 
+FABRIK converges extremely quickly, you can sometimes  get  away with just 3-5
+iterations. MSS takes longer  to  converge, approximately 100-1000 iterations.
+ONE_BONE and TWO_BONE solvers ignore both of these values since they calculate
+the result directly.
+

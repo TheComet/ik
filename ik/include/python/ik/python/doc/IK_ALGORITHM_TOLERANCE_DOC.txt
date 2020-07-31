@@ -1,1 +1,7 @@
-todo
+The  maximum  distance  allowed  between  each  end  effector and  its  target
+position.
+ 
+Depending on your world scale, the  tolerance  should be set to something that
+is approximately a 10th to a 100th the size of the chain being solved. It is a
+trade-off  between accuracy and solver speed,  since  the  less  accurate  the
+result has to be, the earlier the solver can bail.

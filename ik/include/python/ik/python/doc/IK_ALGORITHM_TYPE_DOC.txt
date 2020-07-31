@@ -1,1 +1,27 @@
-todo
+The type of algorithm to use.
+
+There are four solvers available and each has a  specific  use-case  with pros
+and cons.
+ 
+  - ik.ONE_BONE rotates a single segment to  point  towards a target position.
+                This  is  useful  for  things  like eyeballs, rotating  heads,
+                pointing guns in  a direction, etc.
+  - ik.TWO_BONE solves the two bone IK problem analytically (1 iteration) and
+                is very fast. This is useful for legs, arms, robotic limbs, 
+                anything that has a single joint and two bones.
+  - ik.FABRIK   is a fast  general purpose IK solver.  Converges  very quickly
+                (5-50  iterations), works  with  constraints,  supports target 
+                rotations,  supports  multiple  end  effectors.  FABRIK  is  a 
+                heuristic  algorithm meaning it isn't  based  on any  physical 
+                model  and produces results  that can  "look wrong" on organic 
+                creatures. FABRIK  is good at making  small  adjustments, such 
+                as foot  placement to match  inclination. It is not a suitable 
+                algorithm for driving animations on organic creatures.
+  - ik.MSS      is a mass-spring  based  solver.  Produces  excellent  looking
+                results for organic creatures and is reasonably fast. Supports
+                constraints, target rotations, and multiple end effectors. MSS
+                is a  physically  based  model  that is  aware of  the model's
+                distribution of mass. Each  joint specifies how "heavy" it is,
+                making  heavier  nodes react  slower  than  lighter  nodes  to
+                approximate how a real organic joint might behave.
+
