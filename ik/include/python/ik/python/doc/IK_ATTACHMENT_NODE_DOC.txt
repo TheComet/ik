@@ -1,1 +1,2 @@
-todo
+This is the node  to  which  the  attachment  is  attached. Can be None if the
+attachment is not attached.

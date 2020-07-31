@@ -1,1 +1,1 @@
-todo
+Base class for all objects that can be attached to a node.
