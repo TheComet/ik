@@ -1,5 +1,6 @@
 #include "ik/python/ik_module.h"
 #include "ik/python/ik_type_ModuleRef.h"
+#include "ik/python/ik_docstrings.h"
 
 /* ------------------------------------------------------------------------- */
 static void
@@ -39,7 +40,7 @@ PyTypeObject ik_ModuleRefType = {
     .tp_name = "ik.ModuleRef",
     .tp_basicsize = sizeof(ik_ModuleRef),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = "Root object for all IK type instantiations. Holds a reference to the IK's module object to ensure the module is destroyed last",
+    .tp_doc = IK_MODULE_REF_DOC,
     .tp_dealloc = ModuleRef_dealloc,
     .tp_new = ModuleRef_new
 };

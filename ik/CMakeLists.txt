@@ -128,7 +128,10 @@ add_custom_target (ik_build_info_header
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_timestamp.cmake"
     COMMENT "Updating build information"
     VERBATIM)
-add_custom_command (OUTPUT ${UPDATE_INFO_HEADER} COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake DEPENDS ik_build_info_header)
+add_custom_command (
+    OUTPUT ${UPDATE_INFO_HEADER}
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake
+    DEPENDS ik_build_info_header)
 
 set (IK_HEADERS
     "${UPDATE_INFO_HEADER}")
@@ -266,9 +269,32 @@ target_link_libraries (ik_obj PUBLIC cstructures)
 
 if (IK_PYTHON)
     find_package (Python COMPONENTS Development REQUIRED)
+
+    file (GLOB IK_PYTHON_DOCFILES "include/python/ik/python/doc/*")
+    set (IK_DOCSTRINGS_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/ik/python/ik_docstrings.h")
+    set (IK_DOCSTRINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/src/ik_docstrings.c")
+    add_custom_command (
+        OUTPUT
+            ${IK_DOCSTRINGS_HEADER}
+            ${IK_DOCSTRINGS_SOURCE}
+        COMMAND ${CMAKE_COMMAND}
+            -DIK_DOCSTRINGS_HEADER=${IK_DOCSTRINGS_HEADER}
+            -DIK_DOCSTRINGS_SOURCE=${IK_DOCSTRINGS_SOURCE}
+            -DIK_PYTHON_DOCFILES="${IK_PYTHON_DOCFILES}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_docstrings.cmake"
+        DEPENDS
+            "cmake/generate_python_docstrings.cmake"
+            ${IK_PYTHON_DOCFILES})
+    add_custom_target (ik_generate_docstrings ALL
+        DEPENDS
+            ${IK_DOCSTRINGS_HEADER}
+            ${IK_DOCSTRINGS_SOURCE})
+
     add_library (ik_python_obj OBJECT
         ${IK_PYTHON_SOURCES}
-        ${IK_PYTHON_HEADERS})
+        ${IK_PYTHON_HEADERS}
+        ${IK_DOCSTRINGS_HEADER}
+        ${IK_DOCSTRINGS_SOURCE})
     set_target_properties (ik_python_obj
         PROPERTIES
             C_STANDARD 99
@@ -290,8 +316,11 @@ if (IK_PYTHON)
             $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
         >
     )
+
     target_link_libraries (ik_python_obj PRIVATE Python::Python)
     target_link_libraries (ik_python_obj PRIVATE ik_obj)
+
+    add_dependencies (ik_python_obj ik_generate_docstrings)
 endif ()
 
 ###############################################################################
@@ -300,13 +329,13 @@ endif ()
 
 if (IK_TESTS)
     if (IK_PYTHON)
-        set (GENERATE_PYTHON_TESTS_CMD ${CMAKE_COMMAND}
-            -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-            -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -DIK_PYTHON_TESTS_SOURCES="${IK_PYTHON_TESTS_SOURCES}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake")
-        add_custom_command (OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"
-            COMMAND ${GENERATE_PYTHON_TESTS_CMD}
+        add_custom_command (
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"
+            COMMAND ${CMAKE_COMMAND}
+                -DIK_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+                -DIK_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                -DIK_PYTHON_TESTS_SOURCES="${IK_PYTHON_TESTS_SOURCES}"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_python_unit_tests.cmake"
             DEPENDS
                 "cmake/generate_python_unit_tests.cmake"
                 "templates/test_python_bindings.cpp.in"

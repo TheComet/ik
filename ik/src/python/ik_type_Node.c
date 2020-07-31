@@ -7,6 +7,7 @@
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_helpers.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/node.h"
 #include "structmember.h"
 
@@ -184,8 +185,6 @@ static PySequenceMethods NodeChildrenView_as_sequence = {
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CHILDREN_VIEW_DOC,
-"");
 PyTypeObject ik_NodeChildrenViewType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.NodeChildrenView",
@@ -194,7 +193,7 @@ PyTypeObject ik_NodeChildrenViewType = {
     .tp_repr = NodeChildrenView_repr,
     .tp_str = NodeChildrenView_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = NODE_CHILDREN_VIEW_DOC,
+    .tp_doc = "",
     .tp_new = NodeChildrenView_new,
     .tp_as_mapping = &NodeChildrenView_as_mapping,
     .tp_as_sequence = &NodeChildrenView_as_sequence
@@ -402,7 +401,6 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_LINK_DOC, "");
 static PyObject*
 Node_link(PyObject* myself, PyObject* child)
 {
@@ -425,7 +423,6 @@ Node_link(PyObject* myself, PyObject* child)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_UNLINK_DOC, "");
 static PyObject*
 Node_unlink(PyObject* myself, PyObject* args)
 {
@@ -444,7 +441,6 @@ Node_unlink(PyObject* myself, PyObject* args)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CREATE_CHILD_DOC, "");
 static PyObject*
 Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
 {
@@ -468,7 +464,6 @@ Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_PACK_DOC, "");
 static PyObject*
 Node_pack(PyObject* myself, PyObject* arg)
 {
@@ -480,15 +475,14 @@ Node_pack(PyObject* myself, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
-    {"link",         Node_link,                      METH_O,                       NODE_LINK_DOC},
-    {"unlink",       Node_unlink,                    METH_NOARGS,                  NODE_UNLINK_DOC},
-    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, NODE_CREATE_CHILD_DOC},
-    {"pack",         Node_pack,                      METH_NOARGS,                  NODE_PACK_DOC},
+    {"link",         Node_link,                      METH_O,                       IK_NODE_LINK_DOC},
+    {"unlink",       Node_unlink,                    METH_NOARGS,                  IK_NODE_UNLINK_DOC},
+    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, IK_NODE_CREATE_CHILD_DOC},
+    {"pack",         Node_pack,                      METH_NOARGS,                  IK_NODE_PACK_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_COUNT_DOC,"");
 static PyObject*
 Node_getcount(PyObject* myself, void* closure)
 {
@@ -505,7 +499,6 @@ Node_setcount(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CHILD_COUNT_DOC,"");
 static PyObject*
 Node_getchild_count(PyObject* myself, void* closure)
 {
@@ -522,7 +515,6 @@ Node_setchild_count(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CHILDREN_DOC,"");
 static PyObject*
 Node_getchildren(PyObject* myself, void* closure)
 {
@@ -539,7 +531,6 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_PARENT_DOC,"");
 static PyObject*
 Node_getparent(PyObject* myself, void* closure)
 {
@@ -565,7 +556,6 @@ Node_setparent(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_POSITION_DOC,"");
 static PyObject*
 Node_getposition(PyObject* myself, void* closure)
 {
@@ -589,7 +579,6 @@ Node_setposition(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_ROTATION_DOC,"");
 static PyObject*
 Node_getrotation(PyObject* myself, void* closure)
 {
@@ -613,7 +602,6 @@ Node_setrotation(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_MASS_DOC,"");
 static PyObject*
 Node_getmass(PyObject* myself, void* closure)
 {
@@ -646,7 +634,6 @@ Node_setmass(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_ROTATION_WEIGHT_DOC,"");
 static PyObject*
 Node_getrotation_weight(PyObject* myself, void* closure)
 {
@@ -679,7 +666,6 @@ Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_ALGORITHM_DOC,"");
 static PyObject*
 Node_getalgorithm(PyObject* myself, void* closure)
 {
@@ -725,7 +711,6 @@ Node_setalgorithm(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_CONSTRAINTS_DOC,"");
 static PyObject*
 Node_getconstraints(PyObject* myself, void* closure)
 {
@@ -876,7 +861,6 @@ Node_setconstraints(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_EFFECTOR_DOC,"");
 static PyObject*
 Node_geteffector(PyObject* myself, void* closure)
 {
@@ -922,7 +906,6 @@ Node_seteffector(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_POLE_DOC,"");
 static PyObject*
 Node_getpole(PyObject* myself, void* closure)
 {
@@ -969,18 +952,18 @@ Node_setpole(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
-    {"count",           Node_getcount,           Node_setcount,           NODE_COUNT_DOC, NULL},
-    {"child_count",     Node_getchild_count,     Node_setchild_count,     NODE_CHILD_COUNT_DOC, NULL},
-    {"children",        Node_getchildren,        Node_setchildren,        NODE_CHILDREN_DOC, NULL},
-    {"parent",          Node_getparent,          Node_setparent,          NODE_PARENT_DOC, NULL},
-    {"position",        Node_getposition,        Node_setposition,        NODE_POSITION_DOC, NULL},
-    {"rotation",        Node_getrotation,        Node_setrotation,        NODE_ROTATION_DOC, NULL},
-    {"mass",            Node_getmass,            Node_setmass,            NODE_MASS_DOC, NULL},
-    {"rotation_weight", Node_getrotation_weight, Node_setrotation_weight, NODE_ROTATION_WEIGHT_DOC, NULL},
-    {"algorithm",       Node_getalgorithm,       Node_setalgorithm,       NODE_ALGORITHM_DOC, NULL},
-    {"constraints",     Node_getconstraints,     Node_setconstraints,     NODE_CONSTRAINTS_DOC, NULL},
-    {"effector",        Node_geteffector,        Node_seteffector,        NODE_EFFECTOR_DOC, NULL},
-    {"pole",            Node_getpole,            Node_setpole,            NODE_POLE_DOC, NULL},
+    {"count",           Node_getcount,           Node_setcount,           IK_NODE_COUNT_DOC, NULL},
+    {"child_count",     Node_getchild_count,     Node_setchild_count,     IK_NODE_CHILD_COUNT_DOC, NULL},
+    {"children",        Node_getchildren,        Node_setchildren,        IK_NODE_CHILDREN_DOC, NULL},
+    {"parent",          Node_getparent,          Node_setparent,          IK_NODE_PARENT_DOC, NULL},
+    {"position",        Node_getposition,        Node_setposition,        IK_NODE_POSITION_DOC, NULL},
+    {"rotation",        Node_getrotation,        Node_setrotation,        IK_NODE_ROTATION_DOC, NULL},
+    {"mass",            Node_getmass,            Node_setmass,            IK_NODE_MASS_DOC, NULL},
+    {"rotation_weight", Node_getrotation_weight, Node_setrotation_weight, IK_NODE_ROTATION_WEIGHT_DOC, NULL},
+    {"algorithm",       Node_getalgorithm,       Node_setalgorithm,       IK_NODE_ALGORITHM_DOC, NULL},
+    {"constraints",     Node_getconstraints,     Node_setconstraints,     IK_NODE_CONSTRAINTS_DOC, NULL},
+    {"effector",        Node_geteffector,        Node_seteffector,        IK_NODE_EFFECTOR_DOC, NULL},
+    {"pole",            Node_getpole,            Node_setpole,            IK_NODE_POLE_DOC, NULL},
     {NULL}
 };
 
@@ -1181,8 +1164,6 @@ Node_richcompare(PyObject* myself, PyObject* other, int op)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_DOC,
-"");
 PyTypeObject ik_NodeType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Node",
@@ -1191,7 +1172,7 @@ PyTypeObject ik_NodeType = {
     .tp_repr = Node_repr,
     .tp_str = Node_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = NODE_DOC,
+    .tp_doc = IK_NODE_DOC,
     .tp_methods = Node_methods,
     .tp_getset = Node_getset,
     .tp_new = Node_new,
@@ -1249,7 +1230,6 @@ Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(POSE_APPLY_DOC, "");
 static PyObject*
 Pose_apply(PyObject* myself, PyObject* args, PyObject* kwds)
 {
@@ -1281,20 +1261,18 @@ Pose_apply(PyObject* myself, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Pose_methods[] = {
-    {"apply", (PyCFunction)Pose_apply, METH_VARARGS | METH_KEYWORDS, POSE_APPLY_DOC},
+    {"apply", (PyCFunction)Pose_apply, METH_VARARGS | METH_KEYWORDS, IK_POSE_APPLY_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(TREE_STATE_DOC,
-"");
 PyTypeObject ik_PoseType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Pose",
     .tp_basicsize = sizeof(ik_Pose),
     .tp_dealloc = Pose_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = TREE_STATE_DOC,
+    .tp_doc = IK_POSE_DOC,
     .tp_methods = Pose_methods,
     .tp_new = Pose_new,
     .tp_init = Pose_init

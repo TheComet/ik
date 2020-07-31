@@ -1,13 +1,13 @@
 __author__ = "TheComet"
 
 import pygame
-import time
 import ik
 import random
 from Updateable import Updateable
 from TreeEditor import TreeEditor
 from Tree import Tree
-from math import pi
+from math import pi, sqrt
+from time import time
 
 
 def one_bone_example(pos):
@@ -34,9 +34,9 @@ def long_chain_example(pos, chain_len, segment_len):
     for i in range(chain_len):
         tip = tip.create_child(position=ik.Vec3(0, 0, segment_len))
 
-    root.children[0].children[0].constraints = ik.StiffConstraint()
+    root.children[0].children[0].children[0].constraints = ik.StiffConstraint()
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=5, constraints=False)
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=20, constraints=True)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
@@ -87,6 +87,26 @@ def multiple_effectors_example(pos, chain_len):
 
     return root
 
+def too_many_effectors_example(pos, chain_len, segment_len, max_depth):
+    root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
+    def branchoff(node, chain_len, depth, x):
+        if depth == 0:
+            dist = max_depth*chain_len*segment_len
+            y = sqrt(dist**2 - x**2)
+            node.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+x, pos[1]-y))
+            return
+        for i in range(chain_len):
+            node = node.create_child(position=ik.Vec3(0, 0, segment_len))
+        branchoff(node, chain_len, depth-1, x-depth**2*segment_len/12)
+        #branchoff(node, chain_len, depth-1, x)
+        branchoff(node, chain_len, depth-1, x+depth**2*segment_len/12)
+    tstart = time()
+    branchoff(root, chain_len, max_depth, 0)
+    print(f"tree took {time()-tstart} to build")
+    root.algorithm = ik.Algorithm(ik.FABRIK)
+
+    return root
+
 class Window(Updateable):
     def __init__(self, width, height):
         self.dimensions = width, height
@@ -94,18 +114,19 @@ class Window(Updateable):
 
         self.__updateables = [
             self,
-            Tree(one_bone_example((100, height - 200))),
-            Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((500, height - 200), 3, 80)),
-            Tree(double_effectors_example((700, height - 200), 3)),
-            Tree(multiple_effectors_example((900, height - 200), 4))
+            #Tree(one_bone_example((100, height - 200))),
+            #Tree(two_bone_example((300, height - 200))),
+            Tree(long_chain_example((width/2, height - 200), 4, 80))
+            #Tree(double_effectors_example((700, height - 200), 3)),
+            #Tree(multiple_effectors_example((900, height - 200), 4))
+            #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
         ]
 
         self.__last_time_updated = None
         self.__running = False
 
     def enter_main_loop(self):
-        self.__last_time_updated = time.time()
+        self.__last_time_updated = time()
         self.__running = True
         while self.__running:
             self.__process_events()
@@ -124,7 +145,7 @@ class Window(Updateable):
             updateable.update(dt)
 
     def __update_timestep(self):
-        new_time = time.time()
+        new_time = time()
         dt = new_time - self.__last_time_updated
         self.__last_time_updated = new_time
         return dt

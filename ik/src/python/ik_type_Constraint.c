@@ -3,6 +3,7 @@
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_helpers.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/constraint.h"
 #include "structmember.h"
 
@@ -43,14 +44,13 @@ Constraint_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(CONSTRAINT_DOC, "");
 PyTypeObject ik_ConstraintType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Constraint",
     .tp_basicsize = sizeof(ik_Constraint),
     .tp_dealloc = Constraint_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = CONSTRAINT_DOC,
+    .tp_doc = IK_CONSTRAINT_DOC,
     .tp_new = Constraint_new
 };
 
@@ -136,7 +136,6 @@ StiffConstraint_str(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(STIFF_TARGET_ROTATION_DOC, "");
 static PyObject*
 StiffConstraint_getrotation(PyObject* myself, void* closure)
 {
@@ -161,12 +160,11 @@ StiffConstraint_setrotation(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef StiffConstraint_getsetters[] = {
-    {"rotation", StiffConstraint_getrotation, StiffConstraint_setrotation, STIFF_TARGET_ROTATION_DOC},
+    {"rotation", StiffConstraint_getrotation, StiffConstraint_setrotation, IK_STIFFCONSTRAINT_TARGET_ROTATION_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(STIFF_CONSTRAINT_DOC, "");
 PyTypeObject ik_StiffConstraintType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.StiffConstraint",
@@ -176,7 +174,7 @@ PyTypeObject ik_StiffConstraintType = {
     .tp_repr = StiffConstraint_repr,
     .tp_str = StiffConstraint_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = STIFF_CONSTRAINT_DOC,
+    .tp_doc = IK_STIFFCONSTRAINT_DOC,
     .tp_getset = StiffConstraint_getsetters,
     .tp_new = StiffConstraint_new,
     .tp_init = StiffConstraint_init
@@ -285,7 +283,6 @@ HingeConstraint_str(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(HINGE_AXIS_DOC, "");
 static PyObject*
 HingeConstraint_getaxis(PyObject* myself, void* closure)
 {
@@ -309,13 +306,82 @@ HingeConstraint_setaxis(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+HingeConstraint_getmin_angle(PyObject* myself, void* closure)
+{
+    ik_HingeConstraint* self = (ik_HingeConstraint*)myself;
+    struct ik_constraint* constraint = (struct ik_constraint*)self->super.super.attachment;
+    (void)closure;
+    return PyFloat_FromDouble(constraint->data.hinge.min_angle);
+}
+static int
+HingeConstraint_setmin_angle(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_HingeConstraint* self = (ik_HingeConstraint*)myself;
+    struct ik_constraint* constraint = (struct ik_constraint*)self->super.super.attachment;
+    (void)closure;
+
+    if (PyFloat_Check(value))
+    {
+        constraint->data.hinge.min_angle = PyFloat_AS_DOUBLE(value);
+        return 0;
+    }
+    if (PyLong_Check(value))
+    {
+        double d = PyLong_AsDouble(value);
+        if (d == -1.0 && PyErr_Occurred())
+            return -1;
+        constraint->data.hinge.min_angle = d;
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Expected a value");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+HingeConstraint_getmax_angle(PyObject* myself, void* closure)
+{
+    ik_HingeConstraint* self = (ik_HingeConstraint*)myself;
+    struct ik_constraint* constraint = (struct ik_constraint*)self->super.super.attachment;
+    (void)closure;
+    return PyFloat_FromDouble(constraint->data.hinge.max_angle);
+}
+static int
+HingeConstraint_setmax_angle(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_HingeConstraint* self = (ik_HingeConstraint*)myself;
+    struct ik_constraint* constraint = (struct ik_constraint*)self->super.super.attachment;
+    (void)closure;
+
+    if (PyFloat_Check(value))
+    {
+        constraint->data.hinge.max_angle = PyFloat_AS_DOUBLE(value);
+        return 0;
+    }
+    if (PyLong_Check(value))
+    {
+        double d = PyLong_AsDouble(value);
+        if (d == -1.0 && PyErr_Occurred())
+            return -1;
+        constraint->data.hinge.max_angle = d;
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Expected a value");
+    return -1;
+}
+
+/* ------------------------------------------------------------------------- */
 static PyGetSetDef HingeConstraint_getsetters[] = {
-    {"axis", HingeConstraint_getaxis, HingeConstraint_setaxis, HINGE_AXIS_DOC},
+    {"axis",      HingeConstraint_getaxis,      HingeConstraint_setaxis,      IK_HINGECONSTRAINT_AXIS_DOC},
+    {"min_angle", HingeConstraint_getmin_angle, HingeConstraint_setmin_angle, IK_HINGECONSTRAINT_MIN_ANGLE_DOC},
+    {"max_angle", HingeConstraint_getmax_angle, HingeConstraint_setmax_angle, IK_HINGECONSTRAINT_MAX_ANGLE_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(HINGE_CONSTRAINT_DOC, "");
 PyTypeObject ik_HingeConstraintType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.HingeConstraint",
@@ -325,7 +391,7 @@ PyTypeObject ik_HingeConstraintType = {
     .tp_repr = HingeConstraint_repr,
     .tp_str = HingeConstraint_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = HINGE_CONSTRAINT_DOC,
+    .tp_doc = IK_HINGECONSTRAINT_DOC,
     .tp_getset = HingeConstraint_getsetters,
     .tp_new = HingeConstraint_new,
     .tp_init = HingeConstraint_init

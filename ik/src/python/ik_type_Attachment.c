@@ -1,6 +1,7 @@
 #include "ik/python/ik_type_Attachment.h"
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/node.h"
 #include "ik/attachment.h"
 
@@ -30,7 +31,6 @@ Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ATTACHMENT_NODE_DOC, "");
 static PyObject*
 Attachment_getnode(ik_Attachment* self, void* closure)
 {
@@ -55,20 +55,18 @@ Attachment_setnode(ik_Attachment* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
-    {"node", (getter)Attachment_getnode, (setter)Attachment_setnode, ATTACHMENT_NODE_DOC, NULL},
+    {"node", (getter)Attachment_getnode, (setter)Attachment_setnode, IK_ATTACHMENT_NODE_DOC, NULL},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(NODE_DOC,
-"");
 PyTypeObject ik_AttachmentType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Attachment",
     .tp_basicsize = sizeof(ik_Attachment),
     .tp_dealloc = (destructor)Attachment_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = NODE_DOC,
+    .tp_doc = IK_ATTACHMENT_DOC,
     .tp_getset = Node_getset,
     .tp_new = Attachment_new
 };

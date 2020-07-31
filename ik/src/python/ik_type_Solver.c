@@ -2,6 +2,7 @@
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_docstrings.h"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
@@ -50,7 +51,6 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(SOLVER_SOLVE_DOC, "");
 static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
@@ -60,26 +60,8 @@ Solver_solve(ik_Solver* self, PyObject* arg)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(SOLVER_ITERATE_NODES_DOC, "");
-static PyObject*
-Solver_iterate_nodes(ik_Solver* self, PyObject* callback)
-{
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(SOLVER_ITERATE_EFFECTOR_NODES_DOC, "");
-static PyObject*
-Solver_iterate_effector_nodes(ik_Solver* self, PyObject* callback)
-{
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
 static PyMethodDef Solver_methods[] = {
-    {"solve",                  (PyCFunction)Solver_solve,                  METH_NOARGS, SOLVER_SOLVE_DOC},
-    {"iterate_nodes",          (PyCFunction)Solver_iterate_nodes,          METH_O,      SOLVER_ITERATE_NODES_DOC},
-    {"iterate_effector_nodes", (PyCFunction)Solver_iterate_effector_nodes, METH_O,      SOLVER_ITERATE_EFFECTOR_NODES_DOC},
+    {"solve",                  (PyCFunction)Solver_solve, METH_NOARGS, IK_SOLVER_SOLVE_DOC},
     {NULL}
 };
 
@@ -124,7 +106,7 @@ PyTypeObject ik_SolverType = {
     0,                                             /* tp_setattro */
     0,                                             /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                            /* tp_flags */
-    "",                                            /* tp_doc */
+    IK_SOLVER_DOC,                                 /* tp_doc */
     0,                                             /* tp_traverse */
     0,                                             /* tp_clear */
     0,                                             /* tp_richcompare */

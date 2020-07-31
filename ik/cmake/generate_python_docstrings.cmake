@@ -1,0 +1,17 @@
+file (WRITE ${IK_DOCSTRINGS_HEADER} "#pragma once\n#include \"ik/config.h\"\n\n")
+file (WRITE ${IK_DOCSTRINGS_SOURCE} "#include \"ik/python/ik_docstrings.h\"")
+
+separate_arguments (IK_PYTHON_DOCFILES)
+
+foreach (f ${IK_PYTHON_DOCFILES})
+    get_filename_component (DOCSTRING_NAME ${f} NAME_WE)
+    file (APPEND ${IK_DOCSTRINGS_HEADER} "IK_PRIVATE_API extern const char ${DOCSTRING_NAME}[];\n")
+    file (APPEND ${IK_DOCSTRINGS_SOURCE} "\n\nconst char ${DOCSTRING_NAME}[] = \n")
+    file (READ ${f} DOCSTRING)
+    string (REGEX REPLACE ";" "\\\\;" DOCSTRING ${DOCSTRING})
+    string (REGEX REPLACE "\n" ";" DOCSTRING ${DOCSTRING})
+    foreach (line ${DOCSTRING})
+        file (APPEND ${IK_DOCSTRINGS_SOURCE} "\"${line}\\n\"\n")
+    endforeach ()
+    file (APPEND ${IK_DOCSTRINGS_SOURCE} ";")
+endforeach ()

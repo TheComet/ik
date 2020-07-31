@@ -4,6 +4,7 @@
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_helpers.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/effector.h"
 #include "structmember.h"
 
@@ -321,14 +322,14 @@ Effector_setkeep_global_orientation(PyObject* myself, PyObject* value, void* clo
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Effector_getsetters[] = {
-    {"chain_length",            Effector_getchain_length,            Effector_setchain_length,            ""},
-    {"target_position",         Effector_gettarget_position,         Effector_settarget_position,         ""},
-    {"target_rotation",         Effector_gettarget_rotation,         Effector_settarget_rotation,         ""},
-    {"weight",                  Effector_getweight,                  Effector_setweight,                  ""},
-    {"rotation_weight",         Effector_getrotation_weight,         Effector_setrotation_weight,         ""},
-    {"rotation_decay",          Effector_getrotation_decay,          Effector_setrotation_decay,          ""},
-    {"weight_nlerp",            Effector_getweight_nlerp,            Effector_setweight_nlerp,            ""},
-    {"keep_global_orientation", Effector_getkeep_global_orientation, Effector_setkeep_global_orientation, ""},
+    {"chain_length",            Effector_getchain_length,            Effector_setchain_length,            IK_EFFECTOR_CHAIN_LENGTH_DOC},
+    {"target_position",         Effector_gettarget_position,         Effector_settarget_position,         IK_EFFECTOR_TARGET_POSITION_DOC},
+    {"target_rotation",         Effector_gettarget_rotation,         Effector_settarget_rotation,         IK_EFFECTOR_TARGET_ROTATION_DOC},
+    {"weight",                  Effector_getweight,                  Effector_setweight,                  IK_EFFECTOR_WEIGHT_DOC},
+    {"rotation_weight",         Effector_getrotation_weight,         Effector_setrotation_weight,         IK_EFFECTOR_ROTATION_WEIGHT_DOC},
+    {"rotation_decay",          Effector_getrotation_decay,          Effector_setrotation_decay,          IK_EFFECTOR_ROTATION_DECAY_DOC},
+    {"weight_nlerp",            Effector_getweight_nlerp,            Effector_setweight_nlerp,            IK_EFFECTOR_WEIGHT_NLERP_DOC},
+    {"keep_global_orientation", Effector_getkeep_global_orientation, Effector_setkeep_global_orientation, IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION_DOC},
     {NULL}
 };
 
@@ -541,8 +542,6 @@ Effector_str(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(EFFECTOR_DOC,
-"");
 PyTypeObject ik_EffectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Effector",
@@ -551,7 +550,7 @@ PyTypeObject ik_EffectorType = {
     .tp_repr = Effector_repr,
     .tp_str = Effector_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = EFFECTOR_DOC,
+    .tp_doc = IK_EFFECTOR_DOC,
     .tp_getset = Effector_getsetters,
     .tp_new = Effector_new,
     .tp_init = Effector_init

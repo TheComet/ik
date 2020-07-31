@@ -1,5 +1,6 @@
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_helpers.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/algorithm.h"
 #include "structmember.h"
 
@@ -102,8 +103,6 @@ Algorithm_init(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ALGORITHM_TYPE_DOC,
-"");
 static PyObject*
 Algorithm_gettype(ik_Algorithm* self, void* closure)
 {
@@ -144,7 +143,6 @@ Algorithm_settype(ik_Algorithm* self, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ALGORITHM_TOLERANCE_DOC, "");
 static PyObject*
 Algorithm_gettolerance(ik_Algorithm* self, void* closure)
 {
@@ -169,7 +167,6 @@ Algorithm_settolerance(ik_Algorithm* self, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ALGORITHM_MAX_ITERATIONS_DOC, "");
 static PyObject*
 Algorithm_getmax_iterations(ik_Algorithm* self, void* closure)
 {
@@ -185,7 +182,12 @@ Algorithm_setmax_iterations(ik_Algorithm* self, PyObject* value, void* closure)
 
     if (!PyLong_CheckExact(value))
     {
-        PyErr_SetString(PyExc_TypeError, "Tolerance must be a float");
+        PyErr_SetString(PyExc_TypeError, "Iterations must be an integer");
+        return -1;
+    }
+    if (PyLong_AS_LONG(value) < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "Iterations must be a positive integer");
         return -1;
     }
 
@@ -195,9 +197,9 @@ Algorithm_setmax_iterations(ik_Algorithm* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Algorithm_getset[] = {
-    {"type",           (getter)Algorithm_gettype,           (setter)Algorithm_settype,           ALGORITHM_TYPE_DOC, NULL},
-    {"tolerance",      (getter)Algorithm_gettolerance,      (setter)Algorithm_settolerance,      ALGORITHM_TOLERANCE_DOC, NULL},
-    {"max_iterations", (getter)Algorithm_getmax_iterations, (setter)Algorithm_setmax_iterations, ALGORITHM_MAX_ITERATIONS_DOC, NULL},
+    {"type",           (getter)Algorithm_gettype,           (setter)Algorithm_settype,           IK_ALGORITHM_TYPE_DOC, NULL},
+    {"tolerance",      (getter)Algorithm_gettolerance,      (setter)Algorithm_settolerance,      IK_ALGORITHM_TOLERANCE_DOC, NULL},
+    {"max_iterations", (getter)Algorithm_getmax_iterations, (setter)Algorithm_setmax_iterations, IK_ALGORITHM_MAX_ITERATIONS_DOC, NULL},
     {NULL}
 };
 
@@ -276,7 +278,6 @@ Algorithm_str(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(ALGORITHM_DOC, "");
 PyTypeObject ik_AlgorithmType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Algorithm",
@@ -285,7 +286,7 @@ PyTypeObject ik_AlgorithmType = {
     .tp_repr = Algorithm_repr,
     .tp_str = Algorithm_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = ALGORITHM_DOC,
+    .tp_doc = IK_ALGORITHM_DOC,
     .tp_getset = Algorithm_getset,
     .tp_new = Algorithm_new,
     .tp_init = Algorithm_init
@@ -298,5 +299,6 @@ init_ik_AlgorithmType(void)
     ik_AlgorithmType.tp_base = &ik_AttachmentType;
     if (PyType_Ready(&ik_AlgorithmType) < 0)
         return -1;
+
     return 0;
 }

@@ -1,0 +1,4 @@
+A 3D inverse kinematics library for solving general 3D IK problems using modern
+algorithms.
+ 
+Another paragraph starts here.

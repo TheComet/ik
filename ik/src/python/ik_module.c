@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "ik/init.h"
 #include "ik/algorithm.h"
+#include "ik/python/ik_docstrings.h"
 #include "ik/python/ik_module.h"
 #include "ik/python/ik_module_log.h"
 #include "ik/python/ik_type_Algorithm.h"
@@ -22,8 +23,6 @@ module_free(void* x)
 }
 
 /* ------------------------------------------------------------------------- */
-PyDoc_STRVAR(IK_MODULE_DOC,
-"");
 PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
     "ik",                    /* Module name */

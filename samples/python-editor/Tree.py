@@ -3,13 +3,19 @@ __author__ = "TheComet"
 import ik
 import pygame
 from Updateable import Updateable
+from time import time
 
 
 class Tree(Updateable):
     def __init__(self, root):
         self.root = root
         self.initial_pose = ik.Pose(root)
+
+        font = pygame.font.SysFont(None, 32)
+
+        tstart = time()
         self.solver = ik.Solver(root)
+        self.build_img = font.render(f"build() took {time()-tstart}", True, (255, 255, 255))
 
         self.root_color     = (255, 100, 255)
         self.node_color     = (100, 100, 255)
@@ -24,6 +30,9 @@ class Tree(Updateable):
             if node.effector is not None:
                 yield node.effector
         self.effectors = list(get_effectors(root))
+
+        self.nodes_img = font.render(f"nodes: {self.root.count}", True, (255, 255, 255))
+        self.effectors_img = font.render(f"end effectors: {len(self.effectors)}", True, (255, 255, 255))
 
     def process_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -57,11 +66,16 @@ class Tree(Updateable):
 
     def update(self, time_step):
         self.initial_pose.apply(self.root)
+        tstart = time()
         self.solver.solve()
+        print(f"solve() took {time()-tstart}")
 
     def draw(self, surface):
         self.__draw_tree(surface, self.root, ik.Vec3(), ik.Quat())
         self.__draw_effectors(surface)
+        surface.blit(self.build_img, (10, 10))
+        surface.blit(self.nodes_img, (10, 42))
+        surface.blit(self.effectors_img, (10, 74))
 
     def __draw_tree(self, surface, node, parent_pos, acc_rot):
         # Root node color is different because it can't be deleted
@@ -70,7 +84,7 @@ class Tree(Updateable):
         pos = parent_pos + node.position * acc_rot
 
         # ik lib uses 3D coordinates; we're storing our 2D coordinates in the Y and Z components.
-        pygame.draw.circle(surface, color, (int(pos.y), int(pos.z)), 5, 1)
+        pygame.draw.circle(surface, color, (int(pos.y), int(pos.z)), 4, 1)
 
         # draw segment
         if node.parent is not None:

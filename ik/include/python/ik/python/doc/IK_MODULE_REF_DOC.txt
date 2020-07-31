@@ -1,0 +1,2 @@
+Root  object  for all IK type instantiations. Holds a reference  to  the  IK's
+module object to ensure the module is destroyed last.
