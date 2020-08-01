@@ -504,8 +504,11 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         ik_quat_mul_quat(child->rotation.f, delta.f);
 
         /* Calculate new target position */
-        ik_vec3_mul_scalar(dir.f, dist);
+        ik_vec3_mul_scalar(dir.f, child->position.v.z);
         ik_vec3_add_vec3(target.f, dir.f);
+        ik_vec3_sub_vec3(target.f, child->position.f);
+        ik_vec3_rotate_quat(target.f, delta.f);
+        ik_vec3_add_vec3(target.f, child->position.f);
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)

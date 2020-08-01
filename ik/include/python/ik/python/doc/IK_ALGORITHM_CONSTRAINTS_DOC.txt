@@ -1,0 +1,16 @@
+Default value: False
+ 
+Set to True to enable supporting joint constraints. Set  to  False  to  ignore
+constraints.
+ 
+Each  solver  has implementation variations for solving with and without joint
+constraints.  In  general,  additional calculations need to be performed  each
+iteration  before  constraints can be applied, imposing a  slight  performance
+impact.
+ 
+NOTE:  Changing  this  property after creating a Solver may have no effect. If
+you need to enable/disable joint constraint support for an algorithm, you will
+have  to  re-instantiate a Solver for the  changes  to  take  effect.  Solvers
+typically check this flag once on the first call to solve() and then overwrite
+the  solve()  function  call  with  the  appropriate  implementation variation
+(removing the check).

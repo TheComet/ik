@@ -13,14 +13,14 @@
  * during weight transitions.
  */
 #define IK_EFFECTOR_FEATURES_LIST \
-    X(WEIGHT_NLERP, 0x01) \
-    X(KEEP_GLOBAL_ORIENTATION, 0x02)
+    X(WEIGHT_NLERP,            weight_nlerp,            0x01) \
+    X(KEEP_GLOBAL_ORIENTATION, keep_global_orientation, 0x02)
 
 C_BEGIN
 
-enum ik_effector_features
+enum ik_effector_feature
 {
-#define X(arg, value) IK_EFFECTOR_##arg = value,
+#define X(upper, lower, value) IK_EFFECTOR_##upper = value,
     IK_EFFECTOR_FEATURES_LIST
 #undef X
 

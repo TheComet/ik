@@ -43,32 +43,36 @@ static int
 Algorithm_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     const char* name;
-    int constraints = -1;
-    int poles = -1;
-    int target_rotations = -1;
-    int integrate_rk45 = -1;
+#define X(upper, lower, value) int lower = -1;
+    IK_ALGORITHM_FEATURES_LIST
+#undef X
+
     ik_Algorithm* self = (ik_Algorithm*)myself;
     struct ik_algorithm* alg = (struct ik_algorithm*)self->super.attachment;
 
     static char* kwds_names[] = {
         "type",
+#define X(upper, lower, value) #lower,
+        IK_ALGORITHM_FEATURES_LIST
+#undef X
         "max_iterations",
         "tolerance",
-        "constraints",
-        "poles",
-        "target_rotations",
-        "integrate_rk45",
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|H" FMT "pppp", kwds_names,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "s|"
+#define X(upper, lower, value)       "p"
+        IK_ALGORITHM_FEATURES_LIST
+#undef X
+                                     "H" FMT,
+                                     kwds_names,
                                      &name,
+#define X(upper, lower, value)       &lower,
+        IK_ALGORITHM_FEATURES_LIST
+#undef X
                                      &alg->max_iterations,
-                                     &alg->tolerance,
-                                     &constraints,
-                                     &poles,
-                                     &target_rotations,
-                                     &integrate_rk45))
+                                     &alg->tolerance))
     {
         return -1;
     }
@@ -79,45 +83,34 @@ Algorithm_init(PyObject* myself, PyObject* args, PyObject* kwds)
         return -1;
     }
 
-    if (constraints == 1)
-        alg->features |= IK_ALGORITHM_CONSTRAINTS;
-    else if (constraints == 0)
-        alg->features &= ~IK_ALGORITHM_CONSTRAINTS;
-
-    if (poles == 1)
-        alg->features |= IK_ALGORITHM_POLES;
-    else if (poles == 0)
-        alg->features &= ~IK_ALGORITHM_POLES;
-
-    if (target_rotations == 1)
-        alg->features |= IK_ALGORITHM_TARGET_ROTATIONS;
-    else if (target_rotations == 0)
-        alg->features &= ~IK_ALGORITHM_TARGET_ROTATIONS;
-
-    if (integrate_rk45 == 1)
-        alg->features |= IK_ALGORITHM_INTEGRATE_RK45;
-    else if (integrate_rk45 == 0)
-        alg->features &= ~IK_ALGORITHM_INTEGRATE_RK45;
+#define X(upper, lower, value)                       \
+        if (lower == 1)                              \
+            alg->features |= IK_ALGORITHM_##upper;   \
+        else if (lower == 0)                         \
+            alg->features &= ~IK_ALGORITHM_##upper;
+    IK_ALGORITHM_FEATURES_LIST
+#undef X
 
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Algorithm_gettype(ik_Algorithm* self, void* closure)
+Algorithm_gettype(PyObject* myself, void* closure)
 {
-    struct ik_algorithm* algo;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
+    struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
     (void)closure;
 
-    algo = (struct ik_algorithm*)self->super.attachment;
     return PyUnicode_FromString(algo->type);
 }
 static int
-Algorithm_settype(ik_Algorithm* self, PyObject* value, void* closure)
+Algorithm_settype(PyObject* myself, PyObject* value, void* closure)
 {
-    struct ik_algorithm* algo;
     PyObject* ascii;
     int result;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
+    struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
     (void)closure;
 
     if (!PyUnicode_Check(value))
@@ -129,7 +122,6 @@ Algorithm_settype(ik_Algorithm* self, PyObject* value, void* closure)
     if ((ascii = PyUnicode_AsASCIIString(value)) == NULL)
         return -1;
 
-    algo = (struct ik_algorithm*)self->super.attachment;
     result = ik_algorithm_set_type(algo, PyBytes_AS_STRING(ascii));
     Py_DECREF(ascii);
 
@@ -144,17 +136,20 @@ Algorithm_settype(ik_Algorithm* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Algorithm_gettolerance(ik_Algorithm* self, void* closure)
+Algorithm_gettolerance(PyObject* myself, void* closure)
 {
-    (void)closure;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
     struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
+    (void)closure;
+
     return PyFloat_FromDouble(algo->tolerance);
 }
 static int
-Algorithm_settolerance(ik_Algorithm* self, PyObject* value, void* closure)
+Algorithm_settolerance(PyObject* myself, PyObject* value, void* closure)
 {
-    (void)closure;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
     struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
+    (void)closure;
 
     if (!PyFloat_CheckExact(value))
     {
@@ -168,38 +163,100 @@ Algorithm_settolerance(ik_Algorithm* self, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Algorithm_getmax_iterations(ik_Algorithm* self, void* closure)
+Algorithm_getmax_iterations(PyObject* myself, void* closure)
 {
-    (void)closure;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
     struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
+    (void)closure;
+
     return PyLong_FromLong(algo->max_iterations);
 }
 static int
-Algorithm_setmax_iterations(ik_Algorithm* self, PyObject* value, void* closure)
+Algorithm_setmax_iterations(PyObject* myself, PyObject* value, void* closure)
 {
-    (void)closure;
+    unsigned long max_iterations;
+    ik_Algorithm* self = (ik_Algorithm*)myself;
     struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
+    const unsigned long max_iteration_count = (1 << (sizeof(algo->max_iterations) * 8)) - 1;
+    (void)closure;
 
     if (!PyLong_CheckExact(value))
     {
         PyErr_SetString(PyExc_TypeError, "Iterations must be an integer");
         return -1;
     }
-    if (PyLong_AS_LONG(value) < 0)
+    if (PyLong_AsLong(value) < 0)
     {
         PyErr_SetString(PyExc_ValueError, "Iterations must be a positive integer");
         return -1;
     }
 
-    algo->max_iterations = (uint16_t)PyLong_AS_LONG(value);
+    max_iterations = PyLong_AsUnsignedLong(value);
+    if (max_iterations > max_iteration_count)
+    {
+        PyErr_Format(PyExc_ValueError, "Iteration count too high. Maximum iteration count is %lu", max_iteration_count);
+        return -1;
+    }
+
+    algo->max_iterations = max_iterations;
     return 0;
 }
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+get_feature_flag(struct ik_algorithm* algo, enum ik_algorithm_feature feature)
+{
+    if (algo->features & feature)
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+static int
+set_feature_flag(struct ik_algorithm* algo, PyObject* value, enum ik_algorithm_feature feature)
+{
+    int is_true = PyObject_IsTrue(value);
+    if (is_true == -1)
+        return -1;
+
+    if (is_true)
+        algo->features |= feature;
+    else
+        algo->features &= ~feature;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+#define X(upper, lower, v)                                                    \
+static PyObject*                                                              \
+Algorithm_get##lower(PyObject* myself, void* closure)                         \
+{                                                                             \
+    ik_Algorithm* self = (ik_Algorithm*)myself;                               \
+    (void)closure;                                                            \
+                                                                              \
+    return get_feature_flag((struct ik_algorithm*)self->super.attachment,     \
+                            IK_ALGORITHM_##upper);                            \
+}                                                                             \
+static int                                                                    \
+Algorithm_set##lower(PyObject* myself, PyObject* value, void* closure)        \
+{                                                                             \
+    ik_Algorithm* self = (ik_Algorithm*)myself;                               \
+    (void)closure;                                                            \
+                                                                              \
+    return set_feature_flag((struct ik_algorithm*)self->super.attachment,     \
+                            value,                                            \
+                            IK_ALGORITHM_##upper);                            \
+}
+IK_ALGORITHM_FEATURES_LIST
+#undef X
+
+/* ------------------------------------------------------------------------- */
 static PyGetSetDef Algorithm_getset[] = {
-    {"type",           (getter)Algorithm_gettype,           (setter)Algorithm_settype,           IK_ALGORITHM_TYPE_DOC, NULL},
-    {"tolerance",      (getter)Algorithm_gettolerance,      (setter)Algorithm_settolerance,      IK_ALGORITHM_TOLERANCE_DOC, NULL},
-    {"max_iterations", (getter)Algorithm_getmax_iterations, (setter)Algorithm_setmax_iterations, IK_ALGORITHM_MAX_ITERATIONS_DOC, NULL},
+    {"type",             Algorithm_gettype,           Algorithm_settype,           IK_ALGORITHM_TYPE_DOC, NULL},
+#define X(upper, lower, value) \
+    {#lower,             Algorithm_get##lower,        Algorithm_set##lower,        IK_ALGORITHM_##upper##_DOC, NULL},
+    IK_ALGORITHM_FEATURES_LIST
+#undef X
+    {"tolerance",        Algorithm_gettolerance,      Algorithm_settolerance,      IK_ALGORITHM_TOLERANCE_DOC, NULL},
+    {"max_iterations",   Algorithm_getmax_iterations, Algorithm_setmax_iterations, IK_ALGORITHM_MAX_ITERATIONS_DOC, NULL},
     {NULL}
 };
 
@@ -208,7 +265,7 @@ static PyObject*
 Algorithm_repr_build_arglist_list(PyObject* myself)
 {
     ik_Algorithm* self = (ik_Algorithm*)myself;
-    struct ik_algorithm* alg = (struct ik_algorithm*)self->super.attachment;
+    struct ik_algorithm* algo = (struct ik_algorithm*)self->super.attachment;
 
     PyObject* args = PyList_New(0);
     if (args == NULL)
@@ -217,7 +274,7 @@ Algorithm_repr_build_arglist_list(PyObject* myself)
     /* Type */
     {
         int append_result;
-        PyObject* arg = PyUnicode_FromFormat("\"%s\"", alg->type);
+        PyObject* arg = PyUnicode_FromFormat("\"%s\"", algo->type);
         if (arg == NULL)
             goto addarg_failed;
 
@@ -226,6 +283,55 @@ Algorithm_repr_build_arglist_list(PyObject* myself)
         if (append_result == -1)
             goto addarg_failed;
     }
+
+    /* Tolerance */
+    {
+        int append_result;
+        PyObject* tolerance;
+        PyObject* arg;
+
+        tolerance = PyFloat_FromDouble(algo->tolerance);
+        if (tolerance == NULL)
+            goto addarg_failed;
+
+        arg = PyUnicode_FromFormat("tolerance=%R", tolerance);
+        Py_DECREF(tolerance);
+        if (arg == NULL)
+            goto addarg_failed;
+
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Max iterations */
+    {
+        int append_result;
+        PyObject* arg = PyUnicode_FromFormat("max_iterations=%d", (int)algo->max_iterations);
+        if (arg == NULL)
+            goto addarg_failed;
+        append_result = PyList_Append(args, arg);
+        Py_DECREF(arg);
+        if (append_result == -1)
+            goto addarg_failed;
+    }
+
+    /* Feature flags */
+#define X(upper, lower, value)                                                \
+    if (algo->features & IK_ALGORITHM_##upper)                                \
+    {                                                                         \
+        int append_result;                                                    \
+        PyObject* arg = PyUnicode_FromString(#lower "=True");                 \
+        if (arg == NULL)                                                      \
+            goto addarg_failed;                                               \
+        append_result = PyList_Append(args, arg);                             \
+        Py_DECREF(arg);                                                       \
+        if (append_result == -1)                                              \
+            goto addarg_failed;                                               \
+    }
+    IK_ALGORITHM_FEATURES_LIST
+#undef X
 
     return args;
 

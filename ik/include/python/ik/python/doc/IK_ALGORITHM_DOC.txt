@@ -1,10 +1,16 @@
-Algorithm objects let you choose which part of the  tree should be solved, and
-more importantly, which type  of algorithm should be used and what parameters.
+Algorithm objects have two purposes.
  
-By  attaching an algorithm to a node, all nodes between the algorithm and  any
-child  nodes  with  effectors  attached  are  marked to be  solved  using  the
-parameters in the Algorithm object. For example:
+First, they control solver  parameters such as the solver type, tolerance, and
+maximum number of iterations to use.
  
+Secondly,  they define which parts of the tree  should  be  solved.  For  each
+effector, segments up to the next algorithm are affected. This means  that  if
+you  attach  an algorithm somewhere in the middle of the tree, then the  chain
+will terminate  at  the  algorithm  node  rather  than  the root node, even if
+e.chain_length  is  longer.  This can be used as a tool to help partition your
+tree into different isolated parts.
+ 
+For example:
                               n4
                               |          ____
                               n3 <- e1       |
@@ -41,7 +47,7 @@ different algorithm:
     >>> e2 = n3.effector = ik.Effector()
  
 All properties can be specified in the constructor. The only required argument
-is the algorithm type (see below).
+is the algorithm type:
  
     >>> import ik
     >>> ik.Algorithm(type=ik.FABRIK, 
@@ -51,4 +57,10 @@ is the algorithm type (see below).
     ...              poles=True,
     ...              target_rotations=True,
     ...              integrate_rk45=True)
+ 
+The available algorithm types are:
+  - ik.ONE_BONE
+  - ik.TWO_BONE
+  - ik.FABRIK
+  - ik.MSS
 

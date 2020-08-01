@@ -1,5 +1,5 @@
 The type of algorithm to use.
-
+ 
 There are four solvers available and each has a  specific  use-case  with pros
 and cons.
  

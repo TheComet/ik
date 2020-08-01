@@ -34,9 +34,9 @@ def long_chain_example(pos, chain_len, segment_len):
     for i in range(chain_len):
         tip = tip.create_child(position=ik.Vec3(0, 0, segment_len))
 
-    root.children[0].children[0].children[0].constraints = ik.StiffConstraint()
+    root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi))
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=20, constraints=True)
+    root.algorithm = ik.Algorithm(ik.FABRIK, constraints=False)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
@@ -116,7 +116,7 @@ class Window(Updateable):
             self,
             #Tree(one_bone_example((100, height - 200))),
             #Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((width/2, height - 200), 4, 80))
+            Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))

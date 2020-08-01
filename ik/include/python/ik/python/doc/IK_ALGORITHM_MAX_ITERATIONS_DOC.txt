@@ -4,4 +4,16 @@ FABRIK converges extremely quickly, you can sometimes  get  away with just 3-5
 iterations. MSS takes longer  to  converge, approximately 100-1000 iterations.
 ONE_BONE and TWO_BONE solvers ignore both of these values since they calculate
 the result directly.
-
+ 
+If you are more concerned  with  accuracy,  an  optimal  approach is to switch
+between two modes of operation depending on whether the target is within reach
+or not. If the target  is within reach, then you can set the maximum iteration
+count to a very high value (such as 10000) and set the tolerance to a non-zero
+value. The solver will likely bail much earlier than 10000 iterations when the
+target  is in reach, so it will still be performant.  If  the  target  is  not
+within  reach,  then you can set the iteration count to a very low value (such
+as 5 for FABRIK) which is enough to calculate  a  pose  that  reaches  for the
+target.
+ 
+NOTE: The maximum value is 65535 because  internally  the value is stored as a
+16-bit unsigned integer.

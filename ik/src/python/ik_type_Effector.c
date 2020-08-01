@@ -77,30 +77,37 @@ Effector_init(PyObject* myself, PyObject* args, PyObject* kwds)
     struct ik_effector* eff = (struct ik_effector*)self->super.attachment;
     ik_Vec3* target_position = NULL;
     ik_Quat* target_rotation = NULL;
-    int weight_nlerp = -1;
-    int keep_global_orientation = -1;
+#define X(upper, lower, value) int lower = -1;
+    IK_EFFECTOR_FEATURES_LIST
+#undef X
 
     static char* kwds_str[] = {
+#define X(upper, lower, value) #lower,
+        IK_EFFECTOR_FEATURES_LIST
+#undef X
         "chain_length",
         "target_position",
         "target_rotation",
         "weight",
         "rotation_weight",
         "rotation_decay",
-        "weight_nlerp",
-        "keep_global_orientation",
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|HO!O!" FMT FMT FMT "pp", kwds_str,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|"
+#define X(upper, lower, value)       "p"
+        IK_EFFECTOR_FEATURES_LIST
+#undef X
+                                     "HO!O!" FMT FMT FMT, kwds_str,
+#define X(upper, lower, value)       &lower,
+        IK_EFFECTOR_FEATURES_LIST
+#undef X
                                      &eff->chain_length,
                                      &ik_Vec3Type, &target_position,
                                      &ik_QuatType, &target_rotation,
                                      &eff->weight,
                                      &eff->rotation_weight,
-                                     &eff->rotation_decay,
-                                     &weight_nlerp,
-                                     &keep_global_orientation))
+                                     &eff->rotation_decay))
     {
         return -1;
     }
@@ -110,15 +117,13 @@ Effector_init(PyObject* myself, PyObject* args, PyObject* kwds)
     if (target_rotation)
         ASSIGN_QUAT(self->target_rotation, target_rotation);
 
-    if (weight_nlerp == 0)
-        eff->features &= ~IK_EFFECTOR_WEIGHT_NLERP;
-    if (weight_nlerp == 1)
-        eff->features |= IK_EFFECTOR_WEIGHT_NLERP;
-
-    if (keep_global_orientation == 0)
-        eff->features &= ~IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION;
-    if (keep_global_orientation == 1)
-        eff->features |= IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION;
+#define X(upper, lower, value)                   \
+    if (lower == 1)                              \
+        eff->features |= IK_EFFECTOR_##upper;    \
+    else if (lower == 0)                         \
+        eff->features &= ~IK_EFFECTOR_##upper;
+    IK_EFFECTOR_FEATURES_LIST
+#undef X
 
     return 0;
 }
@@ -270,12 +275,12 @@ Effector_setrotation_decay(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-get_feature_flag(struct ik_effector* eff, enum ik_effector_features feature)
+get_feature_flag(struct ik_effector* eff, enum ik_effector_feature feature)
 {
     return PyBool_FromLong(eff->features & feature);
 }
 static int
-set_feature_flag(struct ik_effector* eff, PyObject* value, enum ik_effector_features feature)
+set_feature_flag(struct ik_effector* eff, PyObject* value, enum ik_effector_feature feature)
 {
     int is_true = PyObject_IsTrue(value);
     if (is_true == -1)
@@ -289,47 +294,41 @@ set_feature_flag(struct ik_effector* eff, PyObject* value, enum ik_effector_feat
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Effector_getweight_nlerp(PyObject* myself, void* closure)
-{
-    ik_Effector* self = (ik_Effector*)myself;
-    (void)closure;
-    return get_feature_flag((struct ik_effector*)self->super.attachment, IK_EFFECTOR_WEIGHT_NLERP);
+#define X(upper, lower, v)                                                    \
+static PyObject*                                                              \
+Effector_get##lower(PyObject* myself, void* closure)                          \
+{                                                                             \
+    ik_Effector* self = (ik_Effector*)myself;                                 \
+    (void)closure;                                                            \
+                                                                              \
+    return get_feature_flag((struct ik_effector*)self->super.attachment,      \
+                            IK_EFFECTOR_##upper);                             \
+}                                                                             \
+static int                                                                    \
+Effector_set##lower(PyObject* myself, PyObject* value, void* closure)         \
+{                                                                             \
+    ik_Effector* self = (ik_Effector*)myself;                                 \
+    (void)closure;                                                            \
+                                                                              \
+    return set_feature_flag((struct ik_effector*)self->super.attachment,      \
+                            value,                                            \
+                            IK_EFFECTOR_##upper);                             \
 }
-static int
-Effector_setweight_nlerp(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Effector* self = (ik_Effector*)myself;
-    (void)closure;
-    return set_feature_flag((struct ik_effector*)self->super.attachment, value, IK_EFFECTOR_WEIGHT_NLERP);
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Effector_getkeep_global_orientation(PyObject* myself, void* closure)
-{
-    ik_Effector* self = (ik_Effector*)myself;
-    (void)closure;
-    return get_feature_flag((struct ik_effector*)self->super.attachment, IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION);
-}
-static int
-Effector_setkeep_global_orientation(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Effector* self = (ik_Effector*)myself;
-    (void)closure;
-    return set_feature_flag((struct ik_effector*)self->super.attachment, value, IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION);
-}
+IK_EFFECTOR_FEATURES_LIST
+#undef X
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Effector_getsetters[] = {
-    {"chain_length",            Effector_getchain_length,            Effector_setchain_length,            IK_EFFECTOR_CHAIN_LENGTH_DOC},
-    {"target_position",         Effector_gettarget_position,         Effector_settarget_position,         IK_EFFECTOR_TARGET_POSITION_DOC},
-    {"target_rotation",         Effector_gettarget_rotation,         Effector_settarget_rotation,         IK_EFFECTOR_TARGET_ROTATION_DOC},
-    {"weight",                  Effector_getweight,                  Effector_setweight,                  IK_EFFECTOR_WEIGHT_DOC},
-    {"rotation_weight",         Effector_getrotation_weight,         Effector_setrotation_weight,         IK_EFFECTOR_ROTATION_WEIGHT_DOC},
-    {"rotation_decay",          Effector_getrotation_decay,          Effector_setrotation_decay,          IK_EFFECTOR_ROTATION_DECAY_DOC},
-    {"weight_nlerp",            Effector_getweight_nlerp,            Effector_setweight_nlerp,            IK_EFFECTOR_WEIGHT_NLERP_DOC},
-    {"keep_global_orientation", Effector_getkeep_global_orientation, Effector_setkeep_global_orientation, IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION_DOC},
+#define X(upper, lower, value) \
+    {#lower,            Effector_get##lower,         Effector_set##lower,         IK_EFFECTOR_##upper##_DOC},
+    IK_EFFECTOR_FEATURES_LIST
+#undef X
+    {"chain_length",    Effector_getchain_length,    Effector_setchain_length,    IK_EFFECTOR_CHAIN_LENGTH_DOC},
+    {"target_position", Effector_gettarget_position, Effector_settarget_position, IK_EFFECTOR_TARGET_POSITION_DOC},
+    {"target_rotation", Effector_gettarget_rotation, Effector_settarget_rotation, IK_EFFECTOR_TARGET_ROTATION_DOC},
+    {"weight",          Effector_getweight,          Effector_setweight,          IK_EFFECTOR_WEIGHT_DOC},
+    {"rotation_weight", Effector_getrotation_weight, Effector_setrotation_weight, IK_EFFECTOR_ROTATION_WEIGHT_DOC},
+    {"rotation_decay",  Effector_getrotation_decay,  Effector_setrotation_decay,  IK_EFFECTOR_ROTATION_DECAY_DOC},
     {NULL}
 };
 
@@ -465,31 +464,21 @@ Effector_repr_build_arglist_list(PyObject* myself)
             goto addarg_failed;
     }
 
-    /* weight nlerp feature */
-    if (eff->features & IK_EFFECTOR_WEIGHT_NLERP)
-    {
-        int append_result;
-        PyObject* arg = PyUnicode_FromString("chain_length=True");
-        if (arg == NULL)
-            goto addarg_failed;
-        append_result = PyList_Append(args, arg);
-        Py_DECREF(arg);
-        if (append_result == -1)
-            goto addarg_failed;
+    /* Feature flags */
+#define X(upper, lower, value)                                                \
+    if (eff->features & IK_EFFECTOR_##upper)                                  \
+    {                                                                         \
+        int append_result;                                                    \
+        PyObject* arg = PyUnicode_FromString(#lower "=True");                 \
+        if (arg == NULL)                                                      \
+            goto addarg_failed;                                               \
+        append_result = PyList_Append(args, arg);                             \
+        Py_DECREF(arg);                                                       \
+        if (append_result == -1)                                              \
+            goto addarg_failed;                                               \
     }
-
-    /* keep global orientation feature */
-    if (eff->features & IK_EFFECTOR_KEEP_GLOBAL_ORIENTATION)
-    {
-        int append_result;
-        PyObject* arg = PyUnicode_FromString("keep_global_orientation=True");
-        if (arg == NULL)
-            goto addarg_failed;
-        append_result = PyList_Append(args, arg);
-        Py_DECREF(arg);
-        if (append_result == -1)
-            goto addarg_failed;
-    }
+    IK_EFFECTOR_FEATURES_LIST
+#undef X
 
     return args;
 

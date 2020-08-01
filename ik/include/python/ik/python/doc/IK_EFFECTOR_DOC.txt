@@ -1,1 +1,3 @@
-todo
+Effectors are used to set the target position and rotation of a node.
+
+

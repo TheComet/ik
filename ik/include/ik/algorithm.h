@@ -23,16 +23,16 @@
     /*X(MSS)*/
 
 #define IK_ALGORITHM_FEATURES_LIST \
-    X(CONSTRAINTS,      0x0001) \
-    X(POLES,            0x0002) \
-    X(TARGET_ROTATIONS, 0x0004) \
-    X(INTEGRATE_RK45,   0x0008)
+    X(CONSTRAINTS,      constraints,      0x0001) \
+    X(POLES,            poles,            0x0002) \
+    X(TARGET_ROTATIONS, target_rotations, 0x0004) \
+    X(INTEGRATE_RK45,   integrate_rk45,   0x0008)
 
 C_BEGIN
 
 enum ik_algorithm_feature
 {
-#define X(name, value) IK_ALGORITHM_##name = value,
+#define X(upper, lower, value) IK_ALGORITHM_##upper = value,
     IK_ALGORITHM_FEATURES_LIST
 #undef X
 
