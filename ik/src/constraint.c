@@ -1,6 +1,6 @@
 #include "ik/constraint.h"
 #include "ik/log.h"
-#include "ik/quat.h"
+#include "ik/quat.inl"
 #include <string.h>
 #include <assert.h>
 #include <math.h>

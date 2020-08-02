@@ -9,6 +9,8 @@
 #include "ik/python/ik_helpers.h"
 #include "ik/python/ik_docstrings.h"
 #include "ik/node.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */

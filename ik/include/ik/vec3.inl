@@ -1,27 +1,12 @@
+#pragma once
+
 #include "ik/vec3.h"
-#include <string.h>
 #include <math.h>
 
-/* ------------------------------------------------------------------------- */
-void
-ik_vec3_set(ikreal v[3], ikreal x, ikreal y, ikreal z)
-{
-    v[0] = x;
-    v[1] = y;
-    v[2] = z;
-}
+C_BEGIN
 
-/* ------------------------------------------------------------------------- */
-void
-ik_vec3_set_zero(ikreal v[3])
-{
-    v[0] = 0.0;
-    v[1] = 0.0;
-    v[2] = 0.0;
-}
-
-/* ------------------------------------------------------------------------- */
-void
+/*! Copy vector src into v */
+static inline void
 ik_vec3_copy(ikreal v[3], const ikreal src[3])
 {
     v[0] = src[0];
@@ -29,8 +14,26 @@ ik_vec3_copy(ikreal v[3], const ikreal src[3])
     v[2] = src[2];
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Set xyz components of a vector */
+static inline void
+ik_vec3_set(ikreal v[3], ikreal x, ikreal y, ikreal z)
+{
+    v[0] = x;
+    v[1] = y;
+    v[2] = z;
+}
+
+/*! Set xyz components of vector to zero */
+static inline void
+ik_vec3_set_zero(ikreal v[3])
+{
+    v[0] = 0.0;
+    v[1] = 0.0;
+    v[2] = 0.0;
+}
+
+/*! Add scalar value to each vector component */
+static inline void
 ik_vec3_add_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] += scalar;
@@ -38,8 +41,8 @@ ik_vec3_add_scalar(ikreal v[3], ikreal scalar)
     v[2] += scalar;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Add v2 to v1 */
+static inline void
 ik_vec3_add_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] += v2[0];
@@ -47,8 +50,8 @@ ik_vec3_add_vec3(ikreal v1[3], const ikreal v2[3])
     v1[2] += v2[2];
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Subtract scalar value from each vector component */
+static inline void
 ik_vec3_sub_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] -= scalar;
@@ -56,8 +59,8 @@ ik_vec3_sub_scalar(ikreal v[3], ikreal scalar)
     v[2] -= scalar;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Subtract v2 from v1 */
+static inline void
 ik_vec3_sub_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] -= v2[0];
@@ -65,8 +68,8 @@ ik_vec3_sub_vec3(ikreal v1[3], const ikreal v2[3])
     v1[2] -= v2[2];
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Scale vector by a scalar value */
+static inline void
 ik_vec3_mul_scalar(ikreal v[3], ikreal scalar)
 {
     v[0] *= scalar;
@@ -74,8 +77,8 @@ ik_vec3_mul_scalar(ikreal v[3], ikreal scalar)
     v[2] *= scalar;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Multiply v1 component-wise with v2 */
+static inline void
 ik_vec3_mul_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] *= v2[0];
@@ -83,8 +86,8 @@ ik_vec3_mul_vec3(ikreal v1[3], const ikreal v2[3])
     v1[2] *= v2[2];
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Scale vector by 1/scalar */
+static inline void
 ik_vec3_div_scalar(ikreal v[3], ikreal scalar)
 {
     ikreal det = 1.0 / scalar;
@@ -93,8 +96,8 @@ ik_vec3_div_scalar(ikreal v[3], ikreal scalar)
     v[2] *= det;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Divide v1 component-wise by v2 */
+static inline void
 ik_vec3_div_vec3(ikreal v1[3], const ikreal v2[3])
 {
     v1[0] /= v2[0];
@@ -102,8 +105,8 @@ ik_vec3_div_vec3(ikreal v1[3], const ikreal v2[3])
     v1[2] /= v2[2];
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Negate each vector component, 1-v */
+static inline void
 ik_vec3_negate(ikreal v[3])
 {
     v[0] = -v[0];
@@ -111,22 +114,31 @@ ik_vec3_negate(ikreal v[3])
     v[2] = -v[2];
 }
 
-/* ------------------------------------------------------------------------- */
-ikreal
+/*! Calculate dot product of v1 and v2 */
+static inline ikreal
+ik_vec3_dot(const ikreal v1[3], const ikreal v2[3])
+{
+    return v1[0] * v2[0] +
+           v1[1] * v2[1] +
+           v1[2] * v2[2];
+}
+
+/*! Compute squared length of a vector */
+static inline ikreal
 ik_vec3_length_squared(const ikreal v[3])
 {
     return ik_vec3_dot(v, v);
 }
 
-/* ------------------------------------------------------------------------- */
-ikreal
+/*! Compute length of a vector */
+static inline ikreal
 ik_vec3_length(const ikreal v[3])
 {
     return sqrt(ik_vec3_length_squared(v));
 }
 
-/* ------------------------------------------------------------------------- */
-int
+/*! Normalize vector (length is scaled to 1) */
+static inline int
 ik_vec3_normalize(ikreal v[3])
 {
     ikreal length_squared = ik_vec3_length_squared(v);
@@ -144,17 +156,11 @@ ik_vec3_normalize(ikreal v[3])
     }
 }
 
-/* ------------------------------------------------------------------------- */
-ikreal
-ik_vec3_dot(const ikreal v1[3], const ikreal v2[3])
-{
-    return v1[0] * v2[0] +
-           v1[1] * v2[1] +
-           v1[2] * v2[2];
-}
-
-/* ------------------------------------------------------------------------- */
-void
+/*!
+ * Calculate cross product v1 x v2. Store result into v1. If instead you want
+ * to store the result in v2, see ik_vec3_ncross.
+ */
+static inline void
 ik_vec3_cross(ikreal v1[3], const ikreal v2[3])
 {
     ikreal v1x = v1[1] * v2[2] - v2[1] * v1[2];
@@ -164,8 +170,8 @@ ik_vec3_cross(ikreal v1[3], const ikreal v2[3])
     v1[2] = v1z;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Calculate cross product of v2 x v1. Store result into v1. */
+static inline void
 ik_vec3_ncross(ikreal v1[3], const ikreal v2[3])
 {
     ikreal v1x = v2[1] * v1[2] - v1[1] * v2[2];
@@ -175,8 +181,8 @@ ik_vec3_ncross(ikreal v1[3], const ikreal v2[3])
     v1[2] = v1z;
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Rotates vector v by the quaternion q. */
+static inline void
 ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
@@ -197,8 +203,8 @@ ik_vec3_rotate_quat(ikreal v[3], const ikreal q[4])
     ik_vec3_add_vec3(v, tmp.f);
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Rotates vector v by the conjugate of the quaternion q. */
+static inline void
 ik_vec3_rotate_quat_conj(ikreal v[3], const ikreal q[4])
 {
     /* v' = q * v * q' */
@@ -219,21 +225,11 @@ ik_vec3_rotate_quat_conj(ikreal v[3], const ikreal q[4])
     ik_vec3_sub_vec3(v, tmp.f);
 }
 
-/* ------------------------------------------------------------------------- */
-void
-ik_vec3_rotate_vec3_span(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
-{
-    union ik_vec3 v1n;
-    union ik_vec3 v2n;
-    ik_vec3_copy(v1n.f, v1);
-    ik_vec3_copy(v2n.f, v2);
-    ik_vec3_normalize(v1n.f);
-    ik_vec3_normalize(v2n.f);
-    ik_vec3_rotate_vec3_span_normalized(v, v1, v2);
-}
-
-/* ------------------------------------------------------------------------- */
-void
+/*!
+ * Rotates vector v by the angle between v1 and v2, assuming v1 and v2 are
+ * unit vectors
+ */
+static inline void
 ik_vec3_rotate_vec3_span_normalized(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
 {
     /* Rodrigues' rotation formula */
@@ -264,8 +260,21 @@ ik_vec3_rotate_vec3_span_normalized(ikreal v[3], const ikreal v1[3], const ikrea
     ik_vec3_add_vec3(v, k2.f);
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Rotates vector v by the angle between v1 and v2 */
+static inline void
+ik_vec3_rotate_vec3_span(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
+{
+    union ik_vec3 v1n;
+    union ik_vec3 v2n;
+    ik_vec3_copy(v1n.f, v1);
+    ik_vec3_copy(v2n.f, v2);
+    ik_vec3_normalize(v1n.f);
+    ik_vec3_normalize(v2n.f);
+    ik_vec3_rotate_vec3_span_normalized(v, v1, v2);
+}
+
+/*! Projects v2 onto v1 */
+static inline void
 ik_vec3_project_from_vec3(ikreal v1[3], const ikreal v2[3])
 {
     ikreal dot = ik_vec3_dot(v1, v2);
@@ -273,16 +282,16 @@ ik_vec3_project_from_vec3(ikreal v1[3], const ikreal v2[3])
     ik_vec3_mul_scalar(v1, dot / det);
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Projects v2 onto v1 and assumes both v1 and v2 are normalized. */
+static inline void
 ik_vec3_project_from_vec3_normalized(ikreal v1[3], const ikreal v2[3])
 {
     ikreal dot = ik_vec3_dot(v1, v2);
     ik_vec3_mul_scalar(v1, dot);
 }
 
-/* ------------------------------------------------------------------------- */
-void
+/*! Projects v into the plane spanned by x,y. */
+static inline void
 ik_vec3_project_onto_plane(ikreal v[3], const ikreal x[3], const ikreal y[3])
 {
     union ik_vec3 n;
@@ -291,3 +300,5 @@ ik_vec3_project_onto_plane(ikreal v[3], const ikreal x[3], const ikreal y[3])
     ik_vec3_project_from_vec3(n.f, v);  /* project vector onto normal */
     ik_vec3_sub_vec3(v, n.f);           /* subtract projection from vector */
 }
+
+C_END

@@ -1,47 +1,56 @@
-#include "ik/ik.h"
-#include "ik/solverdef.h"
-#include "ik/solver_MSS.h"
-#include <math.h>
+#include "ik/effector.h"
+#include "ik/solver.h"
 
-struct ik_solver_t
+struct ik_solver_mss
 {
-    ALGORITHM_HEAD
+    IK_SOLVER_HEAD
 };
 
 /* ------------------------------------------------------------------------- */
-uintptr_t
-ik_solver_MSS_type_size(void)
+static int
+mss_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
-    return sizeof(struct ik_solver_t);
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_MSS_init(struct ik_solver_t* solver)
+static void
+mss_deinit(struct ik_solver* solver_base)
 {
-    return IK_OK;
+
 }
 
 /* ------------------------------------------------------------------------- */
-void
-ik_solver_MSS_deinit(struct ik_solver_t* solver)
+static int
+mss_solve(struct ik_solver* solver_base)
 {
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_MSS_rebuild(struct ik_solver_t* solver)
+static void
+mss_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func callback, int skip_base)
 {
-    return IK_OK;
-}
 
+}
 
 /* ------------------------------------------------------------------------- */
-ikret_t
-ik_solver_MSS_solve(struct ik_solver_t* solver)
+static void
+mss_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func callback)
 {
-    return IK_OK;
+
 }
+
+/* ------------------------------------------------------------------------- */
+struct ik_solver_interface ik_solver_MSS = {
+    "mss",
+    sizeof(struct ik_solver_mss),
+    mss_init,
+    mss_deinit,
+    mss_solve,
+    mss_iterate_nodes,
+    mss_iterate_effector_nodes
+};
 
 #if 0
 

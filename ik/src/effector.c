@@ -1,6 +1,7 @@
 #include "ik/effector.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include <stddef.h>
-#include <stdio.h>
 
 /* ------------------------------------------------------------------------- */
 static void

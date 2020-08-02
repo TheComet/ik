@@ -1,6 +1,6 @@
 #include "ik/log.h"
 #include "ik/solver.h"
-#include "cstructures/vector.h"
+#include "ik/meta_solvers.h"
 #include <assert.h>
 #include <string.h>
 

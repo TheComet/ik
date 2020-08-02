@@ -20,7 +20,7 @@
     X(ONE_BONE)           \
     X(TWO_BONE)           \
     X(FABRIK)             \
-    /*X(MSS)*/
+    X(MSS)
 
 #define IK_ALGORITHM_FEATURES_LIST \
     X(CONSTRAINTS,      constraints,      0x0001) \

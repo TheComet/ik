@@ -1,5 +1,5 @@
 #include "gmock/gmock.h"
-#include "ik/ik.h"
+#include "ik/quat.inl"
 
 #define _USE_MATH_DEFINES
 #include <math.h>

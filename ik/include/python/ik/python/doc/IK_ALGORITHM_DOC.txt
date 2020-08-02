@@ -12,13 +12,13 @@ tree into different isolated parts.
  
 For example:
                               n4
-                              |          ____
+                              ¦          ____
                               n3 <- e1       |
                               |              | This section of
                               n2             | the tree will
                               |              | be solved.
                               n1 <- a1   ____|
-                              |
+                              ¦
                               n0
  
     >>> e1 = n3.effector = ik.Effector()
@@ -32,7 +32,7 @@ It is  also possible to change algorithms partway down the tree by attaching a
 different algorithm:
  
                               n4
-                      ____    |
+                      ____    ¦
                      |        n3 <- e2
     This section is  |        |
     solved by the    |        n2

@@ -10,6 +10,7 @@
 #include "ik/python/ik_type_Info.h"
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
@@ -46,6 +47,7 @@ init_builtin_types(void)
     if (init_ik_InfoType() != 0)           return -1;
     if (init_ik_ModuleRefType() != 0)      return -1;
     if (init_ik_NodeType() != 0)           return -1;
+    if (init_ik_PoleType() != 0)           return -1;
     if (init_ik_QuatType() != 0)           return -1;
     if (init_ik_SolverType() != 0)         return -1;
     if (init_ik_Vec3Type() != 0)           return -1;
@@ -58,11 +60,16 @@ add_builtin_types_to_module(PyObject* m)
 {
     Py_INCREF(&ik_AttachmentType);      if (PyModule_AddObject(m, "Attachment",      (PyObject*)&ik_AttachmentType) != 0)      return -1;
     Py_INCREF(&ik_AlgorithmType);       if (PyModule_AddObject(m, "Algorithm",       (PyObject*)&ik_AlgorithmType) != 0)       return -1;
+    Py_INCREF(&ik_ConstraintType);      if (PyModule_AddObject(m, "Constraint",      (PyObject*)&ik_ConstraintType) != 0)      return -1;
     Py_INCREF(&ik_StiffConstraintType); if (PyModule_AddObject(m, "StiffConstraint", (PyObject*)&ik_StiffConstraintType) != 0) return -1;
     Py_INCREF(&ik_HingeConstraintType); if (PyModule_AddObject(m, "HingeConstraint", (PyObject*)&ik_HingeConstraintType) != 0) return -1;
     Py_INCREF(&ik_EffectorType);        if (PyModule_AddObject(m, "Effector",        (PyObject*)&ik_EffectorType) != 0)        return -1;
     Py_INCREF(&ik_NodeType);            if (PyModule_AddObject(m, "Node",            (PyObject*)&ik_NodeType) != 0)            return -1;
     Py_INCREF(&ik_PoseType);            if (PyModule_AddObject(m, "Pose",            (PyObject*)&ik_PoseType) != 0)            return -1;
+    Py_INCREF(&ik_PoleType);            if (PyModule_AddObject(m, "Pole",            (PyObject*)&ik_PoleType) != 0)            return -1;
+    Py_INCREF(&ik_GenericPoleType);     if (PyModule_AddObject(m, "GenericPole",     (PyObject*)&ik_GenericPoleType) != 0)     return -1;
+    Py_INCREF(&ik_BlenderPoleType);     if (PyModule_AddObject(m, "BlenderPole",     (PyObject*)&ik_BlenderPoleType) != 0)     return -1;
+    Py_INCREF(&ik_MayaPoleType);        if (PyModule_AddObject(m, "MayaPole",        (PyObject*)&ik_MayaPoleType) != 0)        return -1;
     Py_INCREF(&ik_QuatType);            if (PyModule_AddObject(m, "Quat",            (PyObject*)&ik_QuatType) != 0)            return -1;
     Py_INCREF(&ik_SolverType);          if (PyModule_AddObject(m, "Solver",          (PyObject*)&ik_SolverType) != 0)          return -1;
     Py_INCREF(&ik_Vec3Type);            if (PyModule_AddObject(m, "Vec3",            (PyObject*)&ik_Vec3Type) != 0)            return -1;

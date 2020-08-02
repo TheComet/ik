@@ -3,6 +3,7 @@
 #include "ik/solver.h"
 #include "ik/algorithm.h"
 #include "ik/effector.h"
+#include "ik/vec3.inl"
 #include "ik/cpputils.hpp"
 
 #define NAME solver_b2

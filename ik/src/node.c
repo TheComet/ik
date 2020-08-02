@@ -1,12 +1,13 @@
 #include "ik/algorithm.h"
 #include "ik/constraint.h"
 #include "ik/effector.h"
-#include "ik/pole.h"
 #include "ik/log.h"
 #include "ik/node.h"
+#include "ik/pole.h"
+#include "ik/quat.inl"
+#include "ik/vec3.inl"
 #include <string.h>
 #include <assert.h>
-#include <stdio.h>
 
 #define GUID(n) (btree_key_t)((n)->user.guid)
 

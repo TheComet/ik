@@ -4,7 +4,8 @@
 #include "ik/solver.h"
 #include "ik/subtree.h"
 #include "ik/transform.h"
-#include "ik/vec3.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include <stddef.h>
 #include <assert.h>
 

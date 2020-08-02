@@ -1,8 +1,8 @@
 #include "ik/ik.h"
 #include "ik/log.h"
 #include "ik/pole.h"
-#include "ik/quat.h"
-#include "ik/vec3.h"
+#include "ik/quat.inl"
+#include "ik/vec3.inl"
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
@@ -13,15 +13,16 @@
 
 /* ------------------------------------------------------------------------- */
 static void
-calculate_roll_GENERIC(ikreal q[4], const struct ik_pole* pole)
+calculate_roll_generic(const struct ik_pole* pole, ikreal q[4])
 {
     ik_quat_set_identity(q);
 }
 
 /* ------------------------------------------------------------------------- */
 #if 0
+/* https://i.stack.imgur.com/lKN6o.jpg */
 static void
-calculate_roll_BLENDER(ikreal q[4], const struct ik_pole* pole)
+calculate_roll_blender(ikreal q[4], const struct ik_pole* pole)
 {
     union ik_vec3 work, x_axis, z_axis;
 
@@ -56,7 +57,7 @@ calculate_roll_BLENDER(ikreal q[4], const struct ik_pole* pole)
 
 /* ------------------------------------------------------------------------- *
 static void
-calculate_roll_MAYA(ikreal q[4], const struct ik_pole* pole)
+calculate_roll_maya(ikreal q[4], const struct ik_pole* pole)
 {
     ik_quat_set_identity(q);
 }*/
@@ -68,7 +69,6 @@ calculate_roll_MAYA(ikreal q[4], const struct ik_pole* pole)
 static void
 deinit_pole(struct ik_pole* pole)
 {
-    /* No data is managed by pole */
 }
 
 /* ------------------------------------------------------------------------- */
@@ -80,32 +80,30 @@ ik_pole_create(void)
     if (pole == NULL)
         return NULL;
 
+    pole->calculate_roll = calculate_roll_generic;
     pole->angle = 0.0;
-    pole->calculate_roll = calculate_roll_GENERIC;
-    ik_vec3_set_zero((pole)->position.f);
+    ik_vec3_set_zero(pole->position.f);
 
     return pole;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_free(struct ik_pole* pole)
+ik_pole_set_generic(struct ik_pole* pole)
 {
-    IK_DECREF(pole);
+    pole->calculate_roll = calculate_roll_generic;
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_pole_set_type(struct ik_pole* pole, enum ik_pole_type type)
+ik_pole_set_blender(struct ik_pole* pole)
 {
-    switch (type)
-    {
-#define X(arg) case IK_POLE_##arg : pole->calculate_roll = calculate_roll_##arg; break;
-        IK_POLE_TYPE_LIST
-#undef X
+    pole->calculate_roll = calculate_roll_generic;
+}
 
-        default:
-            ik_log_printf(IK_WARN, "ik_pole_set_type(): Unknown type %d, ignoring...", type);
-            break;
-    }
+/* ------------------------------------------------------------------------- */
+void
+ik_pole_set_maya(struct ik_pole* pole)
+{
+    pole->calculate_roll = calculate_roll_generic;
 }

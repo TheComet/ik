@@ -3,6 +3,8 @@
 #include "ik/effector.h"
 #include "ik/node.h"
 #include "ik/solver.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include "ik/cpputils.hpp"
 
 #define NAME solver_fabrik

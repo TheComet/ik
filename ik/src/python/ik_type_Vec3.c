@@ -1,6 +1,7 @@
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
-#include "ik/vec3.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include "structmember.h"
 
 /* Macro and helper that convert PyObject obj to a C double and store

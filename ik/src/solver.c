@@ -1,7 +1,7 @@
 #include "ik/algorithm.h"
+#include "ik/meta_solvers.h"
 #include "ik/node.h"
 #include "ik/solver.h"
-#include "ik/solver_list.h"
 #include "ik/subtree.h"
 #include "ik/log.h"
 #include "cstructures/btree.h"
@@ -296,10 +296,13 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
                          const struct ik_node* node,
                          const struct btree_t* marked_nodes)
 {
-    struct ik_solver* solver;
     struct ik_subtree subtree;
+    struct cs_vector combined_solvers;
+
+    vector_init(&combined_solvers, sizeof(struct ik_solver*));
 
     NODE_FOR_EACH(node, user_data, child)
+        struct ik_solver* solver;
         if (subtree_init(&subtree) != 0)
             goto subtree_init_failed;
 
@@ -315,16 +318,56 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
         if (solver == NULL)
             goto new_solver_failed;
 
-        if (vector_push(solver_list, &solver) != 0)
-            goto add_solver_to_solver_failed;
+        if (vector_push(&combined_solvers, &solver) != 0)
+        {
+            destroy_solver(solver);
+            goto new_solver_failed;
+        }
 
         subtree_deinit(&subtree);
     NODE_END_EACH
 
-    return 0;
+    if (vector_count(&combined_solvers) > 1)
+    {
+        struct ik_solver* solver = ik_solver_combine_create(combined_solvers);
+        if (solver == NULL)
+        {
+            VECTOR_FOR_EACH(&combined_solvers, struct ik_solver*, psolver)
+                destroy_solver(*psolver);
+            VECTOR_END_EACH
+            vector_deinit(&combined_solvers);
+        }
+        if (vector_push(solver_list, &solver) != 0)
+        {
+            destroy_solver(solver);
+            return -1;
+        }
 
-    add_solver_to_solver_failed  : destroy_solver(solver);
-    new_solver_failed            :
+        return 0;
+    }
+    else if (vector_count(&combined_solvers) == 1)
+    {
+        struct ik_solver* solver = *(struct ik_solver**)vector_back(&combined_solvers);
+        if (vector_push(solver_list, &solver) != 0)
+        {
+            destroy_solver(solver);
+            vector_deinit(&combined_solvers);
+            return -1;
+        }
+
+        vector_deinit(&combined_solvers);
+        return 0;
+    }
+    else
+    {
+        vector_deinit(&combined_solvers);
+        return 0;
+    }
+
+    new_solver_failed            : VECTOR_FOR_EACH(&combined_solvers, struct ik_solver*, psolver)
+                                       destroy_solver(*psolver);
+                                   VECTOR_END_EACH
+                                   vector_deinit(&combined_solvers);
     recurse_failed               : subtree_deinit(&subtree);
     subtree_init_failed          : return -1;
 }
@@ -426,20 +469,16 @@ ik_solver_build(const struct ik_node* root)
         goto split_into_subtrees_failed;
     vector_reverse(&solver_list);
 
-    /* If there is more than 1 solver in the list then we have to group those
-     * together into a group solver. If there is only one solver then that
-     * solver can be returned directly. */
-    if (vector_count(&solver_list) > 1)
-    {
-        /* NOTE: solver_list ownership is moved here. */
-        solver = ik_solver_list_create(solver_list);
-        if (solver == NULL)
-            goto solver_group_create_failed;
-    }
-    else
+    if (vector_count(&solver_list) == 1)
     {
         solver = *(struct ik_solver**)vector_back(&solver_list);
         vector_deinit(&solver_list);
+    }
+    else
+    {
+        solver = ik_solver_group_create(solver_list);
+        if (solver == NULL)
+            goto create_meta_solvers_failed;
     }
 
     btree_deinit(&marked_nodes);
@@ -447,7 +486,7 @@ ik_solver_build(const struct ik_node* root)
 
     return solver;
 
-    solver_group_create_failed     :
+    create_meta_solvers_failed     :
     split_into_subtrees_failed     : VECTOR_FOR_EACH(&solver_list, struct ik_solver*, psolver)
                                          destroy_solver(*psolver);
                                      VECTOR_END_EACH

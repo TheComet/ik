@@ -5,6 +5,8 @@
 #include "ik/solver.h"
 #include "ik/subtree.h"
 #include "ik/transform.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 
 #include "cstructures/memory.h"
 

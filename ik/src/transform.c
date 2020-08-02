@@ -1,6 +1,7 @@
 #include "ik/node.h"
 #include "ik/transform.h"
-#include "ik/vec3.h"
+#include "ik/quat.inl"
+#include "ik/vec3.inl"
 #include <stddef.h>
 #include <assert.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 #include "gmock/gmock.h"
-#include "ik/vec3.h"
-#include "ik/quat.h"
+#include "ik/vec3.inl"
+#include "ik/quat.inl"
 
 #define NAME vec3
 
