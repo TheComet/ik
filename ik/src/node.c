@@ -48,10 +48,9 @@ ik_node_create(union ik_node_user_data user)
     struct ik_node* node = (struct ik_node*)
         ik_refcounted_alloc(sizeof *node, (ik_deinit_func)ik_node_deinit);
     if (node == NULL)
-        goto alloc_node_failed;
+        return NULL;
 
     node->user = user;
-
     node->algorithm = NULL;
     node->constraint = NULL;
     node->effector = NULL;
@@ -59,21 +58,14 @@ ik_node_create(union ik_node_user_data user)
 
     ik_vec3_set_zero(node->position.f);
     ik_quat_set_identity(node->rotation.f);
+
     node->rotation_weight = 1.0;
     node->mass = 1.0;
 
     node->parent = NULL;
-
-    if (btree_init(&node->children, sizeof(struct ik_node*)) != BTREE_OK)
-    {
-        ik_log_out_of_memory("btree_init()");
-        goto init_node_failed;
-    }
+    btree_init(&node->children, sizeof(struct ik_node*));
 
     return node;
-
-    init_node_failed  : ik_refcounted_free((struct ik_refcounted*)node);
-    alloc_node_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */

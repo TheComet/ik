@@ -13,6 +13,18 @@ class TestSolver(unittest.TestCase, CustomAssertions):
     def test_one_bone(self):
         pass
 
+    def test_combine(self):
+        root = ik.Node(position=ik.Vec3(0, 0, 0), rotation=ik.Quat((1, 0, 0), pi))
+        tip1 = root.create_child(position=ik.Vec3(0, 0, 2))
+        tip2 = root.create_child(position=ik.Vec3(0, 0, 2))
+
+        root.algorithm = ik.Algorithm(ik.ONE_BONE)
+        tip1.effector = ik.Effector(target_position=ik.Vec3(0, -2, 2))
+        tip2.effector = ik.Effector(target_position=ik.Vec3(0, 2, 2))
+
+        s = ik.Solver(root)
+        s.solve()
+
     def test_fabrik(self):
         rn = ik.Node()
         mid_rot = ik.Quat((2, 6, 1), pi/5)

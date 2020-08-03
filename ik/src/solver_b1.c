@@ -181,8 +181,16 @@ solver_b1_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_
 {
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
 
-
     cb(solver->tip);
+}
+/* ------------------------------------------------------------------------- */
+static void
+solver_b1_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip)
+{
+    struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
+
+    *base = solver->base;
+    *tip = solver->tip;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -193,5 +201,6 @@ struct ik_solver_interface ik_solver_ONE_BONE = {
     solver_b1_deinit,
     solver_b1_solve,
     solver_b1_iterate_nodes,
-    solver_b1_iterate_effector_nodes
+    solver_b1_iterate_effector_nodes,
+    solver_b1_get_first_segment
 };

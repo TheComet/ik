@@ -107,6 +107,23 @@ def too_many_effectors_example(pos, chain_len, segment_len, max_depth):
 
     return root
 
+
+def combined_solvers(pos, segment_len):
+    root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
+    mid = root.create_child(position=ik.Vec3(0, 0, segment_len))
+    mid1 = mid.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+    mid2 = mid.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+    mid3 = mid.create_child(position=ik.Vec3(0, -segment_len, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+    tip1 = mid1.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+    tip2 = mid2.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+    tip3 = mid3.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
+
+    root.algorithm = ik.Algorithm(ik.FABRIK)
+    mid1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-segment_len, pos[1]-segment_len), chain_length=2)
+    mid2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+segment_len, pos[1]-segment_len), chain_length=2)
+
+    return root
+
 class Window(Updateable):
     def __init__(self, width, height):
         self.dimensions = width, height
@@ -116,10 +133,11 @@ class Window(Updateable):
             self,
             #Tree(one_bone_example((100, height - 200))),
             #Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((width/2, height - 200), 20, 20))
+            #Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
+            Tree(combined_solvers((width/2, height-200), 80))
         ]
 
         self.__last_time_updated = None

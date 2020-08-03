@@ -13,7 +13,7 @@ struct ik_subtree
     struct cs_vector leaves;  /* list of ik_node* */
 };
 
-IK_PRIVATE_API int
+IK_PRIVATE_API void
 subtree_init(struct ik_subtree* st);
 
 IK_PRIVATE_API void

@@ -35,7 +35,7 @@ chain_tree_destroy(struct ik_chain* chain);
 /*!
  * @brief Initializes an allocated chain object.
  */
-IK_PRIVATE_API int
+IK_PRIVATE_API void
 chain_tree_init(struct ik_chain* chain);
 
 /*!

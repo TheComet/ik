@@ -5,16 +5,11 @@
 #include <assert.h>
 
 /* ------------------------------------------------------------------------- */
-int
+void
 subtree_init(struct ik_subtree* st)
 {
     st->root = NULL;
-    if (vector_init(&st->leaves, sizeof(struct ik_node*)) != 0)
-    {
-        ik_log_out_of_memory("ik_subtree_init()");
-        return -1;
-    }
-    return 0;
+    vector_init(&st->leaves, sizeof(struct ik_node*));
 }
 
 /* ------------------------------------------------------------------------- */

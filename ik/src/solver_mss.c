@@ -42,6 +42,13 @@ mss_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callba
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+mss_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip)
+{
+    struct ik_solver_mss* solver = (struct ik_solver_mss*)solver_base;
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_MSS = {
     "mss",
     sizeof(struct ik_solver_mss),
@@ -49,7 +56,8 @@ struct ik_solver_interface ik_solver_MSS = {
     mss_deinit,
     mss_solve,
     mss_iterate_nodes,
-    mss_iterate_effector_nodes
+    mss_iterate_effector_nodes,
+    mss_get_first_segment
 };
 
 #if 0

@@ -46,6 +46,8 @@ struct ik_solver_interface
     void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func cb, int skip_base);
 
     void (*iterate_effector_nodes)(const struct ik_solver*, ik_solver_callback_func cb);
+
+    void (*get_first_segment)(const struct ik_solver*, struct ik_node**, struct ik_node**);
 };
 
 IK_PUBLIC_API int
@@ -97,7 +99,7 @@ struct ik_solver
  * supported.
  */
 IK_PUBLIC_API struct ik_solver*
-ik_solver_build(const struct ik_node* root);
+ik_solver_build(struct ik_node* root);
 
 IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);
@@ -109,6 +111,9 @@ IK_PUBLIC_API void
 ik_solver_iterate_effector_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
 
 #if defined(IK_BUILDING)
+
+IK_PRIVATE_API void
+ik_solver_get_first_segment(const struct ik_solver* solver, struct ik_node** base, struct ik_node** tip);
 
 IK_PRIVATE_API int
 ik_solver_init_interfaces(void);

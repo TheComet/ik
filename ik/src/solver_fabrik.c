@@ -543,8 +543,7 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     if (solver->target_positions == NULL)
         goto alloc_target_positions_failed;
 
-    if (chain_tree_init(&solver->chain_tree) != 0)
-        goto chain_tree_init_failed;
+    chain_tree_init(&solver->chain_tree);
     if (chain_tree_build(&solver->chain_tree, subtree) != 0)
         goto build_chain_tree_failed;
 
@@ -554,7 +553,7 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     return 0;
 
     build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
-    chain_tree_init_failed          : FREE(solver->target_positions);
+                                      FREE(solver->target_positions);
     alloc_target_positions_failed   : FREE(solver->effector_nodes);
     alloc_effector_nodes_failed     : FREE(solver->effector_rotations);
     alloc_effector_rotations_failed : return -1;
@@ -665,6 +664,16 @@ fabrik_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_cal
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+fabrik_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip)
+{
+    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
+
+    *base = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
+    *tip = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 2);
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_FABRIK = {
     "fabrik",
     sizeof(struct ik_solver_fabrik),
@@ -672,5 +681,6 @@ struct ik_solver_interface ik_solver_FABRIK = {
     fabrik_deinit,
     fabrik_solve,
     fabrik_iterate_nodes,
-    fabrik_iterate_effector_nodes
+    fabrik_iterate_effector_nodes,
+    fabrik_get_first_segment
 };

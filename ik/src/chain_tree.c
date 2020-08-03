@@ -17,11 +17,7 @@ chain_tree_create(void)
         return NULL;
     }
 
-    if (chain_tree_init(chain) != 0)
-    {
-        FREE(chain);
-        return NULL;
-    }
+    chain_tree_init(chain);
 
     return chain;
 }
@@ -35,19 +31,11 @@ chain_tree_destroy(struct ik_chain* chain)
 }
 
 /* ------------------------------------------------------------------------- */
-int
+void
 chain_tree_init(struct ik_chain* chain)
 {
-    if (vector_init(&chain->nodes, sizeof(struct ik_node*)) != 0)
-        return -1;
-
-    if (vector_init(&chain->children, sizeof(struct ik_chain)) != 0)
-    {
-        vector_deinit(&chain->nodes);
-        return -1;
-    }
-
-    return 0;
+    vector_init(&chain->nodes, sizeof(struct ik_node*));
+    vector_init(&chain->children, sizeof(struct ik_chain));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -116,11 +104,7 @@ chain_create_child(struct ik_chain* chain)
     if (child == NULL)
         return NULL;
 
-    if (chain_tree_init(child) != 0)
-    {
-        vector_erase_element(&chain->children, child);
-        return NULL;
-    }
+    chain_tree_init(child);
 
     return child;
 }
