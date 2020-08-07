@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "ik/init.h"
 #include "ik/algorithm.h"
+#include "ik/log.h"
 #include "ik/python/ik_docstrings.h"
 #include "ik/python/ik_module.h"
-#include "ik/python/ik_module_log.h"
+#include "ik/python/ik_type_Log.h"
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
@@ -45,6 +46,7 @@ init_builtin_types(void)
     if (init_ik_ConstraintType() != 0)     return -1;
     if (init_ik_EffectorType() != 0)       return -1;
     if (init_ik_InfoType() != 0)           return -1;
+    if (init_ik_LogType() != 0)            return -1;
     if (init_ik_ModuleRefType() != 0)      return -1;
     if (init_ik_NodeType() != 0)           return -1;
     if (init_ik_PoleType() != 0)           return -1;
@@ -58,21 +60,31 @@ init_builtin_types(void)
 static int
 add_builtin_types_to_module(PyObject* m)
 {
-    Py_INCREF(&ik_AttachmentType);      if (PyModule_AddObject(m, "Attachment",      (PyObject*)&ik_AttachmentType) != 0)      return -1;
-    Py_INCREF(&ik_AlgorithmType);       if (PyModule_AddObject(m, "Algorithm",       (PyObject*)&ik_AlgorithmType) != 0)       return -1;
-    Py_INCREF(&ik_ConstraintType);      if (PyModule_AddObject(m, "Constraint",      (PyObject*)&ik_ConstraintType) != 0)      return -1;
-    Py_INCREF(&ik_StiffConstraintType); if (PyModule_AddObject(m, "StiffConstraint", (PyObject*)&ik_StiffConstraintType) != 0) return -1;
-    Py_INCREF(&ik_HingeConstraintType); if (PyModule_AddObject(m, "HingeConstraint", (PyObject*)&ik_HingeConstraintType) != 0) return -1;
-    Py_INCREF(&ik_EffectorType);        if (PyModule_AddObject(m, "Effector",        (PyObject*)&ik_EffectorType) != 0)        return -1;
-    Py_INCREF(&ik_NodeType);            if (PyModule_AddObject(m, "Node",            (PyObject*)&ik_NodeType) != 0)            return -1;
-    Py_INCREF(&ik_PoseType);            if (PyModule_AddObject(m, "Pose",            (PyObject*)&ik_PoseType) != 0)            return -1;
-    Py_INCREF(&ik_PoleType);            if (PyModule_AddObject(m, "Pole",            (PyObject*)&ik_PoleType) != 0)            return -1;
-    Py_INCREF(&ik_GenericPoleType);     if (PyModule_AddObject(m, "GenericPole",     (PyObject*)&ik_GenericPoleType) != 0)     return -1;
-    Py_INCREF(&ik_BlenderPoleType);     if (PyModule_AddObject(m, "BlenderPole",     (PyObject*)&ik_BlenderPoleType) != 0)     return -1;
-    Py_INCREF(&ik_MayaPoleType);        if (PyModule_AddObject(m, "MayaPole",        (PyObject*)&ik_MayaPoleType) != 0)        return -1;
-    Py_INCREF(&ik_QuatType);            if (PyModule_AddObject(m, "Quat",            (PyObject*)&ik_QuatType) != 0)            return -1;
-    Py_INCREF(&ik_SolverType);          if (PyModule_AddObject(m, "Solver",          (PyObject*)&ik_SolverType) != 0)          return -1;
-    Py_INCREF(&ik_Vec3Type);            if (PyModule_AddObject(m, "Vec3",            (PyObject*)&ik_Vec3Type) != 0)            return -1;
+#define ADD_TYPE(name) do {                                                   \
+        Py_INCREF(&ik_##name##Type);                                          \
+        if (PyModule_AddObject(m, #name, (PyObject*)&ik_##name##Type) != 0)   \
+        {                                                                     \
+            Py_DECREF(&ik_##name##Type);                                      \
+            return -1;                                                        \
+        }                                                                     \
+    } while(0)
+
+    ADD_TYPE(Attachment);
+    ADD_TYPE(Algorithm);
+    ADD_TYPE(Constraint);
+    ADD_TYPE(StiffConstraint);
+    ADD_TYPE(HingeConstraint);
+    ADD_TYPE(Effector);
+    ADD_TYPE(Node);
+    ADD_TYPE(Pose);
+    ADD_TYPE(Pole);
+    ADD_TYPE(GenericPole);
+    ADD_TYPE(BlenderPole);
+    ADD_TYPE(MayaPole);
+    ADD_TYPE(Quat);
+    ADD_TYPE(Solver);
+    ADD_TYPE(Vec3);
+
     return 0;
 }
 
@@ -85,10 +97,10 @@ add_constants_to_module(PyObject* m)
     IK_ALGORITHM_LIST
 #undef X
 
-    /* Log constants *
-#define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_LOG_##arg) != 0) return -1;
+    /* Log constants */
+#define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_##arg) != 0) return -1;
     IK_LOG_SEVERITY_LIST
-#undef X*/
+#undef X
 
     return 0;
 }
@@ -97,11 +109,28 @@ add_constants_to_module(PyObject* m)
 static int
 add_builtin_objects_to_module(PyObject* m)
 {
-    PyObject* o = PyObject_CallObject((PyObject*)&ik_InfoType, NULL);
-    if (o == NULL)
-        return -1;
-    if (PyModule_AddObject(m, "info", o) != 0)
-        return -1;
+    {
+        PyObject* info = PyObject_CallObject((PyObject*)&ik_InfoType, NULL);
+        if (info == NULL)
+            return -1;
+        if (PyModule_AddObject(m, "info", info) != 0)
+        {
+            Py_DECREF(info);
+            return -1;
+        }
+    }
+
+    /* Instantiate log and add to module */
+    {
+        PyObject* log = PyObject_CallObject((PyObject*)&ik_LogType, NULL);
+        if (log == NULL)
+            return -1;
+        if (PyModule_AddObject(m, "log", log) != 0)
+        {
+            Py_DECREF(log);
+            return -1;
+        }
+    }
 
     return 0;
 }
@@ -114,12 +143,15 @@ PyMODINIT_FUNC PyInit_ik(void)
     if (ik_init() < 0)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to initialize ik library");
-        goto ik_init_failed;
+        return NULL;
     }
 
     m = PyModule_Create(&ik_module);
     if (m == NULL)
-        goto module_alloc_failed;
+    {
+        ik_deinit();
+        return NULL;
+    }
 
     if (init_builtin_types() != 0)             goto init_module_failed;
     if (add_builtin_types_to_module(m) != 0)   goto init_module_failed;
@@ -129,6 +161,5 @@ PyMODINIT_FUNC PyInit_ik(void)
     return m;
 
     init_module_failed  : Py_DECREF(m);
-    module_alloc_failed : ik_deinit();
-    ik_init_failed      : return NULL;
+    return NULL;
 }

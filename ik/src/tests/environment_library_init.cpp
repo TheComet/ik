@@ -10,8 +10,8 @@ public:
     virtual void SetUp() override
     {
         testing::FLAGS_gtest_death_test_style = "threadsafe";
-        ASSERT_THAT(ik_init(), Eq(IK_OK));
-        ASSERT_THAT(ik_log_init(), Eq(IK_OK));
+        ASSERT_THAT(ik_init(), Eq(0));
+        ASSERT_THAT(ik_log_init(), Eq(0));
     }
 
     virtual void TearDown() override

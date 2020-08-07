@@ -1,9 +1,8 @@
 #include "ik/tests.h"
-#include "ik/retcodes.h"
 #include <gmock/gmock.h>
 #include <stdio.h>
 
-ikret
+int
 ik_tests_run(int* argc, char** argv)
 {
     // Since Google Mock depends on Google Test, InitGoogleMock() is
@@ -11,6 +10,6 @@ ik_tests_run(int* argc, char** argv)
     // no need for calling testing::InitGoogleTest() separately.
     testing::InitGoogleMock(argc, argv);
     if (RUN_ALL_TESTS() != 0)
-        return IK_ERR_UNIT_TESTS_FAILED;
-    return IK_OK;
+        return -1;
+    return 0;
 }

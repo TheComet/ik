@@ -17,6 +17,7 @@
         #cmakedefine IK_MEMORY_BACKTRACE
 #   endif
     #cmakedefine IK_HASHMAP_STATS
+    #cmakedefine IK_LOGGING
 #   define IK_PRECISION_${IK_PRECISION_CAPS_AND_NO_SPACES}
     #cmakedefine IK_PIC
     #cmakedefine IK_PROFILING
@@ -53,8 +54,6 @@
     /* --------------------------------------------------------------
      * Common include files
      * --------------------------------------------------------------*/
-
-    #include "ik/retcodes.h"
 
     #ifdef IK_HAVE_STDINT_H
         #include <stdint.h>

@@ -68,7 +68,6 @@ class Tree(Updateable):
         #self.initial_pose.apply(self.root)
         tstart = time()
         self.solver.solve()
-        print(f"solve() took {time()-tstart}")
 
     def draw(self, surface):
         self.__draw_tree(surface, self.root, ik.Vec3(), ik.Quat())

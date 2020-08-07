@@ -94,7 +94,7 @@ solver_combine_solve(struct ik_solver* solver_base)
         /* Store the solved rotation for later */
         solver->child_rotations[i] = node->rotation;
 
-        /* Average */
+        /* Accumulate solved rotation */
         ik_quat_ensure_positive_sign(node->rotation.f);
         ik_quat_add_quat(rot.f, node->rotation.f);
     }
@@ -108,6 +108,7 @@ solver_combine_solve(struct ik_solver* solver_base)
         ik_quat_add_quat(rot.f, solver->child_rotations[i].f);
     }
 
+    /* Average */
     ik_quat_div_scalar(rot.f, solver->child_node_count);
     ik_quat_normalize(rot.f);
 

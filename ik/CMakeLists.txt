@@ -16,6 +16,7 @@ option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" O
 option (IK_BUILDINFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
 option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
 option (IK_HASHMAP_STATS "Record statistics on the use of hashmaps" OFF)
+option (IK_LOGGING "Enable or disable logging support (replaces all log functions with NOP when disabled)" ON)
 option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg on linux" OFF)
@@ -142,7 +143,6 @@ set (IK_SOURCES
     "src/constraint.c"
     "src/effector.c"
     "src/init.c"
-    "src/log.c"
     #"src/mat3x3.c"
     "src/node.c"
     "src/pole.c"
@@ -157,11 +157,11 @@ set (IK_SOURCES
     "src/subtree.c"
     "src/transform.c"
     #"src/util.c"
-    "$<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>"
+    $<$<BOOL:${IK_LOGGING}>:src/log.c>
+    $<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>
     "${CMAKE_CURRENT_BINARY_DIR}/src/info.c"
     "templates/info.c.in")
 set (IK_PYTHON_HEADERS
-    "include/python/ik/python/ik_module_log.h"
     "include/python/ik/python/ik_type_Attachment.h"
     "include/python/ik/python/ik_type_Algorithm.h"
     "include/python/ik/python/ik_type_Constraint.h"
@@ -171,10 +171,10 @@ set (IK_PYTHON_HEADERS
     "include/python/ik/python/ik_type_Node.h"
     "include/python/ik/python/ik_type_Pole.h"
     "include/python/ik/python/ik_type_Quat.h"
-    "include/python/ik/python/ik_type_Vec3.h")
+    "include/python/ik/python/ik_type_Vec3.h"
+    $<$<BOOL:${IK_LOGGING}>:include/python/ik/python/ik_type_Log.h>)
 set (IK_PYTHON_SOURCES
     "src/python/ik_module.c"
-    #"src/python/ik_module_log.c"
     "src/python/ik_type_Attachment.c"
     "src/python/ik_type_Algorithm.c"
     "src/python/ik_type_Constraint.c"
@@ -185,7 +185,8 @@ set (IK_PYTHON_SOURCES
     "src/python/ik_type_Pole.c"
     "src/python/ik_type_Quat.c"
     "src/python/ik_type_Solver.c"
-    "src/python/ik_type_Vec3.c")
+    "src/python/ik_type_Vec3.c"
+    $<$<BOOL:${IK_LOGGING}>:src/python/ik_type_Log.c>)
 set (IK_TESTS_SOURCES
     "src/tests/environment_library_init.cpp"
     "src/tests/tests_run.cpp"

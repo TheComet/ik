@@ -19,6 +19,8 @@ enum ik_log_severity
 
 C_BEGIN
 
+#if defined(IK_LOGGING)
+
 IK_PUBLIC_API int
 ik_log_init(void);
 
@@ -32,13 +34,26 @@ IK_PUBLIC_API void
 ik_log_set_timestamps(int enable);
 
 IK_PUBLIC_API void
-ik_log_printf(enum ik_log_severity, const char* fmt, ...);
+ik_log_printf(enum ik_log_severity severity, const char* fmt, ...);
 
 IK_PUBLIC_API void
-ik_log_set_callback(void (*callback)(enum ik_log_severity, const char*));
+ik_log_set_callback(void (*callback)(void* param, enum ik_log_severity, const char*), void* param);
 
 IK_PUBLIC_API void
 ik_log_out_of_memory(const char* func_name);
+
+#else
+
+#define ik_log_init()
+#define ik_log_deinit()
+#define ik_log_set_severity(x)
+#define ik_log_set_timestamps(x)
+#define ik_log_set_callback(x)
+#define ik_log_out_of_memory(x)
+
+static inline void ik_log_printf(enum ik_log_severity severity, const char* fmt, ...) {}
+
+#endif
 
 C_END
 

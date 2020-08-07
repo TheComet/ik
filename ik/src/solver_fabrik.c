@@ -19,7 +19,7 @@ struct ik_solver_fabrik
 
     struct ik_chain chain_tree;
     struct ik_node** effector_nodes;
-    union ik_quat* effector_rotations;
+    union ik_quat* leaf_node_rotations;
     union ik_vec3* target_positions;
 
     int num_effectors;
@@ -83,30 +83,40 @@ store_effector_nodes(struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-store_effector_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
+store_leaf_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        store_effector_node_rotations(rotations_store, child);
+        store_leaf_node_rotations(rotations_store, child);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_DEAD_NODE(chain, node)
+        **rotations_store = node->rotation;
+        (*rotations_store)++;
     CHAIN_END_EACH
 
     if (chain_child_count(chain) == 0)
     {
-        ik_quat_copy((*rotations_store)->f, chain_get_tip_node(chain)->rotation.f);
+        **rotations_store = chain_get_tip_node(chain)->rotation;
         (*rotations_store)++;
     }
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-restore_effector_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
+restore_leaf_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        restore_effector_node_rotations(rotations_store, child);
+        restore_leaf_node_rotations(rotations_store, child);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_DEAD_NODE(chain, node)
+        node->rotation = **rotations_store;
+        (*rotations_store)++;
     CHAIN_END_EACH
 
     if (chain_child_count(chain) == 0)
     {
-        ik_quat_copy(chain_get_tip_node(chain)->rotation.f, (*rotations_store)->f);
+        chain_get_tip_node(chain)->rotation = **rotations_store;
         (*rotations_store)++;
     }
 }
@@ -114,16 +124,10 @@ restore_effector_node_rotations(union ik_quat** rotations_store, const struct ik
 /* ------------------------------------------------------------------------- */
 static void
 convert_rotations_to_segments_recursive(const struct ik_chain* chain,
-                                        unsigned int sibling_count)
+                                        union ik_quat** rotations_store)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        convert_rotations_to_segments_recursive(child, chain_child_count(chain));
-    CHAIN_END_EACH
-
-    /* Copy all rotations from parent to child node, excluding base node. Base
-     * node requires special attention (see below) */
-    CHAIN_FOR_EACH_SEGMENT_RANGE(chain, parent, child, 0, chain_segment_count(chain) - 1)
-        ik_quat_copy(child->rotation.f, parent->rotation.f);
+        convert_rotations_to_segments_recursive(child, rotations_store);
     CHAIN_END_EACH
 
     /*
@@ -133,49 +137,110 @@ convert_rotations_to_segments_recursive(const struct ik_chain* chain,
      *
      * Need to calculate the parent node rotation that would place the child
      * node at [0, 0, 1] and store that rotation in the child node.
-     *
-     *
      */
-    if (sibling_count > 1)
-    {
-        struct ik_node* child  = chain_get_node(chain, chain_node_count(chain) - 2);
-        struct ik_node* parent = chain_get_node(chain, chain_node_count(chain) - 1);
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        struct ik_node* child  = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
 
         ik_quat_angle_of(child->rotation.f, child->position.f);
-        if (chain_node_count(chain) > 2)
+        if (chain_node_count(child_chain) > 2)
         {
-            struct ik_node* grandchild = chain_get_node(chain, chain_node_count(chain) - 3);
+            struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
             ik_quat_mul_quat_conj(grandchild->rotation.f, child->rotation.f);
         }
-        ik_quat_rmul_quat(child->rotation.f, parent->rotation.f);
         ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
-    }
-    else
+    CHAIN_END_EACH
+    if (chain_child_count(chain) == 0)
     {
-        struct ik_node* child  = chain_get_node(chain, chain_node_count(chain) - 2);
-        struct ik_node* parent = chain_get_node(chain, chain_node_count(chain) - 1);
-
-        ik_quat_copy(child->rotation.f, parent->rotation.f);
+        **rotations_store = chain_get_tip_node(chain)->rotation;
+        (*rotations_store)++;
     }
+
+    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
+        ik_quat_angle_of((*rotations_store)->f, child->position.f);
+        ik_quat_mul_quat_conj(child->rotation.f, (*rotations_store)->f);
+        ik_quat_rmul_quat(chain_get_tip_node(chain)->rotation.f, (*rotations_store)->f);
+        ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
+        (*rotations_store)++;
+    CHAIN_END_EACH
+
+    /* Copy all rotations from parent to child node, excluding base node. Base
+     * node requires special attention */
+    CHAIN_FOR_EACH_SEGMENT_RANGE(chain, parent, child, 0, chain_segment_count(chain) - 1)
+        child->rotation = parent->rotation;
+    CHAIN_END_EACH
 }
 static void
 convert_rotations_to_segments(struct ik_solver_fabrik* solver)
 {
     union ik_quat* rotations_store;
+    struct ik_node* base;
+    struct ik_node* child;
 
     /*
      * Copy all effector node rotations into a pre-allocated array stored in the
      * solver object so we can restore them later. They will be overwritten
      * by the parent node rotation in the next section of code.
      */
-    rotations_store = solver->effector_rotations;
-    store_effector_node_rotations(&rotations_store, &solver->chain_tree);
-
     /* Do conversion */
-    convert_rotations_to_segments_recursive(&solver->chain_tree, 1);
+    rotations_store = solver->leaf_node_rotations;
+    convert_rotations_to_segments_recursive(&solver->chain_tree, &rotations_store);
+
+    base  = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
+    child = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 2);
+    child->rotation = base->rotation;
 }
 
 /* ------------------------------------------------------------------------- */
+#if 1
+static void
+convert_rotations_to_nodes_recursive(const struct ik_chain* chain,
+                                     union ik_quat** rotations_store)
+{
+    ikreal* tip_rot;
+
+    /* Copy all rotations from child back to parent node excluding the base node */
+    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain, parent, child, 0, chain_segment_count(chain) - 1)
+        parent->rotation = child->rotation;
+    CHAIN_END_EACH
+
+    tip_rot = chain_get_tip_node(chain)->rotation.f;
+    ik_quat_set(tip_rot, 0, 0, 0, 0);
+
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        struct ik_node* child = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+        ik_quat_ensure_positive_sign(child->rotation.f);
+        ik_quat_add_quat(tip_rot, child->rotation.f);
+    CHAIN_END_EACH
+    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
+        ik_quat_ensure_positive_sign(child->rotation.f);
+        ik_quat_add_quat(tip_rot, child->rotation.f);
+    CHAIN_END_EACH
+
+    ik_quat_div_scalar(tip_rot, chain_child_count(chain));
+    ik_quat_normalize(tip_rot);
+
+    /* restore translations */
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        struct ik_node* child = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+        ik_quat_conj_rmul_quat(tip_rot, child->rotation.f);
+        ik_vec3_rotate_quat(child->position.f, child->rotation.f);
+
+        if (chain_node_count(child_chain) > 2)
+        {
+            struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
+            ik_quat_mul_quat(grandchild->rotation.f, child->rotation.f);
+        }
+    CHAIN_END_EACH
+    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
+        ik_quat_conj_rmul_quat(tip_rot, child->rotation.f);
+        ik_vec3_rotate_quat(child->position.f, child->rotation.f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        convert_rotations_to_nodes_recursive(child, rotations_store);
+    CHAIN_END_EACH
+}
+#else
 static void
 convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
 {
@@ -219,6 +284,7 @@ convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
         convert_rotations_to_nodes_recursive(child);
     CHAIN_END_EACH
 }
+#endif
 static void
 convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
 {
@@ -235,14 +301,14 @@ convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
     ik_quat_copy(base->rotation.f, child->rotation.f);
 
     /* Do conversion */
-    convert_rotations_to_nodes_recursive(&solver->chain_tree);
+    rotations_store = solver->leaf_node_rotations;
+    convert_rotations_to_nodes_recursive(&solver->chain_tree, &rotations_store);
 
     /*
      * Copy original effector node rotations back from pre-allocated buffer into
      * the tree.
      */
-    rotations_store = solver->effector_rotations;
-    restore_effector_node_rotations(&rotations_store, &solver->chain_tree);
+    /*restore_leaf_node_rotations(&rotations_store, &solver->chain_tree);*/
 }
 
 /* ------------------------------------------------------------------------- */
@@ -525,14 +591,31 @@ solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
 
 /* ------------------------------------------------------------------------- */
 static int
+count_total_dead_nodes(const struct ik_chain* chain)
+{
+    int count = chain_dead_node_count(chain);
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        count += count_total_dead_nodes(child);
+    CHAIN_END_EACH
+    return count;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
 fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
+    int leaf_node_count;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
-    solver->num_effectors = subtree_leaves(subtree);
+    chain_tree_init(&solver->chain_tree);
+    if (chain_tree_build(&solver->chain_tree, subtree) != 0)
+        goto build_chain_tree_failed;
 
-    solver->effector_rotations = MALLOC(sizeof(*solver->effector_rotations) * solver->num_effectors);
-    if (solver->effector_rotations == NULL)
+    solver->num_effectors = subtree_leaves(subtree);
+    leaf_node_count = solver->num_effectors + count_total_dead_nodes(&solver->chain_tree);
+
+    solver->leaf_node_rotations = MALLOC(sizeof(*solver->leaf_node_rotations) * leaf_node_count);
+    if (solver->leaf_node_rotations == NULL)
         goto alloc_effector_rotations_failed;
 
     solver->effector_nodes = MALLOC(sizeof(*solver->effector_nodes) * solver->num_effectors);
@@ -543,20 +626,16 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     if (solver->target_positions == NULL)
         goto alloc_target_positions_failed;
 
-    chain_tree_init(&solver->chain_tree);
-    if (chain_tree_build(&solver->chain_tree, subtree) != 0)
-        goto build_chain_tree_failed;
-
     store_effector_nodes(solver);
     validate_poles(solver);
 
     return 0;
 
-    build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
-                                      FREE(solver->target_positions);
     alloc_target_positions_failed   : FREE(solver->effector_nodes);
-    alloc_effector_nodes_failed     : FREE(solver->effector_rotations);
-    alloc_effector_rotations_failed : return -1;
+    alloc_effector_nodes_failed     : FREE(solver->leaf_node_rotations);
+    alloc_effector_rotations_failed :
+    build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
+    return -1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -568,7 +647,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     chain_tree_deinit(&solver->chain_tree);
     FREE(solver->target_positions);
     FREE(solver->effector_nodes);
-    FREE(solver->effector_rotations);
+    FREE(solver->leaf_node_rotations);
 }
 
 /* ------------------------------------------------------------------------- */

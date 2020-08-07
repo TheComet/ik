@@ -57,6 +57,7 @@ TEST_F(NAME, two_nodes)
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n1));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_dead_node_count(&chain_tree), Eq(0));
 }
 
 TEST_F(NAME, omit_first_and_last)
@@ -83,7 +84,7 @@ TEST_F(NAME, omit_first_and_last)
     EXPECT_THAT(n1.refcount(), Eq(3));
     EXPECT_THAT(n2.refcount(), Eq(3));
     EXPECT_THAT(n3.refcount(), Eq(3));
-    EXPECT_THAT(n4.refcount(), Eq(2));
+    EXPECT_THAT(n4.refcount(), Eq(3)); // referenced as dead node
 }
 
 TEST_F(NAME, ignore_branch_not_part_of_subtree)
@@ -104,6 +105,52 @@ TEST_F(NAME, ignore_branch_not_part_of_subtree)
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n3));
     EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_dead_node_count(&chain_tree), Eq(0));
+}
+
+TEST_F(NAME, children_of_leaf_node_are_added_as_dead_nodes)
+{
+    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
+    ik::Ref<ik_node> n5 = ik_node_create_child(n3, ik_guid(5));
+
+    subtree_set_root(&subtree, n0);
+    subtree_add_leaf(&subtree, n3);
+
+    int result = chain_tree_build(&chain_tree, &subtree);
+    EXPECT_THAT(result, Eq(0));
+
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(4));
+    EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
+    EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    ASSERT_THAT(chain_dead_node_count(&chain_tree), Eq(2));
+    EXPECT_THAT(chain_get_dead_node(&chain_tree, 0), Eq(n4));
+    EXPECT_THAT(chain_get_dead_node(&chain_tree, 1), Eq(n5));
+}
+
+TEST_F(NAME, children_of_base_node_are_not_added_as_dead_nodes)
+{
+    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n0, ik_guid(3));
+
+    subtree_set_root(&subtree, n0);
+    subtree_add_leaf(&subtree, n3);
+
+    int result = chain_tree_build(&chain_tree, &subtree);
+    EXPECT_THAT(result, Eq(0));
+
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(4));
+    EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
+    EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_dead_node_count(&chain_tree), Eq(0));
 }
 
 TEST_F(NAME, two_arms)
@@ -124,6 +171,44 @@ TEST_F(NAME, two_arms)
     EXPECT_THAT(chain_node_count(&chain_tree), Eq(3));
     EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
     EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n2));
+
+    ASSERT_THAT(chain_child_count(&chain_tree), Eq(2));
+    ik_chain* c0 = chain_get_child(&chain_tree, 0);
+    ik_chain* c1 = chain_get_child(&chain_tree, 1);
+
+    EXPECT_THAT(chain_child_count(c0), Eq(0));
+    EXPECT_THAT(chain_get_base_node(c0), Eq(n2));
+    EXPECT_THAT(chain_get_tip_node(c0), Eq(n3));
+
+    EXPECT_THAT(chain_child_count(c1), Eq(0));
+    EXPECT_THAT(chain_get_base_node(c1), Eq(n2));
+    EXPECT_THAT(chain_get_tip_node(c1), Eq(n4));
+}
+
+TEST_F(NAME, two_arms_with_dead_nodes)
+{
+    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n2, ik_guid(4));
+    ik::Ref<ik_node> n5 = ik_node_create_child(n2, ik_guid(5));
+    ik::Ref<ik_node> n6 = ik_node_create_child(n2, ik_guid(6));
+
+    subtree_set_root(&subtree, n0);
+    subtree_add_leaf(&subtree, n3);
+    subtree_add_leaf(&subtree, n4);
+
+    int result = chain_tree_build(&chain_tree, &subtree);
+    EXPECT_THAT(result, Eq(0));
+
+    EXPECT_THAT(chain_node_count(&chain_tree), Eq(3));
+    EXPECT_THAT(chain_get_base_node(&chain_tree), Eq(n0));
+    EXPECT_THAT(chain_get_tip_node(&chain_tree), Eq(n2));
+
+    ASSERT_THAT(chain_dead_node_count(&chain_tree), Eq(2));
+    EXPECT_THAT(chain_get_dead_node(&chain_tree, 0), Eq(n5));
+    EXPECT_THAT(chain_get_dead_node(&chain_tree, 1), Eq(n6));
 
     ASSERT_THAT(chain_child_count(&chain_tree), Eq(2));
     ik_chain* c0 = chain_get_child(&chain_tree, 0);

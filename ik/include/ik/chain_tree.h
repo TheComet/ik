@@ -24,6 +24,9 @@ struct ik_chain
     struct cs_vector nodes;
     /* list of ik_chain objects */
     struct cs_vector children;
+    /* list of ik_node* references that are siblings of our child chains, but
+     * don't have any end effectors that affect them. */
+    struct cs_vector dead_nodes;
 };
 
 IK_PRIVATE_API struct ik_chain*
@@ -58,6 +61,9 @@ IK_PRIVATE_API int
 chain_add_node(struct ik_chain* chain, const struct ik_node* node);
 
 IK_PRIVATE_API int
+chain_add_dead_node(struct ik_chain* chain, const struct ik_node* node);
+
+IK_PRIVATE_API int
 chain_tree_build(struct ik_chain* chain, const struct ik_subtree* subtree);
 
 /*!
@@ -73,6 +79,9 @@ count_chains(const struct ik_chain* chains);
 #define chain_get_node(chain_var, idx) \
     (*(struct ik_node**)vector_get_element(&(chain_var)->nodes, idx))
 
+#define chain_get_dead_node(chain_var, idx) \
+    (*(struct ik_node**)vector_get_element(&(chain_var)->dead_nodes, idx))
+
 #define chain_get_child(chain_var, idx) \
     ((struct ik_chain*)vector_get_element(&(chain_var)->children, idx))
 
@@ -84,6 +93,9 @@ count_chains(const struct ik_chain* chains);
 
 #define chain_segment_count(chain_var) \
     (vector_count(&(chain_var)->nodes) - 1)
+
+#define chain_dead_node_count(chain_var) \
+    (vector_count(&(chain_var)->dead_nodes))
 
 /*!
  * @brief Helper macro for retrieving the base node in the chain.
@@ -110,6 +122,10 @@ count_chains(const struct ik_chain* chains);
  */
 #define CHAIN_FOR_EACH_NODE(chain_var, var_name) \
     VECTOR_FOR_EACH(&(chain_var)->nodes, struct ik_node*, chain_##var_name) \
+    struct ik_node* var_name = *(chain_##var_name); {
+
+#define CHAIN_FOR_EACH_DEAD_NODE(chain_var, var_name) \
+    VECTOR_FOR_EACH(&(chain_var)->dead_nodes, struct ik_node*, chain_##var_name) \
     struct ik_node* var_name = *(chain_##var_name); {
 
 /*!

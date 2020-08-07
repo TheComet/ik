@@ -1,0 +1,3 @@
+- Ability to provide own malloc/free/realloc calls
+- Document threadsafety
+

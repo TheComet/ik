@@ -10,9 +10,10 @@
 static struct log
 {
     struct cs_vector message_buffer;
-    void (*write_message)(enum ik_log_severity severity, const char* msg);
+    void (*write_message)(void* param, enum ik_log_severity severity, const char* msg);
     enum ik_log_severity severity;
     int8_t timestamps;
+    void* param;
 }* g_log;
 
 static int g_init_counter;
@@ -36,7 +37,7 @@ void ik_log_printf(enum ik_log_severity severity, const char* fmt, ...)
     char* buf_ptr;
     va_list va;
 
-    if (g_log == NULL || g_log->severity > severity)
+    if (g_log == NULL)
         return;
 
     /* Deterine total length of message */
@@ -53,20 +54,21 @@ void ik_log_printf(enum ik_log_severity severity, const char* fmt, ...)
     vsprintf(buf_ptr, fmt, va);
     va_end(va);
 
-    g_log->write_message(severity, (const char*)g_log->message_buffer.data);
+    g_log->write_message(g_log->param, severity, (const char*)g_log->message_buffer.data);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_log_set_callback(void (*callback)(enum ik_log_severity, const char* msg))
+ik_log_set_callback(void (*callback)(void* param, enum ik_log_severity, const char* msg), void* param)
 {
     g_log->write_message = callback;
+    g_log->param = param;
 }
 
 /* ------------------------------------------------------------------------- */
 void ik_log_out_of_memory(const char* function)
 {
-    ik_log_printf(IK_FATAL, "Ran out of memory in function %s", function);
+    fprintf(stderr, "Ran out of memory in function %s", function);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -76,11 +78,15 @@ static const char* severities[] = {
 #undef X
 };
 static void
-write_stderr(enum ik_log_severity severity, const char* msg)
+write_stderr(void* param, enum ik_log_severity severity, const char* msg)
 {
     char timestamp[9];
+    struct log* l = (struct log*)param;
 
-    if (g_log->timestamps)
+    if (l->severity > severity)
+        return;
+
+    if (l->timestamps)
     {
         time_t rawtime = time(NULL); /* get system time */
         struct tm* timeinfo = localtime(&rawtime); /* convert to local time */
@@ -88,7 +94,7 @@ write_stderr(enum ik_log_severity severity, const char* msg)
         fprintf(stderr, "[%s] ", timestamp);
     }
 
-    fprintf(stderr, "%s: %s\n", severities[severity], msg);
+    fprintf(stderr, "IK %s: %s\n", severities[severity], msg);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -106,13 +112,14 @@ int ik_log_init(void)
         goto alloc_log_failed;
 
     vector_init(&g_log->message_buffer, sizeof(char));
-    g_log->write_message = write_stderr;
     g_log->timestamps = 1;
 #ifdef DEBUG
     ik_log_set_severity(IK_DEBUG);
 #else
     ik_log_set_severity(IK_INFO);
 #endif
+
+    ik_log_set_callback(write_stderr, (void*)g_log);
 
     return 0;
 

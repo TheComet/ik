@@ -75,7 +75,7 @@ ik_node_create_child(struct ik_node* parent, union ik_node_user_data user)
     struct ik_node* child;
     if ((child = ik_node_create(user)) == NULL)
         goto create_child_failed;
-    if (ik_node_link(parent, child) != IK_OK)
+    if (ik_node_link(parent, child) != 0)
         goto add_child_failed;
 
     return child;
