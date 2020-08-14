@@ -1,4 +1,5 @@
 #include "ik/node.h"
+#include "ik/chain_tree.h"
 #include "ik/transform.h"
 #include "ik/quat.inl"
 #include "ik/vec3.inl"
@@ -295,4 +296,192 @@ ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
         tip = tip->parent;
         assert(tip != NULL);
     }
+}
+
+/* ------------------------------------------------------------------------- */
+/*
+ * Nodes that have siblings will have a translation that is not [0, 0, 1],
+ * and their parent node will have a rotation that is an average of all
+ * sibling rotations.
+ *
+ * Need to calculate the parent node rotation that would place the child
+ * node at [0, 0, 1] and store that rotation in the child node.
+ */
+static void
+unaverage_sibling_segments(const struct ik_chain* chain,
+                           union ik_quat** rotations_store)
+{
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        unaverage_sibling_segments(child, rotations_store);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        struct ik_node* tail = chain_get_node(child_chain, chain_node_count(child_chain) - 1);
+        struct ik_node* head = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+
+        ik_quat_angle_of((**rotations_store).f, head->position.f);             /* delta to correct rotation */
+        ik_vec3_set(head->position.f, 0, 0, ik_vec3_length(head->position.f)); /* rotate to [0,0,1] -- this is faster than ik_quat_mul_quat() */
+        ik_quat_mul_quat_conj(head->rotation.f, (**rotations_store).f);        /* rotate tip in opposite direction so all children retain their orientation */
+        ik_quat_mul_quat((**rotations_store).f, tail->rotation.f);             /* Add average rotation to delta, converting the segment's rotation into an absolute one */
+
+        (*rotations_store)++;
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_DEAD_NODE(chain, head)
+        struct ik_node* tail = chain_get_tip_node(chain);                      /* Our tip node is the dead node's tail */
+
+        ik_quat_angle_of((**rotations_store).f, head->position.f);             /* delta to correct rotation */
+        ik_vec3_set(head->position.f, 0, 0, ik_vec3_length(head->position.f)); /* rotate to [0,0,1] -- this is faster than ik_quat_mul_quat() */
+        ik_quat_mul_quat_conj(head->rotation.f, (**rotations_store).f);        /* rotate tip in opposite direction so all children retain their orientation */
+        ik_quat_mul_quat((**rotations_store).f, tail->rotation.f);             /* Add average rotation to delta, converting the segment's rotation into an absolute one */
+
+        (*rotations_store)++;
+    CHAIN_END_EACH
+}
+static void
+copy_rotations_to_children(const struct ik_chain* chain,
+                           union ik_quat** rotations_store)
+{
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        copy_rotations_to_children(child, rotations_store);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        union ik_quat tmp;
+        struct ik_node* head = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+        struct ik_node* tip  = chain_get_tip_node(child_chain);
+
+        tmp = **rotations_store;
+        **rotations_store = tip->rotation;
+        CHAIN_FOR_EACH_SEGMENT_RANGE(child_chain, parent, child, 0, chain_segment_count(child_chain) - 1)
+            child->rotation = parent->rotation;
+        CHAIN_END_EACH
+        head->rotation = tmp;
+
+        (*rotations_store)++;
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_DEAD_NODE(chain, head)
+        (void)head;
+        (*rotations_store)++;
+    CHAIN_END_EACH
+}
+void
+ik_transform_chain_to_segmental_representation(struct ik_chain* root,
+                                               union ik_quat* intermediate_rotations,
+                                               int num_intermediate_rotations)
+{
+    union ik_quat* rotations_store;
+
+    /*
+     * Copy all effector node rotations into a pre-allocated array stored in the
+     * solver object so we can restore them later. They will be overwritten
+     * by the parent node rotation in the next section of code.
+     */
+    rotations_store = intermediate_rotations;
+    unaverage_sibling_segments(root, &rotations_store);
+    rotations_store = intermediate_rotations;
+    copy_rotations_to_children(root, &rotations_store);
+
+    *rotations_store = chain_get_tip_node(root)->rotation;
+    CHAIN_FOR_EACH_SEGMENT(root, parent, child)
+        child->rotation = parent->rotation;
+    CHAIN_END_EACH
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+copy_rotations_to_parent(const struct ik_chain* chain,
+                         union ik_quat** rotations_store)
+{
+    CHAIN_FOR_EACH_DEAD_NODE_R(chain, head)
+        (void)head;
+        (*rotations_store)--;
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD_R(chain, child_chain)
+        union ik_quat tmp;
+        struct ik_node* head = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+        struct ik_node* tip  = chain_get_tip_node(child_chain);
+
+        (*rotations_store)--;
+
+        tmp = **rotations_store;
+        **rotations_store = head->rotation;
+        CHAIN_FOR_EACH_SEGMENT_RANGE_R(child_chain, parent, child, 0, chain_segment_count(child_chain) - 1)
+            parent->rotation = child->rotation;
+        CHAIN_END_EACH
+        tip->rotation = tmp;
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD_R(chain, child)
+        copy_rotations_to_parent(child, rotations_store);
+    CHAIN_END_EACH
+}
+static void
+average_sibling_segments(const struct ik_chain* chain,
+                         union ik_quat** rotations_store)
+{
+    union ik_quat* rotations;
+    ikreal* avg = chain_get_tip_node(chain)->rotation.f;
+
+    if (chain_child_count(chain) == 0 && chain_dead_node_count(chain) == 0)
+        return;
+
+    ik_quat_set(avg, 0, 0, 0, 0);
+    rotations = *rotations_store;
+    CHAIN_FOR_EACH_DEAD_NODE_R(chain, head)
+        (void)head;
+        rotations--;
+        ik_quat_ensure_positive_sign(rotations->f);
+        ik_quat_add_quat(avg, rotations->f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD_R(chain, child_chain)
+        rotations--;
+        ik_quat_ensure_positive_sign(rotations->f);
+        ik_quat_add_quat(avg, rotations->f);
+    CHAIN_END_EACH
+
+    /* Average */
+    ik_quat_div_scalar(avg, chain_child_count(chain) + chain_dead_node_count(chain));
+    ik_quat_normalize(avg);
+
+    /* Calculate new translations */
+    CHAIN_FOR_EACH_DEAD_NODE_R(chain, head)
+        (*rotations_store)--;
+        ik_quat_conj_rmul_quat(avg, (**rotations_store).f);
+        ik_vec3_rotate_quat(head->position.f, (**rotations_store).f);
+        ik_quat_mul_quat(head->rotation.f, (**rotations_store).f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD_R(chain, child_chain)
+        struct ik_node* head = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+
+        (*rotations_store)--;
+        ik_quat_conj_rmul_quat(avg, (**rotations_store).f);
+        ik_vec3_rotate_quat(head->position.f, (**rotations_store).f);
+        ik_quat_mul_quat(head->rotation.f, (**rotations_store).f);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD_R(chain, child)
+        average_sibling_segments(child, rotations_store);
+    CHAIN_END_EACH
+}
+void
+ik_transform_chain_to_nodal_representation(struct ik_chain* root,
+                                           union ik_quat* intermediate_rotations,
+                                           int num_intermediate_rotations)
+{
+    union ik_quat* rotations_store;
+
+    CHAIN_FOR_EACH_SEGMENT_R(root, parent, child)
+        parent->rotation = child->rotation;
+    CHAIN_END_EACH
+    rotations_store = intermediate_rotations + num_intermediate_rotations - 1;
+    chain_get_tip_node(root)->rotation = *rotations_store;
+
+    copy_rotations_to_parent(root, &rotations_store);
+    rotations_store = intermediate_rotations + num_intermediate_rotations - 1;
+    average_sibling_segments(root, &rotations_store);
 }

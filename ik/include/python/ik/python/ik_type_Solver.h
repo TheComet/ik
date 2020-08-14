@@ -3,10 +3,12 @@
 #include "ik/python/ik_type_ModuleRef.h"
 
 struct ik_solver;
+struct ik_Node;
 
 typedef struct ik_Solver
 {
     ik_ModuleRef super;
+    struct ik_Node* root;  /* unfortunately have to store root node for repr() to work */
     struct ik_solver* solver;
 } ik_Solver;
 

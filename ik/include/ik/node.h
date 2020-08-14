@@ -100,6 +100,9 @@ ik_node_create_child(struct ik_node* parent, union ik_node_user_data user);
 IK_PUBLIC_API int
 ik_node_link(struct ik_node* parent, struct ik_node* child);
 
+IK_PUBLIC_API int
+ik_node_can_link(const struct ik_node* parent, const struct ik_node* child);
+
 /*!
  * @brief Unlinks a node from the tree, without freeing anything. All
  * children of the unlinked node remain in tact and will no longer be
@@ -108,6 +111,9 @@ ik_node_link(struct ik_node* parent, struct ik_node* child);
  */
 IK_PUBLIC_API void
 ik_node_unlink(struct ik_node* node);
+
+IK_PUBLIC_API void
+ik_node_unlink_all_children(struct ik_node* node);
 
 static inline uint32_t
 ik_node_child_count(const struct ik_node* node) {

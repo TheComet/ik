@@ -27,14 +27,10 @@ module_free(void* x)
 /* ------------------------------------------------------------------------- */
 PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
-    "ik",                    /* Module name */
-    IK_MODULE_DOC,           /* docstring, may be NULL */
-    -1,                      /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables */
-    NULL,                    /* module methods */
-    NULL,                    /* m_reload */
-    NULL,                    /* m_traverse */
-    NULL,                    /* m_clear */
-    module_free              /* m_free */
+    .m_name = "ik",
+    .m_doc = IK_MODULE_DOC,
+    .m_size = -1,
+    .m_free = module_free
 };
 
 /* ------------------------------------------------------------------------- */
@@ -46,7 +42,9 @@ init_builtin_types(void)
     if (init_ik_ConstraintType() != 0)     return -1;
     if (init_ik_EffectorType() != 0)       return -1;
     if (init_ik_InfoType() != 0)           return -1;
+#if defined(IK_LOGGING)
     if (init_ik_LogType() != 0)            return -1;
+#endif
     if (init_ik_ModuleRefType() != 0)      return -1;
     if (init_ik_NodeType() != 0)           return -1;
     if (init_ik_PoleType() != 0)           return -1;
@@ -98,9 +96,11 @@ add_constants_to_module(PyObject* m)
 #undef X
 
     /* Log constants */
-#define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_##arg) != 0) return -1;
+#if defined(IK_LOGGING)
+#   define X(arg) if (PyModule_AddIntConstant(m, #arg, IK_##arg) != 0) return -1;
     IK_LOG_SEVERITY_LIST
-#undef X
+#   undef X
+#endif
 
     return 0;
 }
@@ -121,6 +121,7 @@ add_builtin_objects_to_module(PyObject* m)
     }
 
     /* Instantiate log and add to module */
+#if defined(IK_LOGGING)
     {
         PyObject* log = PyObject_CallObject((PyObject*)&ik_LogType, NULL);
         if (log == NULL)
@@ -131,6 +132,7 @@ add_builtin_objects_to_module(PyObject* m)
             return -1;
         }
     }
+#endif
 
     return 0;
 }

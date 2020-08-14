@@ -90,23 +90,10 @@ ik_node_link(struct ik_node* node, struct ik_node* child)
 {
     assert(node);
     assert(child);
-    assert(child != node);
-
-    /* Searches the entire tree for the child guid -- disabled in release mode
-     * for performance reasons */
-#ifdef DEBUG
-    {
-        struct ik_node* root = node;
-        while (root->parent)
-            root = root->parent;
-        if (ik_node_find(root, ik_guid(GUID(child))) != NULL)
-            ik_log_printf(IK_WARN, "Child guid %d already exists in the tree! It will be inserted, but find_child() will only find one of the two.", GUID(child));
-    }
-#endif
 
     if (btree_insert_new(&node->children, GUID(child), &child) != BTREE_OK)
     {
-        ik_log_printf(IK_ERROR, "Child guid %d already exists in this node's list of children! Node was not inserted into the tree.", GUID(child));
+        ik_log_printf(IK_ERROR, "Failed to link node with guid %d as child of node with guid %d", GUID(child), GUID(node));
         return -1;
     }
 
@@ -116,6 +103,19 @@ ik_node_link(struct ik_node* node, struct ik_node* child)
     child->parent = node;
 
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_node_can_link(const struct ik_node* parent, const struct ik_node* child)
+{
+    do {
+        if (parent == child)
+            return 0;
+        parent = parent->parent;
+    } while(parent);
+
+    return 1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -130,6 +130,17 @@ ik_node_unlink(struct ik_node* node)
     btree_erase(&node->parent->children, GUID(node));
     node->parent = NULL;
     IK_DECREF(node);
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_node_unlink_all_children(struct ik_node* node)
+{
+    NODE_FOR_EACH(node, user, child)
+        child->parent = NULL;
+        IK_DECREF(child);
+    NODE_END_EACH
+    btree_clear(&node->children);
 }
 
 /* ------------------------------------------------------------------------- */

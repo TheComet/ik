@@ -111,6 +111,7 @@ def too_many_effectors_example(pos, chain_len, segment_len, max_depth):
 def combined_solvers(pos, segment_len):
     root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
     mid = root.create_child(position=ik.Vec3(0, 0, segment_len))
+    #mid = root
     mid1 = mid.create_child(position=ik.Vec3(0, segment_len, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
     mid2 = mid.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
     mid3 = mid.create_child(position=ik.Vec3(0, -segment_len, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
@@ -118,7 +119,7 @@ def combined_solvers(pos, segment_len):
     tip2 = mid2.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
     tip3 = mid3.create_child(position=ik.Vec3(0, 0, segment_len), rotation=ik.Quat((1, 0, 0), pi/8))
 
-    root.algorithm = ik.Algorithm(ik.TWO_BONE)
+    root.algorithm = ik.Algorithm(ik.FABRIK)
     mid1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-segment_len, pos[1]-segment_len), chain_length=0)
     mid3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+segment_len, pos[1]-segment_len), chain_length=0)
 

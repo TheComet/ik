@@ -161,10 +161,12 @@ chain_tree_build_recursive(struct ik_chain* chain,
         } break;
 
         case 0: {
+            /* NOTE: This causes dead nodes to be added to chains that don't
+             * have child chains. Doesn't make sense anymore
             NODE_FOR_EACH(node, user_data, child_node)
                 if (chain_add_dead_node(chain, child_node) != 0)
                     return -1;
-            NODE_END_EACH
+            NODE_END_EACH*/
         } break;
     }
 
@@ -189,54 +191,3 @@ count_chains(const struct ik_chain* chain)
     CHAIN_END_EACH
     return counter;
 }
-
-/* ------------------------------------------------------------------------- */
-#ifdef IK_DOT_OUTPUT
-static void
-dump_chain(const chain_t* chain, FILE* fp)
-{
-    int last_idx = chain_length(chain) - 1;
-    if (last_idx > 0)
-    {
-        fprintf(fp, "    %d [shape=record];\n", chain_get_node(chain, 0)->guid);
-        fprintf(fp, "    %d [shape=record];\n", chain_get_base_node(chain)->guid);
-    }
-
-    while (last_idx-- > 0)
-    {
-        fprintf(fp, "    %d -- %d [color=\"1.0 0.5 1.0\"];\n",
-            chain_get_node(chain, last_idx + 0)->guid,
-            chain_get_node(chain, last_idx + 1)->guid);
-    }
-
-    VECTOR_FOR_EACH(&chain->children, chain_t, child)
-        dump_chain(child, fp);
-    VECTOR_END_EACH
-}
-static void
-dump_node(const ik_node* node, FILE* fp)
-{
-    if (node->effector != NULL)
-        fprintf(fp, "    %d [color=\"0.6 0.5 1.0\"];\n", node->guid);
-    NODE_FOR_EACH(node, guid, child)
-        fprintf(fp, "    %d -- %d;\n", node->guid, guid);
-        dump_node(child, fp);
-    NODE_END_EACH
-}
-void
-dump_to_dot(const ik_node* node, const vector_t* chains, const char* file_name)
-{
-    FILE* fp = fopen(file_name, "w");
-    if (fp == NULL)
-        return;
-
-    fprintf(fp, "graph chain_tree {\n");
-    dump_node(node, fp);
-    VECTOR_FOR_EACH(chains, chain_t, chain)
-        dump_chain(chain, fp);
-    VECTOR_END_EACH
-    fprintf(fp, "}\n");
-
-    fclose(fp);
-}
-#endif

@@ -41,6 +41,8 @@ static void dummy_deinit(struct ik_solver* solver_base) {
 }
 static int  dummy_solve(struct ik_solver* solver_base) { return 1; }
 static void dummy_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base) {}
+static void dummy_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb) {}
+static void dummy_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip) { *base = NULL; *tip = NULL; }
 
 const struct ik_solver_interface ik_solver_DUMMY1 = {
     "dummy1",
@@ -48,7 +50,9 @@ const struct ik_solver_interface ik_solver_DUMMY1 = {
     dummy_init,
     dummy_deinit,
     dummy_solve,
-    dummy_iterate_nodes
+    dummy_iterate_nodes,
+    dummy_iterate_effector_nodes,
+    dummy_get_first_segment
 };
 const struct ik_solver_interface ik_solver_DUMMY2 = {
     "dummy2",
@@ -56,7 +60,9 @@ const struct ik_solver_interface ik_solver_DUMMY2 = {
     dummy_init,
     dummy_deinit,
     dummy_solve,
-    dummy_iterate_nodes
+    dummy_iterate_nodes,
+    dummy_iterate_effector_nodes,
+    dummy_get_first_segment
 };
 const struct ik_solver_interface ik_solver_DUMMY3 = {
     "dummy3",
@@ -64,7 +70,9 @@ const struct ik_solver_interface ik_solver_DUMMY3 = {
     dummy_init,
     dummy_deinit,
     dummy_solve,
-    dummy_iterate_nodes
+    dummy_iterate_nodes,
+    dummy_iterate_effector_nodes,
+    dummy_get_first_segment
 };
 
 class NAME : public Test

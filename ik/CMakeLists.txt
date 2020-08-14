@@ -11,19 +11,15 @@ else ()
 endif ()
 
 set (IK_LIB_TYPE "SHARED" CACHE STRING "SHARED or STATIC library")
-set (IK_API_NAME "ik" CACHE STRING "This is the name of the symbol that is exported. Also determines the name of the library.")
 option (IK_BENCHMARKS "Whether to build benchmark tests or not (requires C++)" OFF)
 option (IK_BUILDINFO "If true (default) the updated build number is written to a header, which causes the library to recompile info.c. This can get annoying for developers, so disable this if you are annoyed." ${RELEASE_FEATURE})
-option (IK_DOT_EXPORT "When enabled, the generated chains are dumped to DOT for debug purposes" OFF)
-option (IK_HASHMAP_STATS "Record statistics on the use of hashmaps" OFF)
 option (IK_LOGGING "Enable or disable logging support (replaces all log functions with NOP when disabled)" ON)
 option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
-option (IK_PROFILING "Compiles with -pg on linux" OFF)
+option (IK_PROFILING "Compiles with -pg with GCC/Clang" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
 set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
-option (IK_VECTOR_64BIT "Allows vector_t to contain more than 2^32 elements, but makes the structure 32 bytes instead of 20 bytes" OFF)
 
 string (REPLACE " " "_" IK_PRECISION_CAPS_AND_NO_SPACES ${IK_PRECISION})
 string (TOUPPER ${IK_PRECISION_CAPS_AND_NO_SPACES} IK_PRECISION_CAPS_AND_NO_SPACES)
@@ -134,9 +130,12 @@ add_custom_command (
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/nop.cmake
     DEPENDS ik_build_info_header)
 
-set (IK_HEADERS
-    "${UPDATE_INFO_HEADER}")
-set (IK_SOURCES
+###############################################################################
+# Main library
+###############################################################################
+
+add_library (ik_obj OBJECT
+    ${UPDATE_INFO_HEADER}
     "src/algorithm.c"
     "src/attachment.c"
     "src/chain_tree.c"
@@ -161,78 +160,6 @@ set (IK_SOURCES
     $<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>
     "${CMAKE_CURRENT_BINARY_DIR}/src/info.c"
     "templates/info.c.in")
-set (IK_PYTHON_HEADERS
-    "include/python/ik/python/ik_type_Attachment.h"
-    "include/python/ik/python/ik_type_Algorithm.h"
-    "include/python/ik/python/ik_type_Constraint.h"
-    "include/python/ik/python/ik_type_Effector.h"
-    "include/python/ik/python/ik_type_Info.h"
-    "include/python/ik/python/ik_type_ModuleRef.h"
-    "include/python/ik/python/ik_type_Node.h"
-    "include/python/ik/python/ik_type_Pole.h"
-    "include/python/ik/python/ik_type_Quat.h"
-    "include/python/ik/python/ik_type_Vec3.h"
-    $<$<BOOL:${IK_LOGGING}>:include/python/ik/python/ik_type_Log.h>)
-set (IK_PYTHON_SOURCES
-    "src/python/ik_module.c"
-    "src/python/ik_type_Attachment.c"
-    "src/python/ik_type_Algorithm.c"
-    "src/python/ik_type_Constraint.c"
-    "src/python/ik_type_Effector.c"
-    "src/python/ik_type_Info.c"
-    "src/python/ik_type_ModuleRef.c"
-    "src/python/ik_type_Node.c"
-    "src/python/ik_type_Pole.c"
-    "src/python/ik_type_Quat.c"
-    "src/python/ik_type_Solver.c"
-    "src/python/ik_type_Vec3.c"
-    $<$<BOOL:${IK_LOGGING}>:src/python/ik_type_Log.c>)
-set (IK_TESTS_SOURCES
-    "src/tests/environment_library_init.cpp"
-    "src/tests/tests_run.cpp"
-    "src/tests/test_build_solver.cpp"
-    "src/tests/test_chain_tree.cpp"
-    #"src/tests/test_constraint.cpp"
-    "src/tests/test_effector.cpp"
-    "src/tests/test_FABRIK.cpp"
-    #"src/tests/test_mat3x3.cpp"
-    "src/tests/test_node.cpp"
-    #"src/tests/test_pole.cpp"
-    "src/tests/test_quat.cpp"
-    "src/tests/test_refcount.cpp"
-    "src/tests/test_solver_b1.cpp"
-    "src/tests/test_solver_b2.cpp"
-    "src/tests/test_solver_combine.cpp"
-   # "src/tests/test_transform_chain.cpp"
-   # "src/tests/test_transform_chain_rotations.cpp"
-   # "src/tests/test_transform_chain_translations.cpp"
-   # "src/tests/test_transform_node.cpp"
-   # "src/tests/test_transform_node_rotations.cpp"
-   # "src/tests/test_transform_node_translations.cpp"
-   # "src/tests/test_TWO_BONE.cpp"
-    "src/tests/test_vec3.cpp"
-    $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
-set (IK_PYTHON_TESTS_SOURCES
-    "src/tests/python/test_Algorithm.py"
-    "src/tests/python/test_Effector.py"
-    "src/tests/python/test_info.py"
-    "src/tests/python/test_log.py"
-    "src/tests/python/test_Node.py"
-    "src/tests/python/test_Pose.py"
-    "src/tests/python/test_Quat.py"
-    "src/tests/python/test_Solver.py"
-    "src/tests/python/test_Vec3.py")
-set (IK_BENCHMARK_SOURCES
-    "src/benchmarks/bench_FABRIK_solver.cpp"
-    "src/benchmarks/bench_solver.cpp")
-
-###############################################################################
-# Main library
-###############################################################################
-
-add_library (ik_obj OBJECT
-    ${IK_HEADERS}
-    ${IK_SOURCES})
 set_target_properties (ik_obj
     PROPERTIES
         C_STANDARD 90
@@ -289,8 +216,30 @@ if (IK_PYTHON)
             ${IK_DOCSTRINGS_SOURCE})
 
     add_library (ik_python_obj OBJECT
-        ${IK_PYTHON_SOURCES}
-        ${IK_PYTHON_HEADERS}
+        "include/python/ik/python/ik_type_Attachment.h"
+        "include/python/ik/python/ik_type_Algorithm.h"
+        "include/python/ik/python/ik_type_Constraint.h"
+        "include/python/ik/python/ik_type_Effector.h"
+        "include/python/ik/python/ik_type_Info.h"
+        "include/python/ik/python/ik_type_ModuleRef.h"
+        "include/python/ik/python/ik_type_Node.h"
+        "include/python/ik/python/ik_type_Pole.h"
+        "include/python/ik/python/ik_type_Quat.h"
+        "include/python/ik/python/ik_type_Vec3.h"
+        $<$<BOOL:${IK_LOGGING}>:include/python/ik/python/ik_type_Log.h>
+        "src/python/ik_module.c"
+        "src/python/ik_type_Attachment.c"
+        "src/python/ik_type_Algorithm.c"
+        "src/python/ik_type_Constraint.c"
+        "src/python/ik_type_Effector.c"
+        "src/python/ik_type_Info.c"
+        "src/python/ik_type_ModuleRef.c"
+        "src/python/ik_type_Node.c"
+        "src/python/ik_type_Pole.c"
+        "src/python/ik_type_Quat.c"
+        "src/python/ik_type_Solver.c"
+        "src/python/ik_type_Vec3.c"
+        $<$<BOOL:${IK_LOGGING}>:src/python/ik_type_Log.c>
         ${IK_DOCSTRINGS_HEADER}
         ${IK_DOCSTRINGS_SOURCE})
     set_target_properties (ik_python_obj
@@ -301,17 +250,19 @@ if (IK_PYTHON)
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/python>)
+    target_compile_definitions (ik_obj
+        PRIVATE IK_BUILDING)
     target_compile_options (ik_python_obj
         PUBLIC $<$<C_COMPILER_ID:MSVC>:
             /EHa /MTd /W4 /wd4115 /wd4201 /wd4100 /D_CRT_SECURE_NO_DEPRECATE
         >
         PUBLIC $<$<C_COMPILER_ID:GNU>:
             -Wall -Wextra -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -Wno-cast-function-type
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
         >
         PUBLIC $<$<C_COMPILER_ID:Clang>:
             -Wall -Wextra -Werror -pedantic -pedantic-errors -Wno-missing-field-initializers -Wshadow -Wno-cast-function-type
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
         >
     )
 
@@ -326,7 +277,66 @@ endif ()
 ###############################################################################
 
 if (IK_TESTS)
+    add_library (ik_tests_obj OBJECT
+        "src/tests/environment_library_init.cpp"
+        "src/tests/tests_run.cpp"
+        "src/tests/test_build_solver.cpp"
+        "src/tests/test_chain_tree.cpp"
+        #"src/tests/test_constraint.cpp"
+        "src/tests/test_effector.cpp"
+        "src/tests/test_FABRIK.cpp"
+        #"src/tests/test_mat3x3.cpp"
+        "src/tests/test_node.cpp"
+        #"src/tests/test_pole.cpp"
+        "src/tests/test_quat.cpp"
+        "src/tests/test_refcount.cpp"
+        "src/tests/test_solver_b1.cpp"
+        "src/tests/test_solver_b2.cpp"
+        "src/tests/test_solver_combine.cpp"
+        # "src/tests/test_transform_chain.cpp"
+        # "src/tests/test_transform_chain_rotations.cpp"
+        # "src/tests/test_transform_chain_translations.cpp"
+        # "src/tests/test_transform_node.cpp"
+        # "src/tests/test_transform_node_rotations.cpp"
+        # "src/tests/test_transform_node_translations.cpp"
+        "src/tests/test_transform_segmental.cpp"
+        # "src/tests/test_TWO_BONE.cpp"
+        "src/tests/test_vec3.cpp"
+        $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
+    set_target_properties (ik_tests_obj
+        PROPERTIES
+            POSITION_INDEPENDENT_CODE ${IK_PIC})
+    target_compile_options (ik_tests_obj
+        PRIVATE $<$<C_COMPILER_ID:MSVC>:
+            /MTd /D_CRT_SECURE_NO_DEPRECATE
+        >
+        PRIVATE $<$<C_COMPILER_ID:GNU>:
+            -Wno-unused-result
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
+        >
+        PRIVATE $<$<C_COMPILER_ID:Clang>:
+            -Wno-unused-result
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
+        >
+    )
+    target_compile_definitions (ik_tests_obj
+        PRIVATE IK_BUILDING)  # The library is being built
+    target_link_libraries (ik_tests_obj PRIVATE ik_obj)
+    target_link_libraries (ik_tests_obj PRIVATE gtest)
+    target_link_libraries (ik_tests_obj PRIVATE gmock)
+
+
     if (IK_PYTHON)
+        set (IK_PYTHON_TESTS_SOURCES
+            "src/tests/python/test_Algorithm.py"
+            "src/tests/python/test_Effector.py"
+            "src/tests/python/test_info.py"
+            "src/tests/python/test_log.py"
+            "src/tests/python/test_Node.py"
+            "src/tests/python/test_Pose.py"
+            "src/tests/python/test_Quat.py"
+            "src/tests/python/test_Solver.py"
+            "src/tests/python/test_Vec3.py")
         add_custom_command (
             OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"
             COMMAND ${CMAKE_COMMAND}
@@ -340,37 +350,8 @@ if (IK_TESTS)
                 ${IK_PYTHON_TESTS_SOURCES})
         add_custom_target (ik_generate_unit_tests ALL
             DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp")
-    endif ()
-    add_library (ik_tests_obj OBJECT ${IK_TESTS_SOURCES})
-    #target_include_directories (ik_tests_obj
-    #    PRIVATE
-    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/public>
-    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>
-    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/private>
-    #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/private>)
-    set_target_properties (ik_tests_obj
-        PROPERTIES
-            POSITION_INDEPENDENT_CODE ${IK_PIC})
-    target_compile_options (ik_tests_obj
-        PRIVATE $<$<C_COMPILER_ID:MSVC>:
-            /MTd /D_CRT_SECURE_NO_DEPRECATE
-        >
-        PRIVATE $<$<C_COMPILER_ID:GNU>:
-            -Wno-unused-result
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
-        >
-        PRIVATE $<$<C_COMPILER_ID:Clang>:
-            -Wno-unused-result
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
-        >
-    )
-    target_compile_definitions (ik_tests_obj
-        PRIVATE IK_BUILDING)  # The library is being built
-    target_link_libraries (ik_tests_obj PRIVATE ik_obj)
-    target_link_libraries (ik_tests_obj PRIVATE gtest)
-    target_link_libraries (ik_tests_obj PRIVATE gmock)
-    if (IK_PYTHON)
         add_dependencies (ik_tests_obj ik_generate_unit_tests)
+        target_sources (ik_python_obj PRIVATE ${IK_PYTHON_TESTS_SOURCES})
         target_link_libraries (ik_tests_obj PRIVATE Python::Python)
     endif ()
 endif ()
@@ -381,7 +362,9 @@ endif ()
 
 if (IK_BENCHMARKS)
     # ik benchmark object files
-    add_library (ik_benchmarks_obj OBJECT ${IK_BENCHMARK_SOURCES})
+    add_library (ik_benchmarks_obj OBJECT
+        "src/benchmarks/bench_FABRIK_solver.cpp"
+        "src/benchmarks/bench_solver.cpp")
     target_include_directories (ik_benchmarks_obj
         PRIVATE
             ${CMAKE_CURRENT_BINARY_DIR}/include/public
@@ -397,11 +380,11 @@ if (IK_BENCHMARKS)
         >
         PRIVATE $<$<C_COMPILER_ID:GNU>:
             -Wno-unused-result -flto
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
         >
         PRIVATE $<$<C_COMPILER_ID:Clang>:
             -Wno-unused-result
-            $<$<BOOL:IK_PROFILING>:-pg -fno-omit-frame-pointer>
+            $<$<BOOL:${IK_PROFILING}>:-pg -fno-omit-frame-pointer>
         >
     )
     target_compile_definitions (ik_benchmarks_obj
@@ -425,7 +408,7 @@ add_library (ik ${IK_LIB_TYPE}
 set_target_properties (ik PROPERTIES
     PREFIX ""
     DEBUG_POSTFIX ""
-    OUTPUT_NAME ${IK_API_NAME}
+    OUTPUT_NAME "ik"
     SOVERSION ${PROJECT_VERSION})
 # This causes the include directories to be exposed to targets that link to "ik"
 target_link_libraries (ik
@@ -446,7 +429,6 @@ endif ()
 
 if (IK_BENCHMARKS)
     target_link_libraries (ik PRIVATE benchmark)
-
     add_executable (ikbenchmarks "src/benchmarks/run_benchmarks.cpp")
     target_link_libraries (ikbenchmarks PUBLIC ik)
     set_target_properties (ikbenchmarks PROPERTIES

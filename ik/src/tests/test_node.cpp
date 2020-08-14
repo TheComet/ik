@@ -126,10 +126,10 @@ TEST_F(NAME, unlink_node_works)
     EXPECT_THAT(ik_node_child_count(n1), Eq(0u));
 }
 
-TEST_F(NAME, reparent_to_self_causes_death)
+TEST_F(NAME, check_reparent_to_self)
 {
     ik::Ref<ik_node> n1 = ik_node_create(ik_guid(2));
-    EXPECT_DEATH(ik_node_link(n1, n1), ".*");
+    EXPECT_THAT(ik_node_can_link(n1, n1), IsFalse());
 }
 
 TEST_F(NAME, link_NULL_death)

@@ -14,7 +14,7 @@ class TestNode(unittest.TestCase):
     def test_default_construct(self):
         n = ik.Node()
         self.assertIsNone(n.algorithm)
-        self.assertIsNone(n.constraint)
+        self.assertIsNone(n.constraints)
         self.assertIsNone(n.effector)
         self.assertIsNone(n.pole)
 
@@ -141,9 +141,9 @@ class TestNode(unittest.TestCase):
         n2 = n1.create_child()
         n3 = n2.create_child()
 
-        self.assertEqual(n3.parent, n2)
-        self.assertEqual(n2.parent, n1)
-        self.assertEqual(n1.parent, None)
+        self.assertIs(n3.parent, n2)
+        self.assertIs(n2.parent, n1)
+        self.assertIs(n1.parent, None)
 
     def test_modify_parent_fails(self):
         n1 = ik.Node()
@@ -157,3 +157,53 @@ class TestNode(unittest.TestCase):
             n2.parent = ik.Node()
         with self.assertRaises(AttributeError):
             del n2.parent
+
+    def test_set_single_child(self):
+        n1 = ik.Node()
+        n2 = ik.Node()
+        n1.children = n2
+
+        self.assertIs(n2.parent, n1)
+        self.assertIn(n2, n1.children)
+
+    def test_set_multiple_children(self):
+        n1 = ik.Node()
+        n2 = ik.Node()
+        n3 = ik.Node()
+        n1.children = (n2, n3)
+
+        self.assertIs(n2.parent, n1)
+        self.assertIs(n3.parent, n1)
+        self.assertIn(n2, n1.children)
+        self.assertIn(n3, n1.children)
+
+    def test_set_single_child_again(self):
+        n1 = ik.Node()
+        n2 = n1.create_child()
+        n1.children = n2
+
+        self.assertIs(n2.parent, n1)
+        self.assertIn(n2, n1.children)
+
+    def test_set_multiple_children_overwrite_existing(self):
+        n1 = ik.Node()
+        n2 = ik.Node()
+        n3 = ik.Node()
+        n4 = n1.create_child()
+        n1.children = (n2, n3)
+
+        self.assertIs(n2.parent, n1)
+        self.assertIs(n3.parent, n1)
+        self.assertIn(n2, n1.children)
+        self.assertIn(n3, n1.children)
+
+    def test_set_multiple_children_overwrite_existing_same(self):
+        n1 = ik.Node()
+        n2 = n1.create_child()
+        n3 = ik.Node()
+        n1.children = (n2, n3)
+
+        self.assertIs(n2.parent, n1)
+        self.assertIs(n3.parent, n1)
+        self.assertIn(n2, n1.children)
+        self.assertIn(n3, n1.children)

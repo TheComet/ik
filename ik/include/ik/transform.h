@@ -85,6 +85,16 @@ ik_transform_node_section_l2g(struct ik_node* tip, const struct ik_node* base);
 IK_PUBLIC_API void
 ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base);
 
+IK_PRIVATE_API void
+ik_transform_chain_to_segmental_representation(struct ik_chain* root,
+                                               union ik_quat* intermediate_rotations,
+                                               int num_intermediate_rotations);
+
+IK_PRIVATE_API void
+ik_transform_chain_to_nodal_representation(struct ik_chain* root,
+                                           union ik_quat* intermediate_rotations,
+                                           int num_intermediate_rotations);
+
 C_END
 
 #endif /* IK_TRANSFORM_H */

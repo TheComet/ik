@@ -31,7 +31,7 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
      */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Expected 1 end effector, but %d end effectors were found in the subtree. This is most likely a bug and should be reported. Recommended quick fix: Use a more general algorithm (e.g. FABRIK)", solver->impl.name, subtree_leaves(subtree));
+        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", solver->impl.name, subtree_leaves(subtree));
         return -1;
     }
 
@@ -54,7 +54,7 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     {
         if (solver->tip->constraint == NULL && solver->mid->constraint == NULL)
         {
-            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes.. Flag will be ignored. ",solver->impl.name);
+            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes. Flag will be ignored. ",solver->impl.name);
         }
     }
 

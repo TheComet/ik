@@ -60,13 +60,13 @@ solver_combine_solve(struct ik_solver* solver_base)
     int iterations;
     int i;
     union ik_quat rot;
-    union ik_quat initial_rot;
+    union ik_quat avg_rot_initial;
     struct ik_solver_combine* solver = (struct ik_solver_combine*)solver_base;
     struct ik_node* node = solver->shared_node;
 
     /* Store the current averaged rotation, which is required to calculate the
      * isolated rotation of each segment */
-    initial_rot = node->rotation;
+    avg_rot_initial = node->rotation;
 
     /* Normalize translations of all segments to [0, 0, 1]. Each subsolver
      * assumes this to be true. */
@@ -74,8 +74,8 @@ solver_combine_solve(struct ik_solver* solver_base)
     {
         struct ik_node* child = solver->child_nodes[i];
         ik_quat_angle_of(solver->child_rotations[i].f, child->position.f);
-        ik_quat_mul_quat_conj(child->rotation.f, solver->child_rotations[i].f);
         ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
+        ik_quat_mul_quat_conj(child->rotation.f, solver->child_rotations[i].f);
     }
 
     /* Call solve() on all subsolvers now */
@@ -86,7 +86,7 @@ solver_combine_solve(struct ik_solver* solver_base)
         struct ik_solver* subsolver = solver->subsolvers[i];
 
         /* Apply isolated rotation to segment before solve() */
-        node->rotation = initial_rot;
+        node->rotation = avg_rot_initial;
         ik_quat_mul_quat(node->rotation.f, solver->child_rotations[i].f);
 
         iterations += subsolver->impl.solve(subsolver);
@@ -103,7 +103,7 @@ solver_combine_solve(struct ik_solver* solver_base)
      * as well, so their orientation doesn't change */
     for (; i != solver->child_node_count; ++i)
     {
-        ik_quat_rmul_quat(initial_rot.f, solver->child_rotations[i].f);
+        ik_quat_rmul_quat(avg_rot_initial.f, solver->child_rotations[i].f);
         ik_quat_ensure_positive_sign(solver->child_rotations[i].f);
         ik_quat_add_quat(rot.f, solver->child_rotations[i].f);
     }

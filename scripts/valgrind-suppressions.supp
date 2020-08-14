@@ -6,6 +6,5 @@
 {
    ignore_libpython_leaks
    Memcheck:Leak
-   ...
-   obj:*/libpython3.8d.so.*
+   obj:*/libpython3*.so.*
 }

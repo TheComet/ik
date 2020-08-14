@@ -19,10 +19,11 @@ struct ik_solver_fabrik
 
     struct ik_chain chain_tree;
     struct ik_node** effector_nodes;
-    union ik_quat* leaf_node_rotations;
+    union ik_quat* intermediate_rotations;
     union ik_vec3* target_positions;
 
     int num_effectors;
+    int num_intermediate_rotations;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -79,236 +80,6 @@ store_effector_nodes(struct ik_solver_fabrik* solver)
 
     /* sanity check */
     assert(effector_nodes_store - solver->effector_nodes == solver->num_effectors);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-store_leaf_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
-{
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        store_leaf_node_rotations(rotations_store, child);
-    CHAIN_END_EACH
-
-    CHAIN_FOR_EACH_DEAD_NODE(chain, node)
-        **rotations_store = node->rotation;
-        (*rotations_store)++;
-    CHAIN_END_EACH
-
-    if (chain_child_count(chain) == 0)
-    {
-        **rotations_store = chain_get_tip_node(chain)->rotation;
-        (*rotations_store)++;
-    }
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-restore_leaf_node_rotations(union ik_quat** rotations_store, const struct ik_chain* chain)
-{
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        restore_leaf_node_rotations(rotations_store, child);
-    CHAIN_END_EACH
-
-    CHAIN_FOR_EACH_DEAD_NODE(chain, node)
-        node->rotation = **rotations_store;
-        (*rotations_store)++;
-    CHAIN_END_EACH
-
-    if (chain_child_count(chain) == 0)
-    {
-        chain_get_tip_node(chain)->rotation = **rotations_store;
-        (*rotations_store)++;
-    }
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-convert_rotations_to_segments_recursive(const struct ik_chain* chain,
-                                        union ik_quat** rotations_store)
-{
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        convert_rotations_to_segments_recursive(child, rotations_store);
-    CHAIN_END_EACH
-
-    /*
-     * Nodes that have siblings will have a translation that is not [0, 0, 1],
-     * and their parent node will have a rotation that is an average of all
-     * sibling rotations.
-     *
-     * Need to calculate the parent node rotation that would place the child
-     * node at [0, 0, 1] and store that rotation in the child node.
-     */
-    CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        struct ik_node* child  = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
-
-        ik_quat_angle_of(child->rotation.f, child->position.f);
-        if (chain_node_count(child_chain) > 2)
-        {
-            struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
-            ik_quat_mul_quat_conj(grandchild->rotation.f, child->rotation.f);
-        }
-        ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
-    CHAIN_END_EACH
-    if (chain_child_count(chain) == 0)
-    {
-        **rotations_store = chain_get_tip_node(chain)->rotation;
-        (*rotations_store)++;
-    }
-
-    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
-        ik_quat_angle_of((*rotations_store)->f, child->position.f);
-        ik_quat_mul_quat_conj(child->rotation.f, (*rotations_store)->f);
-        ik_quat_rmul_quat(chain_get_tip_node(chain)->rotation.f, (*rotations_store)->f);
-        ik_vec3_set(child->position.f, 0, 0, ik_vec3_length(child->position.f));
-        (*rotations_store)++;
-    CHAIN_END_EACH
-
-    /* Copy all rotations from parent to child node, excluding base node. Base
-     * node requires special attention */
-    CHAIN_FOR_EACH_SEGMENT_RANGE(chain, parent, child, 0, chain_segment_count(chain) - 1)
-        child->rotation = parent->rotation;
-    CHAIN_END_EACH
-}
-static void
-convert_rotations_to_segments(struct ik_solver_fabrik* solver)
-{
-    union ik_quat* rotations_store;
-    struct ik_node* base;
-    struct ik_node* child;
-
-    /*
-     * Copy all effector node rotations into a pre-allocated array stored in the
-     * solver object so we can restore them later. They will be overwritten
-     * by the parent node rotation in the next section of code.
-     */
-    /* Do conversion */
-    rotations_store = solver->leaf_node_rotations;
-    convert_rotations_to_segments_recursive(&solver->chain_tree, &rotations_store);
-
-    base  = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
-    child = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 2);
-    child->rotation = base->rotation;
-}
-
-/* ------------------------------------------------------------------------- */
-#if 1
-static void
-convert_rotations_to_nodes_recursive(const struct ik_chain* chain,
-                                     union ik_quat** rotations_store)
-{
-    ikreal* tip_rot;
-
-    /* Copy all rotations from child back to parent node excluding the base node */
-    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain, parent, child, 0, chain_segment_count(chain) - 1)
-        parent->rotation = child->rotation;
-    CHAIN_END_EACH
-
-    tip_rot = chain_get_tip_node(chain)->rotation.f;
-    ik_quat_set(tip_rot, 0, 0, 0, 0);
-
-    CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        struct ik_node* child = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
-        ik_quat_ensure_positive_sign(child->rotation.f);
-        ik_quat_add_quat(tip_rot, child->rotation.f);
-    CHAIN_END_EACH
-    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
-        ik_quat_ensure_positive_sign(child->rotation.f);
-        ik_quat_add_quat(tip_rot, child->rotation.f);
-    CHAIN_END_EACH
-
-    ik_quat_div_scalar(tip_rot, chain_child_count(chain));
-    ik_quat_normalize(tip_rot);
-
-    /* restore translations */
-    CHAIN_FOR_EACH_CHILD(chain, child_chain)
-        struct ik_node* child = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
-        ik_quat_conj_rmul_quat(tip_rot, child->rotation.f);
-        ik_vec3_rotate_quat(child->position.f, child->rotation.f);
-
-        if (chain_node_count(child_chain) > 2)
-        {
-            struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
-            ik_quat_mul_quat(grandchild->rotation.f, child->rotation.f);
-        }
-    CHAIN_END_EACH
-    CHAIN_FOR_EACH_DEAD_NODE(chain, child)
-        ik_quat_conj_rmul_quat(tip_rot, child->rotation.f);
-        ik_vec3_rotate_quat(child->position.f, child->rotation.f);
-    CHAIN_END_EACH
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        convert_rotations_to_nodes_recursive(child, rotations_store);
-    CHAIN_END_EACH
-}
-#else
-static void
-convert_rotations_to_nodes_recursive(const struct ik_chain* chain)
-{
-    /* Copy all rotations from child back to parent node excluding the base node
-     * and tip node */
-    CHAIN_FOR_EACH_SEGMENT_RANGE_R(chain, parent, child, 0, chain_segment_count(chain) - 1)
-        ik_quat_copy(parent->rotation.f, child->rotation.f);
-    CHAIN_END_EACH
-
-    if (chain_child_count(chain) > 1)
-    {
-        struct ik_node* tip_node = chain_get_tip_node(chain);
-        ikreal* tip_rot = tip_node->rotation.f;
-
-        /* restore base node rotation by averaging all child rotations */
-        ik_quat_set(tip_rot, 0, 0, 0, 0);
-        CHAIN_FOR_EACH_CHILD(chain, child)
-            struct ik_node* first_child_node = chain_get_node(child, chain_node_count(child) - 2);
-            ik_quat_ensure_positive_sign(first_child_node->rotation.f);
-            ik_quat_add_quat(tip_rot, first_child_node->rotation.f);
-        CHAIN_END_EACH
-
-        ik_quat_div_scalar(tip_rot, chain_child_count(chain));
-        ik_quat_normalize(tip_rot);
-
-        /* restore translations */
-        CHAIN_FOR_EACH_CHILD(chain, child_chain)
-            struct ik_node* first_child_node = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
-            ik_quat_conj_rmul_quat(tip_rot, first_child_node->rotation.f);
-            ik_vec3_rotate_quat(first_child_node->position.f, first_child_node->rotation.f);
-
-            if (chain_node_count(child_chain) > 2)
-            {
-                struct ik_node* grandchild = chain_get_node(child_chain, chain_node_count(child_chain) - 3);
-                ik_quat_mul_quat(grandchild->rotation.f, first_child_node->rotation.f);
-            }
-        CHAIN_END_EACH
-    }
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        convert_rotations_to_nodes_recursive(child);
-    CHAIN_END_EACH
-}
-#endif
-static void
-convert_rotations_to_nodes(struct ik_solver_fabrik* solver)
-{
-    union ik_quat* rotations_store;
-    struct ik_node* base;
-    struct ik_node* child;
-
-    /*
-     * The recursive function copies everything except for the base node. Copy
-     * base node rotation here.
-     */
-    base = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 1);
-    child = chain_get_node(&solver->chain_tree, chain_node_count(&solver->chain_tree) - 2);
-    ik_quat_copy(base->rotation.f, child->rotation.f);
-
-    /* Do conversion */
-    rotations_store = solver->leaf_node_rotations;
-    convert_rotations_to_nodes_recursive(&solver->chain_tree, &rotations_store);
-
-    /*
-     * Copy original effector node rotations back from pre-allocated buffer into
-     * the tree.
-     */
-    /*restore_leaf_node_rotations(&rotations_store, &solver->chain_tree);*/
 }
 
 /* ------------------------------------------------------------------------- */
@@ -590,6 +361,7 @@ solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
 }
 
 /* ------------------------------------------------------------------------- */
+/* TODO move into chain_tree.h */
 static int
 count_total_dead_nodes(const struct ik_chain* chain)
 {
@@ -604,7 +376,8 @@ count_total_dead_nodes(const struct ik_chain* chain)
 static int
 fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
-    int leaf_node_count;
+    int num_dead_nodes;
+    int num_chains;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_init(&solver->chain_tree);
@@ -612,10 +385,12 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
         goto build_chain_tree_failed;
 
     solver->num_effectors = subtree_leaves(subtree);
-    leaf_node_count = solver->num_effectors + count_total_dead_nodes(&solver->chain_tree);
+    num_dead_nodes = count_total_dead_nodes(&solver->chain_tree);
+    num_chains = count_chains(&solver->chain_tree);
+    solver->num_intermediate_rotations = num_chains + num_dead_nodes;
 
-    solver->leaf_node_rotations = MALLOC(sizeof(*solver->leaf_node_rotations) * leaf_node_count);
-    if (solver->leaf_node_rotations == NULL)
+    solver->intermediate_rotations = MALLOC(sizeof(*solver->intermediate_rotations) * solver->num_intermediate_rotations);
+    if (solver->intermediate_rotations == NULL)
         goto alloc_effector_rotations_failed;
 
     solver->effector_nodes = MALLOC(sizeof(*solver->effector_nodes) * solver->num_effectors);
@@ -629,10 +404,13 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     store_effector_nodes(solver);
     validate_poles(solver);
 
+    ik_log_printf(IK_DEBUG, "FABRIK: Initialized with %d end-effectors and %d dead nodes. %d chains were created.",
+                  solver->num_effectors, num_dead_nodes, num_chains);
+
     return 0;
 
     alloc_target_positions_failed   : FREE(solver->effector_nodes);
-    alloc_effector_nodes_failed     : FREE(solver->leaf_node_rotations);
+    alloc_effector_nodes_failed     : FREE(solver->intermediate_rotations);
     alloc_effector_rotations_failed :
     build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
     return -1;
@@ -647,7 +425,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     chain_tree_deinit(&solver->chain_tree);
     FREE(solver->target_positions);
     FREE(solver->effector_nodes);
-    FREE(solver->leaf_node_rotations);
+    FREE(solver->intermediate_rotations);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -679,7 +457,9 @@ fabrik_solve(struct ik_solver* solver_base)
     int iteration = alg->max_iterations;
     ikreal tol_squared = alg->tolerance * alg->tolerance;
 
-    convert_rotations_to_segments(solver);
+    ik_transform_chain_to_segmental_representation(&solver->chain_tree,
+                                                   solver->intermediate_rotations,
+                                                   solver->num_intermediate_rotations);
     update_target_data(solver);
 
     while (iteration-- > 0)
@@ -695,7 +475,9 @@ fabrik_solve(struct ik_solver* solver_base)
             break;
     }
 
-    convert_rotations_to_nodes(solver);
+    ik_transform_chain_to_nodal_representation(&solver->chain_tree,
+                                               solver->intermediate_rotations,
+                                               solver->num_intermediate_rotations);
 
     return alg->max_iterations - iteration;
 }

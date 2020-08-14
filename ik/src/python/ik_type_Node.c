@@ -313,12 +313,15 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static int
+Node_setchildren(PyObject* myself, PyObject* value, void* closure);
+static int
 Node_setconstraints(PyObject* myself, PyObject* value, void* closure);
 static int
 Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     ik_Algorithm* algorithm = NULL;
     PyObject* constraint_list = NULL;
+    PyObject* children_list = NULL;
     ik_Effector* effector = NULL;
     ik_Pole* pole = NULL;
     ik_Vec3* position = NULL;
@@ -326,6 +329,7 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
     ik_Node* self = (ik_Node*)myself;
 
     static char* kwds_str[] = {
+        "children",
         "position",
         "rotation",
         "algorithm",
@@ -337,7 +341,8 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!O!OO!O!" FMT FMT, kwds_str,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO!O!O!OO!O!" FMT FMT, kwds_str,
+            &children_list,
             &ik_Vec3Type, &position,
             &ik_QuatType, &rotation,
             &ik_AlgorithmType, &algorithm,
@@ -347,6 +352,12 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
             &self->node->mass,
             &self->node->rotation_weight))
         return -1;
+
+    if (children_list != NULL)
+    {
+        if (Node_setchildren(myself, children_list, NULL) != 0)
+            return -1;
+    }
 
     if (constraint_list != NULL)
     {
@@ -416,7 +427,7 @@ Node_link(PyObject* myself, PyObject* child)
 
     if (ik_node_link(self->node, ((ik_Node*)child)->node) != 0)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to link node (out of memory?) Check log for more info.");
+        PyErr_SetString(PyExc_RuntimeError, "Failed to link node. Check log for more info.");
         return NULL;
     }
     Py_INCREF(child);
@@ -431,13 +442,27 @@ Node_unlink(PyObject* myself, PyObject* args)
     ik_Node* self = (ik_Node*)myself;
     (void)args;
 
-
     /* Parent is holding a reference to this python object, need to decref that
      * when unlinking */
     if (self->node->parent)
         Py_DECREF(self);
 
     ik_node_unlink(self->node);
+
+    Py_RETURN_NONE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_unlink_all_children(PyObject* myself, PyObject* args)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)args;
+
+    NODE_FOR_EACH(self->node, user, child)
+        Py_DECREF(child->user.ptr);
+    NODE_END_EACH
+    ik_node_unlink_all_children(self->node);
 
     Py_RETURN_NONE;
 }
@@ -477,10 +502,11 @@ Node_pack(PyObject* myself, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Node_methods[] = {
-    {"link",         Node_link,                      METH_O,                       IK_NODE_LINK_DOC},
-    {"unlink",       Node_unlink,                    METH_NOARGS,                  IK_NODE_UNLINK_DOC},
-    {"create_child", (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, IK_NODE_CREATE_CHILD_DOC},
-    {"pack",         Node_pack,                      METH_NOARGS,                  IK_NODE_PACK_DOC},
+    {"link",                Node_link,                      METH_O,                       IK_NODE_LINK_DOC},
+    {"unlink",              Node_unlink,                    METH_NOARGS,                  IK_NODE_UNLINK_DOC},
+    {"unlink_all_children", Node_unlink_all_children,       METH_NOARGS,                  IK_NODE_UNLINK_ALL_CHILDREN_DOC},
+    {"create_child",        (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, IK_NODE_CREATE_CHILD_DOC},
+    {"pack",                Node_pack,                      METH_NOARGS,                  IK_NODE_PACK_DOC},
     {NULL}
 };
 
@@ -527,8 +553,110 @@ Node_getchildren(PyObject* myself, void* closure)
 static int
 Node_setchildren(PyObject* myself, PyObject* value, void* closure)
 {
-    (void)myself; (void)value; (void)closure;
-    PyErr_SetString(PyExc_AttributeError, "children property is read-only");
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+
+    /* Children can be a single ik_Node instance, or a list of ik_Node */
+    if (ik_Node_CheckExact(value))
+    {
+        struct btree_t old_children;
+        PyObject* result;
+        ik_Node* new_child = (ik_Node*)value;
+
+        old_children = self->node->children;
+        btree_init(&self->node->children, sizeof(struct ik_node*));
+
+        if (!ik_node_can_link(self->node, new_child->node))
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Can't link node because it would create a circular dependency");
+            goto restore_old_children1;
+        }
+
+        new_child->node->parent = NULL;
+        result = Node_link(myself, value);
+        if (result == NULL)
+            goto restore_old_children1;
+        Py_DECREF(result);
+
+        /* Unlink old children */
+        BTREE_FOR_EACH(&old_children, struct ik_node*, user, pchild)
+            struct ik_node* child = *pchild;
+            if (child->parent != self->node)
+                child->parent = NULL;
+            Py_DECREF(child->user.ptr);
+            IK_DECREF(child);
+        BTREE_END_EACH
+        btree_deinit(&old_children);
+
+        return 0;
+
+        restore_old_children1 : btree_deinit(&self->node->children);
+                                self->node->children = old_children;
+                                NODE_FOR_EACH(self->node, user, child)
+                                    child->parent = self->node;
+                                NODE_END_EACH
+        return -1;
+    }
+    else if (PySequence_Check(value))
+    {
+        int i;
+        struct btree_t old_children;
+        PyObject* seq = PySequence_Tuple(value);
+        if (seq == NULL)
+            return -1;
+
+        old_children = self->node->children;
+        btree_init(&self->node->children, sizeof(struct ik_node*));
+
+        for (i = 0; i != PySequence_Fast_GET_SIZE(seq); ++i)
+        {
+            PyObject* result;
+            PyObject* child = PySequence_Fast_GET_ITEM(seq, i);
+            if (!ik_Node_CheckExact(child))
+            {
+                PyErr_Format(PyExc_TypeError, "Object at index %d is not of type ik.Node", i);
+                goto restore_old_children2;
+            }
+
+            if (!ik_node_can_link(self->node, ((ik_Node*)child)->node))
+            {
+                PyErr_Format(PyExc_RuntimeError, "Can't link node at index %d because it would create a circular dependency", i);
+                goto restore_old_children2;
+            }
+
+            ((ik_Node*)child)->node->parent = NULL;
+            result = Node_link(myself, child);
+            if (result == NULL)
+                goto restore_old_children2;
+        }
+
+        /* unlink old children */
+        BTREE_FOR_EACH(&old_children, struct ik_node*, user, pchild)
+            struct ik_node* child = *pchild;
+            if (child->parent != self->node)
+                child->parent = NULL;
+            Py_DECREF(child->user.ptr);
+            IK_DECREF(child);
+        BTREE_END_EACH
+        btree_deinit(&old_children);
+
+        return 0;
+
+        restore_old_children2 : Node_unlink_all_children(myself, NULL);
+                                btree_deinit(&self->node->children);
+                                self->node->children = old_children;
+                                NODE_FOR_EACH(self->node, user, child)
+                                    child->parent = self->node;
+                                NODE_END_EACH
+        return -1;
+    }
+    else if (value == Py_None)
+    {
+        Node_unlink_all_children(myself, NULL);
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "Expected a list of ik.Node objects or a single instance of ik.Node or None");
     return -1;
 }
 
