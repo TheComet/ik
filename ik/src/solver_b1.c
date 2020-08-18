@@ -26,7 +26,7 @@ solver_b1_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     /* We need to assert that the subtree only contains a chain of length 1 */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", solver->impl.name, subtree_leaves(subtree));
+        ik_log_printf(IK_ERROR, "1B: Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", subtree_leaves(subtree));
         return -1;
     }
 
@@ -35,25 +35,25 @@ solver_b1_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 
     if (solver->base == NULL)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly one bone, but zero were found in the subtree.", solver->impl.name);
+        ik_log_printf(IK_ERROR, "1B: Require exactly one bone, but zero were found in the subtree.");
         return -1;
     }
     if (solver->base != subtree->root)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly one bone, but a chain with more than 1 bone was found in the subtree.", solver->impl.name);
+        ik_log_printf(IK_ERROR, "1B: Require exactly one bone, but a chain with more than 1 bone was found in the subtree.");
         return -1;
     }
 
     if (solver->algorithm->features & IK_ALGORITHM_TARGET_ROTATIONS)
     {
-        ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_TARGET_ROTATIONS is set, but target rotations are not supported. Flag will be ignored.", solver->impl.name);
+        ik_log_printf(IK_WARN, "1B: IK_ALGORITHM_TARGET_ROTATIONS is set, but target rotations are not supported. Flag will be ignored.");
     }
 
     if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
     {
         if (solver->tip->constraint == NULL)
         {
-            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but the tip node does not have a constraint attached. Flag will be ignored. ",solver->impl.name);
+            ik_log_printf(IK_WARN, "1B: IK_ALGORITHM_CONSTRAINTS is set, but the tip node does not have a constraint attached. Flag will be ignored.");
         }
     }
 
@@ -61,6 +61,8 @@ solver_b1_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
      * references them */
     IK_INCREF(solver->base);
     IK_INCREF(solver->tip);
+
+    ik_log_printf(IK_DEBUG, "1B: Initialized");
 
     return 0;
 }
@@ -82,14 +84,14 @@ solver_b1_solve_no_constraints(struct ik_solver* solver_base)
     union ik_quat delta;
     union ik_vec3 target;
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
+    struct ik_node* root = s->root_node;
     struct ik_node* base = s->base;
     struct ik_node* tip = s->tip;
     struct ik_effector* e = s->tip->effector;
 
     /* Transform target into base-node space */
     target = e->target_position;
-    ik_vec3_sub_vec3(target.f, base->position.f);
-    ik_vec3_rotate_quat_conj(target.f, base->rotation.f);
+    ik_transform_pos_g2l(target.f, root->parent, base);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the
@@ -114,6 +116,7 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
     union ik_quat constraint_delta;
     union ik_vec3 target;
     struct ik_solver_b1* s = (struct ik_solver_b1*)solver_base;
+    struct ik_node* root = s->root_node;
     struct ik_node* base = s->base;
     struct ik_node* tip = s->tip;
     struct ik_effector* e = s->tip->effector;
@@ -121,8 +124,7 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
 
     /* Transform target into base-node space */
     target = e->target_position;
-    ik_vec3_sub_vec3(target.f, base->position.f);
-    ik_vec3_rotate_quat_conj(target.f, base->rotation.f);
+    ik_transform_pos_g2l(target.f, root, base);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the

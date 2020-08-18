@@ -31,7 +31,7 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
      */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", solver->impl.name, subtree_leaves(subtree));
+        ik_log_printf(IK_ERROR, "2B: Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", subtree_leaves(subtree));
         return -1;
     }
 
@@ -41,12 +41,12 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 
     if (solver->base == NULL)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly two bones, but only one bone was found in the subtree.", solver->impl.name);
+        ik_log_printf(IK_ERROR, "2B: Require exactly two bones, but only one bone was found in the subtree.");
         return -1;
     }
     if (solver->base != subtree->root)
     {
-        ik_log_printf(IK_ERROR, "(\"%s\" algorithm): Require exactly two bones, but a chain with more than 2 bones was found in the subtree.", solver->impl.name);
+        ik_log_printf(IK_ERROR, "2B: Require exactly two bones, but a chain with more than 2 bones was found in the subtree.");
         return -1;
     }
 
@@ -54,13 +54,15 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     {
         if (solver->tip->constraint == NULL && solver->mid->constraint == NULL)
         {
-            ik_log_printf(IK_WARN, "(\"%s\" algorithm): IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes. Flag will be ignored. ",solver->impl.name);
+            ik_log_printf(IK_WARN, "2B: IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes. Flag will be ignored.");
         }
     }
 
     IK_INCREF(solver->base);
     IK_INCREF(solver->mid);
     IK_INCREF(solver->tip);
+
+    ik_log_printf(IK_DEBUG, "2B: Initialized");
 
     return 0;
 }
@@ -93,8 +95,8 @@ solver_b2_solve(struct ik_solver* solver_base)
 
     /* Tree and effector target position are in local space. Transform everything
      * into base node space */
-    ik_vec3_copy(target_pos.f, e->target_position.f);
-    ik_transform_pos_l2g(target_pos.f, tip, base);
+    target_pos = e->target_position;
+    ik_transform_pos_g2l(target_pos.f, tip, base);
 
     /*
      * Form a triangle from the two segment lengths so we can calculate the
@@ -136,14 +138,14 @@ solver_b2_solve(struct ik_solver* solver_base)
             ik_vec3_copy(alpha_rot.f, s->mid->pole->position.f);
         else
             ik_vec3_copy(alpha_rot.f, mid->position.f);
-        ik_transform_pos_l2g(alpha_rot.f, mid, base);
+        /*ik_transform_pos_l2g(alpha_rot.f, mid, base);*/
         ik_vec3_cross(alpha_rot.f, target_pos.f);
 
         /* if mid and target vectors are colinear... */
         if (!ik_vec3_normalize(alpha_rot.f))
         {
             ik_vec3_copy(alpha_rot.f, tip->position.f);
-            ik_transform_pos_l2g(alpha_rot.f, tip, base);
+            /*ik_transform_pos_l2g(alpha_rot.f, tip, base);*/
             ik_vec3_cross(alpha_rot.f, target_pos.f);
 
             /* if tip and target vectors are also colinear... */
@@ -189,9 +191,6 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_vec3_add_vec3(tip_pos, mid_pos);
 #endif
     }
-
-    /* Transform back to local space */
-    ik_transform_node_section_g2l(s->tip, s->base);
 
     return 1;
 }

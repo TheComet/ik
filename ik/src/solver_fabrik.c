@@ -84,29 +84,31 @@ store_effector_nodes(struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-update_target_data(struct ik_solver_fabrik* solver)
+calculate_target_data(struct ik_solver_fabrik* solver)
 {
     int i;
-    const struct ik_node* root = chain_get_base_node(&solver->chain_tree);
 
     for (i = 0; i != solver->num_effectors; ++i)
     {
-        struct ik_node* tip = solver->effector_nodes[i];
-        struct ik_effector* eff = tip->effector;
-        union ik_vec3 tip_pos = tip->position;
+        const struct ik_node* base_node = chain_get_base_node(&solver->chain_tree);
+        const struct ik_node* root_node = solver->root_node;
+        struct ik_node* tip_node = solver->effector_nodes[i];
+        struct ik_effector* eff = tip_node->effector;
+        union ik_vec3 tip_pos = tip_node->position;
         ikreal* target = solver->target_positions[i].f;
 
-        /* Transform tip node position into same space as the effector target
-         * position so weight can be applied. */
-        while (tip != root)
-        {
-            ik_vec3_rotate_quat_conj(tip_pos.f, tip->rotation.f);
-            tip = tip->parent; assert(tip != NULL);
-            ik_vec3_add_vec3(tip_pos.f, tip->position.f);
-        }
+        /* The target data is most useful when transformed into the same space
+         * as the base node. The effector target position is in global space
+         * (parent space of the solver's root node).
+         */
+        ik_vec3_copy(target, eff->target_position.f);
+        ik_transform_pos_g2l(target, root_node->parent, base_node->parent);
+
+        /* In order to lerp between tip node position and target, transform tip
+         * node position into same space */
+        ik_transform_pos_l2g(tip_pos.f, tip_node->parent, base_node);
 
         /* lerp by effector weight to get weighted target position */
-        ik_vec3_copy(target, eff->target_position.f);
         ik_vec3_sub_vec3(target, tip_pos.f);
         ik_vec3_mul_scalar(target, eff->weight);
         ik_vec3_add_vec3(target, tip_pos.f);
@@ -156,12 +158,12 @@ update(struct ik_node_data_t* tip, struct ik_node_data_t* base)
 /* ------------------------------------------------------------------------- */
 static void
 transform_target_to_local_space(ikreal target[3],
-                                const struct ik_node* node,
-                                const struct ik_node* root)
+                                const struct ik_node* root,
+                                const struct ik_node* node)
 {
     const struct ik_node* parent = node->parent;
     if (parent != root)
-        transform_target_to_local_space(target, parent, root);
+        transform_target_to_local_space(target, root, parent);
 
     ik_vec3_sub_vec3(target, parent->position.f);
     ik_vec3_rotate_quat_conj(target, node->rotation.f);
@@ -188,7 +190,7 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
     if (avg_count == 0)
     {
         target = *(*target_store)++;
-        transform_target_to_local_space(target.f, chain_get_tip_node(chain), root);
+        transform_target_to_local_space(target.f, root, chain_get_tip_node(chain));
     }
     else
         ik_vec3_div_scalar(target.f, avg_count);
@@ -262,14 +264,14 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
 static union ik_vec3
 solve_chain_forwards(struct ik_solver_fabrik* solver)
 {
+    const struct ik_node* base_node = chain_get_base_node(&solver->chain_tree);
     union ik_vec3* target_store = solver->target_positions;
-    struct ik_node* root = chain_get_base_node(&solver->chain_tree);
-    union ik_vec3 target = solve_chain_forwards_recurse(&solver->chain_tree, &target_store, root);
+    union ik_vec3 target = solve_chain_forwards_recurse(&solver->chain_tree, &target_store, base_node);
 
     /* This sets up the target position correctly for backwards iteration */
-    ik_vec3_sub_vec3(target.f, root->position.f);
+    ik_vec3_sub_vec3(target.f, base_node->position.f);
     ik_vec3_negate(target.f);
-    ik_vec3_add_vec3(target.f, root->position.f);
+    ik_vec3_add_vec3(target.f, base_node->position.f);
 
     return target;
 }
@@ -305,7 +307,7 @@ solve_chain_backwards_constraints_recurse(struct ik_chain* chain, union ik_vec3 
             ik_vec3_rotate_quat_conj(dir.f, delta.f);
         }
 
-        ik_vec3_mul_scalar(dir.f, dist);
+        ik_vec3_mul_scalar(dir.f, child->position.v.z);
         ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
 
@@ -342,12 +344,15 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         ik_quat_angle_of_nn(delta.f, dir.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
 
-        /* Calculate new target position */
+        /* Calculate new target position *
         ik_vec3_mul_scalar(dir.f, child->position.v.z);
         ik_vec3_add_vec3(target.f, dir.f);
         ik_vec3_sub_vec3(target.f, child->position.f);
         ik_vec3_rotate_quat(target.f, delta.f);
-        ik_vec3_add_vec3(target.f, child->position.f);
+        ik_vec3_add_vec3(target.f, child->position.f);*/
+
+        ik_vec3_mul_scalar(dir.f, child->position.v.z);
+        ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)
@@ -457,19 +462,20 @@ fabrik_solve(struct ik_solver* solver_base)
     int iteration = alg->max_iterations;
     ikreal tol_squared = alg->tolerance * alg->tolerance;
 
+    calculate_target_data(solver);
+
     ik_transform_chain_to_segmental_representation(&solver->chain_tree,
                                                    solver->intermediate_rotations,
                                                    solver->num_intermediate_rotations);
-    update_target_data(solver);
 
     while (iteration-- > 0)
     {
         union ik_vec3 base_pos = solve_chain_forwards(solver);
+        //solve_chain_backwards_constraints(solver, base_pos);
 
-        if (alg->features & IK_ALGORITHM_CONSTRAINTS)
+        /*if (alg->features & IK_ALGORITHM_CONSTRAINTS)
             solve_chain_backwards_constraints(solver, base_pos);
-        else
-            solve_chain_backwards(solver, base_pos);
+        else*/
 
         if (all_targets_reached(solver, tol_squared))
             break;

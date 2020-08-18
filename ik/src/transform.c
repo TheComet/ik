@@ -206,7 +206,6 @@ ik_transform_chain(struct ik_chain* chain, uint8_t flags)
     if (base_node->parent)
         (*eff_transform_table[flags & 0x01])(base_node->parent, chain);
 }
-#endif
 
 /* ------------------------------------------------------------------------- */
 void
@@ -297,6 +296,7 @@ ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
         assert(tip != NULL);
     }
 }
+#endif
 
 /* ------------------------------------------------------------------------- */
 /*

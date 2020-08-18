@@ -271,6 +271,9 @@ ik_solver_combine_create(const struct cs_vector* solver_list, struct ik_node* sh
     solver->algorithm = NULL;
     solver->shared_node = shared_node;  /* Other solvers are holding a reference to this node so we don't have to */
 
+    ik_log_printf(IK_DEBUG, "Combine: Initialized with %d subsolvers and %d dead nodes",
+                  solver->subsolver_count, solver->child_node_count - solver->subsolver_count);
+
     return (struct ik_solver*)solver;
 
     alloc_child_rotations_failed : FREE(solver->child_nodes);

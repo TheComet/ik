@@ -65,7 +65,7 @@ class Tree(Updateable):
                 return e
 
     def update(self, time_step):
-        #self.initial_pose.apply(self.root)
+        self.initial_pose.apply(self.root)
         tstart = time()
         self.solver.solve()
 

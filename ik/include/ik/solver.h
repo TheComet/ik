@@ -15,7 +15,8 @@ struct ik_node;
     IK_REFCOUNTED_HEAD                                                        \
                                                                               \
     struct ik_solver_interface impl;                                          \
-    struct ik_algorithm* algorithm;
+    struct ik_algorithm* algorithm;                                           \
+    struct ik_node* root_node;
 
 typedef void(*ik_solver_callback_func)(struct ik_node*);
 
@@ -23,7 +24,7 @@ struct ik_solver_interface
 {
     /*! Unique string that identifies this solver. This is matched against the
      * string in ik_algorithm to instantiate a solver when building */
-    char name[16];
+    const char* name;
 
     /*! Size of the solver struct, e.g. sizeof(struct my_solver) */
     uintptr_t size;

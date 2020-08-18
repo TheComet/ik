@@ -127,6 +127,9 @@ ik_solver_group_create(const struct cs_vector* solver_list)
         data->solver = *subsolver;
     VECTOR_END_EACH
 
+    ik_log_printf(IK_DEBUG, "Group: Initialized with %d isolated subsolvers",
+                  vector_count(solver_list));
+
     return (struct ik_solver*)solver;
 
     add_subsolver_failed : VECTOR_FOR_EACH(&solver->subsolvers, struct subsolver, subsolver)
@@ -134,5 +137,5 @@ ik_solver_group_create(const struct cs_vector* solver_list)
                            VECTOR_END_EACH
                            vector_deinit(&solver->subsolvers);
                            ik_refcounted_free((struct ik_refcounted*)solver);
-    alloc_solver_failed : return NULL;
+    alloc_solver_failed  : return NULL;
 }

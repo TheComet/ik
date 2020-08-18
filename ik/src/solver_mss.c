@@ -1,5 +1,6 @@
 #include "ik/effector.h"
 #include "ik/solver.h"
+#include "ik/log.h"
 
 struct ik_solver_mss
 {
@@ -10,6 +11,8 @@ struct ik_solver_mss
 static int
 mss_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
+    ik_log_printf(IK_DEBUG, "MSS: Initialized");
+
     return 0;
 }
 

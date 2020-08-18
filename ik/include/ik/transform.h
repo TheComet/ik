@@ -2,8 +2,8 @@
 #define IK_TRANSFORM_H
 
 #include "ik/config.h"
-#include "ik/quat.h"
-#include "ik/vec3.h"
+#include "ik/quat.inl"
+#include "ik/vec3.inl"
 
 #define IK_TRANSFORM_MODE_LIST \
     X(G2L, 0x00) \
@@ -42,48 +42,34 @@ union ik_transform
 };
 
 /*!
- * Transforms a position and rotation from the node space of "tip" into the
- * node space of "base".
- * @note The nodes tip and base must be in local space for this to work.
+ * Transforms a position from the space of "base" into the space of "tip"
  */
-IK_PUBLIC_API void
-ik_transform_pos_rot_l2g(ikreal pos[3], ikreal rot[4], const struct ik_node* tip, const struct ik_node* base);
+static inline void
+ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* base, const struct ik_node* tip)
+{
+    if (tip == base)
+        return;
+
+    assert(tip);
+    ik_transform_pos_g2l(pos, base, tip->parent);
+
+    ik_vec3_sub_vec3(pos, tip->position.f);
+    ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
+}
 
 /*!
- * Transforms a position and rotation from the node space of "base" into the
- * node space of "tip".
- * @note The nodes tip and base must be in local space for this to work.
+ * Transforms a position from the space of "tip" into the space of "base"
  */
-IK_PUBLIC_API void
-ik_transform_pos_rot_g2l(ikreal pos[3], ikreal rot[4], const struct ik_node* tip, const struct ik_node* base);
-
-/*!
- * Transforms a position from the node space of "tip" into the node space of
- * "base".
- * @note The nodes tip and base must be in local space for this to work.
- */
-IK_PUBLIC_API void
-ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base);
-
-/*!
- * Transforms a position from the node space of "base" into the node space of
- * "tip".
- * @note The nodes tip and base must be in local space for this to work.
- */
-IK_PUBLIC_API void
-ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base);
-
-/*!
- * Transforms all nodes ranging from "tip" to "base" into the space of "base".
- */
-IK_PUBLIC_API void
-ik_transform_node_section_l2g(struct ik_node* tip, const struct ik_node* base);
-
-/*!
- * Transforms all nodes ranging from "tip" to "base" back to local space.
- */
-IK_PUBLIC_API void
-ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base);
+static inline void
+ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
+{
+    while (tip != base)
+    {
+        ik_vec3_rotate_quat(pos, tip->rotation.f);
+        ik_vec3_add_vec3(pos, tip->position.f);
+        tip = tip->parent;
+    }
+}
 
 IK_PRIVATE_API void
 ik_transform_chain_to_segmental_representation(struct ik_chain* root,

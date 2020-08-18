@@ -24,6 +24,7 @@ deinit_solver(struct ik_solver* solver)
 {
     solver->impl.deinit((struct ik_solver*)solver);
     IK_DECREF(solver->algorithm);
+    IK_DECREF(solver->root_node);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -36,7 +37,7 @@ destroy_solver(struct ik_solver* solver)
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree)
+create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct ik_node* root)
 {
     VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
         if (strcmp((*p_iface)->name, algorithm->type) == 0)
@@ -50,8 +51,9 @@ create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree)
                 return NULL;
             }
 
-            solver->algorithm = algorithm;
             solver->impl = *iface;
+            solver->algorithm = algorithm;
+            solver->root_node = root;
 
             if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
             {
@@ -60,6 +62,7 @@ create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree)
             }
 
             IK_INCREF(algorithm);
+            IK_INCREF(root);
 
             return solver;
         }
@@ -259,7 +262,7 @@ mark_reachable_nodes(struct btree_t* marked,
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-find_algorithm_and_create_solver(struct ik_subtree* subtree, const struct ik_node* root)
+find_algorithm_and_create_solver(struct ik_subtree* subtree, struct ik_node* root)
 {
     const struct ik_node* node;
     struct ik_algorithm* algorithm;
@@ -279,7 +282,7 @@ find_algorithm_and_create_solver(struct ik_subtree* subtree, const struct ik_nod
         return NULL;
     }
 
-    return create_solver(algorithm, subtree);
+    return create_solver(algorithm, subtree, root);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -328,22 +331,25 @@ recurse_with_new_subtree(struct cs_vector* solver_list,
         goto create_solvers_failed;
     NODE_END_EACH
 
-    if (vector_count(&combined_solvers) > 1)
+    if (vector_count(&combined_solvers) > 0)
     {
-        struct ik_solver* solver = ik_solver_combine_create(&combined_solvers, node);
-        if (solver == NULL)
-            goto create_solvers_failed;
-        if (vector_push(solver_list, &solver) != 0)
+        if (vector_count(&combined_solvers) > 1 || ik_node_child_count(node) > 1)
         {
-            destroy_solver(solver);
-            goto create_solvers_failed;
+            struct ik_solver* solver = ik_solver_combine_create(&combined_solvers, node);
+            if (solver == NULL)
+                goto create_solvers_failed;
+            if (vector_push(solver_list, &solver) != 0)
+            {
+                destroy_solver(solver);
+                goto create_solvers_failed;
+            }
         }
-    }
-    else if (vector_count(&combined_solvers) == 1)
-    {
-        struct ik_solver* solver = *(struct ik_solver**)vector_back(&combined_solvers);
-        if (vector_push(solver_list, &solver) != 0)
-            goto create_solvers_failed;
+        else
+        {
+            struct ik_solver* solver = *(struct ik_solver**)vector_back(&combined_solvers);
+            if (vector_push(solver_list, &solver) != 0)
+                goto create_solvers_failed;
+        }
     }
 
     vector_deinit(&combined_solvers);
@@ -439,7 +445,6 @@ ik_solver_build(struct ik_node* root)
     vector_init(&solver_list, sizeof(struct ik_solver*));
     if (create_solver_for_each_subtree(&solver_list, NULL, root, root, &marked_nodes) != 0)
         goto split_into_subtrees_failed;
-    vector_reverse(&solver_list);
 
     if (vector_count(&solver_list) == 1)
     {
@@ -448,6 +453,7 @@ ik_solver_build(struct ik_node* root)
     }
     else
     {
+        vector_reverse(&solver_list);
         solver = ik_solver_group_create(&solver_list);
         if (solver == NULL)
             goto create_meta_solver_failed;
