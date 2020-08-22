@@ -96,7 +96,7 @@ solver_b2_solve(struct ik_solver* solver_base)
     /* Tree and effector target position are in local space. Transform everything
      * into base node space */
     target_pos = e->target_position;
-    ik_transform_pos_g2l(target_pos.f, tip, base);
+    ik_transform_pos_g2l(target_pos.f, base, tip);
 
     /*
      * Form a triangle from the two segment lengths so we can calculate the

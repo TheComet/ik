@@ -559,7 +559,7 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
     /* Children can be a single ik_Node instance, or a list of ik_Node */
     if (ik_Node_CheckExact(value))
     {
-        struct btree_t old_children;
+        struct cs_btree old_children;
         PyObject* result;
         ik_Node* new_child = (ik_Node*)value;
 
@@ -600,7 +600,7 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
     else if (PySequence_Check(value))
     {
         int i;
-        struct btree_t old_children;
+        struct cs_btree old_children;
         PyObject* seq = PySequence_Tuple(value);
         if (seq == NULL)
             return -1;

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define GUID(n) (btree_key_t)((n)->user.guid)
+#define GUID(n) (cs_btree_key)((n)->user.guid)
 
 /* ------------------------------------------------------------------------- */
 static void

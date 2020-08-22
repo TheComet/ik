@@ -50,7 +50,7 @@ struct ik_node
     ikreal mass;
 
     struct ik_node* parent;
-    struct btree_t children;  /* holds ik_node* objects */
+    struct cs_btree children;  /* holds ik_node* objects */
 };
 
 struct ik_pose

@@ -1,3 +1,4 @@
 - Ability to provide own malloc/free/realloc calls
 - Document threadsafety
+- Remove need to provide GUID for nodes. Store nodes in vectors. It's easier.
 

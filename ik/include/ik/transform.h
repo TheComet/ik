@@ -33,7 +33,7 @@ union ik_transform
     {
         /*
          * WARNING: HAS to be in this order -- there's some hacking going on
-         * in transform.c which relies on the order of ikreal_t's in transform[7].
+         * in transform.c which relies on the order of ikreal's in transform[7].
          */
         union ik_quat rot;
         union ik_vec3 pos;

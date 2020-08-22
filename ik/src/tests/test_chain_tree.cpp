@@ -235,3 +235,8 @@ TEST_F(NAME, two_arms_with_dead_nodes)
     EXPECT_THAT(chain_get_tip_node(c1), Eq(n5));
     EXPECT_THAT(chain_dead_node_count(c1), Eq(0));
 }
+
+TEST_F(NAME, dead_nodes_in_middle_of_chain)
+{
+
+}

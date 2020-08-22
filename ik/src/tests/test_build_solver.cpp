@@ -5,7 +5,7 @@
 #include "ik/node.h"
 #include "ik/solver.h"
 
-#define NAME build_solver
+#define NAME solver_build
 
 using namespace ::testing;
 
@@ -27,7 +27,13 @@ struct ik_solver_combine
 {
     IK_SOLVER_HEAD
 
-    struct cs_vector solvers;
+    struct ik_solver** subsolvers;
+    struct ik_node** child_nodes;
+    struct ik_node* shared_node;
+    union ik_quat* child_rotations;
+
+    int subsolver_count;
+    int child_node_count;
 };
 
 static int dummy_init(struct ik_solver* solver_base, const struct ik_subtree* subtree) {
@@ -240,7 +246,7 @@ TEST_F(NAME, check_refcounts_are_correct)
     EXPECT_THAT(solver->refcount->refs, Eq(1));
 }
 
-TEST_F(NAME, algorithm_terminates_chain)
+TEST_F(NAME, always_find_root_most_algorithm)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
     ik::Ref<ik_node> n2 = ik_node_find(tree, ik_guid(2));
@@ -267,10 +273,10 @@ TEST_F(NAME, algorithm_terminates_chain)
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
     ASSERT_THAT(solver->algorithm, NotNull());
-    EXPECT_THAT(solver->algorithm, Eq(a2));
+    EXPECT_THAT(solver->algorithm, Eq(a1));
 }
 
-TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
+TEST_F(NAME, choose_next_available_algorithm_after_chain_ends_exact)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
 
@@ -304,19 +310,19 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain_exact)
     //
     ASSERT_THAT(solver.isNull(), IsFalse());
     ASSERT_THAT(solver->impl.name, StrEq("combine"));
-    ASSERT_THAT(vector_count(&((ik_solver_combine*)solver.get())->solvers), Eq(2));
+    ASSERT_THAT(((ik_solver_combine*)solver.get())->subsolver_count, Eq(2));
 
     // We expect algorithm 2 to be chosen because it is the next available
     // one after the chains end
-    ik::Ref<ik_solver> s1 = *(ik_solver**)vector_get_element(&((ik_solver_combine*)solver.get())->solvers, 0);
+    ik::Ref<ik_solver> s1 = ((ik_solver_combine*)solver.get())->subsolvers[0];
     ASSERT_THAT(s1->algorithm, NotNull());
     EXPECT_THAT(s1->algorithm, Eq(a2));
-    ik::Ref<ik_solver> s2 = *(ik_solver**)vector_get_element(&((ik_solver_combine*)solver.get())->solvers, 1);
+    ik::Ref<ik_solver> s2 = ((ik_solver_combine*)solver.get())->subsolvers[1];
     ASSERT_THAT(s2->algorithm, NotNull());
     EXPECT_THAT(s2->algorithm, Eq(a2));
 }
 
-TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
+TEST_F(NAME, choose_next_available_algorithm_after_chain_ends)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
 
@@ -352,14 +358,16 @@ TEST_F(NAME, choose_algorithm_closest_to_end_of_chain)
     ASSERT_THAT(solver->impl.name, StrEq("group"));
     ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->subsolvers), Eq(2));
 
-    // We expect algorithm 2 to be chosen because it is the next available
+    // We expect algorithm 1 to be chosen because it is the next available
     // one after the chains end
     ik::Ref<ik_solver> s1 = *(ik_solver**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 0);
+    ASSERT_THAT(s1->impl.name, StrEq("dummy1"));
     ASSERT_THAT(s1->algorithm, NotNull());
     EXPECT_THAT(s1->algorithm, Eq(a1));
 
-    // same deal with second solver
+    // Other solver's chain ends on algorithm 2 so it should be chosen
     ik::Ref<ik_solver> s2 = *(ik_solver**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 1);
+    ASSERT_THAT(s2->impl.name, StrEq("dummy2"));
     ASSERT_THAT(s2->algorithm, NotNull());
     EXPECT_THAT(s2->algorithm, Eq(a2));
 }
@@ -390,6 +398,62 @@ TEST_F(NAME, ignore_effector_on_root_node)
 }
 
 TEST_F(NAME, split_trees_on_effectors)
+{
+    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3,   ik_guid(4));
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4,   ik_guid(5));
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5,   ik_guid(6));
+
+    ik_effector* e1 = ik_node_create_effector(n2);
+    ik_effector* e2 = ik_node_create_effector(n3);
+    ik_effector* e3 = ik_node_create_effector(n5);
+    ik_algorithm* a = ik_node_create_algorithm(tree, "dummy1");
+    ik::Ref<ik_solver> solver = ik_solver_build(tree);
+
+    //
+    //       6
+    //       |
+    //       5 <- e3
+    //       |
+    //       4
+    //       |
+    //       3 <- e2
+    //       |
+    //       2 <- e1
+    //       |
+    //       1
+    //       |
+    //       0 <- a
+    //
+    //
+    ASSERT_THAT(solver.isNull(), IsFalse());
+    ASSERT_THAT(solver->impl.name, StrEq("group"));
+    ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->subsolvers), Eq(3));
+
+    ik_solver_dummy* s1 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 0);
+    ik_solver_dummy* s2 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 1);
+    ik_solver_dummy* s3 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 2);
+
+    EXPECT_THAT(s1->algorithm, Eq(a));
+    EXPECT_THAT(chain_node_count(&s1->chain_tree), Eq(3));
+    EXPECT_THAT(chain_get_base_node(&s1->chain_tree), Eq(tree));
+    EXPECT_THAT(chain_get_tip_node(&s1->chain_tree), Eq(n2));
+
+    EXPECT_THAT(s2->algorithm, Eq(a));
+    EXPECT_THAT(chain_node_count(&s2->chain_tree), Eq(2));
+    EXPECT_THAT(chain_get_base_node(&s2->chain_tree), Eq(n2));
+    EXPECT_THAT(chain_get_tip_node(&s2->chain_tree), Eq(n3));
+
+    EXPECT_THAT(s3->algorithm, Eq(a));
+    EXPECT_THAT(chain_node_count(&s3->chain_tree), Eq(3));
+    EXPECT_THAT(chain_get_base_node(&s3->chain_tree), Eq(n3));
+    EXPECT_THAT(chain_get_tip_node(&s3->chain_tree), Eq(n5));
+}
+
+TEST_F(NAME, split_trees_on_effectors_and_choose_new_algorithm)
 {
     ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
     ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
@@ -484,7 +548,22 @@ TEST_F(NAME, missing_root_algorithm)
     //       0
     //
     //
-    ASSERT_THAT(solver.isNull(), IsTrue());
+    ASSERT_THAT(solver.isNull(), IsFalse());
+    ASSERT_THAT(solver->impl.name, StrEq("group"));
+    ASSERT_THAT(vector_count(&((ik_solver_group*)solver.get())->subsolvers), Eq(2));
+
+    ik_solver_dummy* s1 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 0);
+    ik_solver_dummy* s2 = *(ik_solver_dummy**)vector_get_element(&((ik_solver_group*)solver.get())->subsolvers, 1);
+
+    EXPECT_THAT(s1->algorithm, Eq(a2));
+    EXPECT_THAT(chain_node_count(&s1->chain_tree), Eq(2));
+    EXPECT_THAT(chain_get_base_node(&s1->chain_tree), Eq(n2));
+    EXPECT_THAT(chain_get_tip_node(&s1->chain_tree), Eq(n3));
+
+    EXPECT_THAT(s2->algorithm, Eq(a1));
+    EXPECT_THAT(chain_node_count(&s2->chain_tree), Eq(3));
+    EXPECT_THAT(chain_get_base_node(&s2->chain_tree), Eq(n3));
+    EXPECT_THAT(chain_get_tip_node(&s2->chain_tree), Eq(n5));
 }
 
 TEST_F(NAME, ignore_parents_of_root_node)
@@ -514,6 +593,60 @@ TEST_F(NAME, ignore_parents_of_root_node)
     ASSERT_THAT(s1->impl.name, StrEq("dummy1"));
     ASSERT_THAT(s2.isNull(), IsTrue());
     ASSERT_THAT(s3.isNull(), IsTrue());
+}
+
+TEST_F(NAME, chain_ending_in_middle_of_second_chain_creates_two_solvers)
+{
+    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
+    ik::Ref<ik_node> n4 = ik_node_create_child(n1,   ik_guid(4));
+
+    ik_effector* e1 = ik_node_create_effector(n3);
+    ik_effector* e2 = ik_node_create_effector(n4);
+    e2->chain_length = 1;
+    ik_algorithm* a = ik_node_create_algorithm(tree, "dummy1");
+
+    ik::Ref<ik_solver> s = ik_solver_build(tree);
+
+    //
+    //      3 <- e1
+    //      |
+    //      2  4 <- e2 (chain_length=1)
+    //      | /
+    //      1
+    //      |
+    //      0 <- a
+    //
+    ASSERT_THAT(s.isNull(), IsFalse());
+    ASSERT_THAT(s->impl.name, StrEq("group"));
+    ASSERT_THAT(vector_count(&((ik_solver_group*)s.get())->subsolvers), Eq(2));
+
+    ik_solver_dummy*   s1 = *(ik_solver_dummy**)  vector_get_element(&((ik_solver_group*)s.get())->subsolvers, 0);
+    ik_solver_combine* s2 = *(ik_solver_combine**)vector_get_element(&((ik_solver_group*)s.get())->subsolvers, 1);
+    ASSERT_THAT(s2->impl.name, StrEq("combine"));
+    ASSERT_THAT(s2->subsolver_count, Eq(1));
+    ik_solver_dummy*   s3 = (ik_solver_dummy*)s2->subsolvers[0];
+
+    EXPECT_THAT(s1->algorithm, Eq(a));
+    EXPECT_THAT(chain_node_count(&s1->chain_tree), Eq(4));
+    EXPECT_THAT(chain_get_base_node(&s1->chain_tree), Eq(tree));
+    EXPECT_THAT(chain_get_tip_node(&s1->chain_tree), Eq(n3));
+    EXPECT_THAT(chain_child_count(&s1->chain_tree), Eq(0));
+    EXPECT_THAT(chain_dead_node_count(&s1->chain_tree), Eq(0));
+
+    EXPECT_THAT(s2->shared_node, Eq(n1));
+    ASSERT_THAT(s2->child_node_count, Eq(2));
+    EXPECT_THAT(s2->child_nodes[0], Eq(n2));
+    EXPECT_THAT(s2->child_nodes[1], Eq(n4));
+
+    EXPECT_THAT(s3->algorithm, Eq(a));
+    EXPECT_THAT(chain_node_count(&s3->chain_tree), Eq(2));
+    EXPECT_THAT(chain_get_base_node(&s3->chain_tree), Eq(n1));
+    EXPECT_THAT(chain_get_tip_node(&s3->chain_tree), Eq(n4));
+    EXPECT_THAT(chain_child_count(&s3->chain_tree), Eq(0));
+    EXPECT_THAT(chain_dead_node_count(&s3->chain_tree), Eq(0));
 }
 
 /*
