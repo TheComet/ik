@@ -56,9 +56,9 @@ NodeChildrenView_repr_build_arglist_list(PyObject* myself)
     if (args == NULL)
         return NULL;
 
-    NODE_FOR_EACH(self->node, user, child)
+    NODE_FOR_EACH(self->node, child)
         int append_result;
-        ik_Node* pychild = child->user.ptr;
+        ik_Node* pychild = child->user_data;
         PyObject* arg = PyUnicode_FromFormat("%R", pychild);
         if (arg == NULL)
             goto addarg_failed;
@@ -147,7 +147,7 @@ NodeChildrenView_item(PyObject* myself, Py_ssize_t index)
         return NULL;
     }
 
-    node = ik_node_get_child(self->node, (uint32_t)index)->user.ptr;
+    node = ik_node_get_child(self->node, (uint32_t)index)->user_data;
     return Py_INCREF(node), (PyObject*)node;
 }
 
@@ -208,8 +208,8 @@ Node_dealloc(PyObject* myself)
     ik_Node* self = (ik_Node*)myself;
 
     /* Release references to all child python nodes */
-    NODE_FOR_EACH(self->node, user, child)
-        Py_DECREF(child->user.ptr);
+    NODE_FOR_EACH(self->node, child)
+        Py_DECREF(child->user_data);
     NODE_END_EACH
     IK_DECREF(self->node);
 
@@ -242,7 +242,7 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     (void)args; (void)kwds;
 
     /* Allocate the internal node */
-    node = ik_node_create(ik_ptr(0));
+    node = ik_node_create();
     if (node == NULL)
         goto alloc_node_failed;
     IK_INCREF(node);
@@ -296,7 +296,7 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
      * Store the python object in node's user data so we don't have to store
      * child nodes in a python list.
      */
-    node->user.ptr = self;
+    node->user_data = self;
 
     /* store other objects we successfully allocated */
     self->node = node;
@@ -459,8 +459,8 @@ Node_unlink_all_children(PyObject* myself, PyObject* args)
     ik_Node* self = (ik_Node*)myself;
     (void)args;
 
-    NODE_FOR_EACH(self->node, user, child)
-        Py_DECREF(child->user.ptr);
+    NODE_FOR_EACH(self->node, child)
+        Py_DECREF(child->user_data);
     NODE_END_EACH
     ik_node_unlink_all_children(self->node);
 
@@ -559,12 +559,12 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
     /* Children can be a single ik_Node instance, or a list of ik_Node */
     if (ik_Node_CheckExact(value))
     {
-        struct cs_btree old_children;
+        struct cs_vector old_children;
         PyObject* result;
         ik_Node* new_child = (ik_Node*)value;
 
         old_children = self->node->children;
-        btree_init(&self->node->children, sizeof(struct ik_node*));
+        vector_init(&self->node->children, sizeof(struct ik_node*));
 
         if (!ik_node_can_link(self->node, new_child->node))
         {
@@ -579,20 +579,20 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         Py_DECREF(result);
 
         /* Unlink old children */
-        BTREE_FOR_EACH(&old_children, struct ik_node*, user, pchild)
+        VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
             struct ik_node* child = *pchild;
             if (child->parent != self->node)
                 child->parent = NULL;
-            Py_DECREF(child->user.ptr);
+            Py_DECREF(child->user_data);
             IK_DECREF(child);
-        BTREE_END_EACH
-        btree_deinit(&old_children);
+        VECTOR_END_EACH
+        vector_deinit(&old_children);
 
         return 0;
 
-        restore_old_children1 : btree_deinit(&self->node->children);
+        restore_old_children1 : vector_deinit(&self->node->children);
                                 self->node->children = old_children;
-                                NODE_FOR_EACH(self->node, user, child)
+                                NODE_FOR_EACH(self->node, child)
                                     child->parent = self->node;
                                 NODE_END_EACH
         return -1;
@@ -600,13 +600,13 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
     else if (PySequence_Check(value))
     {
         int i;
-        struct cs_btree old_children;
+        struct cs_vector old_children;
         PyObject* seq = PySequence_Tuple(value);
         if (seq == NULL)
             return -1;
 
         old_children = self->node->children;
-        btree_init(&self->node->children, sizeof(struct ik_node*));
+        vector_init(&self->node->children, sizeof(struct ik_node*));
 
         for (i = 0; i != PySequence_Fast_GET_SIZE(seq); ++i)
         {
@@ -631,21 +631,21 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         }
 
         /* unlink old children */
-        BTREE_FOR_EACH(&old_children, struct ik_node*, user, pchild)
+        VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
             struct ik_node* child = *pchild;
             if (child->parent != self->node)
                 child->parent = NULL;
-            Py_DECREF(child->user.ptr);
+            Py_DECREF(child->user_data);
             IK_DECREF(child);
-        BTREE_END_EACH
-        btree_deinit(&old_children);
+        VECTOR_END_EACH
+        vector_deinit(&old_children);
 
         return 0;
 
         restore_old_children2 : Node_unlink_all_children(myself, NULL);
-                                btree_deinit(&self->node->children);
+                                vector_deinit(&self->node->children);
                                 self->node->children = old_children;
-                                NODE_FOR_EACH(self->node, user, child)
+                                NODE_FOR_EACH(self->node, child)
                                     child->parent = self->node;
                                 NODE_END_EACH
         return -1;
@@ -669,7 +669,7 @@ Node_getparent(PyObject* myself, void* closure)
 
     if (self->node->parent != NULL)
     {
-        ik_Node* parent = self->node->parent->user.ptr;
+        ik_Node* parent = self->node->parent->user_data;
         return Py_INCREF(parent), (PyObject*)parent;
     }
     else
@@ -1285,7 +1285,7 @@ Node_richcompare(PyObject* myself, PyObject* other, int op)
     {
         ik_Node* self = (ik_Node*)myself;
         ik_Node* ikother = (ik_Node*)other;
-        Py_RETURN_RICHCOMPARE(self->node->user.ptr, ikother->node->user.ptr, op);
+        Py_RETURN_RICHCOMPARE(self->node->user_data, ikother->node->user_data, op);
     }
     else
     {

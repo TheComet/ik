@@ -134,7 +134,7 @@ ik_solver_unregister(const struct ik_solver_interface* interface)
 static int
 find_all_effector_nodes(struct cs_vector* result, const struct ik_node* node)
 {
-    NODE_FOR_EACH(node, user_data, child)
+    NODE_FOR_EACH(node, child)
         if (find_all_effector_nodes(result, child) != 0)
             return -1;
     NODE_END_EACH
@@ -251,9 +251,7 @@ find_algorithm_and_create_solver(struct ik_subtree* subtree, struct ik_node* roo
         }
     if (algorithm == NULL)
     {
-        ik_log_printf(IK_WARN, "No algorithm assigned to subtree with root node %zu (%p)",
-                      subtree->root->user.guid,
-                      subtree->root->user.ptr);
+        ik_log_printf(IK_WARN, "Found nodes that are influenced by end-effectors, but couldn't find an attached algorithm. This subtree will be ignored.");
         return NULL;
     }
 
@@ -282,7 +280,7 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
             goto create_solvers_failed;
     }
 
-    NODE_FOR_EACH(node, user_data, child)
+    NODE_FOR_EACH(node, child)
         const int* segment_color = btree_find(segment_colors, (cs_btree_key)child);
 
         /* Sanity check: If node was added as leaf, then the first if-statement

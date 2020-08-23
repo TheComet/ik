@@ -38,7 +38,7 @@ Attachment_getnode(ik_Attachment* self, void* closure)
 
     if (self->attachment && self->attachment->node)
     {
-        ik_Node* node = self->attachment->node->user.ptr;
+        ik_Node* node = self->attachment->node->user_data;
         return Py_INCREF(node), (PyObject*)node;
     }
 

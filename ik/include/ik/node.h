@@ -1,5 +1,4 @@
-#ifndef IK_NODE_H
-#define IK_NODE_H
+#pragma once
 
 #include "ik/algorithm.h"
 #include "ik/constraint.h"
@@ -9,13 +8,13 @@
 #include "ik/refcount.h"
 #include "ik/quat.h"
 #include "ik/vec3.h"
-#include "cstructures/btree.h"
+#include "cstructures/vector.h"
 
-#define NODE_FOR_EACH(node, userdata, child) \
-    BTREE_FOR_EACH(&(node)->children, struct ik_node*, userdata, p##child) \
+#define NODE_FOR_EACH(node, child) \
+    VECTOR_FOR_EACH(&(node)->children, struct ik_node*, p##child) \
     struct ik_node* child = *p##child; (void)child; {
 
-#define NODE_END_EACH } BTREE_END_EACH
+#define NODE_END_EACH } VECTOR_END_EACH
 
 C_BEGIN
 
@@ -24,11 +23,6 @@ struct ik_constraint;
 struct ik_effector;
 struct ik_pole;
 
-union ik_node_user_data {
-    void* ptr;
-    uintptr_t guid;
-};
-
 /*!
  * @brief Base structure used to build the tree to be solved.
  */
@@ -36,7 +30,7 @@ struct ik_node
 {
     IK_REFCOUNTED_HEAD
 
-    union ik_node_user_data user;
+    void* user_data;
 
     struct ik_algorithm* algorithm;
     struct ik_constraint* constraint;
@@ -50,7 +44,7 @@ struct ik_node
     ikreal mass;
 
     struct ik_node* parent;
-    struct cs_btree children;  /* holds ik_node* objects */
+    struct cs_vector children;  /* holds ik_node* objects */
 };
 
 struct ik_pose
@@ -82,7 +76,7 @@ ik_pose_apply(const struct ik_pose* state, struct ik_node* root);
  * generate a random integer if you don't care.
  */
 IK_PUBLIC_API struct ik_node*
-ik_node_create(union ik_node_user_data user);
+ik_node_create(void);
 
 /*!
  * @brief Creates a new node, attaches it as a child to the specified node,
@@ -90,7 +84,7 @@ ik_node_create(union ik_node_user_data user);
  * later to search for nodes in the tree or to store user data for later access.
  */
 IK_PUBLIC_API struct ik_node*
-ik_node_create_child(struct ik_node* parent, union ik_node_user_data user);
+ik_node_create_child(struct ik_node* parent);
 
 /*!
  * @brief Attaches a node as a child to another node. The parent node gains
@@ -115,15 +109,14 @@ ik_node_unlink(struct ik_node* node);
 IK_PUBLIC_API void
 ik_node_unlink_all_children(struct ik_node* node);
 
-static inline uint32_t
-ik_node_child_count(const struct ik_node* node) {
-    return btree_count(&node->children);
-}
+IK_PUBLIC_API struct ik_node*
+ik_node_find(struct ik_node* node, const void* user_data);
 
-static inline struct ik_node*
-ik_node_get_child(struct ik_node* node, uint32_t idx) {
-    return *(struct ik_node**)BTREE_VALUE(&node->children, idx);
-}
+#define  ik_node_child_count(node) \
+    vector_count(&node->children)
+
+#define ik_node_get_child(node, idx) \
+    (*(struct ik_node**)vector_get_element(&node->children, idx))
 
 IK_PUBLIC_API uint32_t
 ik_node_count(const struct ik_node* node);
@@ -133,15 +126,6 @@ ik_node_count(const struct ik_node* node);
  */
 IK_PUBLIC_API struct ik_node*
 ik_node_pack(const struct ik_node* root);
-
-/*!
- * @brief Searches recursively for a node in a tree with the specified global
- * identifier.
- * @return Returns NULL if the node was not found, otherwise the node is
- * returned.
- */
-IK_PUBLIC_API struct ik_node*
-ik_node_find(struct ik_node* node, union ik_node_user_data user);
 
 /*!
  * @brief The constraint is attached to the specified node.
@@ -191,20 +175,4 @@ ik_node_find(struct ik_node* node, union ik_node_user_data user);
 #undef X
 #undef X1
 
-static inline union ik_node_user_data
-ik_guid(uint32_t guid) {
-    union ik_node_user_data user;
-    user.guid = guid;
-    return user;
-}
-
-static inline union ik_node_user_data
-ik_ptr(void* ptr) {
-    union ik_node_user_data user;
-    user.ptr = ptr;
-    return user;
-}
-
 C_END
-
-#endif /* IK_NODE_H */

@@ -86,16 +86,16 @@ class NAME : public Test
 public:
     ik_node* tree_without_effectors()
     {
-        ik_node* tree = ik_node_create(ik_guid(0));
-        ik_node* n1 = ik_node_create_child(tree, ik_guid(1));
-        ik_node* n2 = ik_node_create_child(n1, ik_guid(2));
-        ik_node* n3 = ik_node_create_child(n2, ik_guid(3));
-        ik_node* n4 = ik_node_create_child(n3, ik_guid(4));
-        ik_node* n5 = ik_node_create_child(n4, ik_guid(5));
-        ik_node* n6 = ik_node_create_child(n5, ik_guid(6));
-        ik_node* n7 = ik_node_create_child(n3, ik_guid(7));
-        ik_node* n8 = ik_node_create_child(n7, ik_guid(8));
-        ik_node* n9 = ik_node_create_child(n8, ik_guid(9));
+        ik_node* tree = ik_node_create();          tree->user_data = (void*)0;
+        ik_node* n1 = ik_node_create_child(tree);  n1->user_data = (void*)1;
+        ik_node* n2 = ik_node_create_child(n1);    n2->user_data = (void*)2;
+        ik_node* n3 = ik_node_create_child(n2);    n3->user_data = (void*)3;
+        ik_node* n4 = ik_node_create_child(n3);    n4->user_data = (void*)4;
+        ik_node* n5 = ik_node_create_child(n4);    n5->user_data = (void*)5;
+        ik_node* n6 = ik_node_create_child(n5);    n6->user_data = (void*)6;
+        ik_node* n7 = ik_node_create_child(n3);    n7->user_data = (void*)7;
+        ik_node* n8 = ik_node_create_child(n7);    n8->user_data = (void*)8;
+        ik_node* n9 = ik_node_create_child(n8);    n9->user_data = (void*)9;
         return tree;
     }
 
@@ -103,8 +103,8 @@ public:
     {
         ik_node *tree, *n6, *n9;
         tree = tree_without_effectors();
-        n6 = ik_node_find(tree, ik_guid(6));
-        n9 = ik_node_find(tree, ik_guid(9));
+        n6 = ik_node_find(tree, (void*)6);
+        n9 = ik_node_find(tree, (void*)9);
 
         ik_node_create_effector(n6);
         ik_node_create_effector(n9);
@@ -117,8 +117,8 @@ public:
     {
         ik_node *tree, *n6, *n9;
         tree = tree_without_effectors();
-        n6 = ik_node_find(tree, ik_guid(6));
-        n9 = ik_node_find(tree, ik_guid(9));
+        n6 = ik_node_find(tree, (void*)6);
+        n9 = ik_node_find(tree, (void*)9);
 
         ik_node_create_effector(n6);
         ik_node_create_effector(n9);
@@ -144,17 +144,17 @@ public:
          *               |
          *               0
          */
-        ik_node* tree = ik_node_create(ik_guid(0));
-        ik_node* b1 = ik_node_create_child(tree, ik_guid(1));
-        b1 = ik_node_create_child(b1, ik_guid(2));
-        ik_node* b2 = ik_node_create_child(b1, ik_guid(3));
-        b2 = ik_node_create_child(b2, ik_guid(4));
-        ik_node* e1 = ik_node_create_child(b2, ik_guid(5));
-        e1 = ik_node_create_child(e1, ik_guid(6));
-        ik_node* e2 = ik_node_create_child(b2, ik_guid(7));
-        e2 = ik_node_create_child(e2, ik_guid(8));
-        ik_node* e3 = ik_node_create_child(b1, ik_guid(9));
-        e3 = ik_node_create_child(e3, ik_guid(10));
+        ik_node* tree = ik_node_create();
+        ik_node* b1 = ik_node_create_child(tree);
+        b1 = ik_node_create_child(b1);
+        ik_node* b2 = ik_node_create_child(b1);
+        b2 = ik_node_create_child(b2);
+        ik_node* e1 = ik_node_create_child(b2);
+        e1 = ik_node_create_child(e1);
+        ik_node* e2 = ik_node_create_child(b2);
+        e2 = ik_node_create_child(e2);
+        ik_node* e3 = ik_node_create_child(b1);
+        e3 = ik_node_create_child(e3);
 
         ik_node_create_effector(e1);
         ik_node_create_effector(e2);
@@ -180,17 +180,17 @@ public:
          *           |
          *           0
          */
-        ik_node* tree = ik_node_create(ik_guid(0));
-        ik_node* b1 = ik_node_create_child(tree, ik_guid(1));
-        b1 = ik_node_create_child(b1, ik_guid(2));
-        ik_node* e1 = ik_node_create_child(b1, ik_guid(3));
-        e1 = ik_node_create_child(e1, ik_guid(4));
-        ik_node* b2 = ik_node_create_child(b1, ik_guid(5));
-        b2 = ik_node_create_child(b2, ik_guid(6));
-        ik_node* e2 = ik_node_create_child(b2, ik_guid(7));
-        e2 = ik_node_create_child(e2, ik_guid(8));
-        ik_node* e3 = ik_node_create_child(b2, ik_guid(9));
-        e3 = ik_node_create_child(e3, ik_guid(10));
+        ik_node* tree = ik_node_create();
+        ik_node* b1 = ik_node_create_child(tree);
+        b1 = ik_node_create_child(b1);
+        ik_node* e1 = ik_node_create_child(b1);
+        e1 = ik_node_create_child(e1);
+        ik_node* b2 = ik_node_create_child(b1);
+        b2 = ik_node_create_child(b2);
+        ik_node* e2 = ik_node_create_child(b2);
+        e2 = ik_node_create_child(e2);
+        ik_node* e3 = ik_node_create_child(b2);
+        e3 = ik_node_create_child(e3);
 
         ik_node_create_effector(e1);
         ik_node_create_effector(e2);
@@ -224,8 +224,8 @@ TEST_F(NAME, no_action_if_tree_has_no_effectors_or_algorithms)
 TEST_F(NAME, no_action_if_tree_has_no_algorithms)
 {
     ik::Ref<ik_node> tree = tree_without_effectors();
-    ik::Ref<ik_node> n6 = ik_node_find(tree, ik_guid(6));
-    ik::Ref<ik_node> n9 = ik_node_find(tree, ik_guid(9));
+    ik::Ref<ik_node> n6 = ik_node_find(tree, (void*)6);
+    ik::Ref<ik_node> n9 = ik_node_find(tree, (void*)9);
 
     ik_effector* eff1 = ik_node_create_effector(n6);
     ik_effector* eff2 = ik_node_create_effector(n9);
@@ -249,7 +249,7 @@ TEST_F(NAME, check_refcounts_are_correct)
 TEST_F(NAME, always_find_root_most_algorithm)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
-    ik::Ref<ik_node> n2 = ik_node_find(tree, ik_guid(2));
+    ik::Ref<ik_node> n2 = ik_node_find(tree, (void*)2);
 
     ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
     ik_algorithm* a2 = ik_node_create_algorithm(n2, "dummy2");
@@ -280,10 +280,10 @@ TEST_F(NAME, choose_next_available_algorithm_after_chain_ends_exact)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
 
-    ik::Ref<ik_node> n2 = ik_node_find(tree, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_find(tree, ik_guid(3));
-    ik::Ref<ik_node> n6 = ik_node_find(tree, ik_guid(6));
-    ik::Ref<ik_node> n9 = ik_node_find(tree, ik_guid(9));
+    ik::Ref<ik_node> n2 = ik_node_find(tree, (void*)2);
+    ik::Ref<ik_node> n3 = ik_node_find(tree, (void*)3);
+    ik::Ref<ik_node> n6 = ik_node_find(tree, (void*)6);
+    ik::Ref<ik_node> n9 = ik_node_find(tree, (void*)9);
 
     ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
     ik_algorithm* a2 = ik_node_create_algorithm(n3, "dummy2");
@@ -326,10 +326,10 @@ TEST_F(NAME, choose_next_available_algorithm_after_chain_ends)
 {
     ik::Ref<ik_node> tree = tree_with_two_effectors_and_no_algorithms();
 
-    ik::Ref<ik_node> n2 = ik_node_find(tree, ik_guid(2));
-    ik::Ref<ik_node> n4 = ik_node_find(tree, ik_guid(4));
-    ik::Ref<ik_node> n6 = ik_node_find(tree, ik_guid(6));
-    ik::Ref<ik_node> n9 = ik_node_find(tree, ik_guid(9));
+    ik::Ref<ik_node> n2 = ik_node_find(tree, (void*)2);
+    ik::Ref<ik_node> n4 = ik_node_find(tree, (void*)4);
+    ik::Ref<ik_node> n6 = ik_node_find(tree, (void*)6);
+    ik::Ref<ik_node> n9 = ik_node_find(tree, (void*)9);
 
     ik_algorithm* a1 = ik_node_create_algorithm(tree, "dummy1");
     ik_algorithm* a2 = ik_node_create_algorithm(n4, "dummy2");
@@ -374,9 +374,9 @@ TEST_F(NAME, choose_next_available_algorithm_after_chain_ends)
 
 TEST_F(NAME, ignore_effector_on_root_node)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,  ik_guid(2));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
 
     ik_effector* e1 = ik_node_create_effector(tree);
     ik_effector* e2 = ik_node_create_effector(n2);
@@ -399,13 +399,13 @@ TEST_F(NAME, ignore_effector_on_root_node)
 
 TEST_F(NAME, split_trees_on_effectors)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3,   ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n4,   ik_guid(5));
-    ik::Ref<ik_node> n6 = ik_node_create_child(n5,   ik_guid(6));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4);
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5);
 
     ik_effector* e1 = ik_node_create_effector(n2);
     ik_effector* e2 = ik_node_create_effector(n3);
@@ -455,13 +455,13 @@ TEST_F(NAME, split_trees_on_effectors)
 
 TEST_F(NAME, split_trees_on_effectors_and_choose_new_algorithm)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3,   ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n4,   ik_guid(5));
-    ik::Ref<ik_node> n6 = ik_node_create_child(n5,   ik_guid(6));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4);
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5);
 
     ik_effector* e1 = ik_node_create_effector(n2);
     ik_effector* e2 = ik_node_create_effector(n3);
@@ -515,13 +515,13 @@ TEST_F(NAME, split_trees_on_effectors_and_choose_new_algorithm)
 
 TEST_F(NAME, missing_root_algorithm)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3,   ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n4,   ik_guid(5));
-    ik::Ref<ik_node> n6 = ik_node_create_child(n5,   ik_guid(6));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4);
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5);
 
     ik_effector* e1 = ik_node_create_effector(n2);
     ik_effector* e2 = ik_node_create_effector(n3);
@@ -568,10 +568,10 @@ TEST_F(NAME, missing_root_algorithm)
 
 TEST_F(NAME, ignore_parents_of_root_node)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
 
     ik_effector* e = ik_node_create_effector(n3);
     ik_algorithm* a = ik_node_create_algorithm(tree, "dummy1");
@@ -597,11 +597,11 @@ TEST_F(NAME, ignore_parents_of_root_node)
 
 TEST_F(NAME, chain_ending_in_middle_of_second_chain_creates_two_solvers)
 {
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1,   ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2,   ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n1,   ik_guid(4));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n1);
 
     ik_effector* e1 = ik_node_create_effector(n3);
     ik_effector* e2 = ik_node_create_effector(n4);
@@ -654,7 +654,7 @@ TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
 {
     ik_node *tree, *n1, *n2, *dead3, *n4, *n5, *dead6, *dead7, *dead8, *dead9, *dead10, *dead11, *dead12, *dead13;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> tree = ik_node_create();
     ik::Ref<ik_node> n1 = ik_node_create_child(    tree,  ik_guid(1));
     ik::Ref<ik_node> n2 = ik_node_create_child(    n1,    ik_guid(2));
     ik::Ref<ik_node> dead3 = ik_node_create_child( n2,    ik_guid(3));
@@ -664,10 +664,10 @@ TEST_F(NAME, split_tree_can_be_flattened_multiple_times)
     ik::Ref<ik_node> dead7 = ik_node_create_child( tree,  ik_guid(7));
     ik::Ref<ik_node> dead8 = ik_node_create_child( n1,    ik_guid(8));
     ik::Ref<ik_node> dead9 = ik_node_create_child( n2,    ik_guid(9));
-    ik::Ref<ik_node> dead10 = ik_node_create_child(dead3, ik_guid(10));
+    ik::Ref<ik_node> dead10 = ik_node_create_child(dead3);
     ik::Ref<ik_node> dead11 = ik_node_create_child(n4,    ik_guid(11));
     ik::Ref<ik_node> dead12 = ik_node_create_child(n5,    ik_guid(12));
-    ik::Ref<ik_node> dead13 = ik_node_create_child(dead6, ik_guid(13));
+    ik::Ref<ik_node> dead13 = ik_node_create_child(dead6);
 
     ik_effector *e1, *e2;
     ik_node_create_effector(&e1, n2);
@@ -744,8 +744,8 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths)
     ik_solver solver;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
     ik::Ref<ik_node> n2 = ik_node_create_child( n1,  ik_guid(2));
     ik::Ref<ik_node> n3 = ik_node_create_child( n2,  ik_guid(3));
     ik::Ref<ik_node> n4 = ik_node_create_child( n3,  ik_guid(4));
@@ -824,8 +824,8 @@ TEST_F(NAME, ignore_effector_on_root_node_with_dead_nodes)
     ik_solver solver;
     ik_node *tree, *n1, *n2, *n3, *n4;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
     ik::Ref<ik_node> n2 = ik_node_create_child(n1,  ik_guid(2));
     ik::Ref<ik_node> n3 = ik_node_create_child(tree,  ik_guid(3));
     ik::Ref<ik_node> n4 = ik_node_create_child(n1,  ik_guid(4));
@@ -867,7 +867,7 @@ TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
     ik_solver solver;
     ik_node *tree, *n1, *n2, *dead3, *n4, *n5, *dead6, *dead7, *dead8, *dead9, *dead10, *dead11, *dead12, *dead13;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> tree = ik_node_create();
     ik::Ref<ik_node> n1 = ik_node_create_child(    tree,  ik_guid(1));
     ik::Ref<ik_node> n2 = ik_node_create_child(    n1,    ik_guid(2));
     ik::Ref<ik_node> dead3 = ik_node_create_child( n2,    ik_guid(3));
@@ -877,10 +877,10 @@ TEST_F(NAME, split_trees_on_effectors_with_dead_nodes)
     ik::Ref<ik_node> dead7 = ik_node_create_child( tree,  ik_guid(7));
     ik::Ref<ik_node> dead8 = ik_node_create_child( n1,    ik_guid(8));
     ik::Ref<ik_node> dead9 = ik_node_create_child( n2,    ik_guid(9));
-    ik::Ref<ik_node> dead10 = ik_node_create_child(dead3, ik_guid(10));
+    ik::Ref<ik_node> dead10 = ik_node_create_child(dead3);
     ik::Ref<ik_node> dead11 = ik_node_create_child(n4,    ik_guid(11));
     ik::Ref<ik_node> dead12 = ik_node_create_child(n5,    ik_guid(12));
-    ik::Ref<ik_node> dead13 = ik_node_create_child(dead6, ik_guid(13));
+    ik::Ref<ik_node> dead13 = ik_node_create_child(dead6);
 
     ik_effector *e1, *e2;
     ik_node_create_effector(&e1, n2);
@@ -954,8 +954,8 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
     ik_solver solver;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *dead6, *dead7, *dead8, *dead9, *dead10, *dead11, *dead12, *dead13;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
     ik::Ref<ik_node> n2 = ik_node_create_child(n1,  ik_guid(2));
     ik::Ref<ik_node> n3 = ik_node_create_child(n2,  ik_guid(3));
     ik::Ref<ik_node> n4 = ik_node_create_child(n3,  ik_guid(4));
@@ -1049,13 +1049,13 @@ TEST_F(NAME, split_trees_on_effectors_with_chain_lengths_with_dead_nodes)
 TEST_F(NAME, split_trees_with_dead_nodes)
 {
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6;
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n4, ik_guid(5));
-    ik::Ref<ik_node> n6 = ik_node_create_child(n5, ik_guid(6));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n4);
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5);
 
     ik_effector *e1, *e2;
     ik_effector_create(&e1);
@@ -1259,8 +1259,8 @@ TEST_F(NAME, check_solver_order_for_disjoint_trees_llrr)
     ik_solver solver;
     ik_node *tree, *n1, *n2, *n3, *n4, *n5, *n6, *n7, *n8, *n9, *n10, *n11, *n12, *n13, *n14, *n15;
 
-    ik::Ref<ik_node> tree = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(tree, ik_guid(1));
+    ik::Ref<ik_node> tree = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(tree);
     ik::Ref<ik_node> n2 = ik_node_create_child( n1,  ik_guid(2));
     ik::Ref<ik_node> n3 = ik_node_create_child( n2,  ik_guid(3));
     ik::Ref<ik_node> n4 = ik_node_create_child( n3,  ik_guid(4));
@@ -1270,11 +1270,11 @@ TEST_F(NAME, check_solver_order_for_disjoint_trees_llrr)
     ik::Ref<ik_node> n8 = ik_node_create_child( n5,  ik_guid(8));
     ik::Ref<ik_node> n9 = ik_node_create_child( n8,  ik_guid(9));
     ik::Ref<ik_node> n10 = ik_node_create_child(n2,  ik_guid(10));
-    ik::Ref<ik_node> n11 = ik_node_create_child(n10, ik_guid(11));
-    ik::Ref<ik_node> n12 = ik_node_create_child(n11, ik_guid(12));
-    ik::Ref<ik_node> n13 = ik_node_create_child(n12, ik_guid(13));
-    ik::Ref<ik_node> n14 = ik_node_create_child(n11, ik_guid(14));
-    ik::Ref<ik_node> n15 = ik_node_create_child(n14, ik_guid(15));
+    ik::Ref<ik_node> n11 = ik_node_create_child(n10);
+    ik::Ref<ik_node> n12 = ik_node_create_child(n11);
+    ik::Ref<ik_node> n13 = ik_node_create_child(n12);
+    ik::Ref<ik_node> n14 = ik_node_create_child(n11);
+    ik::Ref<ik_node> n15 = ik_node_create_child(n14);
 
     ik_effector *e1, *e2, *e3, *e4, *e5;
     ik_node_create_effector(&e1, n7);

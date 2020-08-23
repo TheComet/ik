@@ -52,10 +52,10 @@ protected:
 
 TEST_F(NAME, reach_target_colinear_segments)
 {
-    ik::Ref<ik_node> root = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> base = ik_node_create_child(root, ik_guid(1));
-    ik::Ref<ik_node> mid = ik_node_create_child(base, ik_guid(2));
-    ik::Ref<ik_node> tip = ik_node_create_child(mid, ik_guid(3));
+    ik::Ref<ik_node> root = ik_node_create();
+    ik::Ref<ik_node> base = ik_node_create_child(root);
+    ik::Ref<ik_node> mid = ik_node_create_child(base);
+    ik::Ref<ik_node> tip = ik_node_create_child(mid);
     ik::Ref<ik_effector> e = ik_node_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_TWO_BONE);
 
@@ -90,10 +90,10 @@ TEST_F(NAME, reach_target_colinear_segments)
 
 TEST_F(NAME, reach_target_coplanar_segments)
 {
-    ik::Ref<ik_node> root = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> base = ik_node_create_child(root, ik_guid(1));
-    ik::Ref<ik_node> mid = ik_node_create_child(base, ik_guid(2));
-    ik::Ref<ik_node> tip = ik_node_create_child(mid, ik_guid(3));
+    ik::Ref<ik_node> root = ik_node_create();
+    ik::Ref<ik_node> base = ik_node_create_child(root);
+    ik::Ref<ik_node> mid = ik_node_create_child(base);
+    ik::Ref<ik_node> tip = ik_node_create_child(mid);
     ik::Ref<ik_effector> e = ik_node_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_TWO_BONE);
 

@@ -30,7 +30,7 @@ protected:
 
 TEST_F(NAME, single_node)
 {
-    ik::Ref<ik_node> node = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> node = ik_node_create();
     subtree_set_root(&subtree, node);
     subtree_add_leaf(&subtree, node);
 
@@ -44,8 +44,8 @@ TEST_F(NAME, single_node)
 
 TEST_F(NAME, two_nodes)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n1);
@@ -62,11 +62,11 @@ TEST_F(NAME, two_nodes)
 
 TEST_F(NAME, omit_first_and_last)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
 
     subtree_set_root(&subtree, n1);
     subtree_add_leaf(&subtree, n3);
@@ -89,11 +89,11 @@ TEST_F(NAME, omit_first_and_last)
 
 TEST_F(NAME, ignore_branch_not_part_of_subtree)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n2, ik_guid(4));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n2);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
@@ -110,12 +110,12 @@ TEST_F(NAME, ignore_branch_not_part_of_subtree)
 
 TEST_F(NAME, children_of_leaf_nodes_are_not_added_as_dead_nodes)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n3, ik_guid(5));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n3);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
@@ -132,11 +132,11 @@ TEST_F(NAME, children_of_leaf_nodes_are_not_added_as_dead_nodes)
 
 TEST_F(NAME, children_of_base_node_are_not_added_as_dead_nodes)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n0, ik_guid(3));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n0);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
@@ -153,11 +153,11 @@ TEST_F(NAME, children_of_base_node_are_not_added_as_dead_nodes)
 
 TEST_F(NAME, two_arms)
 {
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n2, ik_guid(4));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n2);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
@@ -196,15 +196,15 @@ TEST_F(NAME, two_arms_with_dead_nodes)
      *         |
      *         n0 <- a1
      */
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n2, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
-    ik::Ref<ik_node> n5 = ik_node_create_child(n2, ik_guid(5));
-    ik::Ref<ik_node> n6 = ik_node_create_child(n5, ik_guid(6));
-    ik::Ref<ik_node> n7 = ik_node_create_child(n2, ik_guid(7));
-    ik::Ref<ik_node> n8 = ik_node_create_child(n2, ik_guid(8));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
+    ik::Ref<ik_node> n5 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n6 = ik_node_create_child(n5);
+    ik::Ref<ik_node> n7 = ik_node_create_child(n2);
+    ik::Ref<ik_node> n8 = ik_node_create_child(n2);
 
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);

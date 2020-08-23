@@ -66,8 +66,8 @@ public:
 
     Chain MakeOneBone(ik::Ref<ik_node>* base, ik::Ref<ik_node>* tip)
     {
-        *base = ik_node_create(ik_guid(0));
-        *tip  = ik_node_create_child(*base, ik_guid(1));
+        *base = ik_node_create();
+        *tip  = ik_node_create_child(*base);
 
         ik_vec3_set((*tip)->position.f, 0, 0, 2);
 
@@ -79,9 +79,9 @@ public:
 
     Chain MakeTwoBone(ik::Ref<ik_node>* base, ik::Ref<ik_node>* mid, ik::Ref<ik_node>* tip)
     {
-        *base = ik_node_create(ik_guid(0));
-        *mid  = ik_node_create_child(*base, ik_guid(1));
-        *tip  = ik_node_create_child(*mid, ik_guid(2));
+        *base = ik_node_create();
+        *mid  = ik_node_create_child(*base);
+        *tip  = ik_node_create_child(*mid);
 
         ik_vec3_set((*mid)->position.f, 0, 0, 2);
         ik_vec3_set((*tip)->position.f, 0, 0, 2);
@@ -94,10 +94,10 @@ public:
 
     Chain MakeOneBoneSplit(ik::Ref<ik_node>* base, ik::Ref<ik_node>* mid, ik::Ref<ik_node>* tipl, ik::Ref<ik_node>* tipr)
     {
-        *base = ik_node_create(ik_guid(0));
-        *mid  = ik_node_create_child(*base, ik_guid(1));
-        *tipl  = ik_node_create_child(*mid, ik_guid(2));
-        *tipr  = ik_node_create_child(*mid, ik_guid(3));
+        *base = ik_node_create();
+        *mid  = ik_node_create_child(*base);
+        *tipl = ik_node_create_child(*mid);
+        *tipr = ik_node_create_child(*mid);
 
         ik_vec3_set((*mid)->position.f, 0, 0, 2);
         ik_vec3_set((*tipl)->position.f, 0, 0, 2);

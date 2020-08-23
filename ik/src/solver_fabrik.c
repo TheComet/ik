@@ -42,7 +42,7 @@ validate_poles_recursive(const struct ik_solver_fabrik* solver, const struct ik_
             continue;
         if (node->pole != NULL)
         {
-            ik_log_printf(IK_WARN, "(\"%s\" algorithm): Pole attached to node (ptr: 0x%p, guid: %d) has no effect and will be ignored.", solver->impl.name, node->user.ptr, node->user.guid);
+            ik_log_printf(IK_WARN, "FABRIK: Pole attached to node (address: 0x%p) has no effect and will be ignored.", node);
             poles_found++;
         }
     CHAIN_END_EACH
@@ -54,7 +54,7 @@ validate_poles(const struct ik_solver_fabrik* solver)
 {
     if (validate_poles_recursive(solver, &solver->chain_tree))
     {
-        ik_log_printf(IK_WARN, "(\"%s\" algorithm): Poles only make sense when attached to the end of chains, such as effector nodes, or nodes with multiple children.", solver->impl.name);
+        ik_log_printf(IK_WARN, "FABRIK: Poles only make sense when attached to the end of chains, such as effector nodes, or nodes with multiple children.");
     }
 }
 
@@ -325,6 +325,7 @@ solve_chain_backwards_constraints(struct ik_solver_fabrik* solver, union ik_vec3
 static void
 solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
 {
+    uint32_t i = 2;
     CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
         ikreal dist;
         union ik_vec3 dir;
@@ -344,13 +345,14 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         ik_quat_angle_of_nn(delta.f, dir.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
 
-        /* Calculate new target position *
-        ik_vec3_mul_scalar(dir.f, child->position.v.z);
-        ik_vec3_add_vec3(target.f, dir.f);
-        ik_vec3_sub_vec3(target.f, child->position.f);
-        ik_vec3_rotate_quat(target.f, delta.f);
-        ik_vec3_add_vec3(target.f, child->position.f);*/
+        if (i < chain_node_count(chain))
+        {
+            struct ik_node* grandchild = chain_get_node(chain, i);
+            ik_quat_mul_quat_conj(grandchild->rotation.f, delta.f);
+        }
+        ++i;
 
+        /* Calculate new target position */
         ik_vec3_mul_scalar(dir.f, child->position.v.z);
         ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
@@ -471,7 +473,7 @@ fabrik_solve(struct ik_solver* solver_base)
     while (iteration-- > 0)
     {
         union ik_vec3 base_pos = solve_chain_forwards(solver);
-        //solve_chain_backwards_constraints(solver, base_pos);
+        //solve_chain_backwards(solver, base_pos);
 
         /*if (alg->features & IK_ALGORITHM_CONSTRAINTS)
             solve_chain_backwards_constraints(solver, base_pos);

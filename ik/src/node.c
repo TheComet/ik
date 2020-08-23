@@ -9,8 +9,6 @@
 #include <string.h>
 #include <assert.h>
 
-#define GUID(n) (cs_btree_key)((n)->user.guid)
-
 /* ------------------------------------------------------------------------- */
 static void
 ik_node_deinit(struct ik_node* node)
@@ -18,7 +16,7 @@ ik_node_deinit(struct ik_node* node)
     assert(node);
 
     /* Unref children */
-    NODE_FOR_EACH(node, user_data, child)
+    NODE_FOR_EACH(node, child)
         IK_DECREF(child);
     NODE_END_EACH
 
@@ -30,7 +28,7 @@ ik_node_deinit(struct ik_node* node)
 #undef X1
 
     /* deinit */
-    btree_deinit(&node->children);
+    vector_deinit(&node->children);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -43,14 +41,14 @@ ik_node_destroy(struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 struct ik_node*
-ik_node_create(union ik_node_user_data user)
+ik_node_create(void)
 {
     struct ik_node* node = (struct ik_node*)
         ik_refcounted_alloc(sizeof *node, (ik_deinit_func)ik_node_deinit);
     if (node == NULL)
         return NULL;
 
-    node->user = user;
+    node->user_data = NULL;
     node->algorithm = NULL;
     node->constraint = NULL;
     node->effector = NULL;
@@ -63,17 +61,17 @@ ik_node_create(union ik_node_user_data user)
     node->mass = 1.0;
 
     node->parent = NULL;
-    btree_init(&node->children, sizeof(struct ik_node*));
+    vector_init(&node->children, sizeof(struct ik_node*));
 
     return node;
 }
 
 /* ------------------------------------------------------------------------- */
 struct ik_node*
-ik_node_create_child(struct ik_node* parent, union ik_node_user_data user)
+ik_node_create_child(struct ik_node* parent)
 {
     struct ik_node* child;
-    if ((child = ik_node_create(user)) == NULL)
+    if ((child = ik_node_create()) == NULL)
         goto create_child_failed;
     if (ik_node_link(parent, child) != 0)
         goto add_child_failed;
@@ -91,9 +89,9 @@ ik_node_link(struct ik_node* node, struct ik_node* child)
     assert(node);
     assert(child);
 
-    if (btree_insert_new(&node->children, GUID(child), &child) != BTREE_OK)
+    if (vector_push(&node->children, &child) != 0)
     {
-        ik_log_printf(IK_ERROR, "Failed to link node with guid %d as child of node with guid %d", GUID(child), GUID(node));
+        ik_log_out_of_memory("ik_node_link()");
         return -1;
     }
 
@@ -122,12 +120,16 @@ ik_node_can_link(const struct ik_node* parent, const struct ik_node* child)
 void
 ik_node_unlink(struct ik_node* node)
 {
+    cs_vec_idx idx;
     assert(node);
 
     if (node->parent == NULL)
         return;
 
-    btree_erase(&node->parent->children, GUID(node));
+    idx = vector_find_element(&node->parent->children, &node);
+    if (idx != vector_count(&node->parent->children))
+        vector_erase_index(&node->parent->children, idx);
+
     node->parent = NULL;
     IK_DECREF(node);
 }
@@ -136,11 +138,11 @@ ik_node_unlink(struct ik_node* node)
 void
 ik_node_unlink_all_children(struct ik_node* node)
 {
-    NODE_FOR_EACH(node, user, child)
+    NODE_FOR_EACH(node, child)
         child->parent = NULL;
         IK_DECREF(child);
     NODE_END_EACH
-    btree_clear(&node->children);
+    vector_clear(&node->children);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -148,7 +150,7 @@ uint32_t
 ik_node_count(const struct ik_node* node)
 {
     uint32_t count = 1;
-    NODE_FOR_EACH(node, user, child)
+    NODE_FOR_EACH(node, child)
         count += ik_node_count(child);
     NODE_END_EACH
     return count;
@@ -167,20 +169,15 @@ ik_node_pack(const struct ik_node* root)
 
 /* ------------------------------------------------------------------------- */
 struct ik_node*
-ik_node_find(struct ik_node* node, union ik_node_user_data user)
+ik_node_find(struct ik_node* node, const void* user_data)
 {
-    /* O(log(n)) search of children */
-    struct ik_node** found = btree_find(&node->children, user.guid);
-    if (found != NULL)
-        return *found;
-
     /* might be searching for this node? */
-    if (GUID(node) == user.guid)
+    if (node->user_data == user_data)
         return (struct ik_node*)node;
 
-    NODE_FOR_EACH(node, child_guid, child)
+    NODE_FOR_EACH(node, child)
         struct ik_node* found_child;
-        if ((found_child = ik_node_find(child, user)) != NULL)
+        if ((found_child = ik_node_find(child, user_data)) != NULL)
             return found_child;
     NODE_END_EACH
 
@@ -268,7 +265,7 @@ ik_pose_alloc(const struct ik_node* root)
 static void
 save_pose(const struct ik_node* node, struct ik_node_state** data)
 {
-    NODE_FOR_EACH(node, user, child)
+    NODE_FOR_EACH(node, child)
         save_pose(child, data);
     NODE_END_EACH
 
@@ -290,7 +287,7 @@ ik_pose_save(struct ik_pose* state, const struct ik_node* root)
 static void
 restore_pose(struct ik_node* node, struct ik_node_state** data)
 {
-    NODE_FOR_EACH(node, user, child)
+    NODE_FOR_EACH(node, child)
         restore_pose(child, data);
     NODE_END_EACH
 

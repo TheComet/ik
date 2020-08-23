@@ -78,7 +78,7 @@ TEST_F(NAME, duplicate_copies_parameters_correctly)
 
 TEST_F(NAME, attach_detach_works)
 {
-    ik::Ref<ik_node> n = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n = ik_node_create();
     ik::Ref<ik_effector> eff = ik_effector_create();
 
     ik_node_attach_effector(n, eff);
@@ -92,8 +92,8 @@ TEST_F(NAME, attach_detach_works)
 
 TEST_F(NAME, reattach_removes_from_previous_node)
 {
-    ik::Ref<ik_node> n1 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(1));
+    ik::Ref<ik_node> n1 = ik_node_create();
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
     ik::Ref<ik_effector> eff = ik_effector_create();
 
     ik_node_attach_effector(n1, eff);
@@ -109,7 +109,7 @@ TEST_F(NAME, reattach_removes_from_previous_node)
 
 TEST_F(NAME, attach_two_effectors_to_same_node)
 {
-    ik::Ref<ik_node> n = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n = ik_node_create();
     ik::Ref<ik_effector> eff1 = ik_effector_create();
     ik::Ref<ik_effector> eff2 = ik_effector_create();
 
@@ -122,7 +122,7 @@ TEST_F(NAME, attach_two_effectors_to_same_node)
 
 TEST_F(NAME, attach_already_attached_effector_again)
 {
-    ik::Ref<ik_node> n = ik_node_create(ik_guid(0));
+    ik::Ref<ik_node> n = ik_node_create();
     ik::Ref<ik_effector> eff = ik_effector_create();
 
     ik_node_attach_effector(n, eff);

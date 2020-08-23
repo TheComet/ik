@@ -35,9 +35,9 @@ def long_chain_example(pos, chain_len, segment_len):
     for i in range(chain_len):
         tip = tip.create_child(position=ik.Vec3(0, 0, segment_len))
 
-    root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi))
+    #root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi))
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, constraints=False)
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=1)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
     return root
 
@@ -56,8 +56,8 @@ def double_effectors_example(pos, chain_len):
         tip2 = tip2.create_child(position=ik.Vec3(0, 0, 50))
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
-    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-chain_len*12, pos[1]-chain_len*50*2), chain_length=chain_len)
-    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+chain_len*12, pos[1]-chain_len*50*2), chain_length=chain_len)
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-chain_len*12, pos[1]-chain_len*50*2))
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+chain_len*12, pos[1]-chain_len*50*2))
 
     return root
 
@@ -174,7 +174,7 @@ def double_embedded_effectors(pos, chain_len):
     mid1.create_child(position=ik.Vec3(0, 0, 50))
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=20)
-    mid1.parent.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]-chain_len*50))
+    mid1.parent.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]-chain_len*50+50))
 
     mid1.algorithm = ik.Algorithm(ik.FABRIK)
     tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-chain_len*12, pos[1]-chain_len*50*2))
@@ -212,8 +212,8 @@ def human_example(pos):
     elbow_l = shoulder_l.create_child(position=ik.Vec3(0, 0, 50))
     hand_l = elbow_l.create_child(position=ik.Vec3(0, 0, 50))
 
-    hand_r.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+40, pos[1]-100), chain_length=0)
-    hand_l.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-40, pos[1]-100), chain_length=0)
+    hand_r.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+40, pos[1]-100), chain_length=5)
+    hand_l.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-40, pos[1]-100), chain_length=5)
 
     neck = spine3.create_child(position=ik.Vec3(0, 0, 20))
 
@@ -230,8 +230,8 @@ class Window(Updateable):
             self,
             #Tree(one_bone_example((100, height - 200))),
             #Tree(two_bone_example((300, height - 200))),
-            #Tree(long_chain_example((width/2, height - 200), 20, 20))
-            Tree(double_effectors_example((700, height - 200), 3)),
+            Tree(long_chain_example((width/2, height - 200), 20, 20))
+            #Tree(double_effectors_example((700, height - 200), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))

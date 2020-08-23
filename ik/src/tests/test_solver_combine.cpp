@@ -15,9 +15,9 @@ TEST(NAME, two_target_one_bones)
      *   \  /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n0, ik_guid(2));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n0);
     ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
     ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
     ik::Ref<ik_effector> e2 = ik_node_create_effector(n2);
@@ -35,11 +35,11 @@ TEST(NAME, two_target_one_bones_with_unaffected_children)
      *   \  /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n0, ik_guid(3));
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3, ik_guid(4));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
     ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
     ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
     ik::Ref<ik_effector> e2 = ik_node_create_effector(n3);
@@ -65,10 +65,10 @@ TEST(NAME, two_target_one_bones_with_third_unaffected_segment)
      *   \ | /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create(ik_guid(0));
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0, ik_guid(1));
-    ik::Ref<ik_node> n2 = ik_node_create_child(n0, ik_guid(2));
-    ik::Ref<ik_node> n3 = ik_node_create_child(n0, ik_guid(3));
+    ik::Ref<ik_node> n0 = ik_node_create();
+    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n2 = ik_node_create_child(n0);
+    ik::Ref<ik_node> n3 = ik_node_create_child(n0);
     ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
     ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
     ik::Ref<ik_effector> e2 = ik_node_create_effector(n3);
