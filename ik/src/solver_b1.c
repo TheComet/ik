@@ -169,21 +169,21 @@ solver_b1_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b1_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
+solver_b1_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
     if (!skip_base)
-        cb(solver->base);
-    cb(solver->tip);
+        visit(solver->base, param);
+    visit(solver->tip, param);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b1_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_b1_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
 {
     struct ik_solver_b1* solver = (struct ik_solver_b1*)solver_base;
 
-    cb(solver->tip);
+    visit(solver->tip, param);
 }
 /* ------------------------------------------------------------------------- */
 static void
@@ -202,7 +202,7 @@ struct ik_solver_interface ik_solver_ONE_BONE = {
     solver_b1_init,
     solver_b1_deinit,
     solver_b1_solve,
-    solver_b1_iterate_nodes,
-    solver_b1_iterate_effector_nodes,
+    solver_b1_visit_nodes,
+    solver_b1_visit_effector_nodes,
     solver_b1_get_first_segment
 };

@@ -197,24 +197,24 @@ solver_b2_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b2_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
+solver_b2_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
     if (!skip_base)
-        cb(solver->base);
+        visit(solver->base, param);
 
-    cb(solver->mid);
-    cb(solver->tip);
+    visit(solver->mid, param);
+    visit(solver->tip, param);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b2_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_b2_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
-    cb(solver->tip);
+    visit(solver->tip, param);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -234,7 +234,7 @@ struct ik_solver_interface ik_solver_TWO_BONE = {
     solver_b2_init,
     solver_b2_deinit,
     solver_b2_solve,
-    solver_b2_iterate_nodes,
-    solver_b2_iterate_effector_nodes,
+    solver_b2_visit_nodes,
+    solver_b2_visit_effector_nodes,
     solver_b2_get_first_segment
 };

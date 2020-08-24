@@ -18,7 +18,7 @@ struct ik_node;
     struct ik_algorithm* algorithm;                                           \
     struct ik_node* root_node;
 
-typedef void(*ik_solver_callback_func)(struct ik_node*);
+typedef void(*ik_visit_node_func)(struct ik_node*, void* param);
 
 struct ik_solver_interface
 {
@@ -42,11 +42,11 @@ struct ik_solver_interface
 
     /*! Call the specified callback function for every node that the solver
      * affects. The order must be from base node to leaf node(s), depth first.
-     * If skip_base is non-zero, then the solver should call cb on every node
+     * If skip_base is non-zero, then the solver should call visit on every node
      * except for the base node. */
-    void (*iterate_nodes)(const struct ik_solver*, ik_solver_callback_func cb, int skip_base);
+    void (*visit_nodes)(const struct ik_solver*, ik_visit_node_func visit, void* param, int skip_base);
 
-    void (*iterate_effector_nodes)(const struct ik_solver*, ik_solver_callback_func cb);
+    void (*visit_effector_nodes)(const struct ik_solver*, ik_visit_node_func visit, void* param);
 
     void (*get_first_segment)(const struct ik_solver*, struct ik_node**, struct ik_node**);
 };
@@ -106,10 +106,10 @@ IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);
 
 IK_PUBLIC_API void
-ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
+ik_solver_visit_nodes(const struct ik_solver* solver, ik_visit_node_func cb, void* param);
 
 IK_PUBLIC_API void
-ik_solver_iterate_effector_nodes(const struct ik_solver* solver, ik_solver_callback_func cb);
+ik_solver_visit_effector_nodes(const struct ik_solver* solver, ik_visit_node_func cb, void* param);
 
 #if defined(IK_BUILDING)
 

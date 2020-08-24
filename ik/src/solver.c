@@ -449,16 +449,16 @@ ik_solver_solve(struct ik_solver* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_iterate_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
+ik_solver_visit_nodes(const struct ik_solver* solver, ik_visit_node_func visit, void* param)
 {
-    solver->impl.iterate_nodes(solver, cb, 0);
+    solver->impl.visit_nodes(solver, visit, param, 0);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_iterate_effector_nodes(const struct ik_solver* solver, ik_solver_callback_func cb)
+ik_solver_visit_effector_nodes(const struct ik_solver* solver, ik_visit_node_func visit, void* param)
 {
-    solver->impl.iterate_effector_nodes(solver, cb);
+    solver->impl.visit_effector_nodes(solver, visit, param);
 }
 
 /* ------------------------------------------------------------------------- */

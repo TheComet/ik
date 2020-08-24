@@ -492,44 +492,44 @@ fabrik_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_iterate_nodes_recursive(const struct ik_chain* chain, ik_solver_callback_func callback)
+fabrik_visit_nodes_recursive(const struct ik_chain* chain, ik_visit_node_func visit, void* param)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        fabrik_iterate_nodes_recursive(child, callback);
+        fabrik_visit_nodes_recursive(child, visit, param);
     CHAIN_END_EACH
 
     /* exclude base node */
     CHAIN_FOR_EACH_NODE_RANGE(chain, node, 0, chain_node_count(chain) - 1)
-        callback(node);
+        visit(node, param);
     CHAIN_END_EACH
 }
 static void
-fabrik_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func callback, int skip_base)
+fabrik_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
-    fabrik_iterate_nodes_recursive(&solver->chain_tree, callback);
+    fabrik_visit_nodes_recursive(&solver->chain_tree, visit, param);
     if (!skip_base)
-        callback(chain_get_base_node(&solver->chain_tree));
+        visit(chain_get_base_node(&solver->chain_tree), param);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_iterate_effector_nodes_recursive(const struct ik_chain* chain, ik_solver_callback_func callback)
+fabrik_visit_effector_nodes_recursive(const struct ik_chain* chain, ik_visit_node_func visit, void* param)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        fabrik_iterate_effector_nodes_recursive(child, callback);
+        fabrik_visit_effector_nodes_recursive(child, visit, param);
     CHAIN_END_EACH
 
     /* All leaves in chain tree have an effector */
     if (chain_child_count(chain) == 0)
-        callback(chain_get_tip_node(chain));
+        visit(chain_get_tip_node(chain), param);
 }
 static void
-fabrik_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func callback)
+fabrik_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func callback, void* param)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
-    fabrik_iterate_effector_nodes_recursive(&solver->chain_tree, callback);
+    fabrik_visit_effector_nodes_recursive(&solver->chain_tree, callback, param);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -549,7 +549,7 @@ struct ik_solver_interface ik_solver_FABRIK = {
     fabrik_init,
     fabrik_deinit,
     fabrik_solve,
-    fabrik_iterate_nodes,
-    fabrik_iterate_effector_nodes,
+    fabrik_visit_nodes,
+    fabrik_visit_effector_nodes,
     fabrik_get_first_segment
 };

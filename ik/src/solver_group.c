@@ -53,7 +53,7 @@ solver_group_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_group_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
+solver_group_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
     unsigned i;
     struct ik_solver** child;
@@ -63,25 +63,25 @@ solver_group_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callba
      * references the base node. We pass skip_base to it */
     i = vector_count(&solver->subsolvers) - 1;
     child = vector_get_element(&solver->subsolvers, i);
-    (*child)->impl.iterate_nodes(*child, cb, skip_base);
+    (*child)->impl.visit_nodes(*child, visit, param, skip_base);
 
     /* Every other solver doesn't reference the base node so explicitely call
      * with skip_base=0 */
     while (i-- > 0)
     {
         child = vector_get_element(&solver->subsolvers, i);
-        (*child)->impl.iterate_nodes(*child, cb, 0);
+        (*child)->impl.visit_nodes(*child, visit, param, 0);
     }
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_group_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_group_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
 {
     const struct ik_solver_group* solver = (const struct ik_solver_group*)solver_base;
 
     VECTOR_FOR_EACH(&solver->subsolvers, struct subsolver, subsolver)
-        subsolver->solver->impl.iterate_effector_nodes(subsolver->solver, cb);
+        subsolver->solver->impl.visit_effector_nodes(subsolver->solver, visit, param);
     VECTOR_END_EACH
 }
 
@@ -100,8 +100,8 @@ struct ik_solver_interface ik_solver_group = {
     solver_group_init,
     solver_group_deinit,
     solver_group_solve,
-    solver_group_iterate_nodes,
-    solver_group_iterate_effector_nodes,
+    solver_group_visit_nodes,
+    solver_group_visit_effector_nodes,
     solver_group_get_first_segment
 };
 

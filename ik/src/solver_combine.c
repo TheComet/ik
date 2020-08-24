@@ -129,7 +129,7 @@ solver_combine_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_combine_iterate_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb, int skip_base)
+solver_combine_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
     unsigned i;
     struct ik_solver* subsolver;
@@ -139,20 +139,20 @@ solver_combine_iterate_nodes(const struct ik_solver* solver_base, ik_solver_call
      * references the base node. We pass skip_base to it */
     i = solver->subsolver_count - 1;
     subsolver = solver->subsolvers[i];
-    subsolver->impl.iterate_nodes(subsolver, cb, skip_base);
+    subsolver->impl.visit_nodes(subsolver, visit, param, skip_base);
 
     /* Every other solver doesn't reference the base node so explicitely call
      * with skip_base=0 */
     while (i-- > 0)
     {
         subsolver = solver->subsolvers[i];
-        subsolver->impl.iterate_nodes(subsolver, cb, 0);
+        subsolver->impl.visit_nodes(subsolver, visit, param, 0);
     }
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_combine_iterate_effector_nodes(const struct ik_solver* solver_base, ik_solver_callback_func cb)
+solver_combine_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
 {
     int i;
     const struct ik_solver_combine* solver = (const struct ik_solver_combine*)solver_base;
@@ -160,7 +160,7 @@ solver_combine_iterate_effector_nodes(const struct ik_solver* solver_base, ik_so
     for (i = 0; i != solver->subsolver_count; ++i)
     {
         struct ik_solver* subsolver = solver->subsolvers[i];
-        subsolver->impl.iterate_effector_nodes(subsolver, cb);
+        subsolver->impl.visit_effector_nodes(subsolver, visit, param);
     }
 }
 
@@ -179,8 +179,8 @@ struct ik_solver_interface ik_solver_combine = {
     solver_combine_init,
     solver_combine_deinit,
     solver_combine_solve,
-    solver_combine_iterate_nodes,
-    solver_combine_iterate_effector_nodes,
+    solver_combine_visit_nodes,
+    solver_combine_visit_effector_nodes,
     solver_combine_get_first_segment
 };
 
