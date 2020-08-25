@@ -12,6 +12,7 @@
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Pole.h"
+#include "ik/python/ik_type_Pose.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
@@ -48,6 +49,7 @@ init_builtin_types(void)
     if (init_ik_ModuleRefType() != 0)      return -1;
     if (init_ik_NodeType() != 0)           return -1;
     if (init_ik_PoleType() != 0)           return -1;
+    if (init_ik_PoseType() != 0)           return -1;
     if (init_ik_QuatType() != 0)           return -1;
     if (init_ik_SolverType() != 0)         return -1;
     if (init_ik_Vec3Type() != 0)           return -1;
@@ -76,6 +78,7 @@ add_builtin_types_to_module(PyObject* m)
     ADD_TYPE(Node);
     ADD_TYPE(Pose);
     ADD_TYPE(Pole);
+    ADD_TYPE(Pose);
     ADD_TYPE(GenericPole);
     ADD_TYPE(BlenderPole);
     ADD_TYPE(MayaPole);

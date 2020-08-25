@@ -32,14 +32,14 @@ mss_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-mss_iterate_nodes(const struct ik_solver* solver_base, ik_visit_node_func callback, int skip_base)
+mss_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
 {
 
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-mss_iterate_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func callback)
+mss_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
 {
 
 }
@@ -58,8 +58,8 @@ struct ik_solver_interface ik_solver_MSS = {
     mss_init,
     mss_deinit,
     mss_solve,
-    mss_iterate_nodes,
-    mss_iterate_effector_nodes,
+    mss_visit_nodes,
+    mss_visit_effector_nodes,
     mss_get_first_segment
 };
 

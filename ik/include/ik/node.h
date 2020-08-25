@@ -10,12 +10,6 @@
 #include "ik/vec3.h"
 #include "cstructures/vector.h"
 
-#define NODE_FOR_EACH(node, child) \
-    VECTOR_FOR_EACH(&(node)->children, struct ik_node*, p##child) \
-    struct ik_node* child = *p##child; (void)child; {
-
-#define NODE_END_EACH } VECTOR_END_EACH
-
 C_BEGIN
 
 struct ik_algorithm;
@@ -47,33 +41,11 @@ struct ik_node
     struct cs_vector children;  /* holds ik_node* objects */
 };
 
-struct ik_pose
-{
-    IK_REFCOUNTED_HEAD
-#ifdef DEBUG
-    int node_count;
-#endif
-};
-
-IK_PUBLIC_API struct ik_pose*
-ik_pose_alloc(const struct ik_node* root);
-
-IK_PUBLIC_API void
-ik_pose_save(struct ik_pose* state, const struct ik_node* root);
-
-IK_PUBLIC_API void
-ik_pose_apply(const struct ik_pose* state, struct ik_node* root);
-
 /*!
  * @brief Creates a new node and returns it. Each node requires a unique
  * identifier.
  * @param[out] node If successful, the address of new node is written to this
  * parameter.
- * @param[in] id Must be a unique value identifying this node. If you are using
- * this library with an existing scene graph, then you can specify the pointer
- * to the corresponding C++ node for this parameter. It can also be a random
- * integer value. As long as it is globally unique. You may use ik_guid() to
- * generate a random integer if you don't care.
  */
 IK_PUBLIC_API struct ik_node*
 ik_node_create(void);
@@ -174,5 +146,11 @@ ik_node_pack(const struct ik_node* root);
     IK_ATTACHMENT_LIST
 #undef X
 #undef X1
+
+#define NODE_FOR_EACH(node, child) \
+    VECTOR_FOR_EACH(&(node)->children, struct ik_node*, p##child) \
+    struct ik_node* child = *p##child; (void)child; {
+
+#define NODE_END_EACH } VECTOR_END_EACH
 
 C_END

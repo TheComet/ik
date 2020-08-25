@@ -46,8 +46,8 @@ static void dummy_deinit(struct ik_solver* solver_base) {
     chain_tree_deinit(&solver->chain_tree);
 }
 static int  dummy_solve(struct ik_solver* solver_base) { return 1; }
-static void dummy_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func cb, int skip_base) {}
-static void dummy_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func cb) {}
+static void dummy_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base) {}
+static void dummy_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param) {}
 static void dummy_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip) { *base = NULL; *tip = NULL; }
 
 const struct ik_solver_interface ik_solver_DUMMY1 = {

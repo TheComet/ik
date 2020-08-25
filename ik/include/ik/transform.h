@@ -71,6 +71,13 @@ ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_n
     }
 }
 
+/*!
+ * @brief Canonicalizes all node transforms and converts rotations from a nodal
+ * representation into a segmental representation. All solvers rely on this
+ * representation.
+ *
+ * @param[out] intermediate_rotations
+ */
 IK_PRIVATE_API void
 ik_transform_chain_to_segmental_representation(struct ik_chain* root,
                                                union ik_quat* intermediate_rotations,
