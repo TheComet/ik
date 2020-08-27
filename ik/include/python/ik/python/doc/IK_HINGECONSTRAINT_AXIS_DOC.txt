@@ -1,1 +1,4 @@
-todo
+A ik.Vec3() type specifying the axis of rotation in local space.
+
+For performance reasons, the axis is always normalized when writing a new value. Thus, reading back the axis will give you a normalized vector.
+

@@ -1,1 +1,6 @@
-todo
+Default value: 0
+
+Specifies how many segments or "bones" this end-effector is allowed to manipulate in order to reach its target. The affected segments form what is known as a "chain".
+
+A value of 0 means "as long as possible". This usually causes all nodes to be included in the chain right down to the root node. The root node is the node passed to ik.Solver(). A chain can terminate earlier if another end-effector is encountered between the root node and this effector.
+

@@ -1,1 +1,4 @@
-todo
+A ik.Vec3() specifying the goal the node this end-effector is attached to should try and reach.
+
+The position is in the same space as the root node (not a child of the root node, but a child of the parent of the root node, i.e. "global space"). If the root node has a parent, then you will have to make sure to transform the target position and rotation into the correct space before calling solver.solve().
+

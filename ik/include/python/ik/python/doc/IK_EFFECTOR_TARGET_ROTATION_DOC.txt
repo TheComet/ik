@@ -1,1 +1,8 @@
-todo
+A ik.Quat() specifying the rotation the node this end-effector is attached to should try and reach.
+
+The algorithm needs to have the target_rotations=True flag enabled or this parameter is ignored.
+
+Solvers will try their best to align the tip segment with the target rotation, however, the target position has priority. If it's not possible to match the target rotation then the chain will "stretch" out in a way to satisfy the target position only.
+
+The rotation is in the same space as the root node (not a child of the root node, but a child of the parent of the root node, i.e. "global space"). If the root node as a parent, then you will have to make sure to transform the target position and rotation into the correct space before calling solver.solve().
+

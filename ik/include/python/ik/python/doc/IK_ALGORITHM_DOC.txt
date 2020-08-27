@@ -1,35 +1,41 @@
-Algorithm objects have two purposes.
- 
-First, they control solver  parameters such as the solver type, tolerance, and
-maximum number of iterations to use.
- 
-Secondly,  they define which parts of the tree  should  be  solved.  For  each
-effector, segments up to the next algorithm are affected. This means  that  if
-you  attach  an algorithm somewhere in the middle of the tree, then the  chain
-will terminate  at  the  algorithm  node  rather  than  the root node, even if
-e.chain_length  is  longer.  This can be used as a tool to help partition your
-tree into different isolated parts.
+Algorithm objects define solver  parameters such as the solver type, tolerance, and
+maximum number of iterations to use. Some of these parameters can be changed at any time without having to rebuild the solver (max_iterations and tolerance), while others require you to rebuild the solver before they take effect.
+
+Each end effector will try to select an algorithm attached to the end of the chain (known as the "base node"). If there is no algorithm on the base node of a chain, then it searches upwards (towards the root node) for the next attached algorithm. This makes it possible to attach multiple algorithms at different locations in the tree and have them selected based on the end effector's chain length parameter.
  
 For example:
-                              n4
-                              ¦          ____
-                              n3 <- e1       |
-                              |              | This section of
-                              n2             | the tree will
-                              |              | be solved.
-                              n1 <- a1   ____|
-                              ¦
-                              n0
+                        ____               ____
+                       |        n4 <- e1       |
+                       |        |              | a1 is selected if
+    a2 is selected if  |        n3             | e1->chain_length=2
+    e1->chain_length=3 |        |              |
+                       |        n2 <- a1   ____|
+                       |        |
+                       |____    n1 <- a2
  
-    >>> e1 = n3.effector = ik.Effector()
-    >>> a1 = n1.algorithm = ik.Algorithm(ik.TWO_BONE)
+    >>> e1 = n4.effector = ik.Effector()
+    >>> a1 = n2.algorithm = ik.Algorithm(ik.TWO_BONE)
+    >>> a2 = n1.algorithm = ik.Algorithm(ik.FABRIK)
+    >>> s = ik.Solver(n1)
+
+Notice that all algorithms deeper than the chain's base node are ignored. The following example will print an error:
+
+                                         
+                                n4 <- e1 
+                                |        
+                                n3       
+                                |        
+                                n2 <- a1 
+                                |
+                                n1
  
-By  attaching  an  algorithm  to  the node 'n1', nodes 'n1', 'n2' and 'n3' are
-marked  as  one chain to be solved by the 'TWO_BONE' algorithm. Nodes 'n0' and
-'n3' will be ignored.
- 
-It is  also possible to change algorithms partway down the tree by attaching a
-different algorithm:
+    >>> e1 = n4.effector = ik.Effector()
+    >>> a1 = n2.algorithm = ik.Algorithm(ik.FABRIK)
+    >>> s = ik.Solver(n1)
+
+This causes an error because the end effector has specified a chain length of 0, so the solver is looking for an algorithm in n1 (or a parent thereof) and can't find any. The solution is to set the chain length to either 1 or 2: n4.effector = ik.Effector(chain_length=2)
+
+It is  also possible to change algorithms partway down the tree by attaching another end effector:
  
                               n4
                       ____    ¦
@@ -45,6 +51,8 @@ different algorithm:
     >>> a2 = n1.algorithm = ik.Algorithm(ik.TWO_BONE)
     >>> e1 = n1.effector = ik.Effector()
     >>> e2 = n3.effector = ik.Effector()
+
+If the a2 algorithm were not attached, then both chains created by e1 and e2 would select algorithm a1.
  
 All properties can be specified in the constructor. The only required argument
 is the algorithm type:

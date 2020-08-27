@@ -1,1 +1,2 @@
-todo
+The minimum angle in radians for this hinge constraint.
+

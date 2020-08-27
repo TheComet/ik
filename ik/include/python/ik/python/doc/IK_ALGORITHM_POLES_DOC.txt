@@ -1,1 +1,4 @@
-todo
+Default value: False
+
+Set to True to enable pole constraint support. Set to False to ignore all attached ik.Pole objects.
+
