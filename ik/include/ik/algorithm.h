@@ -1,5 +1,4 @@
-#ifndef IK_ALGORITHM_H
-#define IK_ALGORITHM_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/attachment.h"
@@ -57,5 +56,3 @@ IK_PUBLIC_API int
 ik_algorithm_set_type(struct ik_algorithm* algorighm, const char* name);
 
 C_END
-
-#endif /* IK_ALGORITHM_H */

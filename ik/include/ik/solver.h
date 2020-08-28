@@ -1,5 +1,4 @@
-#ifndef IK_SOLVER_H
-#define IK_SOLVER_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/refcount.h"
@@ -125,5 +124,3 @@ ik_solver_deinit_interfaces(void);
 #endif
 
 C_END
-
-#endif /* IK_SOLVER_H */

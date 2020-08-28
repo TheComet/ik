@@ -208,7 +208,8 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         ik_vec3_div_scalar(dir.f, dist);
 
         /* Point segment to target */
-        ik_quat_angle_of_nn(delta.f, dir.f);
+        ik_quat_angle_between(delta.f, child->position.f, target.f);
+        /*ik_quat_angle_of_nn(delta.f, dir.f);*/
         ik_quat_mul_quat(child->rotation.f, delta.f);
         CHAIN_FOR_EACH_CHILD(chain, child_chain)
             struct ik_node* first_child_node = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
@@ -241,7 +242,8 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         ik_vec3_div_scalar(dir.f, dist);
 
         /* Point segment to target */
-        ik_quat_angle_of_nn(delta.f, dir.f);
+        /*ik_quat_angle_of_nn(delta.f, dir.f);*/
+        ik_quat_angle_between(delta.f, child->position.f, target.f);
         ik_quat_mul_quat(child->rotation.f, delta.f);
         ik_quat_mul_quat_conj(prev_segment_child->rotation.f, delta.f);
         prev_segment_child = child;

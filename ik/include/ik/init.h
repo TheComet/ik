@@ -1,5 +1,4 @@
-#ifndef IK_INIT_H
-#define IK_INIT_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -40,6 +39,3 @@ IK_PUBLIC_API int ik_init(void);
 IK_PUBLIC_API uintptr_t ik_deinit(void);
 
 C_END
-
-#endif /* IK_INIT_H */
-

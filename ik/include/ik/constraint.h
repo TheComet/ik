@@ -1,5 +1,4 @@
-#ifndef IK_CONSTRAINT_H
-#define IK_CONSTRAINT_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/attachment.h"
@@ -83,5 +82,3 @@ ik_constraint_set_custom(struct ik_constraint* constraint,
                          void* data);
 
 C_END
-
-#endif /* IK_CONSTRAINT_H */

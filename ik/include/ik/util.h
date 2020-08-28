@@ -1,5 +1,4 @@
-#ifndef IK_UTIL_H
-#define IK_UTIL_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -15,5 +14,3 @@ ik_calculate_rotation_weight_decays(const struct vector_t* chains);
 #endif /* IK_BUILDING */
 
 C_END
-
-#endif /* IK_UTIL_H */

@@ -1,6 +1,4 @@
-
-#ifndef IK_SUBTREE_H
-#define IK_SUBTREE_H
+#pragma once
 
 #include "ik/config.h"
 #include "cstructures/vector.h"
@@ -43,5 +41,3 @@ subtree_check_children_up_to(const struct ik_subtree* st,
     (*(struct ik_node**)vector_get_element(&(st)->leaves, idx))
 
 C_END
-
-#endif /* IK_SUBTREE_H */

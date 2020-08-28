@@ -1,5 +1,4 @@
-#ifndef IK_POLE_H
-#define IK_POLE_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/attachment.h"
@@ -49,5 +48,3 @@ IK_PUBLIC_API void
 ik_pole_set_custom(struct ik_pole* pole, void(*calculate_roll)(const struct ik_pole*, ikreal q[4]));
 
 C_END
-
-#endif /* IK_POLE_H */

@@ -1,5 +1,4 @@
-#ifndef IK_REFCOUNT_H
-#define IK_REFCOUNT_H
+#pragma once
 
 #include "ik/config.h"
 #include <assert.h>
@@ -150,5 +149,3 @@ IK_PUBLIC_API void
 ik_refcounted_free(struct ik_refcounted* refcounted_obj);
 
 C_END
-
-#endif /* IK_REFCOUNT_H */

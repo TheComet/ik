@@ -10,7 +10,7 @@ struct ik_pose
 {
     IK_REFCOUNTED_HEAD
 #ifdef DEBUG
-    int node_count;
+    uint32_t node_count;
 #endif
 };
 

@@ -1,5 +1,4 @@
-#ifndef IK_CPP_UTILS_H
-#define IK_CPP_UTILS_H
+#pragma once
 
 #ifdef __cplusplus
 
@@ -129,5 +128,4 @@ private:
 
 }
 
-#endif
 #endif

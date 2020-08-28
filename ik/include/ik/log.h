@@ -1,5 +1,4 @@
-#ifndef IK_LOG_H
-#define IK_LOG_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -56,5 +55,3 @@ static inline void ik_log_printf(enum ik_log_severity severity, const char* fmt,
 #endif
 
 C_END
-
-#endif /* IK_LOG_H */

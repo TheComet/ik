@@ -1,5 +1,4 @@
-#ifndef IK_ATTACHMENT_H
-#define IK_ATTACHMENT_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/refcount.h"
@@ -36,5 +35,3 @@ IK_PRIVATE_API struct ik_attachment*
 ik_attachment_alloc(uintptr_t obj_size, ik_deinit_func deinit);
 
 C_END
-
-#endif /* IK_ATTACHMENT_H */

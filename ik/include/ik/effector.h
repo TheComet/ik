@@ -1,5 +1,4 @@
-#ifndef EFFECTOR_H
-#define EFFECTOR_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/attachment.h"
@@ -94,5 +93,3 @@ IK_PUBLIC_API struct ik_effector*
 ik_effector_create(void);
 
 C_END
-
-#endif /* EFFECTOR_H */

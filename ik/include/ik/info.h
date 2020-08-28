@@ -1,5 +1,4 @@
-#ifndef IK_BUILD_INFO_H
-#define IK_BUILD_INFO_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -33,5 +32,3 @@ IK_PUBLIC_API const char*
 ik_info_all(void);
 
 C_END
-
-#endif /* IK_BUILD_INFO_H */

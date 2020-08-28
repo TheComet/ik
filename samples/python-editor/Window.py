@@ -22,7 +22,7 @@ def one_bone_example(pos):
 
 def two_bone_example(pos):
     root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
-    mid = root.create_child(position=ik.Vec3(0, 0, 50))
+    mid = root.create_child(position=ik.Vec3(0, 50, 50))
     tip = mid.create_child(position=ik.Vec3(0, 0, 50))
 
     root.algorithm = ik.Algorithm(ik.FABRIK)
@@ -229,8 +229,8 @@ class Window(Updateable):
         self.__updateables = [
             self,
             #Tree(one_bone_example((100, height - 200))),
-            #Tree(two_bone_example((300, height - 200))),
-            Tree(long_chain_example((width/2, height - 200), 20, 20))
+            Tree(two_bone_example((300, height - 200))),
+            #Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))

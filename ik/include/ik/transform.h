@@ -1,5 +1,4 @@
-#ifndef IK_TRANSFORM_H
-#define IK_TRANSFORM_H
+#pragma once
 
 #include "ik/config.h"
 #include "ik/quat.inl"
@@ -89,5 +88,3 @@ ik_transform_chain_to_nodal_representation(struct ik_chain* root,
                                            int num_intermediate_rotations);
 
 C_END
-
-#endif /* IK_TRANSFORM_H */

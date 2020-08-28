@@ -3,8 +3,7 @@
  * @brief Manages synthesising the user specified tree of nodes (ik_node)
  * into a structure more optimal for solvers.
  */
-#ifndef IK_CHAIN_H
-#define IK_CHAIN_H
+#pragma once
 
 #include "ik/config.h"
 #include "cstructures/vector.h"
@@ -186,5 +185,3 @@ dump_to_dot(const struct ik_node* node, const struct cs_vector* chains, const ch
 #endif /* IK_DOT_OUTPUT */
 
 C_END
-
-#endif /* IK_CHAIN_H */

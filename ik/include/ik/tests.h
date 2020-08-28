@@ -1,5 +1,4 @@
-#ifndef IK_TESTS_H
-#define IK_TESTS_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -9,5 +8,3 @@ IK_PUBLIC_API int
 ik_tests_run(int* argc, char** argv);
 
 C_END
-
-#endif /* IK_TESTS_H */

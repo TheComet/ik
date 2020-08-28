@@ -1,5 +1,4 @@
-#ifndef IK_MAT3X3_H
-#define IK_MAT3X3_H
+#pragma once
 
 #include "ik/config.h"
 
@@ -30,5 +29,3 @@ ik_mat3x3_from_quat(ikreal_t m[9], const ikreal_t q[4]);
 #endif /* IK_BUILDING */
 
 C_END
-
-#endif /* IK_MAT3X3_H */
