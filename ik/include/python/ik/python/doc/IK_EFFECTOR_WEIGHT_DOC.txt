@@ -1,4 +1,5 @@
 Default value: 1.0
-
-This parameter can be used to individually enable/disable end effectors and allows you to seamlessly blend in and out of solutions. A value of 0.0 will cause the chain to be unchanged after calling solver.solve().
-
+ 
+This  parameter can be used to individually enable/disable end  effectors  and
+allows  you  to  seamlessly blend in and out of solutions. A value of 0.0 will
+cause the chain to be unchanged after calling solver.solve().

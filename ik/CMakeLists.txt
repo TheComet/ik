@@ -234,6 +234,7 @@ if (IK_PYTHON)
         "src/python/ik_type_Constraint.c"
         "src/python/ik_type_Effector.c"
         "src/python/ik_type_Info.c"
+        "src/python/ik_type_Mat3x4.c"
         "src/python/ik_type_ModuleRef.c"
         "src/python/ik_type_Node.c"
         "src/python/ik_type_Pole.c"

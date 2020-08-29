@@ -25,7 +25,7 @@
     X(CONSTRAINTS,      constraints,      0x0001) \
     X(POLES,            poles,            0x0002) \
     X(TARGET_ROTATIONS, target_rotations, 0x0004) \
-    X(INTEGRATE_RK45,   integrate_rk45,   0x0008)
+    X(INTEGRATE_RKF45,  integrate_rkf45,  0x0008)
 
 C_BEGIN
 

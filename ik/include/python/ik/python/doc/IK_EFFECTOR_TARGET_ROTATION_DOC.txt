@@ -1,8 +1,49 @@
-A ik.Quat() specifying the rotation the node this end-effector is attached to should try and reach.
-
-The algorithm needs to have the target_rotations=True flag enabled or this parameter is ignored.
-
-Solvers will try their best to align the tip segment with the target rotation, however, the target position has priority. If it's not possible to match the target rotation then the chain will "stretch" out in a way to satisfy the target position only.
-
-The rotation is in the same space as the root node (not a child of the root node, but a child of the parent of the root node, i.e. "global space"). If the root node as a parent, then you will have to make sure to transform the target position and rotation into the correct space before calling solver.solve().
-
+A ik.Quat() specifying the rotation the node  this end-effector is attached to
+should try and reach.
+ 
+The algorithm  needs  to  have  the target_rotations=True flag enabled or this
+parameter is ignored.
+ 
+Solvers will try their best to align the tip segment with the target rotation,
+however, the target position has priority. If it's not possible  to  match the
+target  rotation  then  the  chain will "stretch" out in a way to satisfy  the
+target position only.
+ 
+The rotation is in the same space as the solver's  root  node  (not a child of
+the solver's root node, but a child of the parent of  the  solver's root node,
+i.e. "solver global space"). If the  solver's  root node as a parent, then you
+will have to make sure to transform the target position and  rotation into the
+correct space before calling solver.solve().
+ 
+              n3 <- e1
+              |
+              n2
+              |
+              n1 <- a1
+              |
+              n0
+ 
+    >>> n0 = ik.Node()
+    >>> n1 = n0.create_child()
+    >>> n2 = n1.create_child()
+    >>> n3 = n2.create_child()
+    >>> n3.effector = ik.Effector()
+    >>> n1.algorithm = ik.Algorithm(ik.TWO_BONE)
+    >>> s = ik.Solver(n1)
+ 
+Notice  how the solver was created on node n1 and NOT node n0. This means that
+e1's  target rotation is not  in  our  global  space,  but  relative  to  n0's
+transform. The solver sees n1 as the root node instead of n0.
+ 
+Therefore,  if  we  set the target rotation  in  our  global  space,  we  must
+transform  it  into  the   space   of  n0  before  solving.  We  can  use  the
+global_rotation property of a node to achieve this:
+ 
+    >>> e1.target_rotation =
+        s.root.parent.global_rotation * get_global_target_rotation()
+ 
+Where  get_global_target_rotation()  returns  a  ik.Quat() rotation in  global
+space.
+ 
+If performance is a concern, cache the  return  value of node.global_rotation.
+Every  access  of  this  property  causes the quaternion to  be  recalculated.

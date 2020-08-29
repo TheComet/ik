@@ -9,6 +9,7 @@
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Info.h"
+#include "ik/python/ik_type_Mat3x4.h"
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Pole.h"
@@ -46,6 +47,7 @@ init_builtin_types(void)
 #if defined(IK_LOGGING)
     if (init_ik_LogType() != 0)            return -1;
 #endif
+    if (init_ik_Mat3x4Type() != 0)         return -1;
     if (init_ik_ModuleRefType() != 0)      return -1;
     if (init_ik_NodeType() != 0)           return -1;
     if (init_ik_PoleType() != 0)           return -1;
@@ -75,6 +77,7 @@ add_builtin_types_to_module(PyObject* m)
     ADD_TYPE(StiffConstraint);
     ADD_TYPE(HingeConstraint);
     ADD_TYPE(Effector);
+    ADD_TYPE(Mat3x4);
     ADD_TYPE(Node);
     ADD_TYPE(Pose);
     ADD_TYPE(Pole);

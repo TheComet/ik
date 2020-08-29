@@ -606,6 +606,44 @@ Quat_repr(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
+#define GETSET_COMPONENT(comp)                                                \
+    static PyObject*                                                          \
+    Quat_get##comp(PyObject* myself, void* closure)                           \
+    {                                                                         \
+        ik_Quat* self = (ik_Quat*)myself;                                     \
+        (void)closure;                                                        \
+        return PyFloat_FromDouble(self->quatref->q.comp);                     \
+    }                                                                         \
+    static int                                                                \
+    Quat_set##comp(PyObject* myself, PyObject* value, void* closure)          \
+    {                                                                         \
+        ik_Quat* self = (ik_Quat*)myself;                                     \
+        (void)closure;                                                        \
+                                                                              \
+        if (PyFloat_Check(value))                                             \
+            self->quatref->q.comp = PyFloat_AS_DOUBLE(value);                 \
+        else if (PyLong_Check(value))                                         \
+        {                                                                     \
+            double v = PyLong_AsDouble(value);                                \
+            if (v == -1.0 && PyErr_Occurred())                                \
+                return -1;                                                    \
+            self->quatref->q.comp = v;                                        \
+        }                                                                     \
+        else                                                                  \
+        {                                                                     \
+            PyErr_SetString(PyExc_TypeError, "Expected a value type");        \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        return 0;                                                             \
+    }
+GETSET_COMPONENT(x)
+GETSET_COMPONENT(y)
+GETSET_COMPONENT(z)
+GETSET_COMPONENT(w)
+#undef GETSET_COMPONENT
+
+/* ------------------------------------------------------------------------- */
 static PyNumberMethods Quat_as_number = {
     .nb_add = Quat_add,
     .nb_subtract = Quat_sub,
@@ -644,44 +682,6 @@ static PyMethodDef Quat_methods[] = {
     {"ensure_positive_sign", Quat_ensure_positive_sign, METH_NOARGS,   "Adds another vector or scalar to this vector"},
     {NULL}
 };
-
-/* ------------------------------------------------------------------------- */
-#define GETSET_COMPONENT(comp)                                                \
-    static PyObject*                                                          \
-    Quat_get##comp(PyObject* myself, void* closure)                           \
-    {                                                                         \
-        ik_Quat* self = (ik_Quat*)myself;                                     \
-        (void)closure;                                                        \
-        return PyFloat_FromDouble(self->quatref->q.comp);                     \
-    }                                                                         \
-    static int                                                                \
-    Quat_set##comp(PyObject* myself, PyObject* value, void* closure)          \
-    {                                                                         \
-        ik_Quat* self = (ik_Quat*)myself;                                     \
-        (void)closure;                                                        \
-                                                                              \
-        if (PyFloat_Check(value))                                             \
-            self->quatref->q.comp = PyFloat_AS_DOUBLE(value);                 \
-        else if (PyLong_Check(value))                                         \
-        {                                                                     \
-            double v = PyLong_AsDouble(value);                                \
-            if (v == -1.0 && PyErr_Occurred())                                \
-                return -1;                                                    \
-            self->quatref->q.comp = v;                                        \
-        }                                                                     \
-        else                                                                  \
-        {                                                                     \
-            PyErr_SetString(PyExc_TypeError, "Expected a value type");        \
-            return -1;                                                        \
-        }                                                                     \
-                                                                              \
-        return 0;                                                             \
-    }
-GETSET_COMPONENT(x)
-GETSET_COMPONENT(y)
-GETSET_COMPONENT(z)
-GETSET_COMPONENT(w)
-#undef GETSET_COMPONENT
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Quat_getsetters[] = {

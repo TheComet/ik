@@ -1,6 +1,7 @@
 Default value: False
  
-Set to True to enable supporting joint constraints. Set  to  False  to  ignore all attached ik.Constraint objects.
+Set to True to enable supporting joint constraints. Set to False to ignore all
+attached ik.Constraint objects.
  
 Each  solver  has implementation variations for solving with and without joint
 constraints.  In  general,  additional calculations need to be performed  each

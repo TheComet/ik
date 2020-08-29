@@ -24,4 +24,3 @@ and cons.
                 distribution of mass. Each  joint specifies how "heavy" it is,
                 making  heavier  nodes react  slower  than  lighter  nodes  to
                 approximate how a real organic joint might behave.
-

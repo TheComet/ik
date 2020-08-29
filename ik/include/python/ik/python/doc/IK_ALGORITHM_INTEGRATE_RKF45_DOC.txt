@@ -1,0 +1,7 @@
+Default value: False
+ 
+This flag is only used by the MSS solver.
+ 
+Set  to  True to use Runge-Kutta-Fehlberg integration with adaptive step size.
+Set to False to use Euler integration.
+

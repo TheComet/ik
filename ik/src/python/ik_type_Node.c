@@ -733,6 +733,96 @@ Node_setrotation(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
+Node_gettransform(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_settransform(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    if (!ik_Quat_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for transform");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_getglobal_position(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->position), (PyObject*)self->position;
+}
+static int
+Node_setglobal_position(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    if (!ik_Vec3_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type for position");
+        return -1;
+    }
+
+    ASSIGN_VEC3(self->position, (ik_Vec3*)value);
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_getglobal_rotation(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    return Py_INCREF(self->rotation), (PyObject*)self->rotation;
+}
+static int
+Node_setglobal_rotation(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    if (!ik_Quat_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for rotation");
+        return -1;
+    }
+
+    ASSIGN_QUAT(self->rotation, (ik_Quat*)value);
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Node_getglobal_transform(PyObject* myself, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    Py_RETURN_NONE;
+}
+static int
+Node_setglobal_transform(PyObject* myself, PyObject* value, void* closure)
+{
+    ik_Node* self = (ik_Node*)myself;
+    (void)closure;
+    if (!ik_Quat_CheckExact(value))
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for transform");
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
 Node_getmass(PyObject* myself, void* closure)
 {
     ik_Node* self = (ik_Node*)myself;
@@ -1082,18 +1172,22 @@ Node_setpole(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Node_getset[] = {
-    {"count",           Node_getcount,           Node_setcount,           IK_NODE_COUNT_DOC, NULL},
-    {"child_count",     Node_getchild_count,     Node_setchild_count,     IK_NODE_CHILD_COUNT_DOC, NULL},
-    {"children",        Node_getchildren,        Node_setchildren,        IK_NODE_CHILDREN_DOC, NULL},
-    {"parent",          Node_getparent,          Node_setparent,          IK_NODE_PARENT_DOC, NULL},
-    {"position",        Node_getposition,        Node_setposition,        IK_NODE_POSITION_DOC, NULL},
-    {"rotation",        Node_getrotation,        Node_setrotation,        IK_NODE_ROTATION_DOC, NULL},
-    {"mass",            Node_getmass,            Node_setmass,            IK_NODE_MASS_DOC, NULL},
-    {"rotation_weight", Node_getrotation_weight, Node_setrotation_weight, IK_NODE_ROTATION_WEIGHT_DOC, NULL},
-    {"algorithm",       Node_getalgorithm,       Node_setalgorithm,       IK_NODE_ALGORITHM_DOC, NULL},
-    {"constraints",     Node_getconstraints,     Node_setconstraints,     IK_NODE_CONSTRAINTS_DOC, NULL},
-    {"effector",        Node_geteffector,        Node_seteffector,        IK_NODE_EFFECTOR_DOC, NULL},
-    {"pole",            Node_getpole,            Node_setpole,            IK_NODE_POLE_DOC, NULL},
+    {"count",            Node_getcount,            Node_setcount,            IK_NODE_COUNT_DOC, NULL},
+    {"child_count",      Node_getchild_count,      Node_setchild_count,      IK_NODE_CHILD_COUNT_DOC, NULL},
+    {"children",         Node_getchildren,         Node_setchildren,         IK_NODE_CHILDREN_DOC, NULL},
+    {"parent",           Node_getparent,           Node_setparent,           IK_NODE_PARENT_DOC, NULL},
+    {"position",         Node_getposition,         Node_setposition,         IK_NODE_POSITION_DOC, NULL},
+    {"rotation",         Node_getrotation,         Node_setrotation,         IK_NODE_ROTATION_DOC, NULL},
+    {"transform",        Node_gettransform,        Node_settransform,        IK_NODE_TRANSFORM_DOC, NULL},
+    {"global_position",  Node_getglobal_position,  Node_setglobal_position,  IK_NODE_GLOBAL_POSITION_DOC, NULL},
+    {"global_rotation",  Node_getglobal_rotation,  Node_setglobal_rotation,  IK_NODE_GLOBAL_ROTATION_DOC, NULL},
+    {"global_transform", Node_getglobal_transform, Node_setglobal_transform, IK_NODE_GLOBAL_TRANSFORM_DOC, NULL},
+    {"mass",             Node_getmass,             Node_setmass,             IK_NODE_MASS_DOC, NULL},
+    {"rotation_weight",  Node_getrotation_weight,  Node_setrotation_weight,  IK_NODE_ROTATION_WEIGHT_DOC, NULL},
+    {"algorithm",        Node_getalgorithm,        Node_setalgorithm,        IK_NODE_ALGORITHM_DOC, NULL},
+    {"constraints",      Node_getconstraints,      Node_setconstraints,      IK_NODE_CONSTRAINTS_DOC, NULL},
+    {"effector",         Node_geteffector,         Node_seteffector,         IK_NODE_EFFECTOR_DOC, NULL},
+    {"pole",             Node_getpole,             Node_setpole,             IK_NODE_POLE_DOC, NULL},
     {NULL}
 };
 
@@ -1278,7 +1372,7 @@ Node_str(PyObject* myself)
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
+/*static PyObject*
 Node_richcompare(PyObject* myself, PyObject* other, int op)
 {
     if (ik_Node_CheckExact(other))
@@ -1291,7 +1385,7 @@ Node_richcompare(PyObject* myself, PyObject* other, int op)
     {
         Py_RETURN_NOTIMPLEMENTED;
     }
-}
+}*/
 
 /* ------------------------------------------------------------------------- */
 PyTypeObject ik_NodeType = {
@@ -1306,8 +1400,8 @@ PyTypeObject ik_NodeType = {
     .tp_methods = Node_methods,
     .tp_getset = Node_getset,
     .tp_new = Node_new,
-    .tp_init = Node_init,
-    .tp_richcompare = Node_richcompare
+    .tp_init = Node_init
+    /*.tp_richcompare = Node_richcompare*/
 };
 
 /* ------------------------------------------------------------------------- */
