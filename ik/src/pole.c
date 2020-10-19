@@ -107,3 +107,86 @@ ik_pole_set_maya(struct ik_pole* pole)
 {
     pole->calculate_roll = calculate_roll_generic;
 }
+
+/* ------------------------------------------------------------------------- */
+struct ik_pole*
+ik_pole_duplicate(const struct ik_pole* pole)
+{
+    struct ik_pole* dup = (struct ik_pole*)
+        ik_attachment_alloc(sizeof *dup, NULL);
+    if (dup == NULL)
+        return NULL;
+
+    dup->angle = pole->angle;
+    dup->position = pole->position;
+    dup->calculate_roll = pole->calculate_roll;
+    dup->tip = NULL;
+    dup->base = NULL;
+
+    return dup;
+}
+
+/* ------------------------------------------------------------------------- */
+static int
+count_poles(const struct ik_tree_object* root)
+{
+    int count = root->pole ? 1 : 0;
+    TREE_OBJECT_FOR_EACH_CHILD(root, child)
+        count += count_poles(child);
+    TREE_OBJECT_END_EACH
+    return count;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+copy_from_tree(struct ik_pole** pole_buf,
+               struct ik_tree_object* dst,
+               const struct ik_tree_object* src)
+{
+    uint32_t i;
+
+    if (src->pole)
+    {
+        struct ik_pole* pole = *pole_buf;
+        (*pole_buf)++;
+
+        ik_attachment_init((struct ik_attachment*)pole);
+
+        pole->angle = src->pole->angle;
+        pole->position = src->pole->position;
+        pole->calculate_roll = src->pole->calculate_roll;
+        pole->tip = NULL;
+        pole->base = NULL;
+
+        ik_tree_object_attach_pole(dst, pole);
+    }
+
+    assert(ik_tree_object_child_count(src) == ik_tree_object_child_count(dst));
+    for (i = 0; i != ik_tree_object_child_count(src); ++i)
+    {
+        copy_from_tree(pole_buf,
+                       ik_tree_object_get_child(dst, i),
+                       ik_tree_object_get_child(src, i));
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_pole_duplicate_from_tree(struct ik_tree_object* dst,
+                                const struct ik_tree_object* src)
+{
+    int count;
+    struct ik_pole* pole_buf;
+
+    count = count_poles(src);
+    if (count == 0)
+        return 0;
+
+    pole_buf = (struct ik_pole*)
+        ik_refcounted_alloc_array(sizeof *pole_buf, NULL, count);
+    if (pole_buf == NULL)
+        return -1;
+
+    copy_from_tree(&pole_buf, dst, src);
+    return 0;
+}

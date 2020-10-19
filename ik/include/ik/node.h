@@ -1,44 +1,21 @@
 #pragma once
 
-#include "ik/algorithm.h"
-#include "ik/constraint.h"
-#include "ik/effector.h"
-#include "ik/pole.h"
-#include "ik/config.h"
-#include "ik/refcount.h"
+#include "ik/tree_object.h"
+#include "ik/tree_object_conversions.h"
 #include "ik/quat.h"
 #include "ik/vec3.h"
-#include "cstructures/vector.h"
 
 C_BEGIN
-
-struct ik_algorithm;
-struct ik_constraint;
-struct ik_effector;
-struct ik_pole;
 
 /*!
  * @brief Base structure used to build the tree to be solved.
  */
 struct ik_node
 {
-    IK_REFCOUNTED_HEAD
-
-    void* user_data;
-
-    struct ik_algorithm* algorithm;
-    struct ik_constraint* constraint;
-    struct ik_effector* effector;
-    struct ik_pole* pole;
+    IK_TREE_OBJECT_HEAD
 
     union ik_quat rotation;
     union ik_vec3 position;
-
-    ikreal rotation_weight;
-    ikreal mass;
-
-    struct ik_node* parent;
-    struct cs_vector children;  /* holds ik_node* objects */
 };
 
 /*!
@@ -63,11 +40,15 @@ ik_node_create_child(struct ik_node* parent);
  * ownership of the child node and is responsible for deallocating it.
  * @note You will need to rebuild the algorithm's tree before solving.
  */
-IK_PUBLIC_API int
-ik_node_link(struct ik_node* parent, struct ik_node* child);
+static inline int
+ik_node_link(struct ik_node* parent, struct ik_node* child) {
+    return ik_tree_object_link((struct ik_tree_object*)parent, (struct ik_tree_object*)child);
+}
 
-IK_PUBLIC_API int
-ik_node_can_link(const struct ik_node* parent, const struct ik_node* child);
+static inline int
+ik_node_can_link(const struct ik_node* parent, const struct ik_node* child) {
+    return ik_tree_object_can_link((const struct ik_tree_object*)parent, (struct ik_tree_object*)child);
+}
 
 /*!
  * @brief Unlinks a node from the tree, without freeing anything. All
@@ -75,29 +56,45 @@ ik_node_can_link(const struct ik_node* parent, const struct ik_node* child);
  * affiliated with the original tree.
  * @note You will need to rebuild the algorithm's tree before solving.
  */
-IK_PUBLIC_API void
-ik_node_unlink(struct ik_node* node);
+static inline void
+ik_node_unlink(struct ik_node* node) {
+    ik_tree_object_unlink((struct ik_tree_object*)node);
+}
 
-IK_PUBLIC_API void
-ik_node_unlink_all_children(struct ik_node* node);
+static inline void
+ik_node_unlink_all_children(struct ik_node* node) {
+    ik_tree_object_unlink_all_children((struct ik_tree_object*)node);
+}
 
-IK_PUBLIC_API struct ik_node*
-ik_node_find(struct ik_node* node, const void* user_data);
+static inline struct ik_node*
+ik_node_find(struct ik_node* root, const void* user_data) {
+    return (struct ik_node*)ik_tree_object_find((struct ik_tree_object*)root, user_data);
+}
 
-#define  ik_node_child_count(node) \
-    vector_count(&node->children)
+#define ik_node_child_count(node) \
+    (ik_tree_object_child_count(node))
 
 #define ik_node_get_child(node, idx) \
-    (*(struct ik_node**)vector_get_element(&node->children, idx))
+    ((struct ik_node*)ik_tree_object_get_child(node, idx))
 
-IK_PUBLIC_API uint32_t
-ik_node_count(const struct ik_node* node);
+static inline int
+ik_node_count(const struct ik_node* root)  {
+    return ik_tree_object_count((struct ik_tree_object*)root);
+}
+
+static inline int
+ik_node_leaf_count(const struct ik_node* root)  {
+    return ik_tree_object_leaf_count((struct ik_tree_object*)root);
+}
 
 /*!
  * @brief Reallocates all nodes and attachments into a flat array.
  */
-IK_PUBLIC_API struct ik_node*
-ik_node_pack(const struct ik_node* root);
+static inline struct ik_node*
+ik_node_pack(const struct ik_node* root) {
+    return (struct ik_node*)ik_tree_object_pack(
+        (const struct ik_tree_object*)root, sizeof(*root));
+}
 
 /*!
  * @brief The constraint is attached to the specified node.
@@ -127,27 +124,35 @@ ik_node_pack(const struct ik_node* root);
  * @note You will need to rebuild the algorithm's tree before solving.
  */
 #define X1(upper, lower, arg0)                                                \
-        IK_PUBLIC_API struct ik_##lower*                                      \
-        ik_node_create_##lower(struct ik_node* node, arg0 arg);
+        static inline struct ik_##lower*                                      \
+        ik_node_create_##lower(struct ik_node* node, arg0 arg) {              \
+            return ik_tree_object_create_##lower((struct ik_tree_object*)node, arg); \
+        }
 #define X(upper, lower)                                                       \
-        IK_PUBLIC_API struct ik_##lower*                                      \
-        ik_node_create_##lower(struct ik_node* node);
+        static inline struct ik_##lower*                                      \
+        ik_node_create_##lower(struct ik_node* node) {                        \
+            return ik_tree_object_create_##lower((struct ik_tree_object*)node); \
+        }
     IK_ATTACHMENT_LIST
 #undef X
 #undef X1
 
 #define X1(upper, lower, arg0) X(upper, lower)
 #define X(upper, lower)                                                       \
-        IK_PUBLIC_API void                                                    \
-        ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower); \
+        static inline void                                                    \
+        ik_node_attach_##lower(struct ik_node* node, struct ik_##lower* lower) { \
+            ik_tree_object_attach_##lower((struct ik_tree_object*)node, lower); \
+        }                                                                     \
                                                                               \
-        IK_PUBLIC_API struct ik_##lower*                                      \
-        ik_node_detach_##lower(struct ik_node* node);
+        static inline struct ik_##lower*                                      \
+        ik_node_detach_##lower(struct ik_node* node) {                        \
+            return ik_tree_object_detach_##lower((struct ik_tree_object*)node); \
+        }
     IK_ATTACHMENT_LIST
 #undef X
 #undef X1
 
-#define NODE_FOR_EACH(node, child) \
+#define NODE_FOR_EACH_CHILD(node, child) \
     VECTOR_FOR_EACH(&(node)->children, struct ik_node*, p##child) \
     struct ik_node* child = *p##child; (void)child; {
 

@@ -130,7 +130,7 @@ chain_tree_build_recursive(struct ik_chain* chain,
     switch (subtree_check_children_up_to(subtree, node, 2))
     {
         case 2: {
-            NODE_FOR_EACH(node, child_node)
+            NODE_FOR_EACH_CHILD(node, child_node)
                 struct ik_chain* child_chain;
 
                 if (!subtree_check_node(subtree, child_node))
@@ -152,7 +152,7 @@ chain_tree_build_recursive(struct ik_chain* chain,
         } break;
 
         case 1: {
-            NODE_FOR_EACH(node, child_node)
+            NODE_FOR_EACH_CHILD(node, child_node)
                 if (!subtree_check_node(subtree, child_node))
                     continue;
                 if (chain_tree_build_recursive(chain, child_node, subtree) != 0)
@@ -163,7 +163,7 @@ chain_tree_build_recursive(struct ik_chain* chain,
         case 0: {
             /* NOTE: This causes dead nodes to be added to chains that don't
              * have child chains. Doesn't make sense anymore
-            NODE_FOR_EACH(node, user_data, child_node)
+            NODE_FOR_EACH_CHILD(node, user_data, child_node)
                 if (chain_add_dead_node(chain, child_node) != 0)
                     return -1;
             NODE_END_EACH*/

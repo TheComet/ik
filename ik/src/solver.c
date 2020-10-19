@@ -24,7 +24,7 @@ static void
 destroy_solver(struct ik_solver* solver)
 {
     deinit_solver(solver);
-    ik_refcounted_free((struct ik_refcounted*)solver);
+    ik_refcounted_obj_free((struct ik_refcounted*)solver);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -49,7 +49,7 @@ create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct
 
             if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
             {
-                ik_refcounted_free((struct ik_refcounted*)solver);
+                ik_refcounted_obj_free((struct ik_refcounted*)solver);
                 return NULL;
             }
 
@@ -134,7 +134,7 @@ ik_solver_unregister(const struct ik_solver_interface* interface)
 static int
 find_all_effector_nodes(struct cs_vector* result, const struct ik_node* node)
 {
-    NODE_FOR_EACH(node, child)
+    NODE_FOR_EACH_CHILD(node, child)
         if (find_all_effector_nodes(result, child) != 0)
             return -1;
     NODE_END_EACH
@@ -280,7 +280,7 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
             goto create_solvers_failed;
     }
 
-    NODE_FOR_EACH(node, child)
+    NODE_FOR_EACH_CHILD(node, child)
         const int* segment_color = btree_find(segment_colors, (cs_btree_key)child);
 
         /* Sanity check: If node was added as leaf, then the first if-statement

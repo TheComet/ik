@@ -47,4 +47,10 @@ ik_pole_set_maya(struct ik_pole* pole);
 IK_PUBLIC_API void
 ik_pole_set_custom(struct ik_pole* pole, void(*calculate_roll)(const struct ik_pole*, ikreal q[4]));
 
+IK_PUBLIC_API struct ik_pole*
+ik_pole_duplicate(const struct ik_pole* pole);
+
+IK_PUBLIC_API int
+ik_pole_duplicate_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
+
 C_END

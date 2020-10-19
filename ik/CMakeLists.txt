@@ -138,6 +138,7 @@ add_library (ik_obj OBJECT
     ${UPDATE_INFO_HEADER}
     "src/algorithm.c"
     "src/attachment.c"
+    "src/bone.c"
     "src/chain_tree.c"
     "src/constraint.c"
     "src/effector.c"
@@ -156,6 +157,8 @@ add_library (ik_obj OBJECT
     "src/solver_mss.c"
     "src/subtree.c"
     "src/transform.c"
+    "src/tree_object.c"
+    "src/tree_object_conversions.c"
     #"src/util.c"
     $<$<BOOL:${IK_LOGGING}>:src/log.c>
     $<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>
@@ -289,7 +292,6 @@ if (IK_TESTS)
         "src/tests/test_effector.cpp"
         "src/tests/test_FABRIK.cpp"
         #"src/tests/test_mat3x3.cpp"
-        "src/tests/test_node.cpp"
         #"src/tests/test_pole.cpp"
         "src/tests/test_quat.cpp"
         "src/tests/test_refcount.cpp"
@@ -302,6 +304,8 @@ if (IK_TESTS)
         # "src/tests/test_transform_node.cpp"
         # "src/tests/test_transform_node_rotations.cpp"
         # "src/tests/test_transform_node_translations.cpp"
+        "src/tests/test_tree_object.cpp"
+        "src/tests/test_tree_object_conversions.cpp"
         "src/tests/test_transform_segmental.cpp"
         # "src/tests/test_TWO_BONE.cpp"
         "src/tests/test_vec3.cpp"

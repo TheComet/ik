@@ -38,6 +38,8 @@ enum ik_algorithm_feature
     IK_ALGORITHM_FEATURE_COUNT
 };
 
+struct ik_tree_object;
+
 struct ik_algorithm
 {
     IK_ATTACHMENT_HEAD
@@ -54,5 +56,11 @@ ik_algorithm_create(const char* name);
 
 IK_PUBLIC_API int
 ik_algorithm_set_type(struct ik_algorithm* algorighm, const char* name);
+
+IK_PUBLIC_API struct ik_algorithm*
+ik_algorithm_duplicate(const struct ik_algorithm* algorithm);
+
+IK_PRIVATE_API int
+ik_algorithm_duplicate_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
 
 C_END

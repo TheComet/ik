@@ -1,4 +1,8 @@
 #include "ik/attachment.h"
+#include "ik/algorithm.h"
+#include "ik/constraint.h"
+#include "ik/effector.h"
+#include "ik/pole.h"
 #include <stddef.h>
 
 /* ------------------------------------------------------------------------- */
@@ -10,6 +14,27 @@ ik_attachment_alloc(uintptr_t obj_size, ik_deinit_func deinit)
     if (att == NULL)
         return NULL;
 
-    att->node = NULL;
+    ik_attachment_init(att);
     return att;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_attachment_init(struct ik_attachment* att)
+{
+    att->tree_object = NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+ik_attachment_duplicate_all(struct ik_tree_object* dst, const struct ik_tree_object* src)
+{
+#define X1(upper, lower, arg) X(upper, lower)
+#define X(upper, lower)                                                       \
+    if (ik_##lower##_duplicate_from_tree(dst, src) != 0)                      \
+        return -1;
+    IK_ATTACHMENT_LIST
+#undef X
+#undef X1
+    return 0;
 }

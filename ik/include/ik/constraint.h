@@ -81,4 +81,13 @@ ik_constraint_set_custom(struct ik_constraint* constraint,
                          ik_constraint_apply_func callback,
                          void* data);
 
+IK_PUBLIC_API struct ik_constraint*
+ik_constraint_duplicate(const struct ik_constraint* constraint);
+
+IK_PUBLIC_API struct ik_constraint*
+ik_constraint_duplicate_chain(const struct ik_constraint* constraint);
+
+IK_PUBLIC_API int
+ik_constraint_duplicate_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
+
 C_END

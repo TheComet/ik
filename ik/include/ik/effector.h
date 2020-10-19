@@ -92,4 +92,10 @@ struct ik_effector
 IK_PUBLIC_API struct ik_effector*
 ik_effector_create(void);
 
+IK_PUBLIC_API struct ik_effector*
+ik_effector_duplicate(const struct ik_effector* effector);
+
+IK_PUBLIC_API int
+ik_effector_duplicate_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
+
 C_END

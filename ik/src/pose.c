@@ -21,7 +21,7 @@ ik_pose_alloc(const struct ik_node* root)
     if (state == NULL)
         return NULL;
 
-#ifdef DEBUG
+#if !defined(NDEBUG)
     state->node_count = node_count;
 #endif
 
@@ -32,7 +32,7 @@ ik_pose_alloc(const struct ik_node* root)
 static void
 save_pose(const struct ik_node* node, struct ik_node_state** data)
 {
-    NODE_FOR_EACH(node, child)
+    NODE_FOR_EACH_CHILD(node, child)
         save_pose(child, data);
     NODE_END_EACH
 
@@ -44,7 +44,7 @@ void
 ik_pose_save(struct ik_pose* state, const struct ik_node* root)
 {
     struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
-#ifdef DEBUG
+#if !defined(NDEBUG)
     assert(state->node_count == ik_node_count(root));
 #endif
     save_pose(root, &data);
@@ -54,7 +54,7 @@ ik_pose_save(struct ik_pose* state, const struct ik_node* root)
 static void
 restore_pose(struct ik_node* node, struct ik_node_state** data)
 {
-    NODE_FOR_EACH(node, child)
+    NODE_FOR_EACH_CHILD(node, child)
         restore_pose(child, data);
     NODE_END_EACH
 
@@ -66,7 +66,7 @@ void
 ik_pose_apply(const struct ik_pose* state, struct ik_node* root)
 {
     struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
-#ifdef DEBUG
+#if !defined(NDEBUG)
     assert(state->node_count == ik_node_count(root));
 #endif
     restore_pose(root, &data);

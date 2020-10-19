@@ -20,7 +20,13 @@ C_BEGIN
  * Get the number of references of a refcount allocated memory block.
  */
 #define IK_REFCOUNT(o) \
-        (o)->refcount->refs
+        ((o)->refcount->refs)
+
+/*!
+ * Get the number of objects in a refcount allocated memory block.
+ */
+#define IK_REFCOUNTED_OBJS(o) \
+        ((o)->refcount->obj_count)
 
 /*!
  * Adds a reference to a refcount allocated memory block.
@@ -35,16 +41,16 @@ C_BEGIN
  * in the block before freeing the memory.
  */
 #define IK_DECREF(o) do {                                                     \
-        assert((o)->refcount->refs > 0);                                      \
-        if (--((o)->refcount->refs) == 0)                                     \
+        struct ik_refcount* refcount = (o)->refcount;                         \
+        assert(refcount->refs > 0);                                           \
+        if (--(refcount->refs) == 0)                                          \
         {                                                                     \
             uint32_t decref_i;                                                \
-            if ((o)->refcount->deinit)                                        \
-                for (decref_i = 0; (o)->refcount->obj_count--; decref_i++)    \
-                    (o)->refcount->deinit((o) + decref_i);                    \
-                    /* XXX: This only works if o is the correct type, which   \
-                     * should be the case */                                  \
-            ik_refcounted_free((struct ik_refcounted*)o);                     \
+            for (decref_i = 0; refcount->obj_count--; decref_i++)             \
+                refcount->deinit((o) + decref_i);                             \
+                /* XXX: This only works if o is the correct type, which       \
+                    * should be the case */                                   \
+            ik_refcount_free(refcount);                                       \
         }                                                                     \
     } while(0)
 
@@ -101,8 +107,8 @@ struct ik_refcounted
  *
  *   Beginning of memory block
  *           |
- *           v_______________ _______________________
- *           | ik_refcount_t | N number of bytes ...
+ *           v_____________ _______________________
+ *           | ik_refcount | N number of bytes ...
  *                           ^
  *                           |
  *                returned pointer points here
@@ -121,15 +127,15 @@ ik_refcounted_alloc(uintptr_t bytes,
  * argument.
  *
  * The actual number of bytes allocated will be the requested number of bytes
- * multiplied by array_length plus the size of the ik_refcount_t structure,
+ * multiplied by array_length plus the size of the ik_refcount structure,
  * which is placed at the beginning of the block of memory. To make this detail
  * transparent to the user, the returned pointer will point to the beginning of
  * the usable memory, after the refcount header.
  *
  *   Beginning of memory block
  *           |
- *           v_______________ _______ _______ _______ ______
- *           | ik_refcount_t | bytes | bytes | bytes | ...
+ *           v_____________ _______ _______ _______ ______
+ *           | ik_refcount | bytes | bytes | bytes | ...
  *                           ^
  *                           |
  *                returned pointer points here
@@ -145,7 +151,24 @@ ik_refcounted_alloc_array(uintptr_t obj_size,
                           ik_deinit_func deinit,
                           uint32_t obj_count);
 
+IK_PRIVATE_API void
+ik_refcounted_obj_free(struct ik_refcounted* refcounted_obj);
+
 IK_PUBLIC_API void
-ik_refcounted_free(struct ik_refcounted* refcounted_obj);
+ik_refcount_free(struct ik_refcount* refcount);
+
+/*!
+ * Returns the beginning of the memory block of a refcounted object.
+ *
+ * @warning In the case of an array of refcounted objects, this only works when
+ * given the first object in that array, because it calcultes the base address
+ * using a fixed offset. There is no way to get the base address of a refcounted
+ * object in an array in general.
+ */
+IK_PRIVATE_API struct ik_refcount*
+ik_refcounted_obj_base_address(struct ik_refcounted* refcounted_obj);
+
+IK_PRIVATE_API struct ik_refcounted*
+ik_refcount_to_first_obj_address(struct ik_refcount* refcount);
 
 C_END

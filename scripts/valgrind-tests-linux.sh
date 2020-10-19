@@ -9,5 +9,5 @@ valgrind --num-callers=50 \
 	--time-stamp=yes \
     --gen-suppressions=all \
 	--suppressions=../../scripts/valgrind-suppressions.supp \
-	./iktests -- 2>&1 | tee ../../tests.grind
+	./iktests -- --gtest_filter="tree_object.*" 2>&1 | tee ../../tests.grind
 cd .. && cd ..

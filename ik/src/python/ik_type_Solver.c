@@ -57,12 +57,28 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
+Solver_getroot(PyObject* myself, void* closure)
+{
+    ik_Solver* self = (ik_Solver*)myself;
+    (void)closure;
+
+    return Py_INCREF(self->root), (PyObject*)self->root;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
 Solver_solve(ik_Solver* self, PyObject* arg)
 {
     (void)arg;
     return PyLong_FromLong(
         ik_solver_solve(self->solver));
 }
+
+/* ------------------------------------------------------------------------- */
+static PyGetSetDef Solver_getset[] = {
+    {"root", Solver_getroot, NULL, IK_SOLVER_ROOT_DOC, NULL},
+    {NULL}
+};
 
 /* ------------------------------------------------------------------------- */
 static PyMethodDef Solver_methods[] = {
@@ -89,6 +105,7 @@ PyTypeObject ik_SolverType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc = IK_SOLVER_DOC,
     .tp_methods = Solver_methods,
+    .tp_getset = Solver_getset,
     .tp_new = Solver_new
 };
 

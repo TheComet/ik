@@ -206,7 +206,7 @@ sort_node_list_to_match_subsolvers(struct ik_solver_combine* solver)
         }
     }
 
-#ifdef DEBUG
+#if !defined(NDEBUG)
     for (s = 0; s != solver->subsolver_count; ++s)
     {
         struct ik_node *base, *tip;
@@ -278,6 +278,7 @@ ik_solver_combine_create(const struct cs_vector* solver_list, struct ik_node* sh
 
     alloc_child_rotations_failed : FREE(solver->child_nodes);
     alloc_child_nodes_failed     : FREE(solver->subsolvers);
-    alloc_subsolvers_failed      : ik_refcounted_free((struct ik_refcounted*)solver);
+    alloc_subsolvers_failed      : 
+    ik_refcounted_obj_free((struct ik_refcounted*)solver);
     alloc_solver_failed          : return NULL;
 }

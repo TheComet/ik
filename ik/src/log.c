@@ -113,7 +113,7 @@ int ik_log_init(void)
 
     vector_init(&g_log->message_buffer, sizeof(char));
     g_log->timestamps = 1;
-#ifdef DEBUG
+#if !defined(NDEBUG)
     ik_log_set_severity(IK_DEBUG);
 #else
     ik_log_set_severity(IK_INFO);

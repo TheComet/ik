@@ -207,3 +207,9 @@ class TestNode(unittest.TestCase):
         self.assertIs(n3.parent, n1)
         self.assertIn(n2, n1.children)
         self.assertIn(n3, n1.children)
+
+    def test_access_parent_after_destroyed(self):
+        n = ik.Node().create_child()
+        n = n.parent
+
+        self.assertIs(n, None)

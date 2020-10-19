@@ -20,7 +20,29 @@ ik_mat3x4_copy(ikreal m[12], const ikreal src[12])
 }
 
 static inline void
-ik_mat3x4_from_pos_rot(ikreal m[12], const ikreal v[3], const ikreal q[4])
+ik_mat3x4_set_pos(ikreal m[12], const ikreal v[3])
+{
+    m[0] = 1.0;   m[3] = 0.0;   m[6] = 0.0;   m[9]  = v[0];
+    m[1] = 0.0;   m[4] = 1.0;   m[7] = 0.0;   m[10] = v[1];
+    m[2] = 0.0;   m[5] = 0.0;   m[8] = 1.0;   m[11] = v[2];
+}
+
+static inline void
+ik_mat3x4_set_rot(ikreal m[12], const ikreal q[4])
+{
+    m[0] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2];
+    m[1] = 2.0f * q[0] * q[1] + 2.0f * q[3] * q[2];
+    m[2] = 2.0f * q[0] * q[2] - 2.0f * q[3] * q[1];
+    m[3] = 2.0f * q[0] * q[1] - 2.0f * q[3] * q[2];
+    m[4] = 1.0f - 2.0f * q[0] * q[0] - 2.0f * q[2] * q[2];
+    m[5] = 2.0f * q[1] * q[2] + 2.0f * q[3] * q[0];
+    m[6] = 2.0f * q[0] * q[2] + 2.0f * q[3] * q[1];
+    m[7] = 2.0f * q[1] * q[2] - 2.0f * q[3] * q[0];
+    m[8] = 1.0f - 2.0f * q[0] * q[0] - 2.0f * q[1] * q[1];
+}
+
+static inline void
+ik_mat3x4_set_pos_rot(ikreal m[12], const ikreal v[3], const ikreal q[4])
 {
     m[0] = 1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2];
     m[1] = 2.0f * q[0] * q[1] + 2.0f * q[3] * q[2];
@@ -35,6 +57,26 @@ ik_mat3x4_from_pos_rot(ikreal m[12], const ikreal v[3], const ikreal q[4])
     m[9]  = v[0];
     m[10] = v[1];
     m[11] = v[2];
+}
+
+static inline void
+ik_mat3x4_set_basis_vectors(ikreal m[12], const ikreal ex[3], const ikreal ey[3], const ikreal ez[3], const ikreal et[3])
+{
+    memcpy(&m[0], ex, sizeof(ikreal) * 3);
+    memcpy(&m[3], ey, sizeof(ikreal) * 3);
+    memcpy(&m[6], ez, sizeof(ikreal) * 3);
+    memcpy(&m[9], et, sizeof(ikreal) * 3);
+}
+
+static inline void
+ik_mat3x4_set(ikreal m[12],
+              ikreal m00, ikreal m01, ikreal m02, ikreal m03,
+              ikreal m10, ikreal m11, ikreal m12, ikreal m13,
+              ikreal m20, ikreal m21, ikreal m22, ikreal m23)
+{
+    m[0] = m00;   m[3] = m01;   m[6] = m02;   m[9]  = m03;
+    m[1] = m10;   m[4] = m11;   m[7] = m12;   m[10] = m13;
+    m[2] = m20;   m[5] = m21;   m[8] = m22;   m[11] = m23;
 }
 
 static inline void

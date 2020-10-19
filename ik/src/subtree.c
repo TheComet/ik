@@ -76,7 +76,7 @@ subtree_check_children_up_to(const struct ik_subtree* st,
                              int max_count)
 {
     int found = 0;
-    NODE_FOR_EACH(node, child)
+    NODE_FOR_EACH_CHILD(node, child)
         found += subtree_check_node(st, child);
         if (found == max_count)
             break;

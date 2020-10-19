@@ -50,7 +50,7 @@ ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* base, const struct ik_
         return;
 
     assert(tip);
-    ik_transform_pos_g2l(pos, base, tip->parent);
+    ik_transform_pos_g2l(pos, base, (struct ik_node*)tip->parent);
 
     ik_vec3_sub_vec3(pos, tip->position.f);
     ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
@@ -66,7 +66,7 @@ ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_n
     {
         ik_vec3_rotate_quat(pos, tip->rotation.f);
         ik_vec3_add_vec3(pos, tip->position.f);
-        tip = tip->parent;
+        tip = (struct ik_node*)tip->parent;
     }
 }
 

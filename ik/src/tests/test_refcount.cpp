@@ -17,7 +17,7 @@ TEST(NAME, can_decref_with_null_deinit_function)
     MyObj* o = (MyObj*)ik_refcounted_alloc(sizeof(MyObj), NULL);
     ASSERT_THAT(o, NotNull());
     EXPECT_THAT(IK_REFCOUNT(o), Eq(0));
-    ik_refcounted_free((struct ik_refcounted*)o);
+    ik_refcounted_obj_free((struct ik_refcounted*)o);
 }
 
 static bool deinit1Called = false;

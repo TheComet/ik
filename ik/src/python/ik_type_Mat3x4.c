@@ -84,6 +84,16 @@ Mat3x4_init(PyObject* myself, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
+Mat3x4_set_identity(PyObject* myself, PyObject* none)
+{
+    ik_Mat3x4* self = (ik_Mat3x4*)myself;
+    (void)none;
+    ik_mat3x4_set_identity(self->mat.f);
+    Py_RETURN_NONE;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
 Mat3x4_set(PyObject* myself, PyObject* args)
 {
     ik_Mat3x4* self = (ik_Mat3x4*)myself;
@@ -98,9 +108,18 @@ Mat3x4_set(PyObject* myself, PyObject* args)
             ik_mat3x4_copy(self->mat.f, other->mat.f);
             Py_RETURN_NONE;
         }
-
-        PyErr_SetString(PyExc_TypeError, "Expected a matrix");
-        return NULL;
+        else if (ik_Vec3_CheckExact(arg))
+        {
+            ik_Vec3* other = (ik_Vec3*)arg;
+            ik_mat3x4_set_pos(self->mat.f, other->vecref->f);
+            Py_RETURN_NONE;
+        }
+        else if (ik_Quat_CheckExact(arg))
+        {
+            ik_Quat* other = (ik_Quat*)arg;
+            ik_mat3x4_set_rot(self->mat.f, other->quatref->f);
+            Py_RETURN_NONE;
+        }
     }
     else if (PyTuple_GET_SIZE(args) == 2)
     {
@@ -109,12 +128,31 @@ Mat3x4_set(PyObject* myself, PyObject* args)
 
         if (ik_Vec3_CheckExact(arg1) && ik_Quat_CheckExact(arg2))
         {
-            ik_mat3x4_from_pos_rot(self->mat.f, ((ik_Vec3*)arg1)->vecref->f, ((ik_Quat*)arg2)->quatref->f);
+            ik_mat3x4_set_pos_rot(self->mat.f, ((ik_Vec3*)arg1)->vecref->f, ((ik_Quat*)arg2)->quatref->f);
             Py_RETURN_NONE;
         }
+        else if (ik_Vec3_CheckExact(arg2) && ik_Quat_CheckExact(arg1))
+        {
+            ik_mat3x4_set_pos_rot(self->mat.f, ((ik_Vec3*)arg2)->vecref->f, ((ik_Quat*)arg1)->quatref->f);
+            Py_RETURN_NONE;
+        }
+    }
+    else if (PyTuple_GET_SIZE(args) == 12)
+    {
+        ikreal m00, m01, m02, m03;
+        ikreal m10, m11, m12, m13;
+        ikreal m20, m21, m22, m23;
+        if (!PyArg_ParseTuple(args, "dddddddddddd",
+                                    &m00, &m01, &m02, &m03,
+                                    &m10, &m11, &m12, &m13,
+                                    &m20, &m21, &m22, &m23))
+            return NULL;
 
-        PyErr_SetString(PyExc_TypeError, "Expected a position and rotation (ik.Vec3() and ik.Quat())");
-        return NULL;
+        ik_mat3x4_set(self->mat.f,
+            m00, m01, m02, m03,
+            m10, m11, m12, m13,
+            m20, m21, m22, m23);
+        Py_RETURN_NONE;
     }
 
     PyErr_SetString(PyExc_TypeError, "Expected a matrix");
@@ -206,6 +244,41 @@ Mat3x4_mul(PyObject* myself, PyObject* arg)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
+Mat3x4_det(PyObject* myself)
+{
+    ik_Mat3x4* self = (ik_Mat3x4*)myself;
+    return NULL;
+}
+static PyObject*
+Mat3x4_det_meth(PyObject* myself, PyObject* none)
+{
+    (void)none;
+    return Mat3x4_det(myself);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Mat3x4_inplace_invert(PyObject* myself, PyObject* none)
+{
+    ik_Mat3x4* self = (ik_Mat3x4*)myself;
+    (void)none;
+    return NULL;
+}
+static PyObject*
+Mat3x4_inverse(PyObject* myself, PyObject* arg)
+{
+    PyObject* op_result;
+    PyObject* copy = Mat3x4_dup(myself);
+    if (copy == NULL)
+        return NULL;
+    if ((op_result = Mat3x4_inplace_invert(copy, arg)) == NULL)
+        return Py_DECREF(copy), NULL;
+    Py_DECREF(op_result);
+    return copy;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
 Mat3x4_repr(PyObject* myself)
 {
     PyObject *m00, *m01, *m02, *m03;
@@ -248,17 +321,6 @@ Mat3x4_repr(PyObject* myself)
     m01_failed : Py_DECREF(m00);
     m00_failed : return str;
 }
-
-/* ------------------------------------------------------------------------- */
-static PyNumberMethods Mat3x4_as_number = {
-    .nb_multiply = Mat3x4_mul,
-    .nb_inplace_multiply = Mat3x4_inplace_mul
-};
-
-/* ------------------------------------------------------------------------- */
-static PyMethodDef Mat3x4_methods[] = {
-    {NULL}
-};
 
 /* ------------------------------------------------------------------------- */
 #define GETSET_BASIS_VECTOR(basis)                                            \
@@ -334,6 +396,22 @@ GETSET_COMPONENT(m21)
 GETSET_COMPONENT(m22)
 GETSET_COMPONENT(m23)
 #undef GETSET_COMPONENT
+
+/* ------------------------------------------------------------------------- */
+static PyNumberMethods Mat3x4_as_number = {
+    .nb_multiply = Mat3x4_mul,
+    .nb_inplace_multiply = Mat3x4_inplace_mul
+};
+
+/* ------------------------------------------------------------------------- */
+static PyMethodDef Mat3x4_methods[] = {
+    {"set_identity", Mat3x4_set_identity,   METH_NOARGS,  "Sets the identity matrix"},
+    {"set",          Mat3x4_set,            METH_VARARGS, "Sets the identity matrix"},
+    {"det",          Mat3x4_det_meth,       METH_NOARGS,  "Sets the identity matrix"},
+    {"invert",       Mat3x4_inplace_invert, METH_NOARGS,  "Sets the identity matrix"},
+    {"inverse",      Mat3x4_inverse,        METH_NOARGS,  "Sets the identity matrix"},
+    {NULL}
+};
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Mat3x4_getsetters[] = {

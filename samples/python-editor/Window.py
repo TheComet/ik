@@ -229,14 +229,14 @@ class Window(Updateable):
         self.__updateables = [
             self,
             #Tree(one_bone_example((100, height - 200))),
-            Tree(two_bone_example((300, height - 200))),
+            #Tree(two_bone_example((300, height - 200))),
             #Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))
             #Tree(human_example((width/2, height-200)))
-            #Tree(embedded_effectors((width/2, height-200)))
+            Tree(embedded_effectors((width/2, height-200)))
             #Tree(double_embedded_effectors((width/2, height-200), 3))
         ]
 

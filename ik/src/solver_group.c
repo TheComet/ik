@@ -136,6 +136,6 @@ ik_solver_group_create(const struct cs_vector* solver_list)
                                IK_DECREF(subsolver->solver);
                            VECTOR_END_EACH
                            vector_deinit(&solver->subsolvers);
-                           ik_refcounted_free((struct ik_refcounted*)solver);
+                           ik_refcounted_obj_free((struct ik_refcounted*)solver);
     alloc_solver_failed  : return NULL;
 }

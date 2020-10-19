@@ -56,7 +56,7 @@ NodeChildrenView_repr_build_arglist_list(PyObject* myself)
     if (args == NULL)
         return NULL;
 
-    NODE_FOR_EACH(self->node, child)
+    NODE_FOR_EACH_CHILD(self->node, child)
         int append_result;
         ik_Node* pychild = child->user_data;
         PyObject* arg = PyUnicode_FromFormat("%R", pychild);
@@ -208,7 +208,7 @@ Node_dealloc(PyObject* myself)
     ik_Node* self = (ik_Node*)myself;
 
     /* Release references to all child python nodes */
-    NODE_FOR_EACH(self->node, child)
+    NODE_FOR_EACH_CHILD(self->node, child)
         Py_DECREF(child->user_data);
     NODE_END_EACH
     IK_DECREF(self->node);
@@ -459,7 +459,7 @@ Node_unlink_all_children(PyObject* myself, PyObject* args)
     ik_Node* self = (ik_Node*)myself;
     (void)args;
 
-    NODE_FOR_EACH(self->node, child)
+    NODE_FOR_EACH_CHILD(self->node, child)
         Py_DECREF(child->user_data);
     NODE_END_EACH
     ik_node_unlink_all_children(self->node);
@@ -581,7 +581,7 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         /* Unlink old children */
         VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
             struct ik_node* child = *pchild;
-            if (child->parent != self->node)
+            if (child->parent != (struct ik_tree_object*)self->node)
                 child->parent = NULL;
             Py_DECREF(child->user_data);
             IK_DECREF(child);
@@ -592,8 +592,8 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
 
         restore_old_children1 : vector_deinit(&self->node->children);
                                 self->node->children = old_children;
-                                NODE_FOR_EACH(self->node, child)
-                                    child->parent = self->node;
+                                NODE_FOR_EACH_CHILD(self->node, child)
+                                    child->parent = (struct ik_tree_object*)self->node;
                                 NODE_END_EACH
         return -1;
     }
@@ -633,7 +633,7 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         /* unlink old children */
         VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
             struct ik_node* child = *pchild;
-            if (child->parent != self->node)
+            if (child->parent != (struct ik_tree_object*)self->node)
                 child->parent = NULL;
             Py_DECREF(child->user_data);
             IK_DECREF(child);
@@ -645,8 +645,8 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         restore_old_children2 : Node_unlink_all_children(myself, NULL);
                                 vector_deinit(&self->node->children);
                                 self->node->children = old_children;
-                                NODE_FOR_EACH(self->node, child)
-                                    child->parent = self->node;
+                                NODE_FOR_EACH_CHILD(self->node, child)
+                                    child->parent = (struct ik_tree_object*)self->node;
                                 NODE_END_EACH
         return -1;
     }
