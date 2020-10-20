@@ -184,7 +184,7 @@ TEST_F(NAME, count_leaves_in_tree)
     EXPECT_THAT(ik_tree_object_leaf_count(n3), Eq(1));
 }
 
-TEST_F(NAME, pack_no_attachments)
+TEST_F(NAME, duplicate_full_no_attachments)
 {
     /*
      *         n1
@@ -204,7 +204,7 @@ TEST_F(NAME, pack_no_attachments)
     n11->user_data = (void*)1;  n12->user_data = (void*)2;  n13->user_data = (void*)3;  n14->user_data = (void*)4;
 
     // Get copied nodes
-    ik::Ref<ik_tree_object> n21 = ik_tree_object_pack(n11, sizeof(ik_tree_object));
+    ik::Ref<ik_tree_object> n21 = ik_tree_object_duplicate_full(n11, sizeof(ik_tree_object), 0);
     ASSERT_THAT(n21.get(), NotNull());
     ik::Ref<ik_tree_object> n22 = ik_tree_object_find(n21, (void*)2);
     ik::Ref<ik_tree_object> n23 = ik_tree_object_find(n21, (void*)3);
@@ -238,7 +238,7 @@ TEST_F(NAME, pack_no_attachments)
     EXPECT_THAT(n24->user_data, Eq((void*)4));
 }
 
-TEST_F(NAME, pack_copies_attachments)
+TEST_F(NAME, duplicate_full_copies_attachments)
 {
     /*
      *         n1
@@ -259,7 +259,7 @@ TEST_F(NAME, pack_copies_attachments)
     ik::Ref<ik_pole>       p = ik_tree_object_create_pole(n14);
 
     // Get copied nodes
-    ik::Ref<ik_tree_object> n21 = ik_tree_object_pack(n11, sizeof(ik_tree_object));
+    ik::Ref<ik_tree_object> n21 = ik_tree_object_duplicate_full(n11, sizeof(ik_tree_object), 0);
     ASSERT_THAT(n21.get(), NotNull());
     ik::Ref<ik_tree_object> n22 = ik_tree_object_find(n21, (void*)2);
     ik::Ref<ik_tree_object> n23 = ik_tree_object_find(n21, (void*)3);

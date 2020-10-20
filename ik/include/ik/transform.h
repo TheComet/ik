@@ -87,4 +87,10 @@ ik_transform_chain_to_nodal_representation(struct ik_chain* root,
                                            union ik_quat* intermediate_rotations,
                                            int num_intermediate_rotations);
 
+IK_PUBLIC_API void
+ik_transform_nodes_to_bones(const struct ik_node* node_root, struct ik_bone* bone_root);
+
+IK_PUBLIC_API void
+ik_transform_bones_to_nodes(const struct ik_bone* node_root, struct ik_node* bone_root);
+
 C_END

@@ -34,14 +34,6 @@ Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 static PyObject*
 Attachment_getnode(ik_Attachment* self, void* closure)
 {
-    (void)closure;
-
-    if (self->attachment && self->attachment->tree_object)
-    {
-        ik_Node* node = self->attachment->tree_object->user_data;
-        return Py_INCREF(node), (PyObject*)node;
-    }
-
     PyErr_SetString(PyExc_RuntimeError, "Attachment is not attached to any node");
     return NULL;
 }

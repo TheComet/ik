@@ -35,6 +35,9 @@ ik_node_create(void);
 IK_PUBLIC_API struct ik_node*
 ik_node_create_child(struct ik_node* parent);
 
+IK_PRIVATE_API void
+ik_node_init(struct ik_node* node);
+
 /*!
  * @brief Attaches a node as a child to another node. The parent node gains
  * ownership of the child node and is responsible for deallocating it.
@@ -88,12 +91,22 @@ ik_node_leaf_count(const struct ik_node* root)  {
 }
 
 /*!
+ * @brief Reallocates all nodes into a flat array, but the new nodes will
+ * still reference the same attachments.
+ */
+static inline struct ik_node*
+ik_node_duplicate_shallow(const struct ik_node* root) {
+    return (struct ik_node*)ik_tree_object_duplicate_shallow(
+        (const struct ik_tree_object*)root, sizeof(*root), 0);
+}
+
+/*!
  * @brief Reallocates all nodes and attachments into a flat array.
  */
 static inline struct ik_node*
-ik_node_pack(const struct ik_node* root) {
-    return (struct ik_node*)ik_tree_object_pack(
-        (const struct ik_tree_object*)root, sizeof(*root));
+ik_node_duplicate_full(const struct ik_node* root) {
+    return (struct ik_node*)ik_tree_object_duplicate_full(
+        (const struct ik_tree_object*)root, sizeof(*root), 0);
 }
 
 /*!

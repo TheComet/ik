@@ -74,7 +74,6 @@ ik_constraint_append(struct ik_constraint* first_constraint,
 
     IK_INCREF(constraint);
     first_constraint->next = constraint;
-    constraint->tree_object = first_constraint->tree_object;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -173,7 +172,6 @@ ik_constraint_duplicate_chain(const struct ik_constraint* constraint)
     for (i = 0; i != count; ++i)
     {
         struct ik_constraint* dup = &dup_buf[i];
-        ik_attachment_init((struct ik_attachment*)dup);
 
         dup->next = i < count-1 ? &dup_buf[i+1] : NULL;
         dup->apply = constraint->apply;
@@ -201,8 +199,6 @@ copy_from_tree(struct ik_constraint** con_buf,
     {
         struct ik_constraint* dst_constraint = *con_buf;
         (*con_buf)++;
-
-        ik_attachment_init((struct ik_attachment*)dst_constraint);
 
         dst_constraint->next = NULL;
         dst_constraint->apply = src_constraint->apply;

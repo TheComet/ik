@@ -65,10 +65,22 @@ ik_bone_leaf_count(const struct ik_bone* root) {
 }
 
 static inline struct ik_bone*
-ik_bone_pack(const struct ik_bone* root) {
-    return (struct ik_bone*)ik_tree_object_pack(
-        (const struct ik_tree_object*)root, sizeof(*root));
+ik_bone_duplicate_shallow(const struct ik_bone* root) {
+    return (struct ik_bone*)ik_tree_object_duplicate_shallow(
+        (const struct ik_tree_object*)root, sizeof *root, 0);
 }
+
+static inline struct ik_bone*
+ik_bone_duplicate_full(const struct ik_bone* root) {
+    return (struct ik_bone*)ik_tree_object_duplicate_full(
+        (const struct ik_tree_object*)root, sizeof *root, 0);
+}
+
+IK_PUBLIC_API struct ik_node*
+ik_bone_duplicate_shallow_for_node_transform(const struct ik_bone* root);
+
+IK_PUBLIC_API struct ik_node*
+ik_bone_duplicate_full_for_node_transform(const struct ik_bone* root);
 
 #define X1(upper, lower, arg0)                                                \
         static inline struct ik_##lower*                                      \

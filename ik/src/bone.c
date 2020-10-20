@@ -1,4 +1,5 @@
 #include "ik/bone.h"
+#include "ik/node.h"
 #include "ik/quat.inl"
 #include "ik/vec3.inl"
 #include <stddef.h>
@@ -41,4 +42,20 @@ ik_bone_create_child(struct ik_bone* parent)
 
     add_child_failed    : ik_bone_destroy(child);
     create_child_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_node*
+ik_bone_duplicate_shallow_for_node_transform(const struct ik_bone* root)
+{
+    return (struct ik_node*)ik_tree_object_duplicate_shallow(
+        (const struct ik_tree_object*)root, sizeof(struct ik_node), 1);
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_node*
+ik_bone_duplicate_full_for_node_transform(const struct ik_bone* root)
+{
+    return (struct ik_node*)ik_tree_object_duplicate_full(
+        (const struct ik_tree_object*)root, sizeof(struct ik_node), 1);
 }

@@ -187,7 +187,8 @@ static int
 copy_tree_object_recurse(const struct ik_tree_object* src,
                          struct ik_refcount* proxy_ref_refcount,
                          void** obj_buf, uintptr_t obj_size,
-                         struct ik_tree_object* parent)
+                         struct ik_tree_object* parent,
+                         int add_extra_leaf_objects)
 {
     struct ik_refcounted* proxy_ref;
     struct ik_tree_object* obj;
@@ -206,17 +207,6 @@ copy_tree_object_recurse(const struct ik_tree_object* src,
     proxy_ref->refcount = proxy_ref_refcount;
     IK_INCREF(proxy_ref);
 
-    /* Copy trivial fields */
-    obj->user_data = src->user_data;
-    obj->rotation_weight = src->rotation_weight;
-    obj->mass = src->mass;
-
-    /* Copy remaining data from derived type (ik_bone and ik_node have extra
-     * fields that we don't directly have access to, so use memcpy) */
-    memcpy((void*)((uintptr_t)obj + sizeof(struct ik_tree_object)),
-           (const void*)((uintptr_t)src + sizeof(struct ik_tree_object)),
-           obj_size - sizeof(struct ik_tree_object));
-
     /* Init relations */
     if (parent)
     {
@@ -224,10 +214,32 @@ copy_tree_object_recurse(const struct ik_tree_object* src,
             goto link_to_parent_failed;
     }
 
-    TREE_OBJECT_FOR_EACH_CHILD(src, child)
-        if (copy_tree_object_recurse(child, proxy_ref_refcount, obj_buf, obj_size, obj) != 0)
-            goto copy_children_failed;
-    TREE_OBJECT_END_EACH
+    /* Copy data from source object. Can be NULL in the case of adding extra
+     * leaf nodes */
+    if (src != NULL)
+    {
+        /* Copy trivial fields */
+        obj->user_data = src->user_data;
+        obj->rotation_weight = src->rotation_weight;
+        obj->mass = src->mass;
+
+        /* Copy remaining data from derived type (ik_bone and ik_node have extra
+        * fields that we don't directly have access to, so use memcpy) */
+        memcpy((void*)((uintptr_t)obj + sizeof(struct ik_tree_object)),
+               (const void*)((uintptr_t)src + sizeof(struct ik_tree_object)),
+               obj_size - sizeof(struct ik_tree_object));
+
+        TREE_OBJECT_FOR_EACH_CHILD(src, child)
+            if (copy_tree_object_recurse(child, proxy_ref_refcount, obj_buf, obj_size, obj, add_extra_leaf_objects) != 0)
+                goto copy_children_failed;
+        TREE_OBJECT_END_EACH
+
+        if (add_extra_leaf_objects && ik_tree_object_child_count(src) == 0)
+        {
+            if (copy_tree_object_recurse(NULL, proxy_ref_refcount, obj_buf, obj_size, obj, add_extra_leaf_objects) != 0)
+                goto copy_children_failed;
+        }
+    }
 
     return 0;
 
@@ -238,9 +250,11 @@ copy_tree_object_recurse(const struct ik_tree_object* src,
 }
 
 /* ------------------------------------------------------------------------- */
-static struct ik_tree_object*
-duplicate_tree(const struct ik_tree_object* root, uintptr_t obj_size)
+struct ik_tree_object*
+ik_tree_object_duplicate_no_attachments(const struct ik_tree_object* root, uintptr_t obj_size, int add_extra_leaf_objects)
 {
+    int count;
+    void* obj_buf;
     struct ik_tree_object* new_root;
     struct ik_refcount* proxy_ref_refcount;
 
@@ -267,7 +281,11 @@ duplicate_tree(const struct ik_tree_object* root, uintptr_t obj_size)
      *
      */
 
-    void* obj_buf = ik_refcounted_alloc(ik_tree_object_count(root) * obj_size, NULL);
+    count = ik_tree_object_count(root);
+    if (add_extra_leaf_objects)
+        count += ik_tree_object_leaf_count(root);
+
+    obj_buf = ik_refcounted_alloc(count * obj_size, NULL);
     if (obj_buf == NULL)
         goto alloc_new_tree_failed;
 
@@ -275,7 +293,7 @@ duplicate_tree(const struct ik_tree_object* root, uintptr_t obj_size)
 
     new_root = obj_buf;
 
-    if (copy_tree_object_recurse(root, proxy_ref_refcount, &obj_buf, obj_size, NULL) != 0)
+    if (copy_tree_object_recurse(root, proxy_ref_refcount, &obj_buf, obj_size, NULL, add_extra_leaf_objects) != 0)
         goto copy_tree_object_failed;
 
     return new_root;
@@ -283,14 +301,16 @@ duplicate_tree(const struct ik_tree_object* root, uintptr_t obj_size)
     copy_tree_object_failed : ik_refcounted_obj_free((struct ik_refcounted*)new_root);
     alloc_new_tree_failed   : return NULL;
 }
+
+/* ------------------------------------------------------------------------- */
 struct ik_tree_object*
-ik_tree_object_pack(const struct ik_tree_object* root, uintptr_t obj_size)
+ik_tree_object_duplicate_shallow(const struct ik_tree_object* root, uintptr_t obj_size, int add_extra_leaf_objects)
 {
-    struct ik_tree_object* new_root = duplicate_tree(root, obj_size);
+    struct ik_tree_object* new_root = ik_tree_object_duplicate_no_attachments(root, obj_size, add_extra_leaf_objects);
     if (new_root == NULL)
         goto duplicate_tree_failed;
 
-    if (ik_attachment_duplicate_all(new_root, root) != 0)
+    if (ik_attachment_duplicate_from_tree(new_root, root) != 0)
         goto duplicate_attachments_failed;
 
     return new_root;
@@ -301,16 +321,15 @@ ik_tree_object_pack(const struct ik_tree_object* root, uintptr_t obj_size)
 
 /* ------------------------------------------------------------------------- */
 struct ik_tree_object*
-ik_tree_object_duplicate_shallow(const struct ik_tree_object* root)
+ik_tree_object_duplicate_full(const struct ik_tree_object* root, uintptr_t obj_size, int add_extra_leaf_objects)
 {
-    return NULL;
-}
+    struct ik_tree_object* new_root = ik_tree_object_duplicate_no_attachments(root, obj_size, add_extra_leaf_objects);
+    if (new_root == NULL)
+        return NULL;
 
-/* ------------------------------------------------------------------------- */
-struct ik_tree_object*
-ik_tree_object_duplicate_full(const struct ik_tree_object* root)
-{
-    return NULL;
+    ik_attachment_reference_from_tree(new_root, root);
+
+    return new_root;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -354,35 +373,13 @@ IK_ATTACHMENT_LIST
 #undef X1
 
 /* ------------------------------------------------------------------------- */
-#define ATTACH_EXTRA_ALGORITHM
-#define ATTACH_EXTRA_CONSTRAINT {                                             \
-        struct ik_constraint* c = constraint->next;                           \
-        for (; c; c = c->next)                                                \
-            c->tree_object = tree_object;                                     \
-    }
-#define ATTACH_EXTRA_EFFECTOR
-#define ATTACH_EXTRA_POLE
-
-#define DETACH_EXTRA_ALGORITHM
-#define DETACH_EXTRA_CONSTRAINT {                                             \
-        struct ik_constraint* c = constraint;                                 \
-        for (; c; c = c->next)                                                \
-            c->tree_object = NULL;                                            \
-    }
-#define DETACH_EXTRA_EFFECTOR
-#define DETACH_EXTRA_POLE
-
 #define X1(upper, lower, arg0) X(upper, lower)
 #define X(upper, lower)                                                       \
     void                                                                      \
     ik_tree_object_attach_##lower(struct ik_tree_object* tree_object, struct ik_##lower* lower) { \
         IK_INCREF(lower);                                                     \
-        if (lower->tree_object)                                               \
-            ik_tree_object_detach_##lower(lower->tree_object);                \
         ik_tree_object_detach_##lower(tree_object);                           \
         tree_object->lower = lower;                                           \
-        lower->tree_object = tree_object;                                     \
-        ATTACH_EXTRA_##upper                                                  \
     }                                                                         \
                                                                               \
     struct ik_##lower*                                                        \
@@ -390,8 +387,6 @@ IK_ATTACHMENT_LIST
         struct ik_##lower* lower = tree_object->lower;                        \
         tree_object->lower = NULL;                                            \
         if (lower) {                                                          \
-            lower->tree_object = NULL;                                        \
-            DETACH_EXTRA_##upper                                              \
             IK_DECREF(lower);                                                 \
         }                                                                     \
         return lower;                                                         \

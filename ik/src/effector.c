@@ -68,8 +68,6 @@ copy_from_tree(struct ik_effector** eff_buf,
         struct ik_effector* eff = *eff_buf;
         (*eff_buf)++;
 
-        ik_attachment_init((struct ik_attachment*)eff);
-
         eff->target_position = src->effector->target_position;
         eff->target_rotation = src->effector->target_rotation;
         eff->weight = src->effector->weight;

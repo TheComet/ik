@@ -97,8 +97,6 @@ copy_from_tree(struct ik_algorithm** alg_buf, struct ik_tree_object* dst,
         struct ik_algorithm* alg = *alg_buf;
         (*alg_buf)++;
 
-        ik_attachment_init((struct ik_attachment*)alg);
-
         strcpy(alg->type, src->algorithm->type);
         alg->tolerance = src->algorithm->tolerance;
         alg->max_iterations = src->algorithm->max_iterations;

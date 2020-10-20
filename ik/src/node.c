@@ -20,8 +20,7 @@ ik_node_create(void)
     if (node == NULL)
         return NULL;
 
-    ik_vec3_set_zero(node->position.f);
-    ik_quat_set_identity(node->rotation.f);
+    ik_node_init(node);
 
     return node;
 }
@@ -40,4 +39,12 @@ ik_node_create_child(struct ik_node* parent)
 
     add_child_failed    : ik_node_destroy(child);
     create_child_failed : return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_node_init(struct ik_node* node)
+{
+    ik_vec3_set_zero(node->position.f);
+    ik_quat_set_identity(node->rotation.f);
 }

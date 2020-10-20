@@ -5,7 +5,7 @@
 
 #define IK_ATTACHMENT_HEAD                   \
     IK_REFCOUNTED_HEAD                       \
-    struct ik_tree_object* tree_object;
+    /*struct ik_tree_object* tree_object;*/
 
 #define IK_ATTACHMENT_LIST                   \
     X1(ALGORITHM, algorithm, const char*)    \
@@ -31,13 +31,15 @@ struct ik_attachment
     IK_ATTACHMENT_HEAD
 };
 
+struct ik_tree_object;
+
 IK_PRIVATE_API struct ik_attachment*
 ik_attachment_alloc(uintptr_t obj_size, ik_deinit_func deinit);
 
-IK_PRIVATE_API void
-ik_attachment_init(struct ik_attachment* att);
-
 IK_PUBLIC_API int
-ik_attachment_duplicate_all(struct ik_tree_object* dst, const struct ik_tree_object* src);
+ik_attachment_duplicate_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
+
+IK_PUBLIC_API void
+ik_attachment_reference_from_tree(struct ik_tree_object* dst, const struct ik_tree_object* src);
 
 C_END

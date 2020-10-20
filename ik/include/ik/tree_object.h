@@ -100,25 +100,22 @@ ik_tree_object_count(const struct ik_tree_object* node);
 IK_PRIVATE_API int
 ik_tree_object_leaf_count(const struct ik_tree_object* node);
 
-/*!
- * @brief Reallocates all nodes and attachments into a flat array.
- */
 IK_PRIVATE_API struct ik_tree_object*
-ik_tree_object_pack(const struct ik_tree_object* root, uintptr_t obj_size);
+ik_tree_object_duplicate_no_attachments(const struct ik_tree_object* root, uintptr_t obj_size, int additional_objs);
 
 /*!
  * @brief Duplicates the tree, but the new tree will still reference all of the
  * old attachments (attachments are properly incref'd)
  */
 IK_PRIVATE_API struct ik_tree_object*
-ik_tree_object_duplicate_shallow(const struct ik_tree_object* root);
+ik_tree_object_duplicate_shallow(const struct ik_tree_object* root, uintptr_t obj_size, int additional_objs);
 
 /*!
  * @brief Duplicates the tree and its attachments. The new tree will be fully
  * independent from the original tree.
  */
 IK_PRIVATE_API struct ik_tree_object*
-ik_tree_object_duplicate_full(const struct ik_tree_object* root);
+ik_tree_object_duplicate_full(const struct ik_tree_object* root, uintptr_t obj_size, int additional_objs);
 
 /*!
  * @brief The constraint is attached to the specified node.

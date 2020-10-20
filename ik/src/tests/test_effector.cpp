@@ -83,11 +83,9 @@ TEST_F(NAME, attach_detach_works)
 
     ik_node_attach_effector(n, eff);
     EXPECT_THAT(n->effector, Eq(eff));
-    EXPECT_THAT((struct ik_node*)eff->tree_object, Eq(n));
 
     EXPECT_THAT(ik_node_detach_effector(n), Eq(eff));
     EXPECT_THAT(n->effector, IsNull());
-    EXPECT_THAT((struct ik_node*)eff->tree_object, IsNull());
 }
 
 TEST_F(NAME, reattach_removes_from_previous_node)
@@ -99,12 +97,10 @@ TEST_F(NAME, reattach_removes_from_previous_node)
     ik_node_attach_effector(n1, eff);
     EXPECT_THAT(n1->effector, Eq(eff));
     EXPECT_THAT(n2->effector, IsNull());
-    EXPECT_THAT((struct ik_node*)eff->tree_object, Eq(n1));
 
     ik_node_attach_effector(n2, eff);
     EXPECT_THAT(n1->effector, IsNull());
     EXPECT_THAT(n2->effector, Eq(eff));
-    EXPECT_THAT((struct ik_node*)eff->tree_object, Eq(n2));
 }
 
 TEST_F(NAME, attach_two_effectors_to_same_node)
@@ -116,8 +112,6 @@ TEST_F(NAME, attach_two_effectors_to_same_node)
     ik_node_attach_effector(n, eff1);
     ik_node_attach_effector(n, eff2);
     EXPECT_THAT(n->effector, Eq(eff2));
-    EXPECT_THAT((struct ik_node*)eff1->tree_object, IsNull());
-    EXPECT_THAT((struct ik_node*)eff2->tree_object, Eq(n));
 }
 
 TEST_F(NAME, attach_already_attached_effector_again)
@@ -128,5 +122,4 @@ TEST_F(NAME, attach_already_attached_effector_again)
     ik_node_attach_effector(n, eff);
     ik_node_attach_effector(n, eff);
     EXPECT_THAT(n->effector, Eq(eff));
-    EXPECT_THAT((struct ik_node*)eff->tree_object, Eq(n));
 }

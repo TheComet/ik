@@ -150,8 +150,6 @@ copy_from_tree(struct ik_pole** pole_buf,
         struct ik_pole* pole = *pole_buf;
         (*pole_buf)++;
 
-        ik_attachment_init((struct ik_attachment*)pole);
-
         pole->angle = src->pole->angle;
         pole->position = src->pole->position;
         pole->calculate_roll = src->pole->calculate_roll;

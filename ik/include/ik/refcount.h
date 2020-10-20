@@ -35,6 +35,11 @@ C_BEGIN
         (o)->refcount->refs++;                                                \
     } while(0)
 
+#define IK_INCDECREF(o) do {                                                  \
+        IK_INCREF(o);                                                         \
+        IK_DECREF(o);                                                         \
+    } while(0)
+
 /*!
  * Removes a reference from a refcount allocated memory block. If the refcount
  * reaches 0, then the registered deinit function is called for all objects

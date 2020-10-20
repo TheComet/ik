@@ -496,7 +496,6 @@ Node_pack(PyObject* myself, PyObject* arg)
 {
     ik_Node* self = (ik_Node*)myself;
     (void)arg;
-    ik_node_pack(self->node);
     Py_RETURN_NONE;
 }
 
