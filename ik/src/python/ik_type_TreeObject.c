@@ -2,45 +2,45 @@
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_ModuleRef.h"
-#include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_TreeObject.h"
 #include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_helpers.h"
 #include "ik/python/ik_docstrings.h"
-#include "ik/node.h"
+#include "ik/tree_object.h"
 #include "ik/vec3.inl"
 #include "ik/quat.inl"
 #include "structmember.h"
 
 /* ------------------------------------------------------------------------- */
 static void
-NodeChildrenView_dealloc(PyObject* myself)
+TreeObjectChildrenView_dealloc(PyObject* myself)
 {
-    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+    ik_TreeObjectChildrenView* self = (ik_TreeObjectChildrenView*)myself;
 
-    IK_DECREF(self->node);
+    IK_DECREF(self->tree_object);
     Py_TYPE(self)->tp_free(self);
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+TreeObjectChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    ik_NodeChildrenView* self;
-    PyObject* node_capsule;
+    ik_TreeObjectChildrenView* self;
+    PyObject* tree_object_capsule;
 
     (void)kwds;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyCapsule_Type, &node_capsule))
+    if (!PyArg_ParseTuple(args, "O!", &PyCapsule_Type, &tree_object_capsule))
         return NULL;
 
-    self = (ik_NodeChildrenView*)type->tp_alloc(type, 0);
+    self = (ik_TreeObjectChildrenView*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
 
-    self->node = PyCapsule_GetPointer(node_capsule, NULL);
-    IK_INCREF(self->node);
+    self->tree_object = PyCapsule_GetPointer(tree_object_capsule, NULL);
+    IK_INCREF(self->tree_object);
 
     return (PyObject*)self;
 
@@ -49,16 +49,16 @@ NodeChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_repr_build_arglist_list(PyObject* myself)
+TreeObjectChildrenView_repr_build_arglist_list(PyObject* myself)
 {
-    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+    ik_TreeObjectChildrenView* self = (ik_TreeObjectChildrenView*)myself;
     PyObject* args = PyList_New(0);
     if (args == NULL)
         return NULL;
 
-    NODE_FOR_EACH_CHILD(self->node, child)
+    TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
         int append_result;
-        ik_Node* pychild = child->user_data;
+        ik_TreeObject* pychild = child->user_data;
         PyObject* arg = PyUnicode_FromFormat("%R", pychild);
         if (arg == NULL)
             goto addarg_failed;
@@ -67,7 +67,7 @@ NodeChildrenView_repr_build_arglist_list(PyObject* myself)
         Py_DECREF(arg);
         if (append_result == -1)
             goto addarg_failed;
-    NODE_END_EACH
+    TREE_OBJECT_END_EACH
 
     return args;
 
@@ -75,7 +75,7 @@ NodeChildrenView_repr_build_arglist_list(PyObject* myself)
     return NULL;
 }
 static PyObject*
-NodeChildrenView_repr_build_arglist_string(PyObject* myself, int* need_comma)
+TreeObjectChildrenView_repr_build_arglist_string(PyObject* myself, int* need_comma)
 {
     PyObject* separator;
     PyObject* arglist;
@@ -85,7 +85,7 @@ NodeChildrenView_repr_build_arglist_string(PyObject* myself, int* need_comma)
     if (separator == NULL)
         return NULL;
 
-    arglist = NodeChildrenView_repr_build_arglist_list(myself);
+    arglist = TreeObjectChildrenView_repr_build_arglist_list(myself);
     if (arglist == NULL)
     {
         Py_DECREF(separator);
@@ -102,11 +102,11 @@ NodeChildrenView_repr_build_arglist_string(PyObject* myself, int* need_comma)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_repr(PyObject* myself)
+TreeObjectChildrenView_repr(PyObject* myself)
 {
     int need_comma;
     PyObject* repr;
-    PyObject* argstring = NodeChildrenView_repr_build_arglist_string(myself, &need_comma);
+    PyObject* argstring = TreeObjectChildrenView_repr_build_arglist_string(myself, &need_comma);
     if (argstring == NULL)
         return NULL;
 
@@ -120,103 +120,98 @@ NodeChildrenView_repr(PyObject* myself)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_str(PyObject* myself)
+TreeObjectChildrenView_str(PyObject* myself)
 {
-    return NodeChildrenView_repr(myself);
+    return TreeObjectChildrenView_repr(myself);
 }
 
 /* ------------------------------------------------------------------------- */
 static Py_ssize_t
-NodeChildrenView_length(PyObject* myself)
+TreeObjectChildrenView_length(PyObject* myself)
 {
-    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+    ik_TreeObjectChildrenView* self = (ik_TreeObjectChildrenView*)myself;
 
-    return ik_node_child_count(self->node);
+    return ik_tree_object_child_count(self->tree_object);
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_item(PyObject* myself, Py_ssize_t index)
+TreeObjectChildrenView_item(PyObject* myself, Py_ssize_t index)
 {
-    ik_Node* node;
-    ik_NodeChildrenView* self = (ik_NodeChildrenView*)myself;
+    ik_TreeObject* tree_object;
+    ik_TreeObjectChildrenView* self = (ik_TreeObjectChildrenView*)myself;
 
-    if (index < 0 || index >= ik_node_child_count(self->node))
+    if (index < 0 || index >= ik_tree_object_child_count(self->tree_object))
     {
-        PyErr_SetString(PyExc_IndexError, "Node child index out of range");
+        PyErr_SetString(PyExc_IndexError, "TreeObject child index out of range");
         return NULL;
     }
 
-    node = ik_node_get_child(self->node, (uint32_t)index)->user_data;
-    return Py_INCREF(node), (PyObject*)node;
+    tree_object = ik_tree_object_get_child(self->tree_object, (uint32_t)index)->user_data;
+    return Py_INCREF(tree_object), (PyObject*)tree_object;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-NodeChildrenView_subscript(PyObject* self, PyObject* item)
+TreeObjectChildrenView_subscript(PyObject* self, PyObject* item)
 {
     if (PyIndex_Check(item))
     {
         Py_ssize_t idx = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (idx == -1 && PyErr_Occurred())
             return NULL;
-        return NodeChildrenView_item(self, idx);
+        return TreeObjectChildrenView_item(self, idx);
     }
     else if (PySlice_Check(item))
     {
-        PyErr_SetString(PyExc_TypeError, "Node children can't be sliced (they're not ordered)");
+        PyErr_SetString(PyExc_TypeError, "TreeObject children can't be sliced (they're not ordered)");
         return NULL;
     }
     else
     {
-        PyErr_SetString(PyExc_TypeError, "Node child index must be an integer");
+        PyErr_SetString(PyExc_TypeError, "TreeObject child index must be an integer");
         return NULL;
     }
 }
 
 /* ------------------------------------------------------------------------- */
-static PyMappingMethods NodeChildrenView_as_mapping = {
-    .mp_length = NodeChildrenView_length,
-    .mp_subscript = NodeChildrenView_subscript
+static PyMappingMethods TreeObjectChildrenView_as_mapping = {
+    .mp_length = TreeObjectChildrenView_length,
+    .mp_subscript = TreeObjectChildrenView_subscript
 };
 
 /* ------------------------------------------------------------------------- */
-static PySequenceMethods NodeChildrenView_as_sequence = {
-    .sq_length = NodeChildrenView_length,
-    .sq_item = NodeChildrenView_item
+static PySequenceMethods TreeObjectChildrenView_as_sequence = {
+    .sq_length = TreeObjectChildrenView_length,
+    .sq_item = TreeObjectChildrenView_item
 };
 
 /* ------------------------------------------------------------------------- */
-PyTypeObject ik_NodeChildrenViewType = {
+PyTypeObject ik_TreeObjectChildrenViewType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "ik.NodeChildrenView",
-    .tp_basicsize = sizeof(ik_NodeChildrenView),
-    .tp_dealloc = NodeChildrenView_dealloc,
-    .tp_repr = NodeChildrenView_repr,
-    .tp_str = NodeChildrenView_str,
+    .tp_name = "ik.TreeObjectChildrenView",
+    .tp_basicsize = sizeof(ik_TreeObjectChildrenView),
+    .tp_dealloc = TreeObjectChildrenView_dealloc,
+    .tp_repr = TreeObjectChildrenView_repr,
+    .tp_str = TreeObjectChildrenView_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = "",
-    .tp_new = NodeChildrenView_new,
-    .tp_as_mapping = &NodeChildrenView_as_mapping,
-    .tp_as_sequence = &NodeChildrenView_as_sequence
+    .tp_new = TreeObjectChildrenView_new,
+    .tp_as_mapping = &TreeObjectChildrenView_as_mapping,
+    .tp_as_sequence = &TreeObjectChildrenView_as_sequence
 };
 
 /* ------------------------------------------------------------------------- */
 static void
-Node_dealloc(PyObject* myself)
+TreeObject_dealloc(PyObject* myself)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
 
-    /* Release references to all child python nodes */
-    NODE_FOR_EACH_CHILD(self->node, child)
+    /* Release references to all child python tree_objects */
+    TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
         Py_DECREF(child->user_data);
-    NODE_END_EACH
-    IK_DECREF(self->node);
-
-    UNREF_VEC3_DATA(self->position);
-    UNREF_QUAT_DATA(self->rotation);
-    Py_DECREF(self->position);
-    Py_DECREF(self->rotation);
+    TREE_OBJECT_END_EACH
+    IK_DECREF(self->tree_object);
 
     Py_DECREF(self->algorithm);
     Py_DECREF(self->constraints);
@@ -224,67 +219,53 @@ Node_dealloc(PyObject* myself)
     Py_DECREF(self->pole);
     Py_DECREF(self->children);
 
-    ik_NodeType.tp_base->tp_dealloc(myself);
+    ik_TreeObjectType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    ik_Node* self;
-    ik_NodeChildrenView* children_view;
+    ik_TreeObject* self;
+    ik_TreeObjectChildrenView* children_view;
     ik_Vec3* position;
     ik_Quat* rotation;
-    struct ik_node* node;
-    PyObject* node_capsule;
+    struct ik_tree_object* tree_object;
+    PyObject* tree_object_capsule;
     PyObject* constructor_args;
 
     (void)args; (void)kwds;
 
-    /* Allocate the internal node */
-    node = ik_node_create();
-    if (node == NULL)
-        goto alloc_node_failed;
-    IK_INCREF(node);
+    /* Allocate the internal tree_object */
+    tree_object = ik_tree_object_create();
+    if (tree_object == NULL)
+        goto alloc_tree_object_failed;
+    IK_INCREF(tree_object);
 
-    /* Add node to capsule so we can construct a NodeChildrenView object */
-    node_capsule = PyCapsule_New(node, NULL, NULL);
-    if (node_capsule == NULL)
+    /* Add tree_object to capsule so we can construct a TreeObjectChildrenView object */
+    tree_object_capsule = PyCapsule_New(tree_object, NULL, NULL);
+    if (tree_object_capsule == NULL)
         goto alloc_children_view_failed;
 
     /* Add capsule to arglist tuple */
     constructor_args = PyTuple_New(1);
     if (constructor_args == NULL)
     {
-        Py_DECREF(node_capsule);
+        Py_DECREF(tree_object_capsule);
         goto alloc_children_view_failed;
     }
-    PyTuple_SET_ITEM(constructor_args, 0, node_capsule); /* steals ref */
+    PyTuple_SET_ITEM(constructor_args, 0, tree_object_capsule); /* steals ref */
 
     /* create children view object */
-    children_view = (ik_NodeChildrenView*)PyObject_CallObject((PyObject*)&ik_NodeChildrenViewType, constructor_args);
+    children_view = (ik_TreeObjectChildrenView*)PyObject_CallObject((PyObject*)&ik_TreeObjectChildrenViewType, constructor_args);
     Py_DECREF(constructor_args); /* destroys arglist and capsule */
     if (children_view == NULL)
         goto alloc_children_view_failed;
 
-    /* Allocate other attributes */
-    position = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
-    if (position == NULL)
-        goto alloc_position_failed;
-    rotation = (ik_Quat*)PyObject_CallObject((PyObject*)&ik_QuatType, NULL);
-    if (rotation == NULL)
-        goto alloc_rotation_failed;
-
     /* Finally, alloc self */
-    self = (ik_Node*)ik_NodeType.tp_base->tp_new(type, args, kwds);
+    self = (ik_TreeObject*)ik_TreeObjectType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
-
-    /* Set up position/rotation */
-    self->position = position;
-    self->rotation = rotation;
-    REF_VEC3_DATA(self->position, &node->position);
-    REF_QUAT_DATA(self->rotation, &node->rotation);
 
     /* Set all attachments to None */
     Py_INCREF(Py_None); self->algorithm = Py_None;
@@ -293,13 +274,13 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     Py_INCREF(Py_None); self->pole = Py_None;
 
     /*
-     * Store the python object in node's user data so we don't have to store
-     * child nodes in a python list.
+     * Store the python object in tree_object's user data so we don't have to store
+     * child tree_objects in a python list.
      */
-    node->user_data = self;
+    tree_object->user_data = self;
 
     /* store other objects we successfully allocated */
-    self->node = node;
+    self->tree_object = tree_object;
     self->children = children_view;
 
     return (PyObject*)self;
@@ -307,17 +288,17 @@ Node_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     alloc_self_failed             : Py_DECREF(rotation);
     alloc_rotation_failed         : Py_DECREF(position);
     alloc_position_failed         : Py_DECREF(children_view);
-    alloc_children_view_failed    : IK_DECREF(node);
-    alloc_node_failed             : return NULL;
+    alloc_children_view_failed    : IK_DECREF(tree_object);
+    alloc_tree_object_failed             : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
 static int
-Node_setchildren(PyObject* myself, PyObject* value, void* closure);
+TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure);
 static int
-Node_setconstraints(PyObject* myself, PyObject* value, void* closure);
+TreeObject_setconstraints(PyObject* myself, PyObject* value, void* closure);
 static int
-Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
+TreeObject_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     ik_Algorithm* algorithm = NULL;
     PyObject* constraint_list = NULL;
@@ -326,7 +307,7 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
     ik_Pole* pole = NULL;
     ik_Vec3* position = NULL;
     ik_Quat* rotation = NULL;
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
 
     static char* kwds_str[] = {
         "children",
@@ -349,19 +330,19 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
             &constraint_list,
             &ik_EffectorType, &effector,
             &ik_PoleType, &pole,
-            &self->node->mass,
-            &self->node->rotation_weight))
+            &self->tree_object->mass,
+            &self->tree_object->rotation_weight))
         return -1;
 
     if (children_list != NULL)
     {
-        if (Node_setchildren(myself, children_list, NULL) != 0)
+        if (TreeObject_setchildren(myself, children_list, NULL) != 0)
             return -1;
     }
 
     if (constraint_list != NULL)
     {
-        if (Node_setconstraints(myself, constraint_list, NULL) != 0)
+        if (TreeObject_setconstraints(myself, constraint_list, NULL) != 0)
             return -1;
     }
 
@@ -369,8 +350,8 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
     {
         PyObject* tmp;
 
-        /* Attach to internal node */
-        ik_node_attach_algorithm(self->node, (struct ik_algorithm*)algorithm->super.attachment);
+        /* Attach to internal tree_object */
+        ik_tree_object_attach_algorithm(self->tree_object, (struct ik_algorithm*)algorithm->super.attachment);
 
         /* Set attachment on python object */
         tmp = (PyObject*)self->algorithm;
@@ -382,8 +363,8 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
     {
         PyObject* tmp;
 
-        /* Attach to internal node */
-        ik_node_attach_effector(self->node, (struct ik_effector*)effector->super.attachment);
+        /* Attach to internal tree_object */
+        ik_tree_object_attach_effector(self->tree_object, (struct ik_effector*)effector->super.attachment);
 
         /* Set attachment on python object */
         tmp = (PyObject*)self->effector;
@@ -395,8 +376,8 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
     {
         PyObject* tmp;
 
-        /* Attach to internal node */
-        ik_node_attach_pole(self->node, (struct ik_pole*)pole->super.attachment);
+        /* Attach to internal tree_object */
+        ik_tree_object_attach_pole(self->tree_object, (struct ik_pole*)pole->super.attachment);
 
         /* Set attachment on python object */
         tmp = (PyObject*)self->pole;
@@ -415,19 +396,19 @@ Node_init(PyObject* myself, PyObject* args, PyObject* kwds)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_link(PyObject* myself, PyObject* child)
+TreeObject_link(PyObject* myself, PyObject* child)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
 
-    if (!ik_Node_CheckExact(child))
+    if (!ik_TreeObject_CheckExact(child))
     {
-        PyErr_SetString(PyExc_TypeError, "Argument must be of type ik.Node");
+        PyErr_SetString(PyExc_TypeError, "Argument must be of type ik.TreeObject");
         return NULL;
     }
 
-    if (ik_node_link(self->node, ((ik_Node*)child)->node) != 0)
+    if (ik_tree_object_link(self->tree_object, ((ik_TreeObject*)child)->tree_object) != 0)
     {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to link node. Check log for more info.");
+        PyErr_SetString(PyExc_RuntimeError, "Failed to link tree_object. Check log for more info.");
         return NULL;
     }
     Py_INCREF(child);
@@ -437,49 +418,49 @@ Node_link(PyObject* myself, PyObject* child)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_unlink(PyObject* myself, PyObject* args)
+TreeObject_unlink(PyObject* myself, PyObject* args)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)args;
 
     /* Parent is holding a reference to this python object, need to decref that
      * when unlinking */
-    if (self->node->parent)
+    if (self->tree_object->parent)
         Py_DECREF(self);
 
-    ik_node_unlink(self->node);
+    ik_tree_object_unlink(self->tree_object);
 
     Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_unlink_all_children(PyObject* myself, PyObject* args)
+TreeObject_unlink_all_children(PyObject* myself, PyObject* args)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)args;
 
-    NODE_FOR_EACH_CHILD(self->node, child)
+    TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
         Py_DECREF(child->user_data);
-    NODE_END_EACH
-    ik_node_unlink_all_children(self->node);
+    TREE_OBJECT_END_EACH
+    ik_tree_object_unlink_all_children(self->tree_object);
 
     Py_RETURN_NONE;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
+TreeObject_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     PyObject* link_result;
-    ik_Node* child;
+    ik_TreeObject* child;
     (void)args;
 
-    child = (ik_Node*)PyObject_Call((PyObject*)&ik_NodeType, args, kwds);
+    child = (ik_TreeObject*)PyObject_Call((PyObject*)&ik_TreeObjectType, args, kwds);
     if (child == NULL)
         return NULL;
 
-    link_result = Node_link(myself, (PyObject*)child);
+    link_result = TreeObject_link(myself, (PyObject*)child);
     if (link_result == NULL)
     {
         Py_DECREF(child);
@@ -491,34 +472,24 @@ Node_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
-Node_pack(PyObject* myself, PyObject* arg)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)arg;
-    Py_RETURN_NONE;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyMethodDef Node_methods[] = {
-    {"link",                Node_link,                      METH_O,                       IK_NODE_LINK_DOC},
-    {"unlink",              Node_unlink,                    METH_NOARGS,                  IK_NODE_UNLINK_DOC},
-    {"unlink_all_children", Node_unlink_all_children,       METH_NOARGS,                  IK_NODE_UNLINK_ALL_CHILDREN_DOC},
-    {"create_child",        (PyCFunction)Node_create_child, METH_VARARGS | METH_KEYWORDS, IK_NODE_CREATE_CHILD_DOC},
-    {"pack",                Node_pack,                      METH_NOARGS,                  IK_NODE_PACK_DOC},
+static PyMethodDef TreeObject_methods[] = {
+    {"link",                TreeObject_link,                      METH_O,                       IK_TREE_OBJECT_LINK_DOC},
+    {"unlink",              TreeObject_unlink,                    METH_NOARGS,                  IK_TREE_OBJECT_UNLINK_DOC},
+    {"unlink_all_children", TreeObject_unlink_all_children,       METH_NOARGS,                  IK_TREE_OBJECT_UNLINK_ALL_CHILDREN_DOC},
+    {"create_child",        (PyCFunction)TreeObject_create_child, METH_VARARGS | METH_KEYWORDS, IK_TREE_OBJECT_CREATE_CHILD_DOC},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getcount(PyObject* myself, void* closure)
+TreeObject_getcount(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
-    return PyLong_FromLong(ik_node_count(self->node));
+    return PyLong_FromLong(ik_tree_object_count(self->tree_object));
 }
 static int
-Node_setcount(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setcount(PyObject* myself, PyObject* value, void* closure)
 {
     (void)myself; (void)value; (void)closure;
     PyErr_SetString(PyExc_AttributeError, "Count is read-only");
@@ -527,14 +498,14 @@ Node_setcount(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getchild_count(PyObject* myself, void* closure)
+TreeObject_getchild_count(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
-    return PyLong_FromLong(ik_node_child_count(self->node));
+    return PyLong_FromLong(ik_tree_object_child_count(self->tree_object));
 }
 static int
-Node_setchild_count(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setchild_count(PyObject* myself, PyObject* value, void* closure)
 {
     (void)myself; (void)value; (void)closure;
     PyErr_SetString(PyExc_AttributeError, "Child count is read-only");
@@ -543,44 +514,44 @@ Node_setchild_count(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getchildren(PyObject* myself, void* closure)
+TreeObject_getchildren(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
     return Py_INCREF(self->children), (PyObject*)self->children;
 }
 static int
-Node_setchildren(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
-    /* Children can be a single ik_Node instance, or a list of ik_Node */
-    if (ik_Node_CheckExact(value))
+    /* Children can be a single ik_TreeObject instance, or a list of ik_TreeObject */
+    if (ik_TreeObject_CheckExact(value))
     {
         struct cs_vector old_children;
         PyObject* result;
-        ik_Node* new_child = (ik_Node*)value;
+        ik_TreeObject* new_child = (ik_TreeObject*)value;
 
-        old_children = self->node->children;
-        vector_init(&self->node->children, sizeof(struct ik_node*));
+        old_children = self->tree_object->children;
+        vector_init(&self->tree_object->children, sizeof(struct ik_tree_object*));
 
-        if (!ik_node_can_link(self->node, new_child->node))
+        if (!ik_tree_object_can_link(self->tree_object, new_child->tree_object))
         {
-            PyErr_SetString(PyExc_RuntimeError, "Can't link node because it would create a circular dependency");
+            PyErr_SetString(PyExc_RuntimeError, "Can't link tree_object because it would create a circular dependency");
             goto restore_old_children1;
         }
 
-        new_child->node->parent = NULL;
-        result = Node_link(myself, value);
+        new_child->tree_object->parent = NULL;
+        result = TreeObject_link(myself, value);
         if (result == NULL)
             goto restore_old_children1;
         Py_DECREF(result);
 
         /* Unlink old children */
-        VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
-            struct ik_node* child = *pchild;
-            if (child->parent != (struct ik_tree_object*)self->node)
+        VECTOR_FOR_EACH(&old_children, struct ik_tree_object*, pchild)
+            struct ik_tree_object* child = *pchild;
+            if (child->parent != (struct ik_tree_object*)self->tree_object)
                 child->parent = NULL;
             Py_DECREF(child->user_data);
             IK_DECREF(child);
@@ -589,11 +560,11 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
 
         return 0;
 
-        restore_old_children1 : vector_deinit(&self->node->children);
-                                self->node->children = old_children;
-                                NODE_FOR_EACH_CHILD(self->node, child)
-                                    child->parent = (struct ik_tree_object*)self->node;
-                                NODE_END_EACH
+        restore_old_children1 : vector_deinit(&self->tree_object->children);
+                                self->tree_object->children = old_children;
+                                TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
+                                    child->parent = (struct ik_tree_object*)self->tree_object;
+                                TREE_OBJECT_END_EACH
         return -1;
     }
     else if (PySequence_Check(value))
@@ -604,35 +575,35 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
         if (seq == NULL)
             return -1;
 
-        old_children = self->node->children;
-        vector_init(&self->node->children, sizeof(struct ik_node*));
+        old_children = self->tree_object->children;
+        vector_init(&self->tree_object->children, sizeof(struct ik_tree_object*));
 
         for (i = 0; i != PySequence_Fast_GET_SIZE(seq); ++i)
         {
             PyObject* result;
             PyObject* child = PySequence_Fast_GET_ITEM(seq, i);
-            if (!ik_Node_CheckExact(child))
+            if (!ik_TreeObject_CheckExact(child))
             {
-                PyErr_Format(PyExc_TypeError, "Object at index %d is not of type ik.Node", i);
+                PyErr_Format(PyExc_TypeError, "Object at index %d is not of type ik.TreeObject", i);
                 goto restore_old_children2;
             }
 
-            if (!ik_node_can_link(self->node, ((ik_Node*)child)->node))
+            if (!ik_tree_object_can_link(self->tree_object, ((ik_TreeObject*)child)->tree_object))
             {
-                PyErr_Format(PyExc_RuntimeError, "Can't link node at index %d because it would create a circular dependency", i);
+                PyErr_Format(PyExc_RuntimeError, "Can't link tree_object at index %d because it would create a circular dependency", i);
                 goto restore_old_children2;
             }
 
-            ((ik_Node*)child)->node->parent = NULL;
-            result = Node_link(myself, child);
+            ((ik_TreeObject*)child)->tree_object->parent = NULL;
+            result = TreeObject_link(myself, child);
             if (result == NULL)
                 goto restore_old_children2;
         }
 
         /* unlink old children */
-        VECTOR_FOR_EACH(&old_children, struct ik_node*, pchild)
-            struct ik_node* child = *pchild;
-            if (child->parent != (struct ik_tree_object*)self->node)
+        VECTOR_FOR_EACH(&old_children, struct ik_tree_object*, pchild)
+            struct ik_tree_object* child = *pchild;
+            if (child->parent != (struct ik_tree_object*)self->tree_object)
                 child->parent = NULL;
             Py_DECREF(child->user_data);
             IK_DECREF(child);
@@ -641,34 +612,34 @@ Node_setchildren(PyObject* myself, PyObject* value, void* closure)
 
         return 0;
 
-        restore_old_children2 : Node_unlink_all_children(myself, NULL);
-                                vector_deinit(&self->node->children);
-                                self->node->children = old_children;
-                                NODE_FOR_EACH_CHILD(self->node, child)
-                                    child->parent = (struct ik_tree_object*)self->node;
-                                NODE_END_EACH
+        restore_old_children2 : TreeObject_unlink_all_children(myself, NULL);
+                                vector_deinit(&self->tree_object->children);
+                                self->tree_object->children = old_children;
+                                TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
+                                    child->parent = (struct ik_tree_object*)self->tree_object;
+                                TREE_OBJECT_END_EACH
         return -1;
     }
     else if (value == Py_None)
     {
-        Node_unlink_all_children(myself, NULL);
+        TreeObject_unlink_all_children(myself, NULL);
         return 0;
     }
 
-    PyErr_SetString(PyExc_TypeError, "Expected a list of ik.Node objects or a single instance of ik.Node or None");
+    PyErr_SetString(PyExc_TypeError, "Expected a list of ik.TreeObject objects or a single instance of ik.TreeObject or None");
     return -1;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getparent(PyObject* myself, void* closure)
+TreeObject_getparent(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
-    if (self->node->parent != NULL)
+    if (self->tree_object->parent != NULL)
     {
-        ik_Node* parent = self->node->parent->user_data;
+        ik_TreeObject* parent = self->tree_object->parent->user_data;
         return Py_INCREF(parent), (PyObject*)parent;
     }
     else
@@ -677,7 +648,7 @@ Node_getparent(PyObject* myself, void* closure)
     }
 }
 static int
-Node_setparent(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setparent(PyObject* myself, PyObject* value, void* closure)
 {
     (void)myself; (void)value; (void)closure;
     PyErr_SetString(PyExc_AttributeError, "parent property is read-only");
@@ -686,157 +657,21 @@ Node_setparent(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getposition(PyObject* myself, void* closure)
+TreeObject_getmass(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
-    return Py_INCREF(self->position), (PyObject*)self->position;
+    return PyFloat_FromDouble(self->tree_object->mass);
 }
 static int
-Node_setposition(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setmass(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Vec3_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type for position");
-        return -1;
-    }
-
-    ASSIGN_VEC3(self->position, (ik_Vec3*)value);
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_getrotation(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    return Py_INCREF(self->rotation), (PyObject*)self->rotation;
-}
-static int
-Node_setrotation(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Quat_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for rotation");
-        return -1;
-    }
-
-    ASSIGN_QUAT(self->rotation, (ik_Quat*)value);
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_gettransform(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    Py_RETURN_NONE;
-}
-static int
-Node_settransform(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Quat_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for transform");
-        return -1;
-    }
-
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_getglobal_position(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    return Py_INCREF(self->position), (PyObject*)self->position;
-}
-static int
-Node_setglobal_position(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Vec3_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Vec3() type for position");
-        return -1;
-    }
-
-    ASSIGN_VEC3(self->position, (ik_Vec3*)value);
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_getglobal_rotation(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    return Py_INCREF(self->rotation), (PyObject*)self->rotation;
-}
-static int
-Node_setglobal_rotation(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Quat_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for rotation");
-        return -1;
-    }
-
-    ASSIGN_QUAT(self->rotation, (ik_Quat*)value);
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_getglobal_transform(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    Py_RETURN_NONE;
-}
-static int
-Node_setglobal_transform(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    if (!ik_Quat_CheckExact(value))
-    {
-        PyErr_SetString(PyExc_TypeError, "Expected a ik.Quat() type for transform");
-        return -1;
-    }
-
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Node_getmass(PyObject* myself, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
-    (void)closure;
-    return PyFloat_FromDouble(self->node->mass);
-}
-static int
-Node_setmass(PyObject* myself, PyObject* value, void* closure)
-{
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)myself; (void)closure;
 
     if (PyFloat_Check(value))
     {
-        self->node->mass = PyFloat_AS_DOUBLE(value);
+        self->tree_object->mass = PyFloat_AS_DOUBLE(value);
         return 0;
     }
     if (PyLong_Check(value))
@@ -844,7 +679,7 @@ Node_setmass(PyObject* myself, PyObject* value, void* closure)
         double d = PyLong_AsDouble(value);
         if (d == -1 && PyErr_Occurred())
             return -1;
-        self->node->mass = d;
+        self->tree_object->mass = d;
         return 0;
     }
 
@@ -854,21 +689,21 @@ Node_setmass(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getrotation_weight(PyObject* myself, void* closure)
+TreeObject_getrotation_weight(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
-    return PyFloat_FromDouble(self->node->rotation_weight);
+    return PyFloat_FromDouble(self->tree_object->rotation_weight);
 }
 static int
-Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)myself; (void)closure;
 
     if (PyFloat_Check(value))
     {
-        self->node->mass = PyFloat_AS_DOUBLE(value);
+        self->tree_object->mass = PyFloat_AS_DOUBLE(value);
         return 0;
     }
     if (PyLong_Check(value))
@@ -876,7 +711,7 @@ Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
         double d = PyLong_AsDouble(value);
         if (d == -1 && PyErr_Occurred())
             return -1;
-        self->node->mass = d;
+        self->tree_object->mass = d;
         return 0;
     }
 
@@ -886,23 +721,23 @@ Node_setrotation_weight(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getalgorithm(PyObject* myself, void* closure)
+TreeObject_getalgorithm(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
     return Py_INCREF(self->algorithm), self->algorithm;
 }
 static int
-Node_setalgorithm(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setalgorithm(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
     if (ik_Algorithm_CheckExact(value))
     {
         PyObject* tmp;
         ik_Attachment* py_attachment = (ik_Attachment*)value;
-        ik_node_attach_algorithm(self->node, (struct ik_algorithm*)py_attachment->attachment);
+        ik_tree_object_attach_algorithm(self->tree_object, (struct ik_algorithm*)py_attachment->attachment);
 
         tmp = self->algorithm;
         Py_INCREF(value);
@@ -915,7 +750,7 @@ Node_setalgorithm(PyObject* myself, PyObject* value, void* closure)
     if (value == Py_None)
     {
         PyObject* tmp;
-        ik_node_detach_algorithm(self->node);
+        ik_tree_object_detach_algorithm(self->tree_object);
 
         tmp = self->algorithm;
         Py_INCREF(Py_None);
@@ -931,14 +766,14 @@ Node_setalgorithm(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getconstraints(PyObject* myself, void* closure)
+TreeObject_getconstraints(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
     return Py_INCREF(self->constraints), (PyObject*)self->constraints;
 }
 static void
-unlink_internal_constraints(ik_Node* self)
+unlink_internal_constraints(ik_TreeObject* self)
 {
     int i;
 
@@ -952,10 +787,10 @@ unlink_internal_constraints(ik_Node* self)
         constraint->next = NULL;
     }
 
-    ik_node_detach_constraint(self->node);
+    ik_tree_object_detach_constraint(self->tree_object);
 }
 static void
-link_internal_constraints(ik_Node* self)
+link_internal_constraints(ik_TreeObject* self)
 {
     int i;
     ik_Constraint* first_constraint = NULL;
@@ -975,12 +810,12 @@ link_internal_constraints(ik_Node* self)
     }
 
     if (first_constraint)
-        ik_node_attach_constraint(self->node, (struct ik_constraint*)first_constraint->super.attachment);
+        ik_tree_object_attach_constraint(self->tree_object, (struct ik_constraint*)first_constraint->super.attachment);
 }
 static int
-Node_setconstraints(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setconstraints(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
     if (PySequence_Check(value))
@@ -1026,7 +861,7 @@ Node_setconstraints(PyObject* myself, PyObject* value, void* closure)
             constraint = (struct ik_constraint*)py_constraint->super.attachment;
             if (constraint->next)
             {
-                PyErr_Format(PyExc_RuntimeError, "Constraint at index %d in list is already part of another constraint chain. Make sure you aren't assigning the same constraint object to multiple nodes, as this is not supported.", i);
+                PyErr_Format(PyExc_RuntimeError, "Constraint at index %d in list is already part of another constraint chain. Make sure you aren't assigning the same constraint object to multiple tree_objects, as this is not supported.", i);
                 Py_DECREF(seq);
                 return -1;
             }
@@ -1081,23 +916,23 @@ Node_setconstraints(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_geteffector(PyObject* myself, void* closure)
+TreeObject_geteffector(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
     return Py_INCREF(self->effector), self->effector;
 }
 static int
-Node_seteffector(PyObject* myself, PyObject* value, void* closure)
+TreeObject_seteffector(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
     if (ik_Effector_CheckExact(value))
     {
         PyObject* tmp;
         ik_Attachment* py_attachment = (ik_Attachment*)value;
-        ik_node_attach_effector(self->node, (struct ik_effector*)py_attachment->attachment);
+        ik_tree_object_attach_effector(self->tree_object, (struct ik_effector*)py_attachment->attachment);
 
         tmp = self->effector;
         Py_INCREF(value);
@@ -1110,7 +945,7 @@ Node_seteffector(PyObject* myself, PyObject* value, void* closure)
     if (value == Py_None)
     {
         PyObject* tmp;
-        ik_node_detach_effector(self->node);
+        ik_tree_object_detach_effector(self->tree_object);
 
         tmp = self->effector;
         Py_INCREF(Py_None);
@@ -1126,23 +961,23 @@ Node_seteffector(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_getpole(PyObject* myself, void* closure)
+TreeObject_getpole(PyObject* myself, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
     return Py_INCREF(self->pole), self->pole;
 }
 static int
-Node_setpole(PyObject* myself, PyObject* value, void* closure)
+TreeObject_setpole(PyObject* myself, PyObject* value, void* closure)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
     (void)closure;
 
     if (ik_Pole_CheckExact(value))
     {
         PyObject* tmp;
         ik_Attachment* py_attachment = (ik_Attachment*)value;
-        ik_node_attach_pole(self->node, (struct ik_pole*)py_attachment->attachment);
+        ik_tree_object_attach_pole(self->tree_object, (struct ik_pole*)py_attachment->attachment);
 
         tmp = self->pole;
         Py_INCREF(value);
@@ -1155,7 +990,7 @@ Node_setpole(PyObject* myself, PyObject* value, void* closure)
     if (value == Py_None)
     {
         PyObject* tmp;
-        ik_node_detach_pole(self->node);
+        ik_tree_object_detach_pole(self->tree_object);
 
         tmp = self->pole;
         Py_INCREF(Py_None);
@@ -1170,31 +1005,25 @@ Node_setpole(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
-static PyGetSetDef Node_getset[] = {
-    {"count",            Node_getcount,            Node_setcount,            IK_NODE_COUNT_DOC, NULL},
-    {"child_count",      Node_getchild_count,      Node_setchild_count,      IK_NODE_CHILD_COUNT_DOC, NULL},
-    {"children",         Node_getchildren,         Node_setchildren,         IK_NODE_CHILDREN_DOC, NULL},
-    {"parent",           Node_getparent,           Node_setparent,           IK_NODE_PARENT_DOC, NULL},
-    {"position",         Node_getposition,         Node_setposition,         IK_NODE_POSITION_DOC, NULL},
-    {"rotation",         Node_getrotation,         Node_setrotation,         IK_NODE_ROTATION_DOC, NULL},
-    {"transform",        Node_gettransform,        Node_settransform,        IK_NODE_TRANSFORM_DOC, NULL},
-    {"global_position",  Node_getglobal_position,  Node_setglobal_position,  IK_NODE_GLOBAL_POSITION_DOC, NULL},
-    {"global_rotation",  Node_getglobal_rotation,  Node_setglobal_rotation,  IK_NODE_GLOBAL_ROTATION_DOC, NULL},
-    {"global_transform", Node_getglobal_transform, Node_setglobal_transform, IK_NODE_GLOBAL_TRANSFORM_DOC, NULL},
-    {"mass",             Node_getmass,             Node_setmass,             IK_NODE_MASS_DOC, NULL},
-    {"rotation_weight",  Node_getrotation_weight,  Node_setrotation_weight,  IK_NODE_ROTATION_WEIGHT_DOC, NULL},
-    {"algorithm",        Node_getalgorithm,        Node_setalgorithm,        IK_NODE_ALGORITHM_DOC, NULL},
-    {"constraints",      Node_getconstraints,      Node_setconstraints,      IK_NODE_CONSTRAINTS_DOC, NULL},
-    {"effector",         Node_geteffector,         Node_seteffector,         IK_NODE_EFFECTOR_DOC, NULL},
-    {"pole",             Node_getpole,             Node_setpole,             IK_NODE_POLE_DOC, NULL},
+static PyGetSetDef TreeObject_getset[] = {
+    {"count",            TreeObject_getcount,            TreeObject_setcount,            IK_TREE_OBJECT_COUNT_DOC, NULL},
+    {"child_count",      TreeObject_getchild_count,      TreeObject_setchild_count,      IK_TREE_OBJECT_CHILD_COUNT_DOC, NULL},
+    {"children",         TreeObject_getchildren,         TreeObject_setchildren,         IK_TREE_OBJECT_CHILDREN_DOC, NULL},
+    {"parent",           TreeObject_getparent,           TreeObject_setparent,           IK_TREE_OBJECT_PARENT_DOC, NULL},
+    {"mass",             TreeObject_getmass,             TreeObject_setmass,             IK_TREE_OBJECT_MASS_DOC, NULL},
+    {"rotation_weight",  TreeObject_getrotation_weight,  TreeObject_setrotation_weight,  IK_TREE_OBJECT_ROTATION_WEIGHT_DOC, NULL},
+    {"algorithm",        TreeObject_getalgorithm,        TreeObject_setalgorithm,        IK_TREE_OBJECT_ALGORITHM_DOC, NULL},
+    {"constraints",      TreeObject_getconstraints,      TreeObject_setconstraints,      IK_TREE_OBJECT_CONSTRAINTS_DOC, NULL},
+    {"effector",         TreeObject_geteffector,         TreeObject_seteffector,         IK_TREE_OBJECT_EFFECTOR_DOC, NULL},
+    {"pole",             TreeObject_getpole,             TreeObject_setpole,             IK_TREE_OBJECT_POLE_DOC, NULL},
     {NULL}
 };
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_repr_build_arglist_list(PyObject* myself)
+TreeObject_repr_build_arglist_list(PyObject* myself)
 {
-    ik_Node* self = (ik_Node*)myself;
+    ik_TreeObject* self = (ik_TreeObject*)myself;
 
     PyObject* args = PyList_New(0);
     if (args == NULL)
@@ -1220,56 +1049,14 @@ Node_repr_build_arglist_list(PyObject* myself)
     APPEND_ATTACHMENT(pole)
 #undef APPEND_ATTACHMENT
 
-    /* Position */
-    {
-        int append_result;
-        PyObject* position;
-        PyObject* arg;
-
-        position = Node_getposition(myself, NULL);
-        if (position == NULL)
-            goto addarg_failed;
-
-        arg = PyUnicode_FromFormat("position=%R", position);
-        Py_DECREF(position);
-        if (arg == NULL)
-            goto addarg_failed;
-
-        append_result = PyList_Append(args, arg);
-        Py_DECREF(arg);
-        if (append_result == -1)
-            goto addarg_failed;
-    }
-
-    /* Rotation */
-    {
-        int append_result;
-        PyObject* rotation;
-        PyObject* arg;
-
-        rotation = Node_getrotation(myself, NULL);
-        if (rotation == NULL)
-            goto addarg_failed;
-
-        arg = PyUnicode_FromFormat("rotation=%R", rotation);
-        Py_DECREF(rotation);
-        if (arg == NULL)
-            goto addarg_failed;
-
-        append_result = PyList_Append(args, arg);
-        Py_DECREF(arg);
-        if (append_result == -1)
-            goto addarg_failed;
-    }
-
     /* Mass */
-    if (self->node->mass != 1.0)
+    if (self->tree_object->mass != 1.0)
     {
         int append_result;
         PyObject* mass;
         PyObject* arg;
 
-        mass = PyFloat_FromDouble(self->node->mass);
+        mass = PyFloat_FromDouble(self->tree_object->mass);
         if (mass == NULL)
             goto addarg_failed;
 
@@ -1285,13 +1072,13 @@ Node_repr_build_arglist_list(PyObject* myself)
     }
 
     /* Rotation weight */
-    if (self->node->rotation_weight != 1.0)
+    if (self->tree_object->rotation_weight != 1.0)
     {
         int append_result;
         PyObject* rotation_weight;
         PyObject* arg;
 
-        rotation_weight = PyFloat_FromDouble(self->node->rotation_weight);
+        rotation_weight = PyFloat_FromDouble(self->tree_object->rotation_weight);
         if (rotation_weight == NULL)
             goto addarg_failed;
 
@@ -1306,8 +1093,8 @@ Node_repr_build_arglist_list(PyObject* myself)
             goto addarg_failed;
     }
 
-    /* Child nodes */
-    if (NodeChildrenView_length((PyObject*)self->children) > 0)
+    /* Child tree_objects */
+    if (TreeObjectChildrenView_length((PyObject*)self->children) > 0)
     {
         int append_result;
         PyObject* arg = PyUnicode_FromFormat("children=%R", (PyObject*)self->children);
@@ -1326,7 +1113,7 @@ Node_repr_build_arglist_list(PyObject* myself)
     return NULL;
 }
 static PyObject*
-Node_repr_build_arglist_string(PyObject* myself)
+TreeObject_repr_build_arglist_string(PyObject* myself)
 {
     PyObject* separator;
     PyObject* arglist;
@@ -1336,7 +1123,7 @@ Node_repr_build_arglist_string(PyObject* myself)
     if (separator == NULL)
         return NULL;
 
-    arglist = Node_repr_build_arglist_list(myself);
+    arglist = TreeObject_repr_build_arglist_list(myself);
     if (arglist == NULL)
     {
         Py_DECREF(separator);
@@ -1351,34 +1138,34 @@ Node_repr_build_arglist_string(PyObject* myself)
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_repr(PyObject* myself)
+TreeObject_repr(PyObject* myself)
 {
     PyObject* repr;
-    PyObject* argstring = Node_repr_build_arglist_string(myself);
+    PyObject* argstring = TreeObject_repr_build_arglist_string(myself);
     if (argstring == NULL)
         return NULL;
 
-    repr = PyUnicode_FromFormat("ik.Node(%U)", argstring);
+    repr = PyUnicode_FromFormat("ik.TreeObject(%U)", argstring);
     Py_DECREF(argstring);
     return repr;
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
-Node_str(PyObject* myself)
+TreeObject_str(PyObject* myself)
 {
-    return Node_repr(myself);
+    return TreeObject_repr(myself);
 }
 
 /* ------------------------------------------------------------------------- */
 /*static PyObject*
-Node_richcompare(PyObject* myself, PyObject* other, int op)
+TreeObject_richcompare(PyObject* myself, PyObject* other, int op)
 {
-    if (ik_Node_CheckExact(other))
+    if (ik_TreeObject_CheckExact(other))
     {
-        ik_Node* self = (ik_Node*)myself;
-        ik_Node* ikother = (ik_Node*)other;
-        Py_RETURN_RICHCOMPARE(self->node->user_data, ikother->node->user_data, op);
+        ik_TreeObject* self = (ik_TreeObject*)myself;
+        ik_TreeObject* ikother = (ik_TreeObject*)other;
+        Py_RETURN_RICHCOMPARE(self->tree_object->user_data, ikother->tree_object->user_data, op);
     }
     else
     {
@@ -1387,30 +1174,30 @@ Node_richcompare(PyObject* myself, PyObject* other, int op)
 }*/
 
 /* ------------------------------------------------------------------------- */
-PyTypeObject ik_NodeType = {
+PyTypeObject ik_TreeObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "ik.Node",
-    .tp_basicsize = sizeof(ik_Node),
-    .tp_dealloc = Node_dealloc,
-    .tp_repr = Node_repr,
-    .tp_str = Node_str,
+    .tp_name = "ik.TreeObject",
+    .tp_basicsize = sizeof(ik_TreeObject),
+    .tp_dealloc = TreeObject_dealloc,
+    .tp_repr = TreeObject_repr,
+    .tp_str = TreeObject_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = IK_NODE_DOC,
-    .tp_methods = Node_methods,
-    .tp_getset = Node_getset,
-    .tp_new = Node_new,
-    .tp_init = Node_init
-    /*.tp_richcompare = Node_richcompare*/
+    .tp_doc = IK_TREE_OBJECT_DOC,
+    .tp_methods = TreeObject_methods,
+    .tp_getset = TreeObject_getset,
+    .tp_new = TreeObject_new,
+    .tp_init = TreeObject_init
+    /*.tp_richcompare = TreeObject_richcompare*/
 };
 
 /* ------------------------------------------------------------------------- */
 int
-init_ik_NodeType(void)
+init_ik_TreeObjectType(void)
 {
-    ik_NodeType.tp_base = &ik_ModuleRefType;
+    ik_TreeObjectType.tp_base = &ik_ModuleRefType;
 
-    if (PyType_Ready(&ik_NodeType) < 0)             return -1;
-    if (PyType_Ready(&ik_NodeChildrenViewType) < 0) return -1;
+    if (PyType_Ready(&ik_TreeObjectType) < 0)             return -1;
+    if (PyType_Ready(&ik_TreeObjectChildrenViewType) < 0) return -1;
 
     return 0;
 }

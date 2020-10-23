@@ -151,14 +151,12 @@ add_library (ik_obj OBJECT
     "src/solver.c"
     "src/solver_b1.c"
     "src/solver_b2.c"
-    "src/solver_combine.c"
-    "src/solver_fabrik.c"
     "src/solver_group.c"
+    #"src/solver_fabrik.c"
     "src/solver_mss.c"
     "src/subtree.c"
     "src/transform.c"
     "src/tree_object.c"
-    "src/tree_object_conversions.c"
     #"src/util.c"
     $<$<BOOL:${IK_LOGGING}>:src/log.c>
     $<$<NOT:$<BOOL:${IK_TESTS}>>:src/tests/tests_run_stub.c>
@@ -226,9 +224,9 @@ if (IK_PYTHON)
         "include/python/ik/python/ik_type_Effector.h"
         "include/python/ik/python/ik_type_Info.h"
         "include/python/ik/python/ik_type_ModuleRef.h"
-        "include/python/ik/python/ik_type_Node.h"
         "include/python/ik/python/ik_type_Pole.h"
         "include/python/ik/python/ik_type_Quat.h"
+        "include/python/ik/python/ik_type_TreeObject.h"
         "include/python/ik/python/ik_type_Vec3.h"
         $<$<BOOL:${IK_LOGGING}>:include/python/ik/python/ik_type_Log.h>
         "src/python/ik_module.c"
@@ -239,11 +237,11 @@ if (IK_PYTHON)
         "src/python/ik_type_Info.c"
         "src/python/ik_type_Mat3x4.c"
         "src/python/ik_type_ModuleRef.c"
-        "src/python/ik_type_Node.c"
         "src/python/ik_type_Pole.c"
         "src/python/ik_type_Pose.c"
         "src/python/ik_type_Quat.c"
         "src/python/ik_type_Solver.c"
+        "src/python/ik_type_TreeObject.c"
         "src/python/ik_type_Vec3.c"
         $<$<BOOL:${IK_LOGGING}>:src/python/ik_type_Log.c>
         ${IK_DOCSTRINGS_HEADER}
@@ -306,7 +304,7 @@ if (IK_TESTS)
         # "src/tests/test_transform_node_translations.cpp"
         "src/tests/test_tree_object.cpp"
         "src/tests/test_tree_object_conversions.cpp"
-        "src/tests/test_transform_segmental.cpp"
+        "src/tests/test_transform_node_to_bone.cpp"
         # "src/tests/test_TWO_BONE.cpp"
         "src/tests/test_vec3.cpp"
         $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
@@ -332,17 +330,16 @@ if (IK_TESTS)
     target_link_libraries (ik_tests_obj PRIVATE gtest)
     target_link_libraries (ik_tests_obj PRIVATE gmock)
 
-
     if (IK_PYTHON)
         set (IK_PYTHON_TESTS_SOURCES
             "src/tests/python/test_Algorithm.py"
             "src/tests/python/test_Effector.py"
             "src/tests/python/test_info.py"
             "src/tests/python/test_log.py"
-            "src/tests/python/test_Node.py"
             "src/tests/python/test_Pose.py"
             "src/tests/python/test_Quat.py"
             "src/tests/python/test_Solver.py"
+            "src/tests/python/test_TreeObject.py"
             "src/tests/python/test_Vec3.py")
         add_custom_command (
             OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp"

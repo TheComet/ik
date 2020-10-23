@@ -1,8 +1,7 @@
 #include "ik/python/ik_type_Attachment.h"
 #include "ik/python/ik_type_ModuleRef.h"
-#include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_docstrings.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/attachment.h"
 
 /* ------------------------------------------------------------------------- */
@@ -30,26 +29,6 @@ Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     return (PyObject*)self;
 }
 
-/* ------------------------------------------------------------------------- */
-static PyObject*
-Attachment_getnode(ik_Attachment* self, void* closure)
-{
-    PyErr_SetString(PyExc_RuntimeError, "Attachment is not attached to any node");
-    return NULL;
-}
-static int
-Attachment_setnode(ik_Attachment* self, PyObject* value, void* closure)
-{
-    (void)self; (void)value; (void)closure;
-    PyErr_SetString(PyExc_AttributeError, "Node is read-only. Use node.attach() to attach to a node.");
-    return -1;
-}
-
-/* ------------------------------------------------------------------------- */
-static PyGetSetDef Node_getset[] = {
-    {"node", (getter)Attachment_getnode, (setter)Attachment_setnode, IK_ATTACHMENT_NODE_DOC, NULL},
-    {NULL}
-};
 
 /* ------------------------------------------------------------------------- */
 PyTypeObject ik_AttachmentType = {
@@ -59,7 +38,6 @@ PyTypeObject ik_AttachmentType = {
     .tp_dealloc = (destructor)Attachment_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc = IK_ATTACHMENT_DOC,
-    .tp_getset = Node_getset,
     .tp_new = Attachment_new
 };
 

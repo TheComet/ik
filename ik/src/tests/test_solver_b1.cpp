@@ -1,6 +1,6 @@
 #include "gmock/gmock.h"
 
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/solver.h"
 #include "ik/algorithm.h"
 #include "ik/effector.h"
@@ -56,11 +56,11 @@ protected:
 
 TEST_F(NAME, rotate_90_degrees)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(base);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_ONE_BONE);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_ONE_BONE);
 
     ik_vec3_set(root->position.f, 0, 4, 5);
     ik_vec3_set(base->position.f, 0, 2, 1);
@@ -86,11 +86,11 @@ TEST_F(NAME, rotate_90_degrees)
 
 TEST_F(NAME, rotate_90_degrees_keep_effector_orientation)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(base);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_ONE_BONE);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_ONE_BONE);
 
     ik_vec3_set(root->position.f, 0, 4, 5);
     ik_vec3_set(base->position.f, 0, 2, 1);
@@ -117,11 +117,11 @@ TEST_F(NAME, rotate_90_degrees_keep_effector_orientation)
 
 TEST_F(NAME, already_pointing_at_target)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(base);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_ONE_BONE);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_ONE_BONE);
 
     ik_vec3_set(root->position.f, 0, 4, 5);
     ik_vec3_set(base->position.f, 0, 2, 1);
@@ -141,12 +141,12 @@ TEST_F(NAME, already_pointing_at_target)
 
 TEST_F(NAME, rotate_90_degrees_with_constraint)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(base);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_ONE_BONE);
-    ik::Ref<ik_constraint> c = ik_node_create_constraint(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_ONE_BONE);
+    ik::Ref<ik_constraint> c = ik_bone_create_constraint(tip);
 
     ik_vec3_set(root->position.f, 0, 4, 5);
     ik_vec3_set(base->position.f, 0, 2, 1);

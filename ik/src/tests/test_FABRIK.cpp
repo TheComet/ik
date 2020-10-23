@@ -1,7 +1,7 @@
 #include "gmock/gmock.h"
 
 #include "ik/effector.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/solver.h"
 #include "ik/vec3.inl"
 #include "ik/quat.inl"
@@ -53,22 +53,22 @@ public:
 protected:
 };
 
-static void buildTreeLongChainsRecurse(ik_solver* solver, ik_node* parent, int depth)
+static void buildTreeLongChainsRecurse(ik_solver* solver, ik_bone* parent, int depth)
 {
-    ik_node* child1 = ik_node_create();
-    ik_node* child2 = ik_node_create();
-    ik_node* child3 = ik_node_create();
-    ik_node* child4 = ik_node_create();
-    ik_node* child5 = ik_node_create();
-    ik_node* child6 = ik_node_create();
+    ik_bone* child1 = ik_bone_create();
+    ik_bone* child2 = ik_bone_create();
+    ik_bone* child3 = ik_bone_create();
+    ik_bone* child4 = ik_bone_create();
+    ik_bone* child5 = ik_bone_create();
+    ik_bone* child6 = ik_bone_create();
 
-    ik_node_link(parent, child1);
-    ik_node_link(child1, child2);
-    ik_node_link(child2, child3);
+    ik_bone_link(parent, child1);
+    ik_bone_link(child1, child2);
+    ik_bone_link(child2, child3);
 
-    ik_node_link(parent, child4);
-    ik_node_link(child4, child5);
-    ik_node_link(child5, child6);
+    ik_bone_link(parent, child4);
+    ik_bone_link(child4, child5);
+    ik_bone_link(child5, child6);
 
     if(depth > 0)
     {
@@ -77,22 +77,22 @@ static void buildTreeLongChainsRecurse(ik_solver* solver, ik_node* parent, int d
     }
     else
     {
-        ik_node_create_effector(child3);
-        ik_node_create_effector(child6);
+        ik_bone_create_effector(child3);
+        ik_bone_create_effector(child6);
     }
 }
 static void buildTreeLongChains(ik_solver* solver, int depth)
 {
-    ik_node* root = ik_node_create();
+    ik_bone* root = ik_bone_create();
     buildTreeLongChainsRecurse(solver, root, depth);
 }
 
-static void buildTreeShortChainsRecurse(ik_solver* solver, ik_node* parent, int depth)
+static void buildTreeShortChainsRecurse(ik_solver* solver, ik_bone* parent, int depth)
 {
-    ik_node* child1 = ik_node_create();
-    ik_node* child2 = ik_node_create();
-    ik_node_link(parent, child1);
-    ik_node_link(parent, child2);
+    ik_bone* child1 = ik_bone_create();
+    ik_bone* child2 = ik_bone_create();
+    ik_bone_link(parent, child1);
+    ik_bone_link(parent, child2);
 
     if(depth > 0)
     {
@@ -101,23 +101,23 @@ static void buildTreeShortChainsRecurse(ik_solver* solver, ik_node* parent, int 
     }
     else
     {
-        ik_node_create_effector(child1);
-        ik_node_create_effector(child2);
+        ik_bone_create_effector(child1);
+        ik_bone_create_effector(child2);
     }
 }
 static void buildTreeShortChains(ik_solver* solver, int depth)
 {
-    ik_node* root = ik_node_create();
+    ik_bone* root = ik_bone_create();
     buildTreeShortChainsRecurse(solver, root, depth);
 }
 
 TEST_F(NAME, two_bone_target_already_reached_should_iterate_0_times)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(mid->position.f, 0, 0, 2);
@@ -135,11 +135,11 @@ TEST_F(NAME, two_bone_target_already_reached_should_iterate_0_times)
 
 TEST_F(NAME, two_bone_target_initial_angles)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(mid->position.f, 0, 0, 2);
@@ -163,10 +163,10 @@ TEST_F(NAME, two_bone_target_initial_angles)
 
 TEST_F(NAME, one_bone_target)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> tip = ik_node_create_child(root);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> tip = ik_bone_create_child(root);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(tip->position.f, 0, 0, 2);
@@ -183,10 +183,10 @@ TEST_F(NAME, one_bone_target)
 
 TEST_F(NAME, one_bone_target_with_root_offset)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> tip = ik_node_create_child(root);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> tip = ik_bone_create_child(root);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 3, 3, 3);
     ik_vec3_set(tip->position.f, 0, 0, 2);
@@ -203,11 +203,11 @@ TEST_F(NAME, one_bone_target_with_root_offset)
 
 TEST_F(NAME, one_bone_target_with_leaf_child)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> tip = ik_node_create_child(root);
-    ik::Ref<ik_node> leaf = ik_node_create_child(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> tip = ik_bone_create_child(root);
+    ik::Ref<ik_bone> leaf = ik_bone_create_child(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(tip->position.f, 0, 0, 2);
@@ -227,11 +227,11 @@ TEST_F(NAME, one_bone_target_with_leaf_child)
 
 TEST_F(NAME, two_bone_target_right_angle)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(mid->position.f, 0, 0, 2);
@@ -251,16 +251,16 @@ TEST_F(NAME, two_bone_target_right_angle)
 
 TEST_F(NAME, two_targets_already_reached)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> center = ik_node_create_child(mid);
-    ik::Ref<ik_node> midl = ik_node_create_child(center);
-    ik::Ref<ik_node> tipl = ik_node_create_child(midl);
-    ik::Ref<ik_node> midr = ik_node_create_child(center);
-    ik::Ref<ik_node> tipr = ik_node_create_child(midr);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> el = ik_node_create_effector(tipl);
-    ik::Ref<ik_effector> er = ik_node_create_effector(tipr);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> center = ik_bone_create_child(mid);
+    ik::Ref<ik_bone> midl = ik_bone_create_child(center);
+    ik::Ref<ik_bone> tipl = ik_bone_create_child(midl);
+    ik::Ref<ik_bone> midr = ik_bone_create_child(center);
+    ik::Ref<ik_bone> tipr = ik_bone_create_child(midr);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> el = ik_bone_create_effector(tipl);
+    ik::Ref<ik_effector> er = ik_bone_create_effector(tipr);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(mid->position.f, 0, 0, 2);
@@ -296,16 +296,16 @@ TEST_F(NAME, two_targets_already_reached)
 
 TEST_F(NAME, two_targets)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> center = ik_node_create_child(mid);
-    ik::Ref<ik_node> midl = ik_node_create_child(center);
-    ik::Ref<ik_node> tipl = ik_node_create_child(midl);
-    ik::Ref<ik_node> midr = ik_node_create_child(center);
-    ik::Ref<ik_node> tipr = ik_node_create_child(midr);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> el = ik_node_create_effector(tipl);
-    ik::Ref<ik_effector> er = ik_node_create_effector(tipr);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> center = ik_bone_create_child(mid);
+    ik::Ref<ik_bone> midl = ik_bone_create_child(center);
+    ik::Ref<ik_bone> tipl = ik_bone_create_child(midl);
+    ik::Ref<ik_bone> midr = ik_bone_create_child(center);
+    ik::Ref<ik_bone> tipr = ik_bone_create_child(midr);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> el = ik_bone_create_effector(tipl);
+    ik::Ref<ik_effector> er = ik_bone_create_effector(tipr);
 
     ik_vec3_set(root->position.f, 0, 0, 0);
     ik_vec3_set(mid->position.f, 0, 0, 2);
@@ -333,12 +333,12 @@ TEST_F(NAME, two_targets)
 
 TEST_F(NAME, two_bone_stiff_constraint)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_constraint> c = ik_node_create_constraint(mid);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_constraint> c = ik_bone_create_constraint(mid);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
 
     ik_vec3_set(mid->position.f, 0, 0, 2);
     ik_vec3_set(tip->position.f, 0, 0, 2);
@@ -360,13 +360,13 @@ TEST_F(NAME, two_bone_stiff_constraint)
 
 TEST_F(NAME, embedded_effector)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> mid = ik_node_create_child(root);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_algorithm> a1 = ik_node_create_algorithm(root, IK_FABRIK);
-    ik::Ref<ik_effector> e1 = ik_node_create_effector(mid);
-    ik::Ref<ik_algorithm> a2 = ik_node_create_algorithm(mid, IK_FABRIK);
-    ik::Ref<ik_effector> e2 = ik_node_create_effector(tip);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> mid = ik_bone_create_child(root);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_algorithm> a1 = ik_bone_create_algorithm(root, IK_FABRIK);
+    ik::Ref<ik_effector> e1 = ik_bone_create_effector(mid);
+    ik::Ref<ik_algorithm> a2 = ik_bone_create_algorithm(mid, IK_FABRIK);
+    ik::Ref<ik_effector> e2 = ik_bone_create_effector(tip);
 
     ik_vec3_set(mid->position.f, 0, 0, 2);
     ik_vec3_set(tip->position.f, 0, 0, 2);

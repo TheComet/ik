@@ -1,7 +1,7 @@
 #include "ik/solver.h"
 #include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_Solver.h"
-#include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_Bone.h"
 #include "ik/python/ik_docstrings.h"
 #include "structmember.h"
 
@@ -23,7 +23,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     struct ik_solver* solver;
     ik_Solver* self;
-    ik_Node* root;
+    ik_Bone* root;
 
     static char* kwds_names[] = {
         "root",
@@ -31,10 +31,10 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwds_names,
-            &ik_NodeType, &root))
+            &ik_BoneType, &root))
         return NULL;
 
-    if ((solver = ik_solver_build(root->node)) == NULL)
+    if ((solver = ik_solver_build((struct ik_bone*)root->super.tree_object)) == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to build solver(s). Check log output for more information.");
         goto build_solvers_failed;

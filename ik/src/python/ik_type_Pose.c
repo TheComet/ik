@@ -1,8 +1,8 @@
-#include "ik/python/ik_type_Node.h"
+#include "ik/python/ik_type_Bone.h"
 #include "ik/python/ik_type_Pose.h"
 #include "ik/python/ik_docstrings.h"
 #include "ik/vec3.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/pose.h"
 
 /* ------------------------------------------------------------------------- */
@@ -28,7 +28,7 @@ static int
 Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     struct ik_pose* tmp;
-    ik_Node* root;
+    ik_Bone* root;
     ik_Pose* self = (ik_Pose*)myself;
 
     static char* kwds_str[] = {
@@ -36,11 +36,11 @@ Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
         NULL
     };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwds_str, &ik_NodeType, &root))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwds_str, &ik_BoneType, &root))
         return -1;
 
     tmp = self->pose;
-    self->pose = ik_pose_alloc(root->node);
+    self->pose = ik_pose_alloc((struct ik_bone*)root->super.tree_object);
     if (self->pose == NULL)
     {
         self->pose = tmp;
@@ -50,7 +50,7 @@ Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
     IK_INCREF(self->pose);
     IK_XDECREF(tmp);
 
-    ik_pose_save(self->pose, root->node);
+    ik_pose_save(self->pose, (struct ik_bone*)root->super.tree_object);
     return 0;
 }
 
@@ -58,8 +58,9 @@ Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
 static PyObject*
 Pose_apply(PyObject* myself, PyObject* args, PyObject* kwds)
 {
-    ik_Node* root;
+    ik_Bone* root;
     ik_Pose* self = (ik_Pose*)myself;
+    struct ik_bone* root_bone;
     union ik_vec3 root_pos;
     int skip_root_position = 1;
 
@@ -70,16 +71,18 @@ Pose_apply(PyObject* myself, PyObject* args, PyObject* kwds)
     };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|p", kwds_str,
-        &ik_NodeType, &root,
+        &ik_BoneType, &root,
         &skip_root_position))
     {
         return NULL;
     }
 
-    root_pos = root->node->position;
-    ik_pose_apply(self->pose, root->node);
+    root_bone = (struct ik_bone*)root->super.tree_object;
+
+    root_pos = root_bone->position;
+    ik_pose_apply(self->pose, root_bone);
     if (skip_root_position)
-        root->node->position = root_pos;
+        root_bone->position = root_pos;
 
     Py_RETURN_NONE;
 }

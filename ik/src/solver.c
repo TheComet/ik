@@ -1,6 +1,6 @@
 #include "ik/algorithm.h"
+#include "ik/bone.h"
 #include "ik/meta_solvers.h"
-#include "ik/node.h"
 #include "ik/solver.h"
 #include "ik/subtree.h"
 #include "ik/log.h"
@@ -16,7 +16,7 @@ deinit_solver(struct ik_solver* solver)
 {
     solver->impl.deinit((struct ik_solver*)solver);
     IK_DECREF(solver->algorithm);
-    IK_DECREF(solver->root_node);
+    IK_DECREF(solver->root_bone);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -29,7 +29,7 @@ destroy_solver(struct ik_solver* solver)
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct ik_node* root)
+create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct ik_bone* root)
 {
     VECTOR_FOR_EACH(&g_solvers, struct ik_solver_interface*, p_iface)
         if (strcmp((*p_iface)->name, algorithm->type) == 0)
@@ -45,7 +45,7 @@ create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct
 
             solver->impl = *iface;
             solver->algorithm = algorithm;
-            solver->root_node = root;
+            solver->root_bone = root;
 
             if (solver->impl.init((struct ik_solver*)solver, subtree) != 0)
             {
@@ -66,7 +66,7 @@ create_solver(struct ik_algorithm* algorithm, struct ik_subtree* subtree, struct
 
 /* ------------------------------------------------------------------------- */
 int
-ik_solver_init_interfaces()
+ik_solver_init_builtin_interfaces()
 {
 #define X(name) extern const struct ik_solver_interface ik_solver_##name;
     IK_ALGORITHM_LIST
@@ -88,7 +88,7 @@ ik_solver_init_interfaces()
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_deinit_interfaces(void)
+ik_solver_deinit_builtin_interfaces(void)
 {
     vector_deinit(&g_solvers);
 }
@@ -132,15 +132,15 @@ ik_solver_unregister(const struct ik_solver_interface* interface)
 
 /* ------------------------------------------------------------------------- */
 static int
-find_all_effector_nodes(struct cs_vector* result, const struct ik_node* node)
+find_all_effector_bones(struct cs_vector* result, const struct ik_bone* bone)
 {
-    NODE_FOR_EACH_CHILD(node, child)
-        if (find_all_effector_nodes(result, child) != 0)
+    BONE_FOR_EACH_CHILD(bone, child)
+        if (find_all_effector_bones(result, child) != 0)
             return -1;
-    NODE_END_EACH
+    BONE_END_EACH
 
-    if (node->effector != NULL)
-        if (vector_push(result, &node) != 0)
+    if (bone->effector != NULL)
+        if (vector_push(result, &bone) != 0)
             return -1;
 
     return 0;
@@ -149,8 +149,8 @@ find_all_effector_nodes(struct cs_vector* result, const struct ik_node* node)
 /* ------------------------------------------------------------------------- */
 static int
 color_chain_recurse(struct cs_btree* colors,
-                    const struct ik_node* root,
-                    const struct ik_node* node,
+                    const struct ik_bone* root,
+                    const struct ik_bone* bone,
                     int chain_length,
                     int* color_counter,
                     int* chain_color)
@@ -158,20 +158,20 @@ color_chain_recurse(struct cs_btree* colors,
     /* If chain joins up with any colored part of the tree, adopt that color */
     if (*chain_color == -1)
     {
-        int* existing_color = btree_find(colors, (cs_btree_key)node);
+        int* existing_color = btree_find(colors, (cs_btree_key)bone);
         if (existing_color)
             *chain_color = *existing_color;
     }
 
-#define is_chain_end() (                             \
-    (node->parent == root)                        || \
-    (chain_length == 1)                           || \
-    (node->parent->effector != NULL))
+#define is_chain_end() (                                                      \
+    (ik_bone_get_parent(bone) == root) ||                                     \
+    (chain_length == 1)                ||                                     \
+    (bone->parent->effector != NULL))
 
     /* Recurse */
     if (!is_chain_end())
     {
-        if (color_chain_recurse(colors, root, node->parent, chain_length - 1, color_counter, chain_color) != 0)
+        if (color_chain_recurse(colors, root, ik_bone_get_parent(bone), chain_length - 1, color_counter, chain_color) != 0)
             return -1;
     }
 
@@ -185,7 +185,7 @@ color_chain_recurse(struct cs_btree* colors,
         (*color_counter)++;
     }
 
-    switch (btree_insert_new(colors, (cs_btree_key)node, chain_color))
+    switch (btree_insert_new(colors, (cs_btree_key)bone, chain_color))
     {
         case BTREE_EXISTS:
         case BTREE_OK:
@@ -200,8 +200,8 @@ color_chain_recurse(struct cs_btree* colors,
 }
 static int
 color_chain(struct cs_btree* colors,
-            const struct ik_node* root,
-            const struct ik_node* node,
+            const struct ik_bone* root,
+            const struct ik_bone* bone,
             int chain_length,
             int* color_counter)
 {
@@ -209,26 +209,26 @@ color_chain(struct cs_btree* colors,
 
     /* Have to handle this special case here because recursive function shits
      * itself otherwise */
-    if (node == root)
+    if (bone == root)
         return 0;
-    return color_chain_recurse(colors, root, node, chain_length, color_counter, &chain_color);
+    return color_chain_recurse(colors, root, bone, chain_length, color_counter, &chain_color);
 }
 static int
 color_reachable_segments(struct cs_btree* colors,
-                         const struct cs_vector* effector_nodes,
-                         const struct ik_node* root)
+                         const struct cs_vector* effector_bones,
+                         const struct ik_bone* root)
 {
     int color_counter = 0;
 
     /*
-     * Iterate the chain of nodes starting at each effector node and ending
-     * at the specified chain length of the effector, mark every node on the
+     * Iterate the chain of bones starting at each effector bone and ending
+     * at the specified chain length of the effector, mark every bone on the
      * way.
      */
-    VECTOR_FOR_EACH(effector_nodes, const struct ik_node*, p_effector_node)
-        const struct ik_node* node = *p_effector_node;
-        const struct ik_effector* effector = node->effector;
-        if (color_chain(colors, root, node, (int)effector->chain_length, &color_counter) != 0)
+    VECTOR_FOR_EACH(effector_bones, const struct ik_bone*, p_effector_bone)
+        const struct ik_bone* bone = *p_effector_bone;
+        const struct ik_effector* effector = bone->effector;
+        if (color_chain(colors, root, bone, (int)effector->chain_length, &color_counter) != 0)
             return -1;
     VECTOR_END_EACH
 
@@ -237,21 +237,21 @@ color_reachable_segments(struct cs_btree* colors,
 
 /* ------------------------------------------------------------------------- */
 static struct ik_solver*
-find_algorithm_and_create_solver(struct ik_subtree* subtree, struct ik_node* root)
+find_algorithm_and_create_solver(struct ik_subtree* subtree, struct ik_bone* root)
 {
-    const struct ik_node* node;
+    const struct ik_bone* bone;
     struct ik_algorithm* algorithm;
 
     algorithm = NULL;
-    for (node = subtree->root; node != root->parent; node = node->parent)
-        if (node->algorithm != NULL)
+    for (bone = subtree->root; bone != ik_bone_get_parent(bone); bone = ik_bone_get_parent(bone))
+        if (bone->algorithm != NULL)
         {
-            algorithm = node->algorithm;
+            algorithm = bone->algorithm;
             break;
         }
     if (algorithm == NULL)
     {
-        ik_log_printf(IK_WARN, "Found nodes that are influenced by end-effectors, but couldn't find an attached algorithm. This subtree will be ignored.");
+        ik_log_printf(IK_WARN, "Found bones that are influenced by end-effectors, but couldn't find an attached algorithm. This subtree will be ignored.");
         return NULL;
     }
 
@@ -261,8 +261,8 @@ find_algorithm_and_create_solver(struct ik_subtree* subtree, struct ik_node* roo
 /* ------------------------------------------------------------------------- */
 static int
 create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
-                                       struct ik_node* root,
-                                       struct ik_node* node,
+                                       struct ik_bone* root,
+                                       struct ik_bone* bone,
                                        struct ik_subtree* current_subtree,
                                        int parent_color,
                                        const struct cs_btree* segment_colors)
@@ -272,20 +272,20 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
     vector_init(&combined_solvers, sizeof(struct ik_solver*));
 
     /* If the parent subtree exists, and there is an effector on this
-     * segment, then this is a leaf node of the parent subtree */
-    if (parent_color != -1 && node->effector != NULL)
+     * segment, then this is a leaf bone of the parent subtree */
+    if (parent_color != -1 && bone->effector != NULL)
     {
         assert(current_subtree != NULL);
-        if (subtree_add_leaf(current_subtree, node) != 0)
+        if (subtree_add_leaf(current_subtree, bone) != 0)
             goto create_solvers_failed;
     }
 
-    NODE_FOR_EACH_CHILD(node, child)
+    BONE_FOR_EACH_CHILD(bone, child)
         const int* segment_color = btree_find(segment_colors, (cs_btree_key)child);
 
-        /* Sanity check: If node was added as leaf, then the first if-statement
+        /* Sanity check: If bone was added as leaf, then the first if-statement
          * (recursing on an existing subtree) must not be true */
-        if (parent_color != -1 && node->effector != NULL)
+        if (parent_color != -1 && bone->effector != NULL)
         {
             assert(segment_color == NULL || *segment_color != parent_color);
         }
@@ -303,7 +303,7 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
 
             /* Begin new subtree */
             subtree_init(&subtree);
-            subtree_set_root(&subtree, node);
+            subtree_set_root(&subtree, bone);
             if (create_solver_for_each_subtree_recurse(solver_list, root, child, &subtree, *segment_color, segment_colors) != 0)
                 goto recurse_failed;
 
@@ -331,13 +331,13 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
             if (create_solver_for_each_subtree_recurse(solver_list, root, child, NULL, -1, segment_colors) != 0)
                 goto create_solvers_failed;
         }
-    NODE_END_EACH
+    BONE_END_EACH
 
     if (vector_count(&combined_solvers) > 0)
     {
-        if (vector_count(&combined_solvers) > 1 || ik_node_child_count(node) > 1)
+        if (vector_count(&combined_solvers) > 1 || ik_bone_child_count(bone) > 1)
         {
-            struct ik_solver* solver = ik_solver_combine_create(&combined_solvers, node);
+            struct ik_solver* solver = NULL; /*ik_solver_combine_create(&combined_solvers, bone);*/
             if (solver == NULL)
                 goto create_solvers_failed;
             if (vector_push(solver_list, &solver) != 0)
@@ -358,14 +358,14 @@ create_solver_for_each_subtree_recurse(struct cs_vector* solver_list,
     return 0;
 
     create_solvers_failed : VECTOR_FOR_EACH(&combined_solvers, struct ik_solver*, psolver)
-                                destroy_solver(*psolver);
+                            destroy_solver(*psolver);
                             VECTOR_END_EACH
                             vector_deinit(&combined_solvers);
                             return -1;
 }
 static int
 create_solver_for_each_subtree(struct cs_vector* solver_list,
-                               struct ik_node* root,
+                               struct ik_bone* root,
                                const struct cs_btree* segment_colors)
 {
     return create_solver_for_each_subtree_recurse(solver_list, root, root, NULL, -1, segment_colors);
@@ -373,28 +373,28 @@ create_solver_for_each_subtree(struct cs_vector* solver_list,
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver*
-ik_solver_build(struct ik_node* root)
+ik_solver_build(struct ik_bone* root)
 {
-    struct cs_vector effector_nodes;
-    struct cs_btree node_colors;
+    struct cs_vector effector_bones;
+    struct cs_btree bone_colors;
     struct cs_vector solver_list;
     struct ik_solver* solver;
 
-    /* Create a list of all nodes that have effectors attached */
-    vector_init(&effector_nodes, sizeof(struct ik_node*));
-    if (find_all_effector_nodes(&effector_nodes, root) != 0)
+    /* Create a list of all bones that have effectors attached */
+    vector_init(&effector_bones, sizeof(struct ik_bone*));
+    if (find_all_effector_bones(&effector_bones, root) != 0)
         goto find_effectors_failed;
 
     /* May not have to do anything if none were found */
-    if (vector_count(&effector_nodes) == 0)
+    if (vector_count(&effector_bones) == 0)
     {
         ik_log_printf(IK_WARN, "No effectors were found in the tree. No solvers were created.");
         goto find_effectors_failed;
     }
 
-    /* Mark all nodes that the effectors can reach */
-    btree_init(&node_colors, sizeof(int));
-    if (color_reachable_segments(&node_colors, &effector_nodes, root) != 0)
+    /* Mark all bones that the effectors can reach */
+    btree_init(&bone_colors, sizeof(int));
+    if (color_reachable_segments(&bone_colors, &effector_bones, root) != 0)
         goto color_reachable_segments_failed;
 
     /*
@@ -403,7 +403,7 @@ ik_solver_build(struct ik_node* root)
      * in a particular order (root to leaf).
      */
     vector_init(&solver_list, sizeof(struct ik_solver*));
-    if (create_solver_for_each_subtree(&solver_list, root, &node_colors) != 0)
+    if (create_solver_for_each_subtree(&solver_list, root, &bone_colors) != 0)
         goto split_into_subtrees_failed;
 
     if (vector_count(&solver_list) == 0)
@@ -425,8 +425,8 @@ ik_solver_build(struct ik_node* root)
         vector_deinit(&solver_list);
     }
 
-    btree_deinit(&node_colors);
-    vector_deinit(&effector_nodes);
+    btree_deinit(&bone_colors);
+    vector_deinit(&effector_bones);
 
     return solver;
 
@@ -435,8 +435,8 @@ ik_solver_build(struct ik_node* root)
                                          destroy_solver(*psolver);
                                      VECTOR_END_EACH
                                      vector_deinit(&solver_list);
-    color_reachable_segments_failed              : btree_deinit(&node_colors);
-    find_effectors_failed          : vector_deinit(&effector_nodes);
+    color_reachable_segments_failed              : btree_deinit(&bone_colors);
+    find_effectors_failed          : vector_deinit(&effector_bones);
     return NULL;
 }
 
@@ -445,25 +445,4 @@ int
 ik_solver_solve(struct ik_solver* solver)
 {
     return solver->impl.solve(solver);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_solver_visit_nodes(const struct ik_solver* solver, ik_visit_node_func visit, void* param)
-{
-    solver->impl.visit_nodes(solver, visit, param, 0);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_solver_visit_effector_nodes(const struct ik_solver* solver, ik_visit_node_func visit, void* param)
-{
-    solver->impl.visit_effector_nodes(solver, visit, param);
-}
-
-/* ------------------------------------------------------------------------- */
-void
-ik_solver_get_first_segment(const struct ik_solver* solver, struct ik_node** base, struct ik_node** tip)
-{
-    solver->impl.get_first_segment(solver, base, tip);
 }

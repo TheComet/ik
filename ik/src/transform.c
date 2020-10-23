@@ -307,6 +307,7 @@ ik_transform_node_section_g2l(struct ik_node* tip, const struct ik_node* base)
  * Need to calculate the parent node rotation that would place the child
  * node at [0, 0, 1] and store that rotation in the child node.
  */
+#if 0
 static void
 unaverage_sibling_segments(const struct ik_chain* chain,
                            union ik_quat** rotations_store)
@@ -485,3 +486,4 @@ ik_transform_chain_to_nodal_representation(struct ik_chain* root,
     rotations_store = intermediate_rotations + num_intermediate_rotations - 1;
     average_sibling_segments(root, &rotations_store);
 }
+#endif

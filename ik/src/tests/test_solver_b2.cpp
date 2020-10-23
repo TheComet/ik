@@ -1,5 +1,5 @@
 #include "gmock/gmock.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/solver.h"
 #include "ik/algorithm.h"
 #include "ik/effector.h"
@@ -52,12 +52,12 @@ protected:
 
 TEST_F(NAME, reach_target_colinear_segments)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> mid = ik_node_create_child(base);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_TWO_BONE);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> mid = ik_bone_create_child(base);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 
     ik_vec3_set(root->position.f, 3, 4, 5);
     ik_vec3_set(base->position.f, 1, 2, 1);
@@ -65,7 +65,7 @@ TEST_F(NAME, reach_target_colinear_segments)
     ik_vec3_set(tip->position.f, 0, 2, 0);
     ik_vec3_set(e->target_position.f, 2, 0, 0);
 
-    // This should form the 3 nodes into an equilateral triangle
+    // This should form the 3 bones into an equilateral triangle
     ik::Ref<ik_solver> s = ik_solver_build(base);
     ik_solver_solve(s);
 
@@ -90,12 +90,12 @@ TEST_F(NAME, reach_target_colinear_segments)
 
 TEST_F(NAME, reach_target_coplanar_segments)
 {
-    ik::Ref<ik_node> root = ik_node_create();
-    ik::Ref<ik_node> base = ik_node_create_child(root);
-    ik::Ref<ik_node> mid = ik_node_create_child(base);
-    ik::Ref<ik_node> tip = ik_node_create_child(mid);
-    ik::Ref<ik_effector> e = ik_node_create_effector(tip);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(base, IK_TWO_BONE);
+    ik::Ref<ik_bone> root = ik_bone_create();
+    ik::Ref<ik_bone> base = ik_bone_create_child(root);
+    ik::Ref<ik_bone> mid = ik_bone_create_child(base);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 
     ik_vec3_set(root->position.f, 3, 4, 5);
     ik_vec3_set(base->position.f, 1, 2, 1);
@@ -103,7 +103,7 @@ TEST_F(NAME, reach_target_coplanar_segments)
     ik_vec3_set(tip->position.f, 2, 0, 0);
     ik_vec3_set(e->target_position.f, 2, 0, 0);
 
-    // This should form the 3 nodes into an equilateral triangle
+    // This should form the 3 bones into an equilateral triangle
     ik::Ref<ik_solver> s = ik_solver_build(base);
     ik_solver_solve(s);
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ik/tree_object.h"
-#include "ik/tree_object_conversions.h"
 #include "ik/quat.h"
 #include "ik/vec3.h"
 #include "cstructures/vector.h"
@@ -53,6 +52,9 @@ ik_bone_find(struct ik_bone* root, const void* user_data) {
 
 #define ik_bone_get_child(bone, idx) \
     ((struct ik_bone*)ik_tree_object_get_child(bone, idx))
+
+#define ik_bone_get_parent(bone) \
+    ((struct ik_bone*)(bone)->parent)
 
 static inline int
 ik_bone_count(const struct ik_bone* root)  {
@@ -112,7 +114,7 @@ ik_bone_duplicate_full_for_node_transform(const struct ik_bone* root);
 #undef X1
 
 #define BONE_FOR_EACH_CHILD(bone, child) \
-    VECTOR_FOR_EACH(&(node)->children, struct ik_bone*, p##child) \
+    VECTOR_FOR_EACH(&(bone)->children, struct ik_bone*, p##child) \
     struct ik_bone* child = *p##child; (void)child; {
 
 #define BONE_END_EACH } VECTOR_END_EACH

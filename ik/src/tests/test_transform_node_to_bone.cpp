@@ -1,6 +1,6 @@
 #include "gmock/gmock.h"
 
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/chain_tree.h"
 #include "ik/subtree.h"
 #include "ik/transform.h"
@@ -64,10 +64,10 @@ public:
     {
     }
 
-    Chain MakeOneBone(ik::Ref<ik_node>* base, ik::Ref<ik_node>* tip)
+    Chain MakeOneBone(ik::Ref<ik_bone>* base, ik::Ref<ik_bone>* tip)
     {
-        *base = ik_node_create();
-        *tip  = ik_node_create_child(*base);
+        *base = ik_bone_create();
+        *tip  = ik_bone_create_child(*base);
 
         ik_vec3_set((*tip)->position.f, 0, 0, 2);
 
@@ -77,11 +77,11 @@ public:
         return Chain(st.get());
     }
 
-    Chain MakeTwoBone(ik::Ref<ik_node>* base, ik::Ref<ik_node>* mid, ik::Ref<ik_node>* tip)
+    Chain MakeTwoBone(ik::Ref<ik_bone>* base, ik::Ref<ik_bone>* mid, ik::Ref<ik_bone>* tip)
     {
-        *base = ik_node_create();
-        *mid  = ik_node_create_child(*base);
-        *tip  = ik_node_create_child(*mid);
+        *base = ik_bone_create();
+        *mid  = ik_bone_create_child(*base);
+        *tip  = ik_bone_create_child(*mid);
 
         ik_vec3_set((*mid)->position.f, 0, 0, 2);
         ik_vec3_set((*tip)->position.f, 0, 0, 2);
@@ -92,12 +92,12 @@ public:
         return Chain(st.get());
     }
 
-    Chain MakeOneBoneSplit(ik::Ref<ik_node>* base, ik::Ref<ik_node>* mid, ik::Ref<ik_node>* tipl, ik::Ref<ik_node>* tipr)
+    Chain MakeOneBoneSplit(ik::Ref<ik_bone>* base, ik::Ref<ik_bone>* mid, ik::Ref<ik_bone>* tipl, ik::Ref<ik_bone>* tipr)
     {
-        *base = ik_node_create();
-        *mid  = ik_node_create_child(*base);
-        *tipl = ik_node_create_child(*mid);
-        *tipr = ik_node_create_child(*mid);
+        *base = ik_bone_create();
+        *mid  = ik_bone_create_child(*base);
+        *tipl = ik_bone_create_child(*mid);
+        *tipr = ik_bone_create_child(*mid);
 
         ik_vec3_set((*mid)->position.f, 0, 0, 2);
         ik_vec3_set((*tipl)->position.f, 0, 0, 2);
@@ -157,7 +157,7 @@ protected:
 
 TEST_F(NAME, one_bone)
 {
-    ik::Ref<ik_node> base, tip;
+    ik::Ref<ik_bone> base, tip;
     Chain c = MakeOneBone(&base, &tip);
     ik_quat ir[1];
 
@@ -166,7 +166,7 @@ TEST_F(NAME, one_bone)
     base->rotation = q0;
     tip->rotation = q1;
 
-    ik_transform_chain_to_segmental_representation(c.get(), ir, 1);
+    //ik_transform_chain_to_segmental_representation(c.get(), ir, 1);
 
     EXPECT_QUAT_EQ(base->rotation, q0);
     EXPECT_QUAT_EQ(tip->rotation, q0);
@@ -175,7 +175,7 @@ TEST_F(NAME, one_bone)
 
 TEST_F(NAME, two_bone)
 {
-    ik::Ref<ik_node> base, mid, tip;
+    ik::Ref<ik_bone> base, mid, tip;
     Chain c = MakeTwoBone(&base, &mid, &tip);
     ik_quat ir[1];
 
@@ -186,7 +186,7 @@ TEST_F(NAME, two_bone)
     mid->rotation = q1;
     tip->rotation = q2;
 
-    ik_transform_chain_to_segmental_representation(c.get(), ir, 1);
+    //ik_transform_chain_to_segmental_representation(c.get(), ir, 1);
 
     EXPECT_QUAT_EQ(base->rotation, q0);
     EXPECT_QUAT_EQ(mid->rotation, q0);
@@ -196,7 +196,7 @@ TEST_F(NAME, two_bone)
 
 TEST_F(NAME, one_bone_split)
 {
-    ik::Ref<ik_node> base, mid, tipl, tipr;
+    ik::Ref<ik_bone> base, mid, tipl, tipr;
     Chain c = MakeOneBoneSplit(&base, &mid, &tipl, &tipr);
     ik_quat ir[3];
 
@@ -212,7 +212,7 @@ TEST_F(NAME, one_bone_split)
     ik_vec3_set(tipr->position.f, 0, 1, 1);
     ik_vec3_set(tipl->position.f, 0, -1, 1);
 
-    ik_transform_chain_to_segmental_representation(c.get(), ir, 3);
+    //ik_transform_chain_to_segmental_representation(c.get(), ir, 3);
 
     ik_quat ql; ik_quat_set_axis_angle(ql.f, 1, 0, 0, M_PI/4);
     ik_quat qr; ik_quat_set_axis_angle(qr.f, 1, 0, 0, -M_PI/4);
@@ -224,7 +224,7 @@ TEST_F(NAME, one_bone_split)
     EXPECT_VEC3_EQ(tipr->position, 0, 0, sqrt(2));
     EXPECT_VEC3_EQ(tipl->position, 0, 0, sqrt(2));
 
-    ik_transform_chain_to_nodal_representation(c.get(), ir, 3);
+    //ik_transform_chain_to_nodal_representation(c.get(), ir, 3);
 
     EXPECT_QUAT_EQ(base->rotation, q0);
     EXPECT_QUAT_EQ(mid->rotation, q1);

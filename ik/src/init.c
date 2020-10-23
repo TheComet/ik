@@ -16,7 +16,7 @@ ik_init(void)
     if (memory_init() != 0)
         goto memory_init_failed;
 
-    if (ik_solver_init_interfaces() != 0)
+    if (ik_solver_init_builtin_interfaces() != 0)
         goto solver_init_interfaces_failed;
 
     return 0;
@@ -33,6 +33,6 @@ ik_deinit(void)
     if (--g_init_counter != 0)
         return 0;
 
-    ik_solver_deinit_interfaces();
+    ik_solver_deinit_builtin_interfaces();
     return memory_deinit();
 }

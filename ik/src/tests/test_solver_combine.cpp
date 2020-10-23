@@ -1,6 +1,6 @@
 #include <gmock/gmock.h>
 #include "ik/solver.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/cpputils.hpp"
 #include "ik/quat.inl"
 
@@ -15,12 +15,12 @@ TEST(NAME, two_target_one_bones)
      *   \  /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create();
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
-    ik::Ref<ik_node> n2 = ik_node_create_child(n0);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
-    ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
-    ik::Ref<ik_effector> e2 = ik_node_create_effector(n2);
+    ik::Ref<ik_bone> n0 = ik_bone_create();
+    ik::Ref<ik_bone> n1 = ik_bone_create_child(n0);
+    ik::Ref<ik_bone> n2 = ik_bone_create_child(n0);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(n0, IK_ONE_BONE);
+    ik::Ref<ik_effector> e1 = ik_bone_create_effector(n1);
+    ik::Ref<ik_effector> e2 = ik_bone_create_effector(n2);
     ik::Ref<ik_solver> s = ik_solver_build(n0);
 
     ik_solver_solve(s);
@@ -35,14 +35,14 @@ TEST(NAME, two_target_one_bones_with_unaffected_children)
      *   \  /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create();
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
-    ik::Ref<ik_node> n2 = ik_node_create_child(n1);
-    ik::Ref<ik_node> n3 = ik_node_create_child(n0);
-    ik::Ref<ik_node> n4 = ik_node_create_child(n3);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
-    ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
-    ik::Ref<ik_effector> e2 = ik_node_create_effector(n3);
+    ik::Ref<ik_bone> n0 = ik_bone_create();
+    ik::Ref<ik_bone> n1 = ik_bone_create_child(n0);
+    ik::Ref<ik_bone> n2 = ik_bone_create_child(n1);
+    ik::Ref<ik_bone> n3 = ik_bone_create_child(n0);
+    ik::Ref<ik_bone> n4 = ik_bone_create_child(n3);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(n0, IK_ONE_BONE);
+    ik::Ref<ik_effector> e1 = ik_bone_create_effector(n1);
+    ik::Ref<ik_effector> e2 = ik_bone_create_effector(n3);
     ik::Ref<ik_solver> s = ik_solver_build(n0);
 
     ik_vec3_set(n1->position.f, 0, 2, 0);
@@ -65,13 +65,13 @@ TEST(NAME, two_target_one_bones_with_third_unaffected_segment)
      *   \ | /
      *    n0
      */
-    ik::Ref<ik_node> n0 = ik_node_create();
-    ik::Ref<ik_node> n1 = ik_node_create_child(n0);
-    ik::Ref<ik_node> n2 = ik_node_create_child(n0);
-    ik::Ref<ik_node> n3 = ik_node_create_child(n0);
-    ik::Ref<ik_algorithm> a = ik_node_create_algorithm(n0, IK_ONE_BONE);
-    ik::Ref<ik_effector> e1 = ik_node_create_effector(n1);
-    ik::Ref<ik_effector> e2 = ik_node_create_effector(n3);
+    ik::Ref<ik_bone> n0 = ik_bone_create();
+    ik::Ref<ik_bone> n1 = ik_bone_create_child(n0);
+    ik::Ref<ik_bone> n2 = ik_bone_create_child(n0);
+    ik::Ref<ik_bone> n3 = ik_bone_create_child(n0);
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(n0, IK_ONE_BONE);
+    ik::Ref<ik_effector> e1 = ik_bone_create_effector(n1);
+    ik::Ref<ik_effector> e2 = ik_bone_create_effector(n3);
     ik::Ref<ik_solver> s = ik_solver_build(n0);
 
     ik_vec3_set(n1->position.f, 0, 2, 0);

@@ -1,7 +1,6 @@
 #include "gmock/gmock.h"
 #include "ik/bone.h"
 #include "ik/node.h"
-#include "ik/tree_object_conversions.h"
 #include "ik/cpputils.hpp"
 
 #define NAME tree_object_conversions

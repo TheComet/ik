@@ -1,6 +1,5 @@
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Solver.h"
-#include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Vec3.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_helpers.h"

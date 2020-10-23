@@ -8,16 +8,16 @@ C_BEGIN
 struct ik_solver;
 struct ik_algorithm;
 struct ik_subtree;
-struct ik_node;
+struct ik_bone;
 
 #define IK_SOLVER_HEAD                                                        \
     IK_REFCOUNTED_HEAD                                                        \
                                                                               \
     struct ik_solver_interface impl;                                          \
     struct ik_algorithm* algorithm;                                           \
-    struct ik_node* root_node;
+    struct ik_bone* root_bone;
 
-typedef void(*ik_visit_node_func)(struct ik_node*, void* param);
+typedef void(*ik_visit_node_func)(struct ik_bone*, void* param);
 
 struct ik_solver_interface
 {
@@ -38,16 +38,6 @@ struct ik_solver_interface
     /*! Called when it's time to solve. Returns the number of iterations that
      * were required to reach the solution */
     int (*solve)(struct ik_solver*);
-
-    /*! Call the specified callback function for every node that the solver
-     * affects. The order must be from base node to leaf node(s), depth first.
-     * If skip_base is non-zero, then the solver should call visit on every node
-     * except for the base node. */
-    void (*visit_nodes)(const struct ik_solver*, ik_visit_node_func visit, void* param, int skip_base);
-
-    void (*visit_effector_nodes)(const struct ik_solver*, ik_visit_node_func visit, void* param);
-
-    void (*get_first_segment)(const struct ik_solver*, struct ik_node**, struct ik_node**);
 };
 
 IK_PUBLIC_API int
@@ -99,27 +89,18 @@ struct ik_solver
  * supported.
  */
 IK_PUBLIC_API struct ik_solver*
-ik_solver_build(struct ik_node* root);
+ik_solver_build(struct ik_bone* root);
 
 IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);
 
-IK_PUBLIC_API void
-ik_solver_visit_nodes(const struct ik_solver* solver, ik_visit_node_func cb, void* param);
-
-IK_PUBLIC_API void
-ik_solver_visit_effector_nodes(const struct ik_solver* solver, ik_visit_node_func cb, void* param);
-
 #if defined(IK_BUILDING)
 
-IK_PRIVATE_API void
-ik_solver_get_first_segment(const struct ik_solver* solver, struct ik_node** base, struct ik_node** tip);
-
 IK_PRIVATE_API int
-ik_solver_init_interfaces(void);
+ik_solver_init_builtin_interfaces(void);
 
 IK_PRIVATE_API void
-ik_solver_deinit_interfaces(void);
+ik_solver_deinit_builtin_interfaces(void);
 
 #endif
 

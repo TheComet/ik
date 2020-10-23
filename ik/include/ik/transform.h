@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ik/config.h"
+#include "ik/bone.h"
 #include "ik/quat.inl"
 #include "ik/vec3.inl"
 
@@ -13,7 +14,7 @@
 C_BEGIN
 
 struct ik_algorithm;
-struct ik_node;
+struct ik_bone;
 struct ik_chain;
 struct cs_vector;
 
@@ -44,13 +45,13 @@ union ik_transform
  * Transforms a position from the space of "base" into the space of "tip"
  */
 static inline void
-ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* base, const struct ik_node* tip)
+ik_transform_pos_g2l(ikreal pos[3], const struct ik_bone* base, const struct ik_bone* tip)
 {
     if (tip == base)
         return;
 
     assert(tip);
-    ik_transform_pos_g2l(pos, base, (struct ik_node*)tip->parent);
+    ik_transform_pos_g2l(pos, base, ik_bone_get_parent(tip->parent));
 
     ik_vec3_sub_vec3(pos, tip->position.f);
     ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
@@ -60,18 +61,18 @@ ik_transform_pos_g2l(ikreal pos[3], const struct ik_node* base, const struct ik_
  * Transforms a position from the space of "tip" into the space of "base"
  */
 static inline void
-ik_transform_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
+ik_transform_pos_l2g(ikreal pos[3], const struct ik_bone* tip, const struct ik_bone* base)
 {
     while (tip != base)
     {
         ik_vec3_rotate_quat(pos, tip->rotation.f);
         ik_vec3_add_vec3(pos, tip->position.f);
-        tip = (struct ik_node*)tip->parent;
+        tip = (struct ik_bone*)tip->parent;
     }
 }
 
 /*!
- * @brief Canonicalizes all node transforms and converts rotations from a nodal
+ * @brief Canonicalizes all bone transforms and converts rotations from a nodal
  * representation into a segmental representation. All solvers rely on this
  * representation.
  *
@@ -91,6 +92,6 @@ IK_PUBLIC_API void
 ik_transform_nodes_to_bones(const struct ik_node* node_root, struct ik_bone* bone_root);
 
 IK_PUBLIC_API void
-ik_transform_bones_to_nodes(const struct ik_bone* node_root, struct ik_node* bone_root);
+ik_transform_bones_to_nodes(const struct ik_bone* bone_root, struct ik_node* node_root);
 
 C_END

@@ -1,8 +1,8 @@
 #include "ik/pose.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include <stddef.h>
 
-struct ik_node_state
+struct ik_bone_state
 {
     union ik_quat rotation;
     union ik_vec3 position;
@@ -13,16 +13,16 @@ struct ik_node_state
 
 /* ------------------------------------------------------------------------- */
 struct ik_pose*
-ik_pose_alloc(const struct ik_node* root)
+ik_pose_alloc(const struct ik_bone* root)
 {
-    uint32_t node_count = ik_node_count(root);
+    uint32_t bone_count = ik_bone_count(root);
     struct ik_pose* state = (struct ik_pose*)ik_refcounted_alloc(
-        IK_POSE_OFFSET + sizeof(struct ik_node_state) * node_count, NULL);
+        IK_POSE_OFFSET + sizeof(struct ik_bone_state) * bone_count, NULL);
     if (state == NULL)
         return NULL;
 
 #if !defined(NDEBUG)
-    state->node_count = node_count;
+    state->bone_count = bone_count;
 #endif
 
     return state;
@@ -30,44 +30,44 @@ ik_pose_alloc(const struct ik_node* root)
 
 /* ------------------------------------------------------------------------- */
 static void
-save_pose(const struct ik_node* node, struct ik_node_state** data)
+save_pose(const struct ik_bone* bone, struct ik_bone_state** data)
 {
-    NODE_FOR_EACH_CHILD(node, child)
+    BONE_FOR_EACH_CHILD(bone, child)
         save_pose(child, data);
-    NODE_END_EACH
+    BONE_END_EACH
 
-    (*data)->position = node->position;
-    (*data)->rotation = node->rotation;
+    (*data)->position = bone->position;
+    (*data)->rotation = bone->rotation;
     (*data)++;
 }
 void
-ik_pose_save(struct ik_pose* state, const struct ik_node* root)
+ik_pose_save(struct ik_pose* state, const struct ik_bone* root)
 {
-    struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
+    struct ik_bone_state* data = (struct ik_bone_state*)((uintptr_t)state + IK_POSE_OFFSET);
 #if !defined(NDEBUG)
-    assert(state->node_count == ik_node_count(root));
+    assert(state->bone_count == ik_bone_count(root));
 #endif
     save_pose(root, &data);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-restore_pose(struct ik_node* node, struct ik_node_state** data)
+restore_pose(struct ik_bone* bone, struct ik_bone_state** data)
 {
-    NODE_FOR_EACH_CHILD(node, child)
+    BONE_FOR_EACH_CHILD(bone, child)
         restore_pose(child, data);
-    NODE_END_EACH
+    BONE_END_EACH
 
-    node->position = (*data)->position;
-    node->rotation = (*data)->rotation;
+    bone->position = (*data)->position;
+    bone->rotation = (*data)->rotation;
     (*data)++;
 }
 void
-ik_pose_apply(const struct ik_pose* state, struct ik_node* root)
+ik_pose_apply(const struct ik_pose* state, struct ik_bone* root)
 {
-    struct ik_node_state* data = (struct ik_node_state*)((uintptr_t)state + IK_POSE_OFFSET);
+    struct ik_bone_state* data = (struct ik_bone_state*)((uintptr_t)state + IK_POSE_OFFSET);
 #if !defined(NDEBUG)
-    assert(state->node_count == ik_node_count(root));
+    assert(state->bone_count == ik_bone_count(root));
 #endif
     restore_pose(root, &data);
 }

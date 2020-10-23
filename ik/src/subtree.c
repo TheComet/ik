@@ -1,5 +1,5 @@
 #include "ik/subtree.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/log.h"
 #include <stddef.h>
 #include <assert.h>
@@ -9,7 +9,7 @@ void
 subtree_init(struct ik_subtree* st)
 {
     st->root = NULL;
-    vector_init(&st->leaves, sizeof(struct ik_node*));
+    vector_init(&st->leaves, sizeof(struct ik_bone*));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -21,14 +21,14 @@ subtree_deinit(struct ik_subtree* st)
 
 /* ------------------------------------------------------------------------- */
 void
-subtree_set_root(struct ik_subtree* st, const struct ik_node* root)
+subtree_set_root(struct ik_subtree* st, const struct ik_bone* root)
 {
     st->root = root;
 }
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_add_leaf(struct ik_subtree* st, const struct ik_node* leaf)
+subtree_add_leaf(struct ik_subtree* st, const struct ik_bone* leaf)
 {
     if (vector_push(&st->leaves, &leaf) != 0)
     {
@@ -41,10 +41,10 @@ subtree_add_leaf(struct ik_subtree* st, const struct ik_node* leaf)
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_is_leaf_node(const struct ik_subtree* st, const struct ik_node* node)
+subtree_is_leaf_bone(const struct ik_subtree* st, const struct ik_bone* bone)
 {
-    VECTOR_FOR_EACH(&st->leaves, struct ik_node*, p_node)
-        if (node == *p_node)
+    VECTOR_FOR_EACH(&st->leaves, struct ik_bone*, p_bone)
+        if (bone == *p_bone)
             return 1;
     VECTOR_END_EACH
 
@@ -53,16 +53,16 @@ subtree_is_leaf_node(const struct ik_subtree* st, const struct ik_node* node)
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_check_node(const struct ik_subtree* st, const struct ik_node* node)
+subtree_check_bone(const struct ik_subtree* st, const struct ik_bone* bone)
 {
-    VECTOR_FOR_EACH(&st->leaves, struct ik_node*, p_node)
-        const struct ik_node* cur_node = *p_node;
-        for (; cur_node != st->root; cur_node = cur_node->parent)
+    VECTOR_FOR_EACH(&st->leaves, struct ik_bone*, p_bone)
+        const struct ik_bone* cur_bone = *p_bone;
+        for (; cur_bone != st->root; cur_bone = (struct ik_bone*)cur_bone->parent)
         {
-            if (cur_node == node)
+            if (cur_bone == bone)
                 return 1;
         }
-        if (st->root == node)
+        if (st->root == bone)
             return 1;
     VECTOR_END_EACH
 
@@ -72,15 +72,15 @@ subtree_check_node(const struct ik_subtree* st, const struct ik_node* node)
 /* ------------------------------------------------------------------------- */
 int
 subtree_check_children_up_to(const struct ik_subtree* st,
-                             const struct ik_node* node,
+                             const struct ik_bone* bone,
                              int max_count)
 {
     int found = 0;
-    NODE_FOR_EACH_CHILD(node, child)
-        found += subtree_check_node(st, child);
+    BONE_FOR_EACH_CHILD(bone, child)
+        found += subtree_check_bone(st, child);
         if (found == max_count)
             break;
-    NODE_END_EACH
+    BONE_END_EACH
 
     return found;
 }
