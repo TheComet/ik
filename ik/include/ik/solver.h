@@ -102,6 +102,14 @@ ik_solver_init_builtin_interfaces(void);
 IK_PRIVATE_API void
 ik_solver_deinit_builtin_interfaces(void);
 
+IK_PRIVATE_API struct ik_solver*
+ik_solver_alloc(const struct ik_solver_interface* impl,
+               struct ik_algorithm* algorithm,
+               struct ik_bone* root_bone);
+
+IK_PRIVATE_API void
+ik_solver_free(struct ik_solver* solver);
+
 #endif
 
 C_END

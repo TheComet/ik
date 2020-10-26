@@ -4,7 +4,7 @@
 #include "ik/subtree.h"
 #include "ik/cpputils.hpp"
 
-#define NAME chain
+#define NAME chain_tree
 
 using namespace ::testing;
 
@@ -14,18 +14,18 @@ public:
     virtual void SetUp()
     {
         subtree_init(&subtree);
-        chain_tree_init(&chain_tree);
+        chain_tree_init(&chain);
     }
 
     virtual void TearDown()
     {
-        chain_tree_deinit(&chain_tree);
+        chain_tree_deinit(&chain);
         subtree_deinit(&subtree);
     }
 
 protected:
     ik_subtree subtree;
-    ik_chain chain_tree;
+    ik_chain chain;
 };
 
 TEST_F(NAME, single_bone)
@@ -34,12 +34,12 @@ TEST_F(NAME, single_bone)
     subtree_set_root(&subtree, bone);
     subtree_add_leaf(&subtree, bone);
 
-    EXPECT_THAT(chain_tree_build(&chain_tree, &subtree), Eq(0));
+    EXPECT_THAT(chain_tree_build(&chain, &subtree), Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(1));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(bone));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(bone));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(1));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(bone));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(bone));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 }
 
 TEST_F(NAME, two_bones)
@@ -50,13 +50,13 @@ TEST_F(NAME, two_bones)
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n1);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(2));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n1));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(2));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n1));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 }
 
 TEST_F(NAME, omit_first_and_last)
@@ -70,13 +70,13 @@ TEST_F(NAME, omit_first_and_last)
     subtree_set_root(&subtree, n1);
     subtree_add_leaf(&subtree, n3);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(3));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n1));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n3));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(3));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n1));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 
     // Check refcounts
     EXPECT_THAT(n0.refcount(), Eq(1));
@@ -97,13 +97,13 @@ TEST_F(NAME, ignore_branch_not_part_of_subtree)
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(4));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n3));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(4));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 }
 
 TEST_F(NAME, children_of_leaf_bones_are_not_added_as_dead_bones)
@@ -118,13 +118,13 @@ TEST_F(NAME, children_of_leaf_bones_are_not_added_as_dead_bones)
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(4));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n3));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(4));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 }
 
 TEST_F(NAME, children_of_base_bone_are_not_added_as_dead_bones)
@@ -138,13 +138,13 @@ TEST_F(NAME, children_of_base_bone_are_not_added_as_dead_bones)
     subtree_set_root(&subtree, n0);
     subtree_add_leaf(&subtree, n3);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(4));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n3));
-    EXPECT_THAT(chain_child_count(&chain_tree), Eq(0));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(4));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n3));
+    EXPECT_THAT(chain_child_count(&chain), Eq(0));
 }
 
 TEST_F(NAME, two_arms)
@@ -159,16 +159,16 @@ TEST_F(NAME, two_arms)
     subtree_add_leaf(&subtree, n3);
     subtree_add_leaf(&subtree, n4);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(3));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n2));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(3));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n2));
 
-    ASSERT_THAT(chain_child_count(&chain_tree), Eq(2));
-    ik_chain* c0 = chain_get_child(&chain_tree, 0);
-    ik_chain* c1 = chain_get_child(&chain_tree, 1);
+    ASSERT_THAT(chain_child_count(&chain), Eq(2));
+    ik_chain* c0 = chain_get_child(&chain, 0);
+    ik_chain* c1 = chain_get_child(&chain, 1);
 
     EXPECT_THAT(chain_child_count(c0), Eq(0));
     EXPECT_THAT(chain_get_base_bone(c0), Eq(n2));
@@ -206,16 +206,16 @@ TEST_F(NAME, two_arms_with_dead_bones)
     subtree_add_leaf(&subtree, n3);
     subtree_add_leaf(&subtree, n5);
 
-    int result = chain_tree_build(&chain_tree, &subtree);
+    int result = chain_tree_build(&chain, &subtree);
     ASSERT_THAT(result, Eq(0));
 
-    EXPECT_THAT(chain_bone_count(&chain_tree), Eq(3));
-    EXPECT_THAT(chain_get_base_bone(&chain_tree), Eq(n0));
-    EXPECT_THAT(chain_get_tip_bone(&chain_tree), Eq(n2));
+    EXPECT_THAT(chain_bone_count(&chain), Eq(3));
+    EXPECT_THAT(chain_get_base_bone(&chain), Eq(n0));
+    EXPECT_THAT(chain_get_tip_bone(&chain), Eq(n2));
 
-    ASSERT_THAT(chain_child_count(&chain_tree), Eq(2));
-    ik_chain* c0 = chain_get_child(&chain_tree, 0);
-    ik_chain* c1 = chain_get_child(&chain_tree, 1);
+    ASSERT_THAT(chain_child_count(&chain), Eq(2));
+    ik_chain* c0 = chain_get_child(&chain, 0);
+    ik_chain* c1 = chain_get_child(&chain, 1);
 
     EXPECT_THAT(chain_child_count(c0), Eq(0));
     EXPECT_THAT(chain_get_base_bone(c0), Eq(n2));

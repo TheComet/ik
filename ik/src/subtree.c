@@ -21,14 +21,14 @@ subtree_deinit(struct ik_subtree* st)
 
 /* ------------------------------------------------------------------------- */
 void
-subtree_set_root(struct ik_subtree* st, const struct ik_bone* root)
+subtree_set_root(struct ik_subtree* st, struct ik_bone* root)
 {
     st->root = root;
 }
 
 /* ------------------------------------------------------------------------- */
 int
-subtree_add_leaf(struct ik_subtree* st, const struct ik_bone* leaf)
+subtree_add_leaf(struct ik_subtree* st, struct ik_bone* leaf)
 {
     if (vector_push(&st->leaves, &leaf) != 0)
     {

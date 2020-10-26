@@ -12,8 +12,7 @@
  * during weight transitions.
  */
 #define IK_EFFECTOR_FEATURES_LIST \
-    X(WEIGHT_NLERP,            weight_nlerp,            0x01) \
-    X(KEEP_GLOBAL_ORIENTATION, keep_global_orientation, 0x02)
+    X(WEIGHT_NLERP,            weight_nlerp,            0x01)
 
 C_BEGIN
 

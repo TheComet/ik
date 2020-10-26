@@ -118,7 +118,8 @@ count_chains(const struct ik_chain* chains);
     VECTOR_FOR_EACH_R(&(chain_var)->bones, struct ik_bone*, chain_##var_name) \
     struct ik_bone* var_name = *(chain_##var_name); {
 
-#define CHAIN_END_EACH VECTOR_END_EACH }
+#define CHAIN_END_EACH \
+    VECTOR_END_EACH }
 
 #ifdef IK_DOT_OUTPUT
 /*!

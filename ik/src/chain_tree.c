@@ -134,14 +134,7 @@ chain_tree_build_recursive(struct ik_chain* chain,
             BONE_END_EACH
         } break;
 
-        case 0: {
-            /* NOTE: This causes dead bones to be added to chains that don't
-             * have child chains. Doesn't make sense anymore
-            BONE_FOR_EACH_CHILD(bone, user_data, child_bone)
-                if (chain_add_dead_bone(chain, child_bone) != 0)
-                    return -1;
-            BONE_END_EACH*/
-        } break;
+        default: break;
     }
 
     if (chain_add_bone(chain, bone) != 0)

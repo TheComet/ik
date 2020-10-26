@@ -1,5 +1,5 @@
 #include "ik/effector.h"
-#include "ik/node.h"
+#include "ik/bone.h"
 #include "ik/log.h"
 #include "ik/solver.h"
 #include "ik/subtree.h"
@@ -14,9 +14,8 @@ struct ik_solver_b2
 {
     IK_SOLVER_HEAD
 
-    struct ik_node* base;
-    struct ik_node* mid;
-    struct ik_node* tip;
+    struct ik_bone* base;
+    struct ik_bone* tip;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -31,38 +30,36 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
      */
     if (subtree_leaves(subtree) != 1)
     {
-        ik_log_printf(IK_ERROR, "2B: Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", subtree_leaves(subtree));
+        ik_log_printf(IK_ERROR, "2-Bone: Expected 1 end effector, but %d end effectors were found in the subtree. Use a more general algorithm (e.g. FABRIK)", subtree_leaves(subtree));
         return -1;
     }
 
     solver->tip = subtree_get_leaf(subtree, 0);
-    solver->mid = solver->tip->parent;
-    solver->base = solver->mid ? solver->mid->parent : NULL;
+    solver->base = ik_bone_get_parent(solver->tip);
 
     if (solver->base == NULL)
     {
-        ik_log_printf(IK_ERROR, "2B: Require exactly two bones, but only one bone was found in the subtree.");
+        ik_log_printf(IK_ERROR, "2-Bone: Require exactly two bones, but only one bone was found in the subtree.");
         return -1;
     }
-    if (solver->base != subtree->root)
+    if (solver->base != subtree_get_root(subtree))
     {
-        ik_log_printf(IK_ERROR, "2B: Require exactly two bones, but a chain with more than 2 bones was found in the subtree.");
+        ik_log_printf(IK_ERROR, "2-Bone: Require exactly two bones, but a chain with more than 2 bones was found in the subtree.");
         return -1;
     }
 
     if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
     {
-        if (solver->tip->constraint == NULL && solver->mid->constraint == NULL)
+        if (solver->base->constraint == NULL && solver->tip->constraint == NULL)
         {
-            ik_log_printf(IK_WARN, "2B: IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid nodes. Flag will be ignored.");
+            ik_log_printf(IK_WARN, "2-Bone: IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or mid bones. Flag will be ignored.");
         }
     }
 
     IK_INCREF(solver->base);
-    IK_INCREF(solver->mid);
     IK_INCREF(solver->tip);
 
-    ik_log_printf(IK_DEBUG, "2B: Initialized");
+    ik_log_printf(IK_DEBUG, "2-Bone: Initialized");
 
     return 0;
 }
@@ -74,7 +71,6 @@ solver_b2_deinit(struct ik_solver* solver_base)
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
     IK_DECREF(solver->tip);
-    IK_DECREF(solver->mid);
     IK_DECREF(solver->base);
 }
 
@@ -88,13 +84,12 @@ solver_b2_solve(struct ik_solver* solver_base)
     union ik_quat alpha_rot;
 
     struct ik_solver_b2* s = (struct ik_solver_b2*)solver_base;
-    struct ik_node* base = s->base;
-    struct ik_node* mid = s->mid;
-    struct ik_node* tip = s->tip;
-    struct ik_effector* e = s->tip->effector;
+    struct ik_bone* base = s->base;
+    struct ik_bone* tip = s->tip;
+    struct ik_effector* e = tip->effector;
 
     /* Tree and effector target position are in local space. Transform everything
-     * into base node space */
+     * into base bone space */
     target_pos = e->target_position;
     ik_transform_pos_g2l(target_pos.f, base, tip);
 
@@ -111,7 +106,7 @@ solver_b2_solve(struct ik_solver* solver_base)
      *
      */
     a = s->tip->position.v.z;
-    b = s->mid->position.v.z;
+    b = s->base->position.v.z;
     aa = a*a;
     bb = b*b;
     cc = ik_vec3_length_squared(target_pos.f);
@@ -134,10 +129,10 @@ solver_b2_solve(struct ik_solver* solver_base)
          * If this too is colinear with the target vector then as a last restort,
          * simply use 0,0,1 as our rotation axis.
          */
-        if (s->mid->pole)
-            ik_vec3_copy(alpha_rot.f, s->mid->pole->position.f);
+        if (s->base->pole)
+            ik_vec3_copy(alpha_rot.f, s->base->pole->position.f);
         else
-            ik_vec3_copy(alpha_rot.f, mid->position.f);
+            ik_vec3_copy(alpha_rot.f, base->position.f);
         /*ik_transform_pos_l2g(alpha_rot.f, mid, base);*/
         ik_vec3_cross(alpha_rot.f, target_pos.f);
 
@@ -165,8 +160,8 @@ solver_b2_solve(struct ik_solver* solver_base)
 #if 0
         /*
          * Rotate side c and scale to length of side b to get the unknown
-         * position. node_base was already subtracted from node_mid
-         * previously, which means it will rotate around the base node's
+         * position. bone_base was already subtracted from bone_mid
+         * previously, which means it will rotate around the base bone's
          * position (as it should)
          */
         ik_vec3_copy(mid_pos, target_pos);
@@ -196,45 +191,10 @@ solver_b2_solve(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-solver_b2_visit_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param, int skip_base)
-{
-    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
-
-    if (!skip_base)
-        visit(solver->base, param);
-
-    visit(solver->mid, param);
-    visit(solver->tip, param);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-solver_b2_visit_effector_nodes(const struct ik_solver* solver_base, ik_visit_node_func visit, void* param)
-{
-    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
-
-    visit(solver->tip, param);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-solver_b2_get_first_segment(const struct ik_solver* solver_base, struct ik_node** base, struct ik_node** tip)
-{
-    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
-
-    *base = solver->base;
-    *tip = solver->mid;
-}
-
-/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_TWO_BONE = {
     "two bone",
     sizeof(struct ik_solver_b2),
     solver_b2_init,
     solver_b2_deinit,
-    solver_b2_solve,
-    solver_b2_visit_nodes,
-    solver_b2_visit_effector_nodes,
-    solver_b2_get_first_segment
+    solver_b2_solve
 };

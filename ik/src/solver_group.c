@@ -1,52 +1,44 @@
 #include "ik/log.h"
 #include "ik/solver.h"
 #include "ik/meta_solvers.h"
+#include "cstructures/memory.h"
 #include <assert.h>
 #include <string.h>
-
-struct subsolver
-{
-    struct ik_solver* solver;
-};
 
 struct ik_solver_group
 {
     IK_SOLVER_HEAD
 
-    struct cs_vector subsolvers;  /* list of struct subsolver */
+    struct ik_solver** subsolvers;
+    int subsolver_count;
 };
-
-/* ------------------------------------------------------------------------- */
-static int
-solver_group_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
-{
-    ik_log_printf(IK_ERROR, "solver_group_init() called! This should not happen ever!");
-    assert(0);
-    return -1;
-}
 
 /* ------------------------------------------------------------------------- */
 static void
 solver_group_deinit(struct ik_solver* solver_base)
 {
+    int i;
     struct ik_solver_group* solver = (struct ik_solver_group*)solver_base;
 
-    VECTOR_FOR_EACH(&solver->subsolvers, struct subsolver, subsolver)
-        IK_DECREF(subsolver->solver);
-    VECTOR_END_EACH
-    vector_deinit(&solver->subsolvers);
+    for (i = 0; i != solver->subsolver_count; ++i)
+        IK_DECREF(solver->subsolvers[i]);
+
+    FREE(solver->subsolvers);
 }
 
 /* ------------------------------------------------------------------------- */
 static int
 solver_group_solve(struct ik_solver* solver_base)
 {
+    int i;
     struct ik_solver_group* solver = (struct ik_solver_group*)solver_base;
 
     int iterations = 0;
-    VECTOR_FOR_EACH(&solver->subsolvers, struct subsolver, subsolver)
-        iterations += subsolver->solver->impl.solve(subsolver->solver);
-    VECTOR_END_EACH
+    for (i = 0; i != solver->subsolver_count; ++i)
+    {
+        struct ik_solver* subsolver = solver->subsolvers[i];
+        iterations += subsolver->impl.solve(subsolver);
+    }
 
     return iterations;
 }
@@ -55,7 +47,7 @@ solver_group_solve(struct ik_solver* solver_base)
 struct ik_solver_interface ik_solver_group = {
     "group",
     sizeof(struct ik_solver_group),
-    solver_group_init,
+    NULL,
     solver_group_deinit,
     solver_group_solve
 };
@@ -64,33 +56,30 @@ struct ik_solver_interface ik_solver_group = {
 struct ik_solver*
 ik_solver_group_create(const struct cs_vector* solver_list)
 {
+    cs_vec_idx i;
+
     struct ik_solver_group* solver = (struct ik_solver_group*)
-        ik_refcounted_alloc(sizeof *solver, (ik_deinit_func)solver_group_deinit);
+        ik_solver_alloc(&ik_solver_group, NULL, NULL);
     if (solver == NULL)
         goto alloc_solver_failed;
 
-    solver->impl = ik_solver_group;
-    solver->algorithm = NULL;
+    solver->subsolver_count = vector_count(solver_list);
+    solver->subsolvers = MALLOC(solver->subsolver_count * sizeof(*solver->subsolvers));
+    if (solver->subsolvers == NULL)
+        goto alloc_subsolvers_failed;
 
-    vector_init(&solver->subsolvers, sizeof(struct subsolver));
-    VECTOR_FOR_EACH(solver_list, struct ik_solver*, subsolver)
-        struct subsolver* data = vector_emplace(&solver->subsolvers);
-        if (data == NULL)
-            goto add_subsolver_failed;
-
-        IK_INCREF(*subsolver);
-        data->solver = *subsolver;
-    VECTOR_END_EACH
+    for (i = 0; i != solver->subsolver_count; ++i)
+    {
+        struct ik_solver** psubsolver = vector_get_element(solver_list, i);
+        IK_INCREF(*psubsolver);
+        solver->subsolvers[i] = *psubsolver;
+    }
 
     ik_log_printf(IK_DEBUG, "Group: Initialized with %d isolated subsolvers",
                   vector_count(solver_list));
 
     return (struct ik_solver*)solver;
 
-    add_subsolver_failed : VECTOR_FOR_EACH(&solver->subsolvers, struct subsolver, subsolver)
-                               IK_DECREF(subsolver->solver);
-                           VECTOR_END_EACH
-                           vector_deinit(&solver->subsolvers);
-                           ik_refcounted_obj_free((struct ik_refcounted*)solver);
-    alloc_solver_failed  : return NULL;
+    alloc_subsolvers_failed : ik_solver_free((struct ik_solver*)solver);
+    alloc_solver_failed     : return NULL;
 }

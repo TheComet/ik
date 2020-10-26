@@ -284,7 +284,6 @@ if (IK_TESTS)
     add_library (ik_tests_obj OBJECT
         "src/tests/environment_library_init.cpp"
         "src/tests/tests_run.cpp"
-        "src/tests/test_build_solver.cpp"
         "src/tests/test_chain_tree.cpp"
         #"src/tests/test_constraint.cpp"
         "src/tests/test_effector.cpp"
@@ -295,6 +294,7 @@ if (IK_TESTS)
         "src/tests/test_refcount.cpp"
         "src/tests/test_solver_b1.cpp"
         "src/tests/test_solver_b2.cpp"
+        "src/tests/test_solver_build.cpp"
         "src/tests/test_solver_combine.cpp"
         # "src/tests/test_transform_chain.cpp"
         # "src/tests/test_transform_chain_rotations.cpp"
@@ -303,9 +303,7 @@ if (IK_TESTS)
         # "src/tests/test_transform_node_rotations.cpp"
         # "src/tests/test_transform_node_translations.cpp"
         "src/tests/test_tree_object.cpp"
-        "src/tests/test_tree_object_conversions.cpp"
         "src/tests/test_transform_node_to_bone.cpp"
-        # "src/tests/test_TWO_BONE.cpp"
         "src/tests/test_vec3.cpp"
         $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
     set_target_properties (ik_tests_obj
