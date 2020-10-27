@@ -28,6 +28,7 @@ tree_object_deinit(struct ik_tree_object* tree_object)
 
     /* Unref children */
     TREE_OBJECT_FOR_EACH_CHILD(tree_object, child)
+        child->parent = NULL;
         IK_DECREF(child);
     TREE_OBJECT_END_EACH
 

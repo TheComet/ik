@@ -288,3 +288,25 @@ TEST_F(NAME, duplicate_full_copies_attachments)
     EXPECT_THAT(n23->pole, IsNull());
     EXPECT_THAT(n24->pole, NotNull());
 }
+
+TEST_F(NAME, destroying_parent_unlinks_children)
+{
+    ik_tree_object* parent = ik_tree_object_create(sizeof(ik_tree_object));
+    ik_tree_object* child1 = ik_tree_object_create_child(parent, sizeof(ik_tree_object));
+    ik_tree_object* child2 = ik_tree_object_create_child(parent, sizeof(ik_tree_object));
+
+    IK_INCREF(parent);
+    IK_INCREF(child1);
+    IK_INCREF(child2);
+
+    EXPECT_THAT(child1->parent, Eq(parent));
+    EXPECT_THAT(child2->parent, Eq(parent));
+
+    IK_DECREF(parent);  // destroys parent
+
+    EXPECT_THAT(child1->parent, IsNull());
+    EXPECT_THAT(child2->parent, IsNull());
+
+    IK_DECREF(child1);
+    IK_DECREF(child2);
+}
