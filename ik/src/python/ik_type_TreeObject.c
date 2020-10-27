@@ -211,6 +211,7 @@ TreeObject_dealloc(PyObject* myself)
     TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
         Py_DECREF(child->user_data);
     TREE_OBJECT_END_EACH
+
     IK_DECREF(self->tree_object);
 
     Py_DECREF(self->algorithm);
@@ -228,37 +229,33 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
     ik_TreeObject* self;
     ik_TreeObjectChildrenView* children_view;
-    ik_Vec3* position;
-    ik_Quat* rotation;
-    struct ik_tree_object* tree_object;
-    PyObject* tree_object_capsule;
-    PyObject* constructor_args;
+    PyObject* capsule;
+    PyObject* children_view_args;
+    PyObject* base_args;
 
-    (void)args; (void)kwds;
-
-    /* Allocate the internal tree_object */
-    tree_object = ik_tree_object_create();
-    if (tree_object == NULL)
-        goto alloc_tree_object_failed;
-    IK_INCREF(tree_object);
-
-    /* Add tree_object to capsule so we can construct a TreeObjectChildrenView object */
-    tree_object_capsule = PyCapsule_New(tree_object, NULL, NULL);
-    if (tree_object_capsule == NULL)
-        goto alloc_children_view_failed;
-
-    /* Add capsule to arglist tuple */
-    constructor_args = PyTuple_New(1);
-    if (constructor_args == NULL)
+    /* First arg must be a capsule containing the internal bone */
+    if (PyTuple_GET_SIZE(args) < 1)
     {
-        Py_DECREF(tree_object_capsule);
-        goto alloc_children_view_failed;
+        PyErr_SetString(PyExc_TypeError, "Missing capsule");
+        return NULL;
     }
-    PyTuple_SET_ITEM(constructor_args, 0, tree_object_capsule); /* steals ref */
+    children_view_args = PyTuple_GetSlice(args, 0, 1);
+    if (children_view_args == NULL)
+        goto slice_children_view_args_failed;
+    capsule = PyTuple_GET_ITEM(children_view_args, 0);
+    if (!PyCapsule_CheckExact(capsule))
+    {
+        PyErr_SetString(PyExc_ValueError, "First argument must be a capsule");
+        goto slice_base_args_failed;
+    }
+
+    /* Slice rest to get the base arglist */
+    base_args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    if (base_args == NULL)
+        goto slice_base_args_failed;
 
     /* create children view object */
-    children_view = (ik_TreeObjectChildrenView*)PyObject_CallObject((PyObject*)&ik_TreeObjectChildrenViewType, constructor_args);
-    Py_DECREF(constructor_args); /* destroys arglist and capsule */
+    children_view = (ik_TreeObjectChildrenView*)PyObject_CallObject((PyObject*)&ik_TreeObjectChildrenViewType, children_view_args);
     if (children_view == NULL)
         goto alloc_children_view_failed;
 
@@ -273,23 +270,29 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     Py_INCREF(Py_None); self->effector = Py_None;
     Py_INCREF(Py_None); self->pole = Py_None;
 
+    /* Store tree object from capsule */
+    self->tree_object = PyCapsule_GetPointer(capsule, NULL);
+    IK_INCREF(self->tree_object);
+
+    /* Store children view */
+    self->children = children_view;
+
     /*
      * Store the python object in tree_object's user data so we don't have to store
      * child tree_objects in a python list.
      */
-    tree_object->user_data = self;
+    self->tree_object->user_data = self;
 
-    /* store other objects we successfully allocated */
-    self->tree_object = tree_object;
-    self->children = children_view;
+    /* Clean up */
+    Py_DECREF(base_args);
+    Py_DECREF(children_view_args);
 
     return (PyObject*)self;
 
-    alloc_self_failed             : Py_DECREF(rotation);
-    alloc_rotation_failed         : Py_DECREF(position);
-    alloc_position_failed         : Py_DECREF(children_view);
-    alloc_children_view_failed    : IK_DECREF(tree_object);
-    alloc_tree_object_failed             : return NULL;
+    alloc_self_failed               : Py_DECREF(children_view);
+    alloc_children_view_failed      : Py_DECREF(base_args);
+    slice_base_args_failed          : Py_DECREF(children_view_args);
+    slice_children_view_args_failed : return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -386,11 +389,6 @@ TreeObject_init(PyObject* myself, PyObject* args, PyObject* kwds)
         Py_DECREF(tmp);
     }
 
-    if (position != NULL)
-        ASSIGN_VEC3(self->position, position);
-    if (rotation != NULL)
-        ASSIGN_QUAT(self->rotation, rotation);
-
     return 0;
 }
 
@@ -400,7 +398,7 @@ TreeObject_link(PyObject* myself, PyObject* child)
 {
     ik_TreeObject* self = (ik_TreeObject*)myself;
 
-    if (!ik_TreeObject_CheckExact(child))
+    if (!ik_TreeObject_Check(child))
     {
         PyErr_SetString(PyExc_TypeError, "Argument must be of type ik.TreeObject");
         return NULL;
@@ -456,7 +454,7 @@ TreeObject_create_child(PyObject* myself, PyObject* args, PyObject* kwds)
     ik_TreeObject* child;
     (void)args;
 
-    child = (ik_TreeObject*)PyObject_Call((PyObject*)&ik_TreeObjectType, args, kwds);
+    child = (ik_TreeObject*)PyObject_Call((PyObject*)Py_TYPE(myself), args, kwds);
     if (child == NULL)
         return NULL;
 
@@ -527,7 +525,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
     (void)closure;
 
     /* Children can be a single ik_TreeObject instance, or a list of ik_TreeObject */
-    if (ik_TreeObject_CheckExact(value))
+    if (ik_TreeObject_Check(value))
     {
         struct cs_vector old_children;
         PyObject* result;
@@ -582,7 +580,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
         {
             PyObject* result;
             PyObject* child = PySequence_Fast_GET_ITEM(seq, i);
-            if (!ik_TreeObject_CheckExact(child))
+            if (!ik_TreeObject_Check(child))
             {
                 PyErr_Format(PyExc_TypeError, "Object at index %d is not of type ik.TreeObject", i);
                 goto restore_old_children2;
@@ -1020,7 +1018,7 @@ static PyGetSetDef TreeObject_getset[] = {
 };
 
 /* ------------------------------------------------------------------------- */
-static PyObject*
+PyObject*
 TreeObject_repr_build_arglist_list(PyObject* myself)
 {
     ik_TreeObject* self = (ik_TreeObject*)myself;

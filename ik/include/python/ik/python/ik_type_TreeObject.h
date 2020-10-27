@@ -4,6 +4,8 @@
 
 #define ik_TreeObject_CheckExact(o) \
     (Py_TYPE(o) == &ik_TreeObjectType)
+#define ik_TreeObject_Check(o) \
+    (PyObject_TypeCheck(o, &ik_TreeObjectType))
 
 struct ik_tree_object;
 
@@ -34,3 +36,6 @@ extern PyTypeObject ik_TreeObjectType;
 
 int
 init_ik_TreeObjectType(void);
+
+PyObject*
+TreeObject_repr_build_arglist_list(PyObject* myself);

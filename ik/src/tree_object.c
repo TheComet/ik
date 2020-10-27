@@ -308,6 +308,19 @@ ik_tree_object_duplicate_shallow(const struct ik_tree_object* root, uintptr_t ob
 {
     struct ik_tree_object* new_root = ik_tree_object_duplicate_no_attachments(root, obj_size, add_extra_leaf_objects);
     if (new_root == NULL)
+        return NULL;
+
+    ik_attachment_reference_from_tree(new_root, root);
+
+    return new_root;
+}
+
+/* ------------------------------------------------------------------------- */
+struct ik_tree_object*
+ik_tree_object_duplicate_full(const struct ik_tree_object* root, uintptr_t obj_size, int add_extra_leaf_objects)
+{
+    struct ik_tree_object* new_root = ik_tree_object_duplicate_no_attachments(root, obj_size, add_extra_leaf_objects);
+    if (new_root == NULL)
         goto duplicate_tree_failed;
 
     if (ik_attachment_duplicate_from_tree(new_root, root) != 0)
@@ -317,19 +330,6 @@ ik_tree_object_duplicate_shallow(const struct ik_tree_object* root, uintptr_t ob
 
     duplicate_attachments_failed : ik_tree_object_destroy(new_root);
     duplicate_tree_failed        : return NULL;
-}
-
-/* ------------------------------------------------------------------------- */
-struct ik_tree_object*
-ik_tree_object_duplicate_full(const struct ik_tree_object* root, uintptr_t obj_size, int add_extra_leaf_objects)
-{
-    struct ik_tree_object* new_root = ik_tree_object_duplicate_no_attachments(root, obj_size, add_extra_leaf_objects);
-    if (new_root == NULL)
-        return NULL;
-
-    ik_attachment_reference_from_tree(new_root, root);
-
-    return new_root;
 }
 
 /* ------------------------------------------------------------------------- */

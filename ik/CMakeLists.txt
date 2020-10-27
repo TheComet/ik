@@ -220,6 +220,7 @@ if (IK_PYTHON)
     add_library (ik_python_obj OBJECT
         "include/python/ik/python/ik_type_Attachment.h"
         "include/python/ik/python/ik_type_Algorithm.h"
+        "include/python/ik/python/ik_type_Bone.h"
         "include/python/ik/python/ik_type_Constraint.h"
         "include/python/ik/python/ik_type_Effector.h"
         "include/python/ik/python/ik_type_Info.h"
@@ -232,6 +233,7 @@ if (IK_PYTHON)
         "src/python/ik_module.c"
         "src/python/ik_type_Attachment.c"
         "src/python/ik_type_Algorithm.c"
+        "src/python/ik_type_Bone.c"
         "src/python/ik_type_Constraint.c"
         "src/python/ik_type_Effector.c"
         "src/python/ik_type_Info.c"

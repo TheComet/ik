@@ -6,6 +6,7 @@
 #include "ik/python/ik_module.h"
 #include "ik/python/ik_type_Log.h"
 #include "ik/python/ik_type_Algorithm.h"
+#include "ik/python/ik_type_Bone.h"
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Info.h"
@@ -41,6 +42,7 @@ init_builtin_types(void)
 {
     if (init_ik_AttachmentType() != 0)     return -1;
     if (init_ik_AlgorithmType() != 0)      return -1;
+    if (init_ik_BoneType() != 0)           return -1;
     if (init_ik_ConstraintType() != 0)     return -1;
     if (init_ik_EffectorType() != 0)       return -1;
     if (init_ik_InfoType() != 0)           return -1;
@@ -73,6 +75,7 @@ add_builtin_types_to_module(PyObject* m)
 
     ADD_TYPE(Attachment);
     ADD_TYPE(Algorithm);
+    ADD_TYPE(Bone);
     ADD_TYPE(BlenderPole);
     ADD_TYPE(Constraint);
     ADD_TYPE(Effector);
