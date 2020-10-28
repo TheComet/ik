@@ -403,8 +403,25 @@ int
 init_ik_ConstraintType(void)
 {
     ik_ConstraintType.tp_base = &ik_AttachmentType;
-    if (PyType_Ready(&ik_ConstraintType) < 0)      return -1;
-    if (PyType_Ready(&ik_StiffConstraintType) < 0) return -1;
-    if (PyType_Ready(&ik_HingeConstraintType) < 0) return -1;
+    if (PyType_Ready(&ik_ConstraintType) < 0)
+        return -1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+init_ik_StiffConstraintType(void)
+{
+    if (PyType_Ready(&ik_StiffConstraintType) < 0)
+        return -1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+init_ik_HingeConstraintType(void)
+{
+    if (PyType_Ready(&ik_HingeConstraintType) < 0)
+        return -1;
     return 0;
 }

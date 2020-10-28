@@ -34,3 +34,9 @@ extern PyTypeObject ik_HingeConstraintType;
 
 int
 init_ik_ConstraintType(void);
+
+int
+init_ik_StiffConstraintType(void);
+
+int
+init_ik_HingeConstraintType(void);

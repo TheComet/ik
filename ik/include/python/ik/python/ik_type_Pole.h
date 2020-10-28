@@ -21,3 +21,12 @@ extern PyTypeObject ik_MayaPoleType;
 
 int
 init_ik_PoleType(void);
+
+int
+init_ik_GenericPoleType(void);
+
+int
+init_ik_BlenderPoleType(void);
+
+int
+init_ik_MayaPoleType(void);

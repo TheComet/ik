@@ -11,13 +11,76 @@
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Info.h"
 #include "ik/python/ik_type_Mat3x4.h"
-#include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_TreeObject.h"
 #include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Pose.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
+
+#if defined(IK_LOGGING)
+#   define LOG_TYPE X(Log)
+#else
+#   define LOG_TYPE
+#endif
+
+#define PUBLIC_IK_TYPES  \
+    X(Attachment)        \
+    X(Algorithm)         \
+    X(Bone)              \
+    X(Constraint)        \
+    X(HingeConstraint)   \
+    X(StiffConstraint)   \
+    X(Effector)          \
+    X(Mat3x4)            \
+    X(Pose)              \
+    X(Pole)              \
+    X(BlenderPole)       \
+    X(GenericPole)       \
+    X(MayaPole)          \
+    X(Quat)              \
+    X(Solver)            \
+    X(TreeObject)        \
+    X(Vec3)
+
+#define PRIVATE_IK_TYPES \
+    X(Info)              \
+    LOG_TYPE
+
+/* ------------------------------------------------------------------------- */
+static void
+module_incref(void)
+{
+    PyObject* module = PyState_FindModule(&ik_module);
+    Py_INCREF(module);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+module_decref(void)
+{
+    PyObject* module = PyState_FindModule(&ik_module);
+    Py_DECREF(module);
+}
+
+/* ------------------------------------------------------------------------- */
+static int g_refs = 0;
+static void
+public_type_instantiated_callback(PyObject* o)
+{
+    module_incref();
+    g_refs++;
+    printf("incref (%d)\n", g_refs);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+public_type_deleted_callback(PyObject* o)
+{
+    module_decref();
+    g_refs--;
+    printf("decref (%d)\n", g_refs);
+}
 
 /* ------------------------------------------------------------------------- */
 static void
@@ -37,60 +100,66 @@ PyModuleDef ik_module = {
 };
 
 /* ------------------------------------------------------------------------- */
-static int
-init_builtin_types(void)
-{
-    if (init_ik_AttachmentType() != 0)     return -1;
-    if (init_ik_AlgorithmType() != 0)      return -1;
-    if (init_ik_BoneType() != 0)           return -1;
-    if (init_ik_ConstraintType() != 0)     return -1;
-    if (init_ik_EffectorType() != 0)       return -1;
-    if (init_ik_InfoType() != 0)           return -1;
-#if defined(IK_LOGGING)
-    if (init_ik_LogType() != 0)            return -1;
-#endif
-    if (init_ik_Mat3x4Type() != 0)         return -1;
-    if (init_ik_ModuleRefType() != 0)      return -1;
-    if (init_ik_PoleType() != 0)           return -1;
-    if (init_ik_PoseType() != 0)           return -1;
-    if (init_ik_QuatType() != 0)           return -1;
-    if (init_ik_SolverType() != 0)         return -1;
-    if (init_ik_TreeObjectType() != 0)     return -1;
-    if (init_ik_Vec3Type() != 0)           return -1;
-    return 0;
-}
+#define X(typename)                                                           \
+        static newfunc typename##_new_orig;                                   \
+        static destructor typename##_dealloc_orig;                            \
+        static PyObject* typename##_new_wrapper(PyTypeObject* type, PyObject* args, PyObject* kwds) \
+        {                                                                     \
+            PyObject* o = (*typename##_new_orig)(type, args, kwds);           \
+            if (o)                                                            \
+                public_type_instantiated_callback(o);                         \
+            return o;                                                         \
+        }                                                                     \
+        static void typename##_dealloc_wrapper(PyObject* o)                   \
+        {                                                                     \
+            public_type_deleted_callback(o);                                  \
+            (*typename##_dealloc_orig)(o);                                    \
+        }                                                                     \
+        static void wrap_##typename##_type(void)                              \
+        {                                                                     \
+            /* module init func can be called again, guard against that */    \
+            if (typename##_new_orig == NULL)                                  \
+            {                                                                 \
+                typename##_new_orig = ik_##typename##Type.tp_new;             \
+                typename##_dealloc_orig = ik_##typename##Type.tp_dealloc;     \
+                                                                              \
+                ik_##typename##Type.tp_new = typename##_new_wrapper;          \
+                ik_##typename##Type.tp_dealloc = typename##_dealloc_wrapper;  \
+            }                                                                 \
+        }
+    PUBLIC_IK_TYPES
+#undef X
 
 /* ------------------------------------------------------------------------- */
 static int
-add_builtin_types_to_module(PyObject* m)
+init_builtin_types(PyObject* m)
 {
-#define ADD_TYPE(name) do {                                                   \
-        Py_INCREF(&ik_##name##Type);                                          \
-        if (PyModule_AddObject(m, #name, (PyObject*)&ik_##name##Type) != 0)   \
+    /* Init all IK types */
+#define X(typename)                          \
+        if (init_ik_##typename##Type() != 0) \
+            return -1;
+    PUBLIC_IK_TYPES
+    PRIVATE_IK_TYPES
+#undef X
+
+    /* Insert callbacks into all public IK type objects so we know when they get
+     * allocated and deleted. This is important because we must ensure that the
+     * module object outlives any types instantiated from the module. */
+#define X(typename) wrap_##typename##_type();
+    PUBLIC_IK_TYPES
+#undef X
+
+    /* Add all public IK types to the module so they can be instantiated in
+     * python */
+#define X(typename)                                                           \
+        Py_INCREF(&ik_##typename##Type);                                      \
+        if (PyModule_AddObject(m, #typename, (PyObject*)&ik_##typename##Type) != 0) \
         {                                                                     \
-            Py_DECREF(&ik_##name##Type);                                      \
+            Py_DECREF(&ik_##typename##Type);                                  \
             return -1;                                                        \
-        }                                                                     \
-    } while(0)
-
-    ADD_TYPE(Attachment);
-    ADD_TYPE(Algorithm);
-    ADD_TYPE(Bone);
-    ADD_TYPE(BlenderPole);
-    ADD_TYPE(Constraint);
-    ADD_TYPE(Effector);
-    ADD_TYPE(GenericPole);
-    ADD_TYPE(HingeConstraint);
-    ADD_TYPE(Mat3x4);
-    ADD_TYPE(MayaPole);
-    ADD_TYPE(Pose);
-    ADD_TYPE(Pole);
-    ADD_TYPE(Solver);
-    ADD_TYPE(StiffConstraint);
-    ADD_TYPE(TreeObject);
-    ADD_TYPE(Quat);
-    ADD_TYPE(Vec3);
-
+        }
+    PUBLIC_IK_TYPES
+#undef X
     return 0;
 }
 
@@ -115,31 +184,24 @@ add_constants_to_module(PyObject* m)
 
 /* ------------------------------------------------------------------------- */
 static int
+add_type_to_module(PyObject* m, const char* name, PyTypeObject* type)
+{
+    PyObject* o = PyObject_CallObject((PyObject*)type, NULL);
+    if (o == NULL)
+        return -1;
+
+    if (PyModule_AddObject(m, name, o) == 0)
+        return 0;
+
+    Py_DECREF(o);
+    return -1;
+}
+static int
 add_builtin_objects_to_module(PyObject* m)
 {
-    {
-        PyObject* info = PyObject_CallObject((PyObject*)&ik_InfoType, NULL);
-        if (info == NULL)
-            return -1;
-        if (PyModule_AddObject(m, "info", info) != 0)
-        {
-            Py_DECREF(info);
-            return -1;
-        }
-    }
-
-    /* Instantiate log and add to module */
+    if (add_type_to_module(m, "info", &ik_InfoType) != 0) return -1;
 #if defined(IK_LOGGING)
-    {
-        PyObject* log = PyObject_CallObject((PyObject*)&ik_LogType, NULL);
-        if (log == NULL)
-            return -1;
-        if (PyModule_AddObject(m, "log", log) != 0)
-        {
-            Py_DECREF(log);
-            return -1;
-        }
-    }
+    if (add_type_to_module(m, "info", &ik_LogType) != 0)  return -1;
 #endif
 
     return 0;
@@ -163,8 +225,7 @@ PyMODINIT_FUNC PyInit_ik(void)
         return NULL;
     }
 
-    if (init_builtin_types() != 0)             goto init_module_failed;
-    if (add_builtin_types_to_module(m) != 0)   goto init_module_failed;
+    if (init_builtin_types(m) != 0)            goto init_module_failed;
     if (add_builtin_objects_to_module(m) != 0) goto init_module_failed;
     if (add_constants_to_module(m) != 0)       goto init_module_failed;
 

@@ -1,7 +1,6 @@
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
-#include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_type_TreeObject.h"
 #include "ik/python/ik_type_Pole.h"
 #include "ik/python/ik_type_Quat.h"
@@ -187,7 +186,7 @@ static PySequenceMethods TreeObjectChildrenView_as_sequence = {
 };
 
 /* ------------------------------------------------------------------------- */
-PyTypeObject ik_TreeObjectChildrenViewType = {
+static PyTypeObject ik_TreeObjectChildrenViewType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.TreeObjectChildrenView",
     .tp_basicsize = sizeof(ik_TreeObjectChildrenView),
@@ -220,7 +219,7 @@ TreeObject_dealloc(PyObject* myself)
     Py_DECREF(self->pole);
     Py_DECREF(self->children);
 
-    ik_TreeObjectType.tp_base->tp_dealloc(myself);
+    Py_TYPE(myself)->tp_free(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -232,6 +231,7 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     PyObject* capsule;
     PyObject* children_view_args;
     PyObject* base_args;
+    (void)kwds;
 
     /* First arg must be a capsule containing the internal bone */
     if (PyTuple_GET_SIZE(args) < 1)
@@ -260,7 +260,7 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_children_view_failed;
 
     /* Finally, alloc self */
-    self = (ik_TreeObject*)ik_TreeObjectType.tp_base->tp_new(type, args, kwds);
+    self = (ik_TreeObject*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -596,6 +596,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
             result = TreeObject_link(myself, child);
             if (result == NULL)
                 goto restore_old_children2;
+            Py_DECREF(result);
         }
 
         /* unlink old children */
@@ -610,7 +611,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
 
         return 0;
 
-        restore_old_children2 : TreeObject_unlink_all_children(myself, NULL);
+        restore_old_children2 : Py_DECREF(TreeObject_unlink_all_children(myself, NULL));
                                 vector_deinit(&self->tree_object->children);
                                 self->tree_object->children = old_children;
                                 TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
@@ -620,7 +621,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
     }
     else if (value == Py_None)
     {
-        TreeObject_unlink_all_children(myself, NULL);
+        Py_DECREF(TreeObject_unlink_all_children(myself, NULL));
         return 0;
     }
 
@@ -1192,8 +1193,6 @@ PyTypeObject ik_TreeObjectType = {
 int
 init_ik_TreeObjectType(void)
 {
-    ik_TreeObjectType.tp_base = &ik_ModuleRefType;
-
     if (PyType_Ready(&ik_TreeObjectType) < 0)             return -1;
     if (PyType_Ready(&ik_TreeObjectChildrenViewType) < 0) return -1;
 

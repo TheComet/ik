@@ -18,9 +18,6 @@ class TestTreeObject(unittest.TestCase):
         self.assertIsNone(n.effector)
         self.assertIsNone(n.pole)
 
-    def test_construct_with_effector(self):
-        n = ik.Bone(effector=ik.Effector())
-
     def test_repr(self):
         n1 = ik.Bone()
         n2 = n1.create_child()

@@ -4,20 +4,17 @@ import pygame
 import ik
 import random
 from Updateable import Updateable
-from TreeEditor import TreeEditor
 from Tree import Tree
 from math import pi, sqrt
 from time import time
 
 
 def one_bone_example(pos):
-    root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
-    tip = root.create_child(position=ik.Vec3(0, 0, 50))
-
-    root.algorithm = ik.Algorithm(ik.ONE_BONE, constraints=True)
-    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 50), target_rotation=ik.Quat((1, 0, 0), pi))
-    tip.constraints = ik.HingeConstraint(axis=ik.Vec3(1, 0, 0), min_angle=-pi/4, max_angle=pi/4)
-    return root
+    bone = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=50)
+    bone.algorithm = ik.Algorithm(ik.ONE_BONE, constraints=True)
+    bone.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 50))
+    bone.constraints = ik.HingeConstraint(axis=ik.Vec3(1, 0, 0), min_angle=-pi/4, max_angle=pi/4)
+    return bone
 
 
 def two_bone_example(pos):
@@ -228,7 +225,7 @@ class Window(Updateable):
 
         self.__updateables = [
             self,
-            #Tree(one_bone_example((100, height - 200))),
+            Tree(one_bone_example((100, height - 200))),
             #Tree(two_bone_example((300, height - 200))),
             #Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),
@@ -236,7 +233,7 @@ class Window(Updateable):
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))
             #Tree(human_example((width/2, height-200)))
-            Tree(embedded_effectors((width/2, height-200)))
+            #Tree(embedded_effectors((width/2, height-200)))
             #Tree(double_embedded_effectors((width/2, height-200), 3))
         ]
 

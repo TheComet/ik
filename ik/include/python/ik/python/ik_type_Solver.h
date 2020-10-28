@@ -1,13 +1,14 @@
 #pragma once
 
-#include "ik/python/ik_type_ModuleRef.h"
+#include "Python.h"
 
 struct ik_solver;
 struct ik_Bone;
 
 typedef struct ik_Solver
 {
-    ik_ModuleRef super;
+    PyObject_HEAD
+
     struct ik_Bone* root;  /* unfortunately have to store root node for repr() to work */
     struct ik_solver* solver;
 } ik_Solver;

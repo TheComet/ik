@@ -1,21 +1,23 @@
 #include "ik/python/ik_type_Attachment.h"
-#include "ik/python/ik_type_ModuleRef.h"
 #include "ik/python/ik_docstrings.h"
 #include "ik/bone.h"
 #include "ik/attachment.h"
 
 /* ------------------------------------------------------------------------- */
 static void
-Attachment_dealloc(PyObject* self)
+Attachment_dealloc(PyObject* myself)
 {
-    ik_AttachmentType.tp_base->tp_dealloc(self);
+    Py_TYPE(myself)->tp_free(myself);
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
 Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    ik_Attachment* self = (ik_Attachment*)ik_AttachmentType.tp_base->tp_new(type, args, kwds);
+    ik_Attachment* self;
+    (void)args; (void)kwds;
+
+    self = (ik_Attachment*)type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
 
@@ -45,7 +47,6 @@ PyTypeObject ik_AttachmentType = {
 int
 init_ik_AttachmentType(void)
 {
-    ik_AttachmentType.tp_base = &ik_ModuleRefType;
     if (PyType_Ready(&ik_AttachmentType) < 0)
         return -1;
     return 0;

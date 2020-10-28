@@ -96,6 +96,38 @@ Bone_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 /* ------------------------------------------------------------------------- */
+static int
+Bone_init(PyObject* myself, PyObject* args, PyObject* kwds)
+{
+    ik_Bone* self = (ik_Bone*)myself;
+    struct ik_bone* bone = (struct ik_bone*)myself;
+    ik_Vec3* position = NULL;
+    ik_Quat* rotation = NULL;
+
+    static char* kwds_str[] = {
+        "position",
+        "rotation",
+        "length",
+        NULL
+    };
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O!O!" FMT, kwds_str,
+        &ik_Vec3Type, &position,
+        &ik_QuatType, &rotation,
+        &bone->length))
+    {
+        return -1;
+    }
+
+    if (position)
+        ASSIGN_VEC3(self->position, position);
+    if (rotation)
+        ASSIGN_QUAT(self->rotation, rotation);
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
 static PyObject*
 Bone_getposition(PyObject* myself, void* closure)
 {
@@ -142,9 +174,35 @@ Bone_setrotation(PyObject* myself, PyObject* value, void* closure)
 }
 
 /* ------------------------------------------------------------------------- */
+static PyObject*
+Bone_getlength(PyObject* myself, void* closure)
+{
+    ik_Bone* self = (ik_Bone*)myself;
+    struct ik_bone* bone = (struct ik_bone*)self->super.tree_object;
+    (void)closure;
+    return PyLong_FromDouble(bone->length);
+}
+static int
+Bone_setlength(PyObject* myself, PyObject* value, void* closure)
+{
+    PyObject* as_float;
+    ik_Bone* self = (ik_Bone*)myself;
+    struct ik_bone* bone = (struct ik_bone*)self->super.tree_object;
+    (void)closure;
+
+    if ((as_float = PyNumber_Float(value)) == NULL)
+        return -1;
+
+    bone->length = PyFloat_AS_DOUBLE(as_float);
+    Py_DECREF(as_float);
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
 static PyGetSetDef Bone_getsetters[] = {
     {"position", Bone_getposition, Bone_setposition, IK_BONE_POSITION_DOC},
     {"rotation", Bone_getrotation, Bone_setrotation, IK_BONE_ROTATION_DOC},
+    {"length",   Bone_getlength,   Bone_setlength,   IK_BONE_LENGTH_DOC},
     {NULL}
 };
 
@@ -274,7 +332,8 @@ PyTypeObject ik_BoneType = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = IK_BONE_DOC,
     .tp_getset = Bone_getsetters,
-    .tp_new = Bone_new
+    .tp_new = Bone_new,
+    .tp_init = Bone_init
 };
 
 /* ------------------------------------------------------------------------- */

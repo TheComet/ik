@@ -15,7 +15,7 @@ Pole_dealloc(PyObject* myself)
     UNREF_VEC3_DATA(self->position);
     Py_DECREF(self->position);
     IK_DECREF(self->super.attachment);
-    ik_PoleType.tp_base->tp_dealloc(myself);
+    Py_TYPE(myself)->tp_free(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -25,6 +25,7 @@ Pole_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     ik_Pole* self;
     ik_Vec3* position;
     struct ik_pole* pole;
+    (void)args; (void)kwds;
 
     /* Allocate internal pole */
     if ((pole = ik_pole_create()) == NULL)
@@ -40,7 +41,7 @@ Pole_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_target_position_failed;
 
     /* Allocate self */
-    self = (ik_Pole*)ik_PoleType.tp_base->tp_new(type, args, kwds);
+    self = (ik_Pole*)type->tp_alloc(type, 0);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -248,7 +249,7 @@ PyTypeObject ik_PoleType = {
     .tp_dealloc = Pole_dealloc,
     .tp_repr = Pole_repr,
     .tp_str = Pole_str,
-    .tp_flags = Py_TPFLAGS_DEFAULT & Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc = IK_POLE_DOC,
     .tp_getset = Pole_getset,
     .tp_init = Pole_init,
@@ -337,11 +338,34 @@ PyTypeObject ik_MayaPoleType = {
 int
 init_ik_PoleType(void)
 {
-    ik_PoleType.tp_base = &ik_ModuleRefType;
+    if (PyType_Ready(&ik_PoleType) < 0)
+        return -1;
+    return 0;
+}
 
-    if (PyType_Ready(&ik_PoleType) < 0)        return -1;
-    if (PyType_Ready(&ik_GenericPoleType) < 0) return -1;
-    if (PyType_Ready(&ik_BlenderPoleType) < 0) return -1;
-    if (PyType_Ready(&ik_MayaPoleType) < 0)    return -1;
+/* ------------------------------------------------------------------------- */
+int
+init_ik_GenericPoleType(void)
+{
+    if (PyType_Ready(&ik_GenericPoleType) < 0)
+        return -1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+init_ik_BlenderPoleType(void)
+{
+    if (PyType_Ready(&ik_BlenderPoleType) < 0)
+        return -1;
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+init_ik_MayaPoleType(void)
+{
+    if (PyType_Ready(&ik_MayaPoleType) < 0)
+        return -1;
     return 0;
 }
