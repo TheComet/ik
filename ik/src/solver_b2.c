@@ -91,18 +91,21 @@ solver_b2_solve(struct ik_solver* solver_base)
     /* Tree and effector target position are in local space. Transform everything
      * into base bone space */
     target_pos = e->target_position;
-    ik_transform_pos_g2l(target_pos.f, base, tip);
+    ik_transform_pos_g2l(target_pos.f, ik_bone_get_parent(base), tip);
 
     /*
-     * Form a triangle from the two segment lengths so we can calculate the
+     * Form a triangle from the two bone lengths so we can calculate the
      * angles. Here's some visual help.
      *
-     *   target *--.__  a
-     *           \     --.___ (unknown position, needs solving)
-     *            \      _-
-     *           c \   _-
-     *              \-    b
-     *            base
+     *                o
+     *                |\
+     *                | \  a (tip)
+     *                |  \
+     *              c |   o <- unknown angle
+     *                |  /
+     *                | / b (base)
+     *                |/
+     *                o
      *
      */
     a = s->tip->position.v.z;
@@ -121,7 +124,7 @@ solver_b2_solve(struct ik_solver* solver_base)
         ikreal sin_a = sin(base_angle * 0.5);
 
         /*
-         * The plane in which both segments lie is best determined by the
+         * The plane in which both bones lie is best determined by the
          * plane spanned by the pole vector and the target position. If no
          * pole vector exists, then we use the plane spanned by the mid position
          * and the target position. If these two vectors happen to be colinear
@@ -176,7 +179,7 @@ solver_b2_solve(struct ik_solver* solver_base)
     else
     {
 #if 0
-        /* Just point both segments at target */
+        /* Just point both bones at target */
         ik_vec3_normalize(target_pos);
         ik_vec3_copy(mid_pos, target_pos);
         ik_vec3_copy(tip_pos, target_pos);

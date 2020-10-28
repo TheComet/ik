@@ -54,14 +54,12 @@ TEST_F(NAME, reach_target_colinear_segments)
 {
     ik::Ref<ik_bone> root = ik_bone_create();
     ik::Ref<ik_bone> base = ik_bone_create_child(root);
-    ik::Ref<ik_bone> mid = ik_bone_create_child(base);
-    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 
     ik_vec3_set(root->position.f, 3, 4, 5);
     ik_vec3_set(base->position.f, 1, 2, 1);
-    ik_vec3_set(mid->position.f, 0, 2, 0);
     ik_vec3_set(tip->position.f, 0, 2, 0);
     ik_vec3_set(e->target_position.f, 2, 0, 0);
 
@@ -72,17 +70,11 @@ TEST_F(NAME, reach_target_colinear_segments)
     // Base position should not change
     EXPECT_VEC3_EQ(base->position, 1, 2, 1);
 
-    // Mid position should remain the same in local space
-    EXPECT_VEC3_EQ(mid->position, 0, 2, 0);
-
     // Tip position should remain the same in local space
     EXPECT_VEC3_EQ(tip->position, 0, 2, 0);
 
     // Base should have rotated about the Z axis by 60°
     EXPECT_QUAT_EQ(base->rotation, 0, 0, -0.5, 1.0/sqrt(3));
-
-    // Mid should have rotated about the Z axis by 60°
-    EXPECT_QUAT_EQ(mid->rotation, 0, 0, -0.5, 1.0/sqrt(3));
 
     // Tip rotation should remain identical
     EXPECT_QUAT_EQ(tip->rotation, 0, 0, 0, 1);
@@ -92,14 +84,12 @@ TEST_F(NAME, reach_target_coplanar_segments)
 {
     ik::Ref<ik_bone> root = ik_bone_create();
     ik::Ref<ik_bone> base = ik_bone_create_child(root);
-    ik::Ref<ik_bone> mid = ik_bone_create_child(base);
-    ik::Ref<ik_bone> tip = ik_bone_create_child(mid);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 
     ik_vec3_set(root->position.f, 3, 4, 5);
     ik_vec3_set(base->position.f, 1, 2, 1);
-    ik_vec3_set(mid->position.f, 0, 2, 0);
     ik_vec3_set(tip->position.f, 2, 0, 0);
     ik_vec3_set(e->target_position.f, 2, 0, 0);
 
@@ -110,17 +100,11 @@ TEST_F(NAME, reach_target_coplanar_segments)
     // Base position should not change
     EXPECT_VEC3_EQ(base->position, 1, 2, 1);
 
-    // Mid position should remain the same in local space
-    EXPECT_VEC3_EQ(mid->position, 0, 2, 0);
-
     // Tip position should remain the same in local space
     EXPECT_VEC3_EQ(tip->position, 2, 0, 0);
 
     // Base should have rotated about the Z axis by 60°
     EXPECT_QUAT_EQ(base->rotation, 0, 0, -0.5, 1.0/sqrt(3));
-
-    // Mid should have rotated about the Z axis by 60°
-    EXPECT_QUAT_EQ(mid->rotation, 0, 0, -0.5, 1.0/sqrt(3));
 
     // Tip rotation should remain identical
     EXPECT_QUAT_EQ(tip->rotation, 0, 0, 0, 1);
