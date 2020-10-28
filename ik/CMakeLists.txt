@@ -18,6 +18,8 @@ option (IK_PIC "Position independent code when building as a static library" ON)
 set (IK_PRECISION "double" CACHE STRING "Type to use for real numbers")
 option (IK_PROFILING "Compiles with -pg with GCC/Clang" OFF)
 option (IK_PYTHON "Compiles the library so it can also be loaded as a python module" OFF)
+option (IK_PYTHON_REFCOUNT_DEBUGGING "Count ik python object allocations and deallocations" ${DEBUG_FEATURE})
+option (IK_PYTHON_REFCOUNT_BACKTRACES "Count ik python object allocations and deallocations" OFF)
 set (IK_PYTHON_VERSION 3 CACHE STRING "The version of python to use if IK_PYTHON=ON")
 option (IK_TESTS "Whether to build unit tests or not (requires C++)" OFF)
 
@@ -197,7 +199,7 @@ target_link_libraries (ik_obj PUBLIC cstructures)
 if (IK_PYTHON)
     find_package (Python COMPONENTS Development REQUIRED)
 
-    file (GLOB IK_PYTHON_DOCFILES "include/python/ik/python/doc/*")
+    file (GLOB IK_PYTHON_DOCFILES "include/python/doc/*")
     set (IK_DOCSTRINGS_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/ik/python/ik_docstrings.h")
     set (IK_DOCSTRINGS_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/src/ik_docstrings.c")
     add_custom_command (

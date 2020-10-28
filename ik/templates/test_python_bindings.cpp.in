@@ -1,6 +1,7 @@
 #include "gmock/gmock.h"
 #include "Python.h"
 #include "ik/ik.h"
+#include "ik/python.h"
 
 #define NAME python_bindings
 
@@ -38,6 +39,12 @@ public:
 
     void TearDown() override
     {
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+        int active_python_objects = ik_python_active_instances();
+        EXPECT_THAT(active_python_objects, Eq(0));
+        if (active_python_objects != 0)
+            ik_python_print_active_instances();
+#endif
         EXPECT_THAT(deinit_python(), Eq(0));
     }
 };

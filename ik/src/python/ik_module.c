@@ -1,9 +1,12 @@
 #include "Python.h"
+#include "cstructures/hashmap.h"
+#include "cstructures/hash.h"
+#include "cstructures/backtrace.h"
 #include "ik/init.h"
 #include "ik/algorithm.h"
 #include "ik/log.h"
+#include "ik/python.h"
 #include "ik/python/ik_docstrings.h"
-#include "ik/python/ik_module.h"
 #include "ik/python/ik_type_Log.h"
 #include "ik/python/ik_type_Algorithm.h"
 #include "ik/python/ik_type_Bone.h"
@@ -17,6 +20,7 @@
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
+#include <string.h>
 
 #if defined(IK_LOGGING)
 #   define LOG_TYPE X(Log)
@@ -47,57 +51,243 @@
     X(Info)              \
     LOG_TYPE
 
-/* ------------------------------------------------------------------------- */
-static void
-module_incref(void)
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+struct module_state
 {
-    PyObject* module = PyState_FindModule(&ik_module);
-    Py_INCREF(module);
-}
+    int active_instance_count;
+    struct cs_hashmap active_instances;
+};
+#endif
 
 /* ------------------------------------------------------------------------- */
 static void
-module_decref(void)
+module_free(void* m)
 {
-    PyObject* module = PyState_FindModule(&ik_module);
-    Py_DECREF(module);
-}
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+    struct module_state* state = PyModule_GetState(m);
+    hashmap_deinit(&state->active_instances);
+#else
+    (void)m;
+#endif
 
-/* ------------------------------------------------------------------------- */
-static int g_refs = 0;
-static void
-public_type_instantiated_callback(PyObject* o)
-{
-    module_incref();
-    g_refs++;
-    printf("incref (%d)\n", g_refs);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-public_type_deleted_callback(PyObject* o)
-{
-    module_decref();
-    g_refs--;
-    printf("decref (%d)\n", g_refs);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-module_free(void* x)
-{
-    (void)x;
     ik_deinit();
 }
+
+/* ------------------------------------------------------------------------- */
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+static PyObject* ik_module_active_instances(PyObject* m, PyObject* args);
+static PyObject* ik_module_print_active_instances(PyObject* m, PyObject* args);
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+static PyObject* ik_module_print_active_instance_backtraces(PyObject* m, PyObject* args);
+#endif
+#endif
+
+static PyMethodDef ik_methods[] = {
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+    {"active_instances", ik_module_active_instances, METH_NOARGS, ""},
+    {"print_active_instances", ik_module_print_active_instances, METH_NOARGS, ""},
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+    {"print_active_instance_backtraces", ik_module_print_active_instance_backtraces, METH_NOARGS, ""},
+#endif
+#endif
+    {NULL}
+};
 
 /* ------------------------------------------------------------------------- */
 PyModuleDef ik_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "ik",
     .m_doc = IK_MODULE_DOC,
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+    .m_size = sizeof(struct module_state),
+#else
     .m_size = -1,
+#endif
+    .m_methods = ik_methods,
     .m_free = module_free
 };
+
+/* ------------------------------------------------------------------------- */
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+
+struct active_instance
+{
+    PyObject* obj;
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+    int backtrace_size;
+    char** backtrace;
+#endif
+};
+
+struct instance_key
+{
+    PyObject* obj;
+    char typename[8];
+};
+
+static void
+strncpy_no_null(char* dst, const char* src, int len)
+{
+    while (len-- && *src != '\0')
+        *dst++ = *src++;
+    while (len-- > 0)
+        *dst++ = '\0';
+}
+
+static void
+debug_refs_inc(PyObject* m, PyObject* o, const char* typename)
+{
+    struct active_instance inst;
+    struct instance_key key;
+    struct module_state* state = PyModule_GetState(m);
+    state->active_instance_count++;
+
+    inst.obj = o;
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+    inst.backtrace = get_backtrace(&inst.backtrace_size);
+    if (inst.backtrace == NULL)
+        fprintf(stderr, "[debugrefs] WARNING: Failed to generate backtrace\n");
+#endif
+
+    key.obj = o;
+    strncpy_no_null(key.typename, typename, 8);
+    if (hashmap_insert(&state->active_instances, &key, &inst) != HM_OK)
+        fprintf(stderr, "[debugrefs] WARNING: Hashmap insert failed\n");
+}
+static void
+debug_refs_dec(PyObject* m, PyObject* o, const char* typename)
+{
+    struct active_instance* inst;
+    struct instance_key key;
+    struct module_state* state = PyModule_GetState(m);
+    state->active_instance_count--;
+
+    key.obj = o;
+    strncpy_no_null(key.typename, typename, 8);
+    inst = hashmap_erase(&state->active_instances, &key);
+    if (inst)
+    {
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+        if (inst->backtrace)
+            free(inst->backtrace);
+        else
+            fprintf(stderr, "[debugrefs] WARNING: No backtrace exists for object being deallocated\n");
+#endif
+    }
+    else
+    {
+        fprintf(stderr, "[debugrefs] WARNING: Deallocating an object that was never allocated\n");
+    }
+}
+int
+ik_python_active_instances(void)
+{
+    struct module_state* state;
+    PyObject* m = PyState_FindModule(&ik_module);
+    if (m == NULL)
+        return 0;
+
+    state = PyModule_GetState(m);
+    return state->active_instance_count;
+}
+void
+ik_python_print_active_instances(void)
+{
+    struct module_state* state;
+    PyObject* m = PyState_FindModule(&ik_module);
+    if (m == NULL)
+        return;
+    state = PyModule_GetState(m);
+
+    fprintf(stderr, "=========================================\n");
+    HASHMAP_FOR_EACH(&state->active_instances, PyObject*, struct active_instance, pobj, inst)
+        PyObject *repr=NULL, *ascii=NULL;
+        if ((repr = PyObject_Repr(inst->obj)) != NULL)
+            ascii = PyUnicode_AsASCIIString(repr);
+        if (repr && ascii)
+            fprintf(stderr, "%s instance at 0x%p, %zd refs: %s\n", Py_TYPE(inst->obj)->tp_name, (void*)inst->obj, Py_REFCNT(inst->obj), PyBytes_AS_STRING(ascii));
+        else
+            fprintf(stderr, "%s instance at 0x%p, %zd refs: (repr() failed)\n", Py_TYPE(inst->obj)->tp_name, (void*)inst->obj, Py_REFCNT(inst->obj));
+        Py_XDECREF(ascii);
+        Py_XDECREF(repr);
+    HASHMAP_END_EACH
+    fprintf(stderr, "=========================================\n");
+}
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+void
+ik_python_print_active_instance_backtraces(void)
+{
+    int i;
+    struct module_state* state;
+    PyObject* m = PyState_FindModule(&ik_module);
+    if (m == NULL)
+        return;
+    state = PyModule_GetState(m);
+
+    fprintf(stderr, "=========================================\n");
+    HASHMAP_FOR_EACH(&state->active_instances, PyObject*, struct active_instance, pobj, inst)
+        PyObject *repr=NULL, *ascii=NULL;
+        if ((repr = PyObject_Repr(inst->obj)) != NULL)
+            ascii = PyUnicode_AsASCIIString(repr);
+        if (repr && ascii)
+            fprintf(stderr, "%s instance at 0x%p, %zd refs: %s\n", Py_TYPE(inst->obj)->tp_name, (void*)inst->obj, Py_REFCNT(inst->obj), PyBytes_AS_STRING(ascii));
+        else
+            fprintf(stderr, "%s instance at 0x%p, %zd refs: (repr() failed)\n", Py_TYPE(inst->obj)->tp_name, (void*)inst->obj, Py_REFCNT(inst->obj));
+        Py_XDECREF(ascii);
+        Py_XDECREF(repr);
+
+        fprintf(stderr, "Backtrace to where tp_new slot was called:\n");
+        for (i = 2; i < inst->backtrace_size; ++i)
+            fprintf(stderr, "    %s\n", inst->backtrace[i]);
+        fprintf(stderr, "  -----------------------------------------\n");
+    HASHMAP_END_EACH
+    fprintf(stderr, "=========================================\n");
+}
+#endif
+static PyObject*
+ik_module_active_instances(PyObject* m, PyObject* args)
+{
+    struct module_state* state = PyModule_GetState(m);
+    (void)args;
+    return PyLong_FromLong(state->active_instance_count);
+}
+static PyObject*
+ik_module_print_active_instances(PyObject* m, PyObject* args)
+{
+    (void)m; (void)args;
+    ik_python_print_active_instances();
+    Py_RETURN_NONE;
+}
+#if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+static PyObject*
+ik_module_print_active_instance_backtraces(PyObject* m, PyObject* args)
+{
+    ik_python_print_active_instance_backtraces();
+    Py_RETURN_NONE;
+}
+#endif
+#else
+#   define debug_refs_inc(m, o, t) (void)m; (void)o; (void)t;
+#   define debug_refs_dec(m, o, t) (void)m; (void)o; (void)t;
+#endif
+
+/* ------------------------------------------------------------------------- */
+static void
+public_type_instantiated_callback(PyObject* o, const char* typename)
+{
+    PyObject* m = PyState_FindModule(&ik_module);
+    Py_INCREF(m);
+    debug_refs_inc(m, o, typename);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+public_type_deleted_callback(PyObject* o, const char* typename)
+{
+    PyObject* m = PyState_FindModule(&ik_module);
+    Py_DECREF(m);
+    debug_refs_dec(m, o, typename);
+}
 
 /* ------------------------------------------------------------------------- */
 #define X(typename)                                                           \
@@ -107,12 +297,12 @@ PyModuleDef ik_module = {
         {                                                                     \
             PyObject* o = (*typename##_new_orig)(type, args, kwds);           \
             if (o)                                                            \
-                public_type_instantiated_callback(o);                         \
+                public_type_instantiated_callback(o, #typename);              \
             return o;                                                         \
         }                                                                     \
         static void typename##_dealloc_wrapper(PyObject* o)                   \
         {                                                                     \
-            public_type_deleted_callback(o);                                  \
+            public_type_deleted_callback(o, #typename);                       \
             (*typename##_dealloc_orig)(o);                                    \
         }                                                                     \
         static void wrap_##typename##_type(void)                              \
@@ -224,6 +414,22 @@ PyMODINIT_FUNC PyInit_ik(void)
         ik_deinit();
         return NULL;
     }
+
+#if defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+    {
+        struct module_state* state = PyModule_GetState(m);
+        state->active_instance_count = 0;
+        if (hashmap_init_with_options(
+            &state->active_instances,
+            sizeof(struct instance_key),
+            sizeof(struct active_instance),
+            4096,
+            hash32_jenkins_oaat) != HM_OK)
+        {
+            goto init_module_failed;
+        }
+    }
+#endif
 
     if (init_builtin_types(m) != 0)            goto init_module_failed;
     if (add_builtin_objects_to_module(m) != 0) goto init_module_failed;

@@ -19,6 +19,8 @@
     #cmakedefine IK_PIC
     #cmakedefine IK_PROFILING
     #cmakedefine IK_PYTHON
+    #cmakedefine IK_PYTHON_REFCOUNT_DEBUGGING
+    #cmakedefine IK_PYTHON_REFCOUNT_BACKTRACES
     #cmakedefine IK_TESTS
 
 #   define IK_PRECISION_${IK_PRECISION_CAPS_AND_NO_SPACES}
@@ -26,6 +28,12 @@
 #   if !defined(IK_MEMORY_DEBUGGING)
 #       if defined(IK_MEMORY_BACKTRACE)
 #           undef IK_MEMORY_BACKTRACE
+#       endif
+#   endif
+
+#   if !defined(IK_PYTHON_REFCOUNT_DEBUGGING)
+#       if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
+#           undef IK_PYTHON_REFCOUNT_BACKTRACES
 #       endif
 #   endif
 
