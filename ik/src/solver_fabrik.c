@@ -37,7 +37,7 @@ validate_poles_recursive(const struct ik_solver_fabrik* solver, const struct ik_
 
     /* Pole target constraints should only be attached to the tip bone of each
      * chain. */
-    CHAIN_FOR_EACH_BONE_RANGE(chain, bone, 0, chain_bone_count(chain) - 1)
+    CHAIN_FOR_EACH_BONE(chain, bone)
         if (bone == chain_get_tip_bone(chain))
             continue;
         if (bone->pole != NULL)
@@ -161,7 +161,7 @@ transform_target_to_local_space(ikreal target[3],
                                 const struct ik_bone* root,
                                 const struct ik_bone* bone)
 {
-    const struct ik_bone* parent = bone->parent;
+    const struct ik_bone* parent = ik_bone_get_parent(bone);
     if (parent != root)
         transform_target_to_local_space(target, root, parent);
 
@@ -174,7 +174,6 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
                              const struct ik_bone* root)
 {
     union ik_vec3 target;
-    struct ik_bone* prev_segment_child;
     int avg_count;
 
     /* Target position for the tip of each chain is the average position of all
@@ -195,70 +194,8 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
     else
         ik_vec3_div_scalar(target.f, avg_count);
 
-    {
-        ikreal dist;
-        union ik_vec3 dir;
-        union ik_quat delta;
-        struct ik_bone* child = chain_get_bone(chain, 0);
-        struct ik_bone* parent = chain_get_bone(chain, 1);
+    CHAIN_FOR_EACH_BONE(chain, bone)
 
-        /* Calculate target direction */
-        dist = ik_vec3_length(target.f);
-        dir = target;
-        ik_vec3_div_scalar(dir.f, dist);
-
-        /* Point segment to target */
-        ik_quat_angle_between(delta.f, child->position.f, target.f);
-        /*ik_quat_angle_of_nn(delta.f, dir.f);*/
-        ik_quat_mul_quat(child->rotation.f, delta.f);
-        CHAIN_FOR_EACH_CHILD(chain, child_chain)
-            struct ik_bone* first_child_bone = chain_get_bone(child_chain, chain_bone_count(child_chain) - 2);
-            ik_quat_mul_quat_conj(first_child_bone->rotation.f, delta.f);
-        CHAIN_END_EACH
-
-        /* Calculate segment base bone position if the tip were attached to
-         * the target position, which becomes the next segment's target
-         * position. NOTE: We assume the segment is pointing directly at the
-         * target position here and therefore are alined with the Z axis in
-         * local space. If in the future constraints are applied during forward
-         * iteration, then this is no longer true. */
-        ik_vec3_set(target.f, 0, 0, dist - child->position.v.z);
-
-        /* Transform target into parent space */
-        ik_vec3_rotate_quat(target.f, child->rotation.f);
-        ik_vec3_add_vec3(target.f, parent->position.f);
-
-        prev_segment_child = child;
-    }
-
-    CHAIN_FOR_EACH_SEGMENT_RANGE(chain, parent, child, 1, chain_segment_count(chain))
-        ikreal dist;
-        union ik_vec3 dir;
-        union ik_quat delta;
-
-        /* Calculate target direction */
-        dist = ik_vec3_length(target.f);
-        dir = target;
-        ik_vec3_div_scalar(dir.f, dist);
-
-        /* Point segment to target */
-        /*ik_quat_angle_of_nn(delta.f, dir.f);*/
-        ik_quat_angle_between(delta.f, child->position.f, target.f);
-        ik_quat_mul_quat(child->rotation.f, delta.f);
-        ik_quat_mul_quat_conj(prev_segment_child->rotation.f, delta.f);
-        prev_segment_child = child;
-
-        /* Calculate segment base bone position if the tip were attached to
-         * the target position, which becomes the next segment's target
-         * position. NOTE: We assume the segment is pointing directly at the
-         * target position here and therefore are alined with the Z axis in
-         * local space. If in the future constraints are applied during forward
-         * iteration, then this is no longer true. */
-        ik_vec3_set(target.f, 0, 0, dist - child->position.v.z);
-
-        /* Transform target into parent space */
-        ik_vec3_rotate_quat(target.f, child->rotation.f);
-        ik_vec3_add_vec3(target.f, parent->position.f);
     CHAIN_END_EACH
 
     return target;
@@ -282,35 +219,8 @@ solve_chain_forwards(struct ik_solver_fabrik* solver)
 static void
 solve_chain_backwards_constraints_recurse(struct ik_chain* chain, union ik_vec3 target)
 {
-    CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
-        ikreal dist;
-        union ik_vec3 dir;
-        union ik_quat delta;
+    CHAIN_FOR_EACH_BONE_R(chain, bone)
 
-        /* Transform target into this segment's space */
-        ik_vec3_sub_vec3(target.f, parent->position.f);
-        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
-
-        /* Determine direction vector to child bone position */
-        dir = child->position;
-        ik_vec3_sub_vec3(dir.f, target.f);
-        dist = ik_vec3_length(dir.f);
-        ik_vec3_div_scalar(dir.f, dist);
-
-        /* Point segment at target */
-        ik_quat_angle_of_nn(delta.f, dir.f);
-        ik_quat_mul_quat(child->rotation.f, delta.f);
-
-        if (child->constraint)
-        {
-            delta = child->rotation;
-            child->constraint->apply(child->constraint, child->rotation.f);
-            ik_quat_conj_rmul_quat(child->rotation.f, delta.f);
-            ik_vec3_rotate_quat_conj(dir.f, delta.f);
-        }
-
-        ik_vec3_mul_scalar(dir.f, child->position.v.z);
-        ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)
@@ -327,36 +237,8 @@ solve_chain_backwards_constraints(struct ik_solver_fabrik* solver, union ik_vec3
 static void
 solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
 {
-    uint32_t i = 2;
-    CHAIN_FOR_EACH_SEGMENT_R(chain, parent, child)
-        ikreal dist;
-        union ik_vec3 dir;
-        union ik_quat delta;
+    CHAIN_FOR_EACH_BONE(chain, bone)
 
-        /* Transform target into this segment's space */
-        ik_vec3_sub_vec3(target.f, parent->position.f);
-        ik_vec3_rotate_quat_conj(target.f, child->rotation.f);
-
-        /* Determine direction vector to child bone position */
-        dir = child->position;
-        ik_vec3_sub_vec3(dir.f, target.f);
-        dist = ik_vec3_length(dir.f);
-        ik_vec3_div_scalar(dir.f, dist);
-
-        /* Point segment at target */
-        ik_quat_angle_of_nn(delta.f, dir.f);
-        ik_quat_mul_quat(child->rotation.f, delta.f);
-
-        if (i < chain_bone_count(chain))
-        {
-            struct ik_bone* grandchild = chain_get_bone(chain, i);
-            ik_quat_mul_quat_conj(grandchild->rotation.f, delta.f);
-        }
-        ++i;
-
-        /* Calculate new target position */
-        ik_vec3_mul_scalar(dir.f, child->position.v.z);
-        ik_vec3_add_vec3(target.f, dir.f);
     CHAIN_END_EACH
 
     CHAIN_FOR_EACH_CHILD(chain, child)
@@ -370,22 +252,9 @@ solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
 }
 
 /* ------------------------------------------------------------------------- */
-/* TODO move into chain_tree.h */
-static int
-count_total_dead_bones(const struct ik_chain* chain)
-{
-    int count = chain_dead_bone_count(chain);
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        count += count_total_dead_bones(child);
-    CHAIN_END_EACH
-    return count;
-}
-
-/* ------------------------------------------------------------------------- */
 static int
 fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
-    int num_dead_bones;
     int num_chains;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
@@ -394,9 +263,8 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
         goto build_chain_tree_failed;
 
     solver->num_effectors = subtree_leaves(subtree);
-    num_dead_bones = count_total_dead_bones(&solver->chain_tree);
     num_chains = count_chains(&solver->chain_tree);
-    solver->num_intermediate_rotations = num_chains + num_dead_bones;
+    solver->num_intermediate_rotations = num_chains;
 
     solver->intermediate_rotations = MALLOC(sizeof(*solver->intermediate_rotations) * solver->num_intermediate_rotations);
     if (solver->intermediate_rotations == NULL)
@@ -413,8 +281,8 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     store_effector_bones(solver);
     validate_poles(solver);
 
-    ik_log_printf(IK_DEBUG, "FABRIK: Initialized with %d end-effectors and %d dead bones. %d chains were created.",
-                  solver->num_effectors, num_dead_bones, num_chains);
+    ik_log_printf(IK_DEBUG, "FABRIK: Initialized with %d end-effectors. %d chains were created.",
+                  solver->num_effectors, num_chains);
 
     return 0;
 
@@ -468,10 +336,6 @@ fabrik_solve(struct ik_solver* solver_base)
 
     calculate_target_data(solver);
 
-    ik_transform_chain_to_segmental_representation(&solver->chain_tree,
-                                                   solver->intermediate_rotations,
-                                                   solver->num_intermediate_rotations);
-
     while (iteration-- > 0)
     {
         union ik_vec3 base_pos = solve_chain_forwards(solver);
@@ -485,63 +349,19 @@ fabrik_solve(struct ik_solver* solver_base)
             break;
     }
 
-    ik_transform_chain_to_nodal_representation(&solver->chain_tree,
-                                               solver->intermediate_rotations,
-                                               solver->num_intermediate_rotations);
-
     return alg->max_iterations - iteration;
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_visit_bones_recursive(const struct ik_chain* chain, ik_visit_bone_func visit, void* param)
+fabrik_visit_bones(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
 {
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        fabrik_visit_bones_recursive(child, visit, param);
-    CHAIN_END_EACH
-
-    /* exclude base bone */
-    CHAIN_FOR_EACH_BONE_RANGE(chain, bone, 0, chain_bone_count(chain) - 1)
-        visit(bone, param);
-    CHAIN_END_EACH
-}
-static void
-fabrik_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param, int skip_base)
-{
-    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
-
-    fabrik_visit_bones_recursive(&solver->chain_tree, visit, param);
-    if (!skip_base)
-        visit(chain_get_base_bone(&solver->chain_tree), param);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_visit_effector_bones_recursive(const struct ik_chain* chain, ik_visit_bone_func visit, void* param)
+fabrik_visit_effectors(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
 {
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        fabrik_visit_effector_bones_recursive(child, visit, param);
-    CHAIN_END_EACH
-
-    /* All leaves in chain tree have an effector */
-    if (chain_child_count(chain) == 0)
-        visit(chain_get_tip_bone(chain), param);
-}
-static void
-fabrik_visit_effector_bones(const struct ik_solver* solver_base, ik_visit_bone_func callback, void* param)
-{
-    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
-    fabrik_visit_effector_bones_recursive(&solver->chain_tree, callback, param);
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-fabrik_get_first_segment(const struct ik_solver* solver_base, struct ik_bone** base, struct ik_bone** tip)
-{
-    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
-
-    *base = chain_get_bone(&solver->chain_tree, chain_bone_count(&solver->chain_tree) - 1);
-    *tip = chain_get_bone(&solver->chain_tree, chain_bone_count(&solver->chain_tree) - 2);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -552,6 +372,5 @@ struct ik_solver_interface ik_solver_FABRIK = {
     fabrik_deinit,
     fabrik_solve,
     fabrik_visit_bones,
-    fabrik_visit_effector_bones,
-    fabrik_get_first_segment
+    fabrik_visit_effectors
 };

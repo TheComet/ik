@@ -191,10 +191,31 @@ solver_b2_solve(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+solver_b2_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+
+    visit(solver->base, param);
+    visit(solver->tip, param);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+solver_b2_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
+
+    visit(solver->tip, param);
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_TWO_BONE = {
     "two bone",
     sizeof(struct ik_solver_b2),
     solver_b2_init,
     solver_b2_deinit,
-    solver_b2_solve
+    solver_b2_solve,
+    solver_b2_visit_bones,
+    solver_b2_visit_effectors
 };

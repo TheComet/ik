@@ -44,12 +44,36 @@ solver_group_solve(struct ik_solver* solver_base)
 }
 
 /* ------------------------------------------------------------------------- */
+static void
+solver_group_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    int i;
+    struct ik_solver_group* solver = (struct ik_solver_group*)solver_base;
+
+    for (i = 0; i != solver->subsolver_count; ++i)
+        solver->subsolvers[i]->impl.visit_bones(solver->subsolvers[i], visit, param);
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+solver_group_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    int i;
+    struct ik_solver_group* solver = (struct ik_solver_group*)solver_base;
+
+    for (i = 0; i != solver->subsolver_count; ++i)
+        solver->subsolvers[i]->impl.visit_effectors(solver->subsolvers[i], visit, param);
+}
+
+/* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_group = {
     "group",
     sizeof(struct ik_solver_group),
     NULL,
     solver_group_deinit,
-    solver_group_solve
+    solver_group_solve,
+    solver_group_visit_bones,
+    solver_group_visit_effectors
 };
 
 /* ------------------------------------------------------------------------- */

@@ -154,7 +154,7 @@ add_library (ik_obj OBJECT
     "src/solver_b1.c"
     "src/solver_b2.c"
     "src/solver_group.c"
-    #"src/solver_fabrik.c"
+    "src/solver_fabrik.c"
     "src/solver_mss.c"
     "src/subtree.c"
     "src/transform.c"

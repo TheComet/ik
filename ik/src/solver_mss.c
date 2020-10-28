@@ -30,6 +30,20 @@ mss_solve(struct ik_solver* solver_base)
     return 0;
 }
 
+/* ------------------------------------------------------------------------- */
+static void
+mss_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    struct ik_solver_mss* solver = (struct ik_solver_mss*)solver_base;
+}
+
+/* ------------------------------------------------------------------------- */
+static void
+mss_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    struct ik_solver_mss* solver = (struct ik_solver_mss*)solver_base;
+}
+
 
 /* ------------------------------------------------------------------------- */
 struct ik_solver_interface ik_solver_MSS = {
@@ -37,7 +51,9 @@ struct ik_solver_interface ik_solver_MSS = {
     sizeof(struct ik_solver_mss),
     mss_init,
     mss_deinit,
-    mss_solve
+    mss_solve,
+    mss_visit_bones,
+    mss_visit_effectors
 };
 
 #if 0
