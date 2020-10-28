@@ -608,6 +608,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
             IK_DECREF(child);
         VECTOR_END_EACH
         vector_deinit(&old_children);
+        Py_DECREF(seq);
 
         return 0;
 
@@ -617,6 +618,7 @@ TreeObject_setchildren(PyObject* myself, PyObject* value, void* closure)
                                 TREE_OBJECT_FOR_EACH_CHILD(self->tree_object, child)
                                     child->parent = (struct ik_tree_object*)self->tree_object;
                                 TREE_OBJECT_END_EACH
+                                Py_DECREF(seq);
         return -1;
     }
     else if (value == Py_None)
