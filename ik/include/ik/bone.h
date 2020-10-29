@@ -113,6 +113,15 @@ ik_bone_duplicate_full_for_node_transform(const struct ik_bone* root);
 #undef X
 #undef X1
 
+/*!
+ * @brief Calculates the head position of the bone (in local space, i.e. relative
+ * to the bone's tail position)
+ * @param[in] bone The bone
+ * @param[out] v Output vector.
+ */
+IK_PUBLIC_API void
+ik_bone_head_position(const struct ik_bone* bone, ikreal v[3]);
+
 #define BONE_FOR_EACH_CHILD(bone, child) \
     VECTOR_FOR_EACH(&(bone)->children, struct ik_bone*, p##child) \
     struct ik_bone* child = *p##child; (void)child; {

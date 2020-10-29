@@ -273,6 +273,20 @@ ik_vec3_rotate_vec3_span(ikreal v[3], const ikreal v1[3], const ikreal v2[3])
     ik_vec3_rotate_vec3_span_normalized(v, v1, v2);
 }
 
+/*!
+ * Converts a quaternion's rotation into a direction vector. A unit quaternion
+ * will produce the direction [0, 0, 1] because by convention bones are aligned
+ * on the Z axis.
+ */
+static inline void
+ik_vec3_direction_of(ikreal v[3], const ikreal q[4])
+{
+    /* v' = q * [0, 0, 1] * q' */
+    v[0] = (q[1]*q[3] + q[0]*q[2]) * 2.0;
+    v[1] = (q[0]*q[3] + q[1]*q[2]) * 2.0;
+    v[2] = q[3]*q[3] + q[2]*q[2]*3.0 - q[0]*q[0] + q[1]*q[1];
+}
+
 /*! Projects v2 onto v1 */
 static inline void
 ik_vec3_project_from_vec3(ikreal v1[3], const ikreal v2[3])

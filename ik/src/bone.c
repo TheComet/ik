@@ -59,3 +59,11 @@ ik_bone_duplicate_full_for_node_transform(const struct ik_bone* root)
     return (struct ik_node*)ik_tree_object_duplicate_full(
         (const struct ik_tree_object*)root, sizeof(struct ik_node), 1);
 }
+
+/* ------------------------------------------------------------------------- */
+void
+ik_bone_head_position(const struct ik_bone* bone, ikreal v[3])
+{
+    ik_vec3_direction_of(v, bone->rotation.f);
+    ik_vec3_mul_scalar(v, bone->length);
+}

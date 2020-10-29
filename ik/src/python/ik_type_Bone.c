@@ -200,9 +200,33 @@ Bone_setlength(PyObject* myself, PyObject* value, void* closure)
 
 /* ------------------------------------------------------------------------- */
 static PyGetSetDef Bone_getsetters[] = {
-    {"position", Bone_getposition, Bone_setposition, IK_BONE_POSITION_DOC},
-    {"rotation", Bone_getrotation, Bone_setrotation, IK_BONE_ROTATION_DOC},
-    {"length",   Bone_getlength,   Bone_setlength,   IK_BONE_LENGTH_DOC},
+    {"position",      Bone_getposition, Bone_setposition, IK_BONE_POSITION_DOC},
+    {"rotation",      Bone_getrotation, Bone_setrotation, IK_BONE_ROTATION_DOC},
+    {"length",        Bone_getlength,   Bone_setlength,   IK_BONE_LENGTH_DOC},
+    {NULL}
+};
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Bone_head_position(PyObject* myself, PyObject* args)
+{
+    ik_Bone* self;
+    ik_Vec3* pos;
+    (void)args;
+
+    pos = (ik_Vec3*)PyObject_CallObject((PyObject*)&ik_Vec3Type, NULL);
+    if (pos == NULL)
+        return NULL;
+
+    self = (ik_Bone*)myself;
+    ik_bone_head_position((struct ik_bone*)self->super.tree_object, pos->vec.f);
+
+    return (PyObject*)pos;
+}
+
+/* ------------------------------------------------------------------------- */
+static PyMethodDef Bone_methods[] = {
+    {"head_position", Bone_head_position, METH_NOARGS, IK_BONE_HEAD_POSITION_DOC},
     {NULL}
 };
 
@@ -331,6 +355,7 @@ PyTypeObject ik_BoneType = {
     .tp_str = Bone_str,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = IK_BONE_DOC,
+    .tp_methods = Bone_methods,
     .tp_getset = Bone_getsetters,
     .tp_new = Bone_new,
     .tp_init = Bone_init
