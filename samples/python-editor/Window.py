@@ -10,7 +10,7 @@ from time import time
 
 
 def one_bone_example(pos):
-    bone = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi/4), length=0.3)
+    bone = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.3)
     bone.algorithm = ik.Algorithm(ik.ONE_BONE, constraints=True)
     bone.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.4))
     bone.constraints = ik.HingeConstraint(axis=ik.Vec3(1, 0, 0), min_angle=-pi/4, max_angle=pi/4)
@@ -18,43 +18,45 @@ def one_bone_example(pos):
 
 
 def two_bone_example(pos):
-    root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
-    mid = root.create_child(position=ik.Vec3(0, 50, 50))
-    tip = mid.create_child(position=ik.Vec3(0, 0, 50))
+    base = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.2)
+    tip = base.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.3)
 
-    root.algorithm = ik.Algorithm(ik.FABRIK)
-    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 100), target_rotation=ik.Quat((1, 0, 0), pi))
-    return root
+    base.algorithm = ik.Algorithm(ik.FABRIK)
+    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.4))
+    return base
 
 
 def long_chain_example(pos, chain_len, segment_len):
-    tip = root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
+    tip = root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=segment_len)
     for i in range(chain_len):
-        tip = tip.create_child(position=ik.Vec3(0, 0, segment_len))
+        tip = tip.create_child(length=segment_len)
 
     #root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi))
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=1)
-    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - segment_len*chain_len), target_rotation=ik.Quat((1, 0, 0), pi))
+    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]))
     return root
 
 
 def double_effectors_example(pos, chain_len):
-    mid1 = root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
+    mid1 = root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.08)
     for i in range(chain_len):
-        mid1 = mid1.create_child(position=ik.Vec3(0, 0, 50))
+        mid1 = mid1.create_child(length=0.08)
 
     tip1 = mid1
     for i in range(chain_len):
-        tip1 = tip1.create_child(position=ik.Vec3(0, 0, 50))
+        tip1 = tip1.create_child(length=0.08)
 
     tip2 = mid1
     for i in range(chain_len):
-        tip2 = tip2.create_child(position=ik.Vec3(0, 0, 50))
+        tip2 = tip2.create_child(length=0.08)
+
+    mid1.children[0].rotation = ik.Quat((1, 0, 0), pi/4)
+    mid1.children[1].rotation = ik.Quat((1, 0, 0), -pi/4)
 
     root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
-    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-chain_len*12, pos[1]-chain_len*50*2))
-    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+chain_len*12, pos[1]-chain_len*50*2))
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]))
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]))
 
     return root
 
@@ -225,10 +227,10 @@ class Window(Updateable):
 
         self.__updateables = [
             self,
-            Tree(one_bone_example((0, 0))),
-            #Tree(two_bone_example((300, height - 200))),
-            #Tree(long_chain_example((width/2, height - 200), 20, 20))
-            #Tree(double_effectors_example((700, height - 200), 3)),
+            #Tree(one_bone_example((0, 0))),
+            Tree(two_bone_example((0, 0))),
+            #Tree(long_chain_example((0, 0), 20, 0.08))
+            #Tree(double_effectors_example((0, 0), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))

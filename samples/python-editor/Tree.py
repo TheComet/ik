@@ -2,26 +2,29 @@ __author__ = "TheComet"
 
 import ik
 import pygame
-from math import pi
 from Updateable import Updateable
 from time import time
 
 
-def transform_points(points, bone):
-    q = bone.rotation
+def rotate_points(points, q):
     cos_a = 1 - 2 * (q.x * q.x + q.y * q.y)
     sin_a = 2 * (q.w * q.x + q.y * q.z)
-    s = bone.length
-    tx = bone.position.y
-    ty = bone.position.z
 
     for point in points:
-        x = point[0]
-        y = point[1]
-        x, y = s*x, s*y
-        x, y = x*cos_a - y*sin_a, x*sin_a + y*cos_a
-        x, y = x+tx, y+ty
-        yield x, y
+        yield point[0]*cos_a - point[1]*sin_a, \
+              point[0]*sin_a + point[1]*cos_a
+
+
+def scale_points(points, scale):
+    for point in points:
+        yield scale * point[0], \
+              scale * point[1]
+
+
+def translate_points(points, pos):
+    for point in points:
+        yield point[0] + pos[0], \
+              point[1] + pos[1]
 
 
 def transform_to_screen(point):
@@ -44,22 +47,45 @@ def draw_closed_shape(surface, points_list, color):
     for i, point in enumerate(points_list):
         start = transform_to_screen(points_list[i-1])
         end = transform_to_screen(point)
-        pygame.draw.line(surface, color, start, end, 1)
+        pygame.draw.line(surface, color, start, end, 2)
 
 
-def draw_tree(surface, bone):
-    diamond_points = list(transform_points((
+def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
+    rot = acc_rot * bone.rotation
+    pos = acc_pos + bone.position
+
+    # transform shape into world space
+    transformed_diamond = list(rotate_points(diamond, rot))
+    transformed_diamond = list(scale_points(transformed_diamond, bone.length))
+    transformed_diamond = list(translate_points(transformed_diamond, (pos.y, pos.z)))
+
+    # get tail and head position of bone so we can draw circles there
+    tail_pos = transform_to_screen(transformed_diamond[0])
+    head_pos = transform_to_screen(transformed_diamond[2])
+
+    # draw line if bone has an offset
+    pygame.draw.line(surface, (100, 100, 100), transform_to_screen((acc_pos.y, acc_pos.z)), tail_pos, 1)
+
+    # draw the shape
+    draw_closed_shape(surface, transformed_diamond, (100, 100, 255))
+    pygame.draw.circle(surface, (100, 100, 255), tail_pos, 4, 2)
+    pygame.draw.circle(surface, (100, 100, 255), head_pos, 4, 2)
+
+    # child bone position is relative to the head of the current bone
+    pos = ik.Vec3(0, transformed_diamond[2][0], transformed_diamond[2][1])
+
+    for child in bone.children:
+        __draw_tree(surface, diamond, child, pos, rot)
+
+
+def draw_tree(surface, root):
+    diamond = (
         (0, 0),
         (-0.1, 0.16),
         (0, 1),
         (0.1, 0.16)
-    ), bone))
-    base_pos = transform_to_screen(diamond_points[0])
-    tip_pos = transform_to_screen(diamond_points[2])
-
-    draw_closed_shape(surface, diamond_points, (100, 100, 255))
-    pygame.draw.circle(surface, (100, 100, 255), base_pos, 4, 1)
-    pygame.draw.circle(surface, (100, 100, 255), tip_pos, 4, 1)
+    )
+    __draw_tree(surface, diamond, root, ik.Vec3(), ik.Quat())
 
 
 def draw_effectors(surface, effectors):
