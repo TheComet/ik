@@ -100,7 +100,7 @@ static int
 Bone_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
     ik_Bone* self = (ik_Bone*)myself;
-    struct ik_bone* bone = (struct ik_bone*)myself;
+    struct ik_bone* bone = (struct ik_bone*)self->super.tree_object;
     ik_Vec3* position = NULL;
     ik_Quat* rotation = NULL;
 
@@ -180,7 +180,7 @@ Bone_getlength(PyObject* myself, void* closure)
     ik_Bone* self = (ik_Bone*)myself;
     struct ik_bone* bone = (struct ik_bone*)self->super.tree_object;
     (void)closure;
-    return PyLong_FromDouble(bone->length);
+    return PyFloat_FromDouble(bone->length);
 }
 static int
 Bone_setlength(PyObject* myself, PyObject* value, void* closure)

@@ -119,10 +119,13 @@ struct active_instance
 #endif
 };
 
-struct instance_key
+union instance_key
 {
-    PyObject* obj;
-    char typename[8];
+    struct {
+        PyObject* obj;
+        char typename[8];
+    } data;
+    char buf[sizeof(PyObject*) + 8];
 };
 
 static void
@@ -137,8 +140,8 @@ strncpy_no_null(char* dst, const char* src, int len)
 static void
 debug_refs_inc(PyObject* m, PyObject* o, const char* typename)
 {
+    union instance_key key;
     struct active_instance inst;
-    struct instance_key key;
     struct module_state* state = PyModule_GetState(m);
     state->active_instance_count++;
 
@@ -149,22 +152,22 @@ debug_refs_inc(PyObject* m, PyObject* o, const char* typename)
         fprintf(stderr, "[debugrefs] WARNING: Failed to generate backtrace\n");
 #endif
 
-    key.obj = o;
-    strncpy_no_null(key.typename, typename, 8);
-    if (hashmap_insert(&state->active_instances, &key, &inst) != HM_OK)
+    key.data.obj = o;
+    strncpy_no_null(key.data.typename, typename, 8);
+    if (hashmap_insert(&state->active_instances, key.buf, &inst) != HM_OK)
         fprintf(stderr, "[debugrefs] WARNING: Hashmap insert failed\n");
 }
 static void
 debug_refs_dec(PyObject* m, PyObject* o, const char* typename)
 {
+    union instance_key key;
     struct active_instance* inst;
-    struct instance_key key;
     struct module_state* state = PyModule_GetState(m);
     state->active_instance_count--;
 
-    key.obj = o;
-    strncpy_no_null(key.typename, typename, 8);
-    inst = hashmap_erase(&state->active_instances, &key);
+    key.data.obj = o;
+    strncpy_no_null(key.data.typename, typename, 8);
+    inst = hashmap_erase(&state->active_instances, key.buf);
     if (inst)
     {
 #if defined(IK_PYTHON_REFCOUNT_BACKTRACES)
@@ -285,7 +288,7 @@ static void
 public_type_deleted_callback(PyObject* o, const char* typename)
 {
     PyObject* m = PyState_FindModule(&ik_module);
-    Py_DECREF(m);
+    Py_DECREF(m); /* BUG: m is NULL when interpreter finalizes. Have to store m somewhere */
     debug_refs_dec(m, o, typename);
 }
 
@@ -391,7 +394,7 @@ add_builtin_objects_to_module(PyObject* m)
 {
     if (add_type_to_module(m, "info", &ik_InfoType) != 0) return -1;
 #if defined(IK_LOGGING)
-    if (add_type_to_module(m, "info", &ik_LogType) != 0)  return -1;
+    if (add_type_to_module(m, "log", &ik_LogType) != 0)  return -1;
 #endif
 
     return 0;
@@ -421,7 +424,7 @@ PyMODINIT_FUNC PyInit_ik(void)
         state->active_instance_count = 0;
         if (hashmap_init_with_options(
             &state->active_instances,
-            sizeof(struct instance_key),
+            sizeof(union instance_key),
             sizeof(struct active_instance),
             4096,
             hash32_jenkins_oaat) != HM_OK)

@@ -10,9 +10,9 @@ from time import time
 
 
 def one_bone_example(pos):
-    bone = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=50)
+    bone = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi/4), length=0.3)
     bone.algorithm = ik.Algorithm(ik.ONE_BONE, constraints=True)
-    bone.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 50))
+    bone.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.4))
     bone.constraints = ik.HingeConstraint(axis=ik.Vec3(1, 0, 0), min_angle=-pi/4, max_angle=pi/4)
     return bone
 
@@ -225,7 +225,7 @@ class Window(Updateable):
 
         self.__updateables = [
             self,
-            Tree(one_bone_example((100, height - 200))),
+            Tree(one_bone_example((0, 0))),
             #Tree(two_bone_example((300, height - 200))),
             #Tree(long_chain_example((width/2, height - 200), 20, 20))
             #Tree(double_effectors_example((700, height - 200), 3)),

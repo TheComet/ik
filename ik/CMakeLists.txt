@@ -333,6 +333,7 @@ if (IK_TESTS)
     if (IK_PYTHON)
         set (IK_PYTHON_TESTS_SOURCES
             "src/tests/python/test_Algorithm.py"
+            "src/tests/python/test_Bone.py"
             "src/tests/python/test_Effector.py"
             "src/tests/python/test_info.py"
             "src/tests/python/test_log.py"
