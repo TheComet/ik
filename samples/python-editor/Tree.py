@@ -50,7 +50,7 @@ def draw_closed_shape(surface, points_list, color):
         pygame.draw.line(surface, color, start, end, 2)
 
 
-def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
+def __draw_tree(surface, diamond, root, bone, acc_pos, acc_rot):
     rot = acc_rot * bone.rotation
     pos = acc_pos + bone.position * acc_rot
 
@@ -64,7 +64,8 @@ def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
     head_pos = transform_to_screen(transformed_diamond[2])
 
     # draw line if bone has an offset
-    pygame.draw.line(surface, (100, 100, 100), transform_to_screen((acc_pos.y, acc_pos.z)), tail_pos, 1)
+    if bone != root:
+        pygame.draw.line(surface, (100, 100, 100), transform_to_screen((acc_pos.y, acc_pos.z)), tail_pos, 1)
 
     # draw the shape
     draw_closed_shape(surface, transformed_diamond, (100, 100, 255))
@@ -72,10 +73,10 @@ def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
     pygame.draw.circle(surface, (100, 100, 255), head_pos, 4, 2)
 
     # child bone position is relative to the head of the current bone
-    pos += ik.Vec3(0, transformed_diamond[2][0], transformed_diamond[2][1])
+    pos = ik.Vec3(0, transformed_diamond[2][0], transformed_diamond[2][1])
 
     for child in bone.children:
-        __draw_tree(surface, diamond, child, pos, rot)
+        __draw_tree(surface, diamond, root, child, pos, rot)
 
 
 def draw_tree(surface, root):
@@ -85,7 +86,7 @@ def draw_tree(surface, root):
         (0, 1),
         (0.1, 0.16)
     )
-    __draw_tree(surface, diamond, root, ik.Vec3(), ik.Quat())
+    __draw_tree(surface, diamond, root, root, ik.Vec3(), ik.Quat())
 
 
 def draw_effectors(surface, effectors):

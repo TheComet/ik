@@ -18,8 +18,8 @@ def one_bone_example(pos):
 
 
 def two_bone_example(pos):
-    base = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.1)
-    tip = base.create_child(position=ik.Vec3(0, 0.1, 0.05), length=0.3)
+    base = ik.Bone(position=ik.Vec3(0, pos[0]-0.5, pos[1]), length=0.1)
+    tip = base.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.2)
 
     base.algorithm = ik.Algorithm(ik.TWO_BONE)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))

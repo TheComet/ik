@@ -165,7 +165,7 @@ solver_b2_solve(struct ik_solver* solver_base)
          * and the target position. If these two vectors happen to be colinear
          * then fall back to using the tip position instead of the mid position.
          * If this too is colinear with the target vector then as a last restort,
-         * simply use 0,0,1 as our rotation axis.
+         * simply use 1,0,0 as our rotation axis.
          */
         if (s->tip->pole && s->algorithm->features & IK_ALGORITHM_POLES)
         {
@@ -206,25 +206,11 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_quat_mul_quat_conj(base->rotation.f, alpha_rot.f);
         ik_quat_mul_quat(base->rotation.f, base_offset_rot.f);
         ik_quat_mul_quat_conj(tip->rotation.f, base_offset_rot.f);
-#if 0
-        /*
-         * Rotate side c and scale to length of side b to get the unknown
-         * position. bone_base was already subtracted from bone_mid
-         * previously, which means it will rotate around the base bone's
-         * position (as it should)
-         */
-        ik_vec3_copy(mid_pos, target_pos);
-        ik_vec3_normalize(mid_pos);
-        ik_vec3_rotate_quat(mid_pos, alpha_rot);
-        ik_vec3_mul_scalar(mid_pos, b);
-        /*ik_vec3_add_vec3(mid_pos, base_pos);*/
-
-        ik_vec3_copy(tip_pos, target_pos);
-#endif
     }
     else if (c > a + b)
     {
-        /* Case where target is far away, just point both segments at target */
+        /* Case where target is out of reach in the outer radius. just point
+         * both segments at target */
         union ik_quat delta;
         ik_quat_angle_of(delta.f, target_pos.f);
         ik_quat_mul_quat(base->rotation.f, delta.f);
@@ -262,6 +248,15 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_quat_set_axis_angle(one_eighty.f, axis.v.x, axis.v.y, axis.v.z, M_PI);
         ik_quat_mul_quat(base->rotation.f, one_eighty.f);
         ik_quat_mul_quat(tip->rotation.f, one_eighty.f);
+    }
+
+    /* Apply constraints */
+    if (s->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
+    {
+        if (base->constraint)
+            base->constraint->apply(base->constraint, base->rotation.f);
+        if (tip->constraint)
+            tip->constraint->apply(tip->constraint, tip->rotation.f);
     }
 
     return 1;
