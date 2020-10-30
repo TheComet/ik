@@ -4,6 +4,7 @@
 #include "ik/algorithm.h"
 #include "ik/effector.h"
 #include "ik/vec3.inl"
+#include "ik/quat.inl"
 #include "ik/cpputils.hpp"
 
 #define NAME solver_b2
@@ -49,6 +50,37 @@ protected:
         EXPECT_THAT(quat.q.z, DoubleNear(qz, epsilon));                       \
         EXPECT_THAT(quat.q.w, DoubleNear(qw, epsilon));                       \
     } while(0)
+
+TEST_F(NAME, unreachable_1)
+{
+    ik::Ref<ik_bone> base = ik_bone_create();
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    base->length = 0.2;  ik_quat_set_axis_angle(base->rotation.f, 1, 0, 0, M_PI/4);
+    tip->length = 0.3; ik_vec3_set(tip->position.f, 0, 0.2, 0);
+
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik_vec3_set(e->target_position.f, 0, 0, 10);
+
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
+    ik::Ref<ik_solver> s = ik_solver_build(base);
+    ik_solver_solve(s);
+}
+
+TEST_F(NAME, reachable_1)
+{
+    ik::Ref<ik_bone> base = ik_bone_create();
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik_quat_set_axis_angle(base->rotation.f, 1, 0, 0, M_PI/4);
+    base->length = 1;
+    tip->length = 1;
+
+    ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
+    ik_vec3_set(e->target_position.f, 0, 0, sqrt(2));
+
+    ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
+    ik::Ref<ik_solver> s = ik_solver_build(base);
+    ik_solver_solve(s);
+}
 
 TEST_F(NAME, reach_target_colinear_segments)
 {

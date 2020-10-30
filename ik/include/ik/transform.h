@@ -2,6 +2,7 @@
 
 #include "ik/config.h"
 #include "ik/bone.h"
+#include "ik/node.h"
 #include "ik/quat.inl"
 #include "ik/vec3.inl"
 
@@ -45,13 +46,13 @@ union ik_transform
  * Transforms a position from the space of "base" into the space of "tip"
  */
 static inline void
-ik_transform_pos_g2l(ikreal pos[3], const struct ik_bone* base, const struct ik_bone* tip)
+ik_transform_node_pos_g2l(ikreal pos[3], const struct ik_node* base, const struct ik_node* tip)
 {
     if (tip == base)
         return;
 
     assert(tip);
-    ik_transform_pos_g2l(pos, base, ik_bone_get_parent(tip));
+    ik_transform_node_pos_g2l(pos, base, ik_node_get_parent(tip));
 
     ik_vec3_sub_vec3(pos, tip->position.f);
     ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
@@ -61,14 +62,72 @@ ik_transform_pos_g2l(ikreal pos[3], const struct ik_bone* base, const struct ik_
  * Transforms a position from the space of "tip" into the space of "base"
  */
 static inline void
-ik_transform_pos_l2g(ikreal pos[3], const struct ik_bone* tip, const struct ik_bone* base)
+ik_transform_node_pos_l2g(ikreal pos[3], const struct ik_node* tip, const struct ik_node* base)
 {
     while (tip != base)
     {
         ik_vec3_rotate_quat(pos, tip->rotation.f);
         ik_vec3_add_vec3(pos, tip->position.f);
+        tip = ik_node_get_parent(tip);
+    }
+}
+
+/*!
+ * Transforms a position from the space of "base" into the space of "tip"
+ */
+static inline void
+ik_transform_bone_pos_g2l_recurse(ikreal pos[3], const struct ik_bone* base, const struct ik_bone* tip)
+{
+    if (tip == base)
+    {
+        if (tip)
+            pos[2] -= tip->length;
+        return;
+    }
+
+    assert(tip);
+    ik_transform_bone_pos_g2l_recurse(pos, base, ik_bone_get_parent(tip));
+
+    ik_vec3_sub_vec3(pos, tip->position.f);
+    ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
+    pos[2] -= tip->length;
+}
+static inline void
+ik_transform_bone_pos_g2l(ikreal pos[3], const struct ik_bone* base, const struct ik_bone* tip)
+{
+    if (tip == base)
+        return;
+
+    assert(tip);
+    ik_transform_bone_pos_g2l_recurse(pos, base, ik_bone_get_parent(tip));
+
+    ik_vec3_sub_vec3(pos, tip->position.f);
+    ik_vec3_rotate_quat_conj(pos, tip->rotation.f);
+}
+
+/*!
+ * Transforms a position from the space of "tip" into the space of "base"
+ */
+static inline void
+ik_transform_bone_pos_l2g(ikreal pos[3], const struct ik_bone* tip, const struct ik_bone* base)
+{
+    if (tip == base)
+        return;
+
+    ik_vec3_rotate_quat(pos, tip->rotation.f);
+    ik_vec3_add_vec3(pos, tip->position.f);
+    tip = ik_bone_get_parent(tip);
+
+    while (tip != base)
+    {
+        pos[2] += tip->length;
+        ik_vec3_rotate_quat(pos, tip->rotation.f);
+        ik_vec3_add_vec3(pos, tip->position.f);
         tip = ik_bone_get_parent(tip);
     }
+
+    if (tip)
+        pos[2] += tip->length;
 }
 
 /*!

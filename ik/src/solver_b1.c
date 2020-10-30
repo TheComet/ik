@@ -79,9 +79,9 @@ solver_b1_solve_no_constraints(struct ik_solver* solver_base)
     struct ik_bone* bone = s->bone;
     struct ik_effector* e = bone->effector;
 
-    /* Transform target into base-bone space */
+    /* Target position is in global space. Transform it into bone space */
     target = e->target_position;
-    ik_transform_pos_g2l(target.f, ik_bone_get_parent(root), bone);
+    ik_transform_bone_pos_g2l(target.f, ik_bone_get_parent(root), bone);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the
@@ -106,9 +106,9 @@ solver_b1_solve_constraints(struct ik_solver* solver_base)
     struct ik_effector* e = bone->effector;
     struct ik_constraint* c = bone->constraint;
 
-    /* Transform target into base-bone space */
+    /* Target position is in global space. Transform it into bone space */
     target = e->target_position;
-    ik_transform_pos_g2l(target.f, ik_bone_get_parent(root), bone);
+    ik_transform_bone_pos_g2l(target.f, ik_bone_get_parent(root), bone);
 
     /*
      * Need to calculate the angle between where the bone is pointing, and the

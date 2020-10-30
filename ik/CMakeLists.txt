@@ -298,14 +298,8 @@ if (IK_TESTS)
         "src/tests/test_solver_b2.cpp"
         "src/tests/test_solver_build.cpp"
         "src/tests/test_solver_combine.cpp"
-        # "src/tests/test_transform_chain.cpp"
-        # "src/tests/test_transform_chain_rotations.cpp"
-        # "src/tests/test_transform_chain_translations.cpp"
-        # "src/tests/test_transform_node.cpp"
-        # "src/tests/test_transform_node_rotations.cpp"
-        # "src/tests/test_transform_node_translations.cpp"
+        "src/tests/test_transform_bone.cpp"
         "src/tests/test_tree_object.cpp"
-        "src/tests/test_transform_node_to_bone.cpp"
         "src/tests/test_vec3.cpp"
         $<$<BOOL:${IK_PYTHON}>:${CMAKE_CURRENT_BINARY_DIR}/src/test_python_bindings.cpp>)
     set_target_properties (ik_tests_obj

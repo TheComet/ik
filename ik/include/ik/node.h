@@ -79,6 +79,9 @@ ik_node_find(struct ik_node* root, const void* user_data) {
 #define ik_node_get_child(node, idx) \
     ((struct ik_node*)ik_tree_object_get_child(node, idx))
 
+#define ik_node_get_parent(node) \
+    ((struct ik_node*)(node)->parent)
+
 static inline int
 ik_node_count(const struct ik_node* root)  {
     return ik_tree_object_count((struct ik_tree_object*)root);

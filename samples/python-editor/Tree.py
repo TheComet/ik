@@ -52,7 +52,7 @@ def draw_closed_shape(surface, points_list, color):
 
 def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
     rot = acc_rot * bone.rotation
-    pos = acc_pos + bone.position
+    pos = acc_pos + bone.position * acc_rot
 
     # transform shape into world space
     transformed_diamond = list(rotate_points(diamond, rot))
@@ -72,7 +72,7 @@ def __draw_tree(surface, diamond, bone, acc_pos, acc_rot):
     pygame.draw.circle(surface, (100, 100, 255), head_pos, 4, 2)
 
     # child bone position is relative to the head of the current bone
-    pos = ik.Vec3(0, transformed_diamond[2][0], transformed_diamond[2][1])
+    pos += ik.Vec3(0, transformed_diamond[2][0], transformed_diamond[2][1])
 
     for child in bone.children:
         __draw_tree(surface, diamond, child, pos, rot)
@@ -108,10 +108,7 @@ class Tree(Updateable):
         tstart = time()
         self.solver = ik.Solver(root)
         self.build_img = font.render(f"build() took {time()-tstart}", True, (255, 255, 255))
-
-        self.root_color     = (255, 100, 255)
-        self.bone_color     = (100, 100, 255)
-        self.effector_color = (200, 255, 0)
+        self.solved = False
 
         self.grabbed_effector = None
         self.grabbed_root_bone = None

@@ -102,11 +102,11 @@ calculate_target_data(struct ik_solver_fabrik* solver)
          * (parent space of the solver's root bone).
          */
         ik_vec3_copy(target, eff->target_position.f);
-        ik_transform_pos_g2l(target, ik_bone_get_parent(root_bone), ik_bone_get_parent(base_bone));
+        ik_transform_bone_pos_g2l(target, ik_bone_get_parent(root_bone), ik_bone_get_parent(base_bone));
 
         /* In order to lerp between tip bone position and target, transform tip
          * bone position into same space */
-        ik_transform_pos_l2g(tip_pos.f, ik_bone_get_parent(tip_bone), base_bone);
+        ik_transform_bone_pos_l2g(tip_pos.f, ik_bone_get_parent(tip_bone), base_bone);
 
         /* lerp by effector weight to get weighted target position */
         ik_vec3_sub_vec3(target, tip_pos.f);
