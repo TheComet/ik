@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Python.h"
+#include "ik/python/ik_type_ModuleRef.h"
 
 struct ik_attachment;
 
 typedef struct ik_Attachment
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
 
     struct ik_attachment* attachment;
 } ik_Attachment;

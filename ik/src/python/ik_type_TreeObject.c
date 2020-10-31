@@ -12,6 +12,8 @@
 #include "ik/quat.inl"
 #include "structmember.h"
 
+extern PyTypeObject ik_TreeObjectChildrenViewType;
+
 /* ------------------------------------------------------------------------- */
 static void
 TreeObjectChildrenView_dealloc(PyObject* myself)
@@ -19,7 +21,7 @@ TreeObjectChildrenView_dealloc(PyObject* myself)
     ik_TreeObjectChildrenView* self = (ik_TreeObjectChildrenView*)myself;
 
     IK_DECREF(self->tree_object);
-    Py_TYPE(self)->tp_free(self);
+    ik_TreeObjectChildrenViewType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -29,12 +31,10 @@ TreeObjectChildrenView_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     ik_TreeObjectChildrenView* self;
     PyObject* tree_object_capsule;
 
-    (void)kwds;
-
     if (!PyArg_ParseTuple(args, "O!", &PyCapsule_Type, &tree_object_capsule))
         return NULL;
 
-    self = (ik_TreeObjectChildrenView*)type->tp_alloc(type, 0);
+    self = (ik_TreeObjectChildrenView*)ik_TreeObjectChildrenViewType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -186,7 +186,7 @@ static PySequenceMethods TreeObjectChildrenView_as_sequence = {
 };
 
 /* ------------------------------------------------------------------------- */
-static PyTypeObject ik_TreeObjectChildrenViewType = {
+PyTypeObject ik_TreeObjectChildrenViewType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.TreeObjectChildrenView",
     .tp_basicsize = sizeof(ik_TreeObjectChildrenView),
@@ -219,7 +219,7 @@ TreeObject_dealloc(PyObject* myself)
     Py_DECREF(self->pole);
     Py_DECREF(self->children);
 
-    Py_TYPE(myself)->tp_free(myself);
+    ik_TreeObjectType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -231,7 +231,6 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     PyObject* capsule;
     PyObject* children_view_args;
     PyObject* base_args;
-    (void)kwds;
 
     /* First arg must be a capsule containing the internal bone */
     if (PyTuple_GET_SIZE(args) < 1)
@@ -260,7 +259,7 @@ TreeObject_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
         goto alloc_children_view_failed;
 
     /* Finally, alloc self */
-    self = (ik_TreeObject*)type->tp_alloc(type, 0);
+    self = (ik_TreeObject*)ik_TreeObjectType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -1195,6 +1194,9 @@ PyTypeObject ik_TreeObjectType = {
 int
 init_ik_TreeObjectType(void)
 {
+    ik_TreeObjectType.tp_base = &ik_ModuleRefType;
+    ik_TreeObjectChildrenViewType.tp_base = &ik_ModuleRefType;
+
     if (PyType_Ready(&ik_TreeObjectType) < 0)             return -1;
     if (PyType_Ready(&ik_TreeObjectChildrenViewType) < 0) return -1;
 

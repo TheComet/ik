@@ -7,17 +7,14 @@
 static void
 Attachment_dealloc(PyObject* myself)
 {
-    Py_TYPE(myself)->tp_free(myself);
+    ik_AttachmentType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
 static PyObject*
 Attachment_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-    ik_Attachment* self;
-    (void)args; (void)kwds;
-
-    self = (ik_Attachment*)type->tp_alloc(type, 0);
+    ik_Attachment* self = (ik_Attachment*)ik_AttachmentType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         return NULL;
 
@@ -47,6 +44,7 @@ PyTypeObject ik_AttachmentType = {
 int
 init_ik_AttachmentType(void)
 {
+    ik_AttachmentType.tp_base = &ik_ModuleRefType;
     if (PyType_Ready(&ik_AttachmentType) < 0)
         return -1;
     return 0;

@@ -6,6 +6,24 @@
 #include "ik/pose.h"
 
 /* ------------------------------------------------------------------------- */
+static void
+Pose_dealloc(PyObject* myself)
+{
+    ik_PoseType.tp_base->tp_dealloc(myself);
+}
+
+/* ------------------------------------------------------------------------- */
+static PyObject*
+Pose_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+{
+    ik_Pose* self = (ik_Pose*)ik_PoseType.tp_base->tp_new(type, args, kwds);
+    if (self == NULL)
+        return NULL;
+
+    return (PyObject*)self;
+}
+
+/* ------------------------------------------------------------------------- */
 static int
 Pose_init(PyObject* myself, PyObject* args, PyObject* kwds)
 {
@@ -80,16 +98,19 @@ PyTypeObject ik_PoseType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ik.Pose",
     .tp_basicsize = sizeof(ik_Pose),
+    .tp_dealloc = Pose_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_doc = IK_POSE_DOC,
     .tp_methods = Pose_methods,
-    .tp_init = Pose_init
+    .tp_init = Pose_init,
+    .tp_new = Pose_new
 };
 
 /* ------------------------------------------------------------------------- */
 int
 init_ik_PoseType(void)
 {
+    ik_PoseType.tp_base = &ik_ModuleRefType;
     if (PyType_Ready(&ik_PoseType) < 0)
         return -1;
 

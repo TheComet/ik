@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Python.h"
+#include "ik/python/ik_type_ModuleRef.h"
 
 #define ik_TreeObject_CheckExact(o) \
     (Py_TYPE(o) == &ik_TreeObjectType)
@@ -11,13 +11,13 @@ struct ik_tree_object;
 
 typedef struct ik_TreeObjectChildrenView
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
     struct ik_tree_object* tree_object;
 } ik_TreeObjectChildrenView;
 
 typedef struct ik_TreeObject
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
 
     /* These can by Py_None */
     PyObject* algorithm;

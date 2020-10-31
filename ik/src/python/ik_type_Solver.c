@@ -13,7 +13,7 @@ Solver_dealloc(PyObject* myself)
     Py_DECREF(self->root);
     IK_DECREF(self->solver);
 
-    Py_TYPE(myself)->tp_free(myself);
+    ik_SolverType.tp_base->tp_dealloc(myself);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -40,7 +40,7 @@ Solver_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     }
     IK_INCREF(solver);
 
-    self = (ik_Solver*)type->tp_alloc(type, 0);
+    self = (ik_Solver*)ik_SolverType.tp_base->tp_new(type, args, kwds);
     if (self == NULL)
         goto alloc_self_failed;
 
@@ -112,6 +112,7 @@ PyTypeObject ik_SolverType = {
 int
 init_ik_SolverType(void)
 {
+    ik_SolverType.tp_base = &ik_ModuleRefType;
     if (PyType_Ready(&ik_SolverType) < 0)
         return -1;
     return 0;

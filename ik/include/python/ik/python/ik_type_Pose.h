@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Python.h"
+#include "ik/python/ik_type_ModuleRef.h"
 
 struct ik_pose;
 
 typedef struct ik_Pose
 {
-    PyObject_HEAD
+    ik_ModuleRef super;
 
     struct ik_pose* pose;
 } ik_Pose;
