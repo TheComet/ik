@@ -220,15 +220,20 @@ if (IK_PYTHON)
             ${IK_DOCSTRINGS_SOURCE})
 
     add_library (ik_python_obj OBJECT
+        "include/python/ik/python/ik_module.h"
         "include/python/ik/python/ik_type_Attachment.h"
         "include/python/ik/python/ik_type_Algorithm.h"
         "include/python/ik/python/ik_type_Bone.h"
         "include/python/ik/python/ik_type_Constraint.h"
         "include/python/ik/python/ik_type_Effector.h"
         "include/python/ik/python/ik_type_Info.h"
+        "include/python/ik/python/ik_type_Mat3x4.h"
         "include/python/ik/python/ik_type_ModuleRef.h"
+        "include/python/ik/python/ik_type_Node.h"
         "include/python/ik/python/ik_type_Pole.h"
+        "include/python/ik/python/ik_type_Pose.h"
         "include/python/ik/python/ik_type_Quat.h"
+        "include/python/ik/python/ik_type_Solver.h"
         "include/python/ik/python/ik_type_TreeObject.h"
         "include/python/ik/python/ik_type_Vec3.h"
         $<$<BOOL:${IK_LOGGING}>:include/python/ik/python/ik_type_Log.h>
@@ -241,6 +246,7 @@ if (IK_PYTHON)
         "src/python/ik_type_Info.c"
         "src/python/ik_type_Mat3x4.c"
         "src/python/ik_type_ModuleRef.c"
+        "src/python/ik_type_Node.c"
         "src/python/ik_type_Pole.c"
         "src/python/ik_type_Pose.c"
         "src/python/ik_type_Quat.c"

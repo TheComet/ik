@@ -9,7 +9,6 @@
 #include "ik/python/ik_docstrings.h"
 #include "ik/python/ik_type_Log.h"
 #include "ik/python/ik_type_Algorithm.h"
-#include "ik/python/ik_type_Bone.h"
 #include "ik/python/ik_type_Constraint.h"
 #include "ik/python/ik_type_Effector.h"
 #include "ik/python/ik_type_Info.h"
@@ -19,6 +18,8 @@
 #include "ik/python/ik_type_Pose.h"
 #include "ik/python/ik_type_Quat.h"
 #include "ik/python/ik_type_TreeObject.h"
+#include "ik/python/ik_type_Bone.h"
+#include "ik/python/ik_type_Node.h"
 #include "ik/python/ik_type_Solver.h"
 #include "ik/python/ik_type_Vec3.h"
 #include <string.h>
@@ -32,7 +33,6 @@
 #define PUBLIC_IK_TYPES  \
     X(Attachment)        \
     X(Algorithm)         \
-    X(Bone)              \
     X(Constraint)        \
     X(HingeConstraint)   \
     X(StiffConstraint)   \
@@ -46,6 +46,8 @@
     X(Quat)              \
     X(Solver)            \
     X(TreeObject)        \
+    X(Bone)              \
+    X(Node)              \
     X(Vec3)
 
 #define PRIVATE_IK_TYPES \

@@ -19,11 +19,9 @@ struct ik_solver_fabrik
 
     struct ik_chain chain_tree;
     struct ik_bone** effector_bones;
-    union ik_quat* intermediate_rotations;
     union ik_vec3* target_positions;
 
     int num_effectors;
-    int num_intermediate_rotations;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -264,11 +262,6 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 
     solver->num_effectors = subtree_leaves(subtree);
     num_chains = count_chains(&solver->chain_tree);
-    solver->num_intermediate_rotations = num_chains;
-
-    solver->intermediate_rotations = MALLOC(sizeof(*solver->intermediate_rotations) * solver->num_intermediate_rotations);
-    if (solver->intermediate_rotations == NULL)
-        goto alloc_effector_rotations_failed;
 
     solver->effector_bones = MALLOC(sizeof(*solver->effector_bones) * solver->num_effectors);
     if (solver->effector_bones == NULL)
@@ -287,8 +280,7 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     return 0;
 
     alloc_target_positions_failed   : FREE(solver->effector_bones);
-    alloc_effector_bones_failed     : FREE(solver->intermediate_rotations);
-    alloc_effector_rotations_failed :
+    alloc_effector_bones_failed     :
     build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
     return -1;
 }
@@ -300,9 +292,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_deinit(&solver->chain_tree);
-    FREE(solver->target_positions);
     FREE(solver->effector_bones);
-    FREE(solver->intermediate_rotations);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -354,14 +344,32 @@ fabrik_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_visit_bones(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
+visit_bones_recursive(const struct ik_chain* chain, ik_visit_bone_func visit, void* param)
 {
+    CHAIN_FOR_EACH_BONE_R(chain, bone)
+        visit(bone, param);
+    CHAIN_END_EACH
+
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        visit_bones_recursive(child, visit, param);
+    CHAIN_END_EACH
+}
+static void
+fabrik_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+{
+    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
+    visit_bones_recursive(&solver->chain_tree, visit, param);
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_visit_effectors(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
+fabrik_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
 {
+    int i;
+    struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
+
+    for (i = 0; i != solver->num_effectors; ++i)
+        visit(solver->effector_bones[i], param);
 }
 
 /* ------------------------------------------------------------------------- */

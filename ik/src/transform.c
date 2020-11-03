@@ -487,3 +487,34 @@ ik_transform_chain_to_nodal_representation(struct ik_chain* root,
     average_sibling_segments(root, &rotations_store);
 }
 #endif
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_nodes_to_bones(const struct ik_node* node_root, struct ik_bone* bone_root)
+{
+    cs_vec_size i;
+    for (i = 0; i != ik_node_child_count(node_root); ++i)
+    {
+        const struct ik_node* node = ik_node_get_child(node_root, i);
+        const struct ik_bone* bone = ik_bone_get_child(bone_root, i);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+void
+ik_transform_bones_to_nodes(const struct ik_bone* bone_root, struct ik_node* node_root)
+{
+#if 0
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        struct ik_node* tail = chain_get_node(child_chain, chain_node_count(child_chain) - 1);
+        struct ik_node* head = chain_get_node(child_chain, chain_node_count(child_chain) - 2);
+
+        ik_quat_angle_of((**rotations_store).f, head->position.f);             /* delta to correct rotation */
+        ik_vec3_set(head->position.f, 0, 0, ik_vec3_length(head->position.f)); /* rotate to [0,0,1] -- this is faster than ik_quat_mul_quat() */
+        ik_quat_mul_quat_conj(head->rotation.f, (**rotations_store).f);        /* rotate tip in opposite direction so all children retain their orientation */
+        ik_quat_mul_quat((**rotations_store).f, tail->rotation.f);             /* Add average rotation to delta, converting the segment's rotation into an absolute one */
+
+        (*rotations_store)++;
+    CHAIN_END_EACH
+#endif
+}

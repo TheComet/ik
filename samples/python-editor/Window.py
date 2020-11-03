@@ -17,13 +17,37 @@ def one_bone_example(pos):
     return bone
 
 
-def two_bone_example(pos):
-    base = ik.Bone(position=ik.Vec3(0, pos[0]-0.5, pos[1]), length=0.1)
-    tip = base.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.2)
+def two_bone_example1(pos):
+    base = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.18)
+    tip = base.create_child(position=ik.Vec3(0, 0, 0), length=0.24)
 
     base.algorithm = ik.Algorithm(ik.TWO_BONE)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
     return base
+
+def two_bone_example2(pos):
+    base = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.18)
+    tip = base.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.24)
+
+    base.algorithm = ik.Algorithm(ik.TWO_BONE)
+    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
+    return base
+
+def two_bone_example3(pos):
+    base1 = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.18)
+    tip1 = base1.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.24)
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
+
+    base2 = tip1.create_child(position=ik.Vec3(0, 0.1, 0), length=0.18)
+    tip2 = base2.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.24)
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
+
+    base3 = tip1.create_child(position=ik.Vec3(0, 0.1, 0), length=0.18)
+    tip3 = base3.create_child(position=ik.Vec3(0, 0.1, 0.1), length=0.24)
+    tip3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
+
+    base1.algorithm = ik.Algorithm(ik.TWO_BONE)
+    return base1
 
 
 def long_chain_example(pos, chain_len, segment_len):
@@ -227,8 +251,10 @@ class Window(Updateable):
 
         self.__updateables = [
             self,
-            #Tree(one_bone_example((0, 0))),
-            Tree(two_bone_example((0, 0))),
+            Tree(one_bone_example((-0.5, -0.5))),
+            Tree(two_bone_example1((-0.25, -0.5))),
+            Tree(two_bone_example2((0.25, -0.5))),
+            Tree(two_bone_example3((0.5, -0.5))),
             #Tree(long_chain_example((0, 0), 20, 0.08))
             #Tree(double_effectors_example((0, 0), 3)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
