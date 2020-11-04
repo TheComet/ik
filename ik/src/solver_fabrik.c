@@ -18,8 +18,10 @@ struct ik_solver_fabrik
     IK_SOLVER_HEAD
 
     struct ik_chain chain_tree;
-    struct ik_bone** effector_bones;
+    struct ik_chain** effector_chains;
     union ik_vec3* target_positions;
+    union ik_quat* deltas;
+    ikreal* lengths;
 
     int num_effectors;
 };
@@ -58,26 +60,26 @@ validate_poles(const struct ik_solver_fabrik* solver)
 
 /* ------------------------------------------------------------------------- */
 static void
-store_effector_bones_recursive(struct ik_bone*** effector_bones_store, const struct ik_chain* chain)
+store_effector_bones_recursive(struct ik_chain*** effector_chains_store, struct ik_chain* chain)
 {
     CHAIN_FOR_EACH_CHILD(chain, child)
-        store_effector_bones_recursive(effector_bones_store, child);
+        store_effector_bones_recursive(effector_chains_store, child);
     CHAIN_END_EACH
 
     if (chain_child_count(chain) == 0)
     {
-        **effector_bones_store = chain_get_tip_bone(chain);
-        (*effector_bones_store)++;
+        **effector_chains_store = chain;
+        (*effector_chains_store)++;
     }
 }
 static void
-store_effector_bones(struct ik_solver_fabrik* solver)
+store_effector_chains(struct ik_solver_fabrik* solver)
 {
-    struct ik_bone** effector_bones_store = solver->effector_bones;
-    store_effector_bones_recursive(&effector_bones_store, &solver->chain_tree);
+    struct ik_chain** effector_chains_store = solver->effector_chains;
+    store_effector_bones_recursive(&effector_chains_store, &solver->chain_tree);
 
     /* sanity check */
-    assert(effector_bones_store - solver->effector_bones == solver->num_effectors);
+    assert(effector_chains_store - solver->effector_chains == solver->num_effectors);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -88,68 +90,64 @@ calculate_target_data(struct ik_solver_fabrik* solver)
 
     for (i = 0; i != solver->num_effectors; ++i)
     {
+        union ik_vec3 tip_pos;
         const struct ik_bone* base_bone = chain_get_base_bone(&solver->chain_tree);
         const struct ik_bone* root_bone = solver->root_bone;
-        struct ik_bone* tip_bone = solver->effector_bones[i];
+        const struct ik_chain* eff_chain = solver->effector_chains[i];
+        const struct ik_bone* tip_bone = chain_get_tip_bone(eff_chain);
         struct ik_effector* eff = tip_bone->effector;
-        union ik_vec3 tip_pos = tip_bone->position;
         ikreal* target = solver->target_positions[i].f;
 
-        /* The target data is most useful when transformed into the same space
-         * as the base bone. The effector target position is in global space
-         * (parent space of the solver's root bone).
+        /*
+         * The "actual" target position is calculated once and must be stored in
+         * a space outside of the bones being solved. It is retrieved by the
+         * FABRIK algorithm each iteration.
+         *
+         * The actual target position depends on the effector target position
+         * and the effector weight. Most of the time it is just equal to the
+         * effector's target position.
+         *
+         * Note that sometimes the parent of root_bone is not equal to the
+         * parent of base_bone. We transform the target position up to the
+         * parent of base_bone because all parent bones are static from the
+         * solver's point of view.
          */
         ik_vec3_copy(target, eff->target_position.f);
         ik_transform_bone_pos_g2l(target, ik_bone_get_parent(root_bone), ik_bone_get_parent(base_bone));
 
         /* In order to lerp between tip bone position and target, transform tip
          * bone position into same space */
-        ik_transform_bone_pos_l2g(tip_pos.f, ik_bone_get_parent(tip_bone), base_bone);
+        tip_pos = tip_bone->position;
+        ik_transform_bone_pos_l2g(tip_pos.f, tip_bone, ik_bone_get_parent(base_bone));
 
-        /* lerp by effector weight to get weighted target position */
+        /* lerp by effector weight to get actual target position */
         ik_vec3_sub_vec3(target, tip_pos.f);
         ik_vec3_mul_scalar(target, eff->weight);
         ik_vec3_add_vec3(target, tip_pos.f);
 
-        /* TODO nlerp, need base bone for that */
-#if 0
-static void
-update(struct ik_bone_data_t* tip, struct ik_bone_data_t* base)
-{
-    struct ik_effector_t* effector =
-        (struct ik_effector_t*)tip->attachment[IK_ATTACHMENT_EFFECTOR];
+        /* nlerp actual target position around the next sub-base bone. Makes
+         * transitions look more natural */
+        if (eff->features & IK_EFFECTOR_WEIGHT_NLERP)
+        {
+            ikreal distance_to_target;
+            const struct ik_bone* subbase_bone = chain_get_base_bone(eff_chain);
+            union ik_vec3 to_tip = tip_bone->position;
+            union ik_vec3 to_eff = eff->target_position;
 
-    /* lerp using effector weight to get actual target position */
-    effector->actual_target = effector->target_position;
-    ik_vec3_sub_vec3(effector->actual_target.f, tip->transform.t.position.f);
-    ik_vec3_mul_scalar(effector->actual_target.f, effector->weight);
-    ik_vec3_add_vec3(effector->actual_target.f, tip->transform.t.position.f);
+            /* Need two vectors from subbase to tip and from subbase to effector target */
+            ik_transform_bone_pos_l2g(to_tip.f, tip_bone, subbase_bone);
+            ik_transform_bone_pos_g2l(to_eff.f, ik_bone_get_parent(root_bone), subbase_bone);
 
-    /* Fancy solver using nlerp, makes transitions look more natural */
-    if (effector->features & IK_EFFECTOR_WEIGHT_NLERP && effector->weight < 1.0)
-    {
-        ikreal_t distance_to_target;
-        union ik_vec3 base_to_effector;
-        union ik_vec3 base_to_target;
+            /* The effective distance is a lerp between the distances of these two vectors*/
+            distance_to_target = ik_vec3_length(to_eff.f) * eff->weight;
+            distance_to_target += ik_vec3_length(to_tip.f) * (1.0 - eff->weight);
 
-        /* Need distance from base bone to target and base to effector bone */
-        base_to_effector = tip->transform.t.position;
-        base_to_target = effector->target_position;
-        ik_vec3_sub_vec3(base_to_effector.f, base->transform.t.position.f);
-        ik_vec3_sub_vec3(base_to_target.f, base->transform.t.position.f);
-
-        /* The effective distance is a lerp between these two distances */
-        distance_to_target = ik_vec3_length(base_to_target.f) * effector->weight;
-        distance_to_target += ik_vec3_length(base_to_effector.f) * (1.0 - effector->weight);
-
-        /* nlerp the target position by pinning it to the base bone */
-        ik_vec3_sub_vec3(effector->actual_target.f, base->transform.t.position.f);
-        ik_vec3_normalize(effector->actual_target.f);
-        ik_vec3_mul_scalar(effector->actual_target.f, distance_to_target);
-        ik_vec3_add_vec3(effector->actual_target.f, base->transform.t.position.f);
-    }
-}
-#endif
+            /* nlerp the target position by pinning it to the base bone */
+            ik_transform_bone_pos_g2l(target, ik_bone_get_parent(base_bone), subbase_bone);
+            ik_vec3_normalize(target);
+            ik_vec3_mul_scalar(target, distance_to_target);
+            ik_transform_bone_pos_l2g(target, subbase_bone, ik_bone_get_parent(base_bone));
+        }
     }
 }
 
@@ -254,6 +252,7 @@ static int
 fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
     int num_chains;
+    void* buf;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_init(&solver->chain_tree);
@@ -263,15 +262,15 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     solver->num_effectors = subtree_leaves(subtree);
     num_chains = count_chains(&solver->chain_tree);
 
-    solver->effector_bones = MALLOC(sizeof(*solver->effector_bones) * solver->num_effectors);
-    if (solver->effector_bones == NULL)
+    solver->effector_chains = MALLOC(sizeof(*solver->effector_chains) * solver->num_effectors);
+    if (solver->effector_chains == NULL)
         goto alloc_effector_bones_failed;
 
     solver->target_positions = MALLOC(sizeof(*solver->target_positions) * solver->num_effectors);
     if (solver->target_positions == NULL)
         goto alloc_target_positions_failed;
 
-    store_effector_bones(solver);
+    store_effector_chains(solver);
     validate_poles(solver);
 
     ik_log_printf(IK_DEBUG, "FABRIK: Initialized with %d end-effectors. %d chains were created.",
