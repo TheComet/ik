@@ -150,11 +150,22 @@ chain_tree_build(struct ik_chain* chain, const struct ik_subtree* subtree)
 
 /* ------------------------------------------------------------------------- */
 int
-count_chains(const struct ik_chain* chain)
+chain_count(const struct ik_chain* chain)
 {
     int counter = 1;
     CHAIN_FOR_EACH_CHILD(chain, child)
-        counter += count_chains(child);
+        counter += chain_count(child);
+    CHAIN_END_EACH
+    return counter;
+}
+
+/* ------------------------------------------------------------------------- */
+int
+chain_count_bones(const struct ik_chain* chain)
+{
+    int counter = chain_bone_count(chain);
+    CHAIN_FOR_EACH_CHILD(chain, child)
+        counter += chain_count_bones(child);
     CHAIN_END_EACH
     return counter;
 }

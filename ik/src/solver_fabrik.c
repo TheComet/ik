@@ -20,8 +20,6 @@ struct ik_solver_fabrik
     struct ik_chain chain_tree;
     struct ik_chain** effector_chains;
     union ik_vec3* target_positions;
-    union ik_quat* deltas;
-    ikreal* lengths;
 
     int num_effectors;
 };
@@ -152,22 +150,10 @@ calculate_target_data(struct ik_solver_fabrik* solver)
 }
 
 /* ------------------------------------------------------------------------- */
-static void
-transform_target_to_local_space(ikreal target[3],
-                                const struct ik_bone* root,
-                                const struct ik_bone* bone)
-{
-    const struct ik_bone* parent = ik_bone_get_parent(bone);
-    if (parent != root)
-        transform_target_to_local_space(target, root, parent);
-
-    ik_vec3_sub_vec3(target, parent->position.f);
-    ik_vec3_rotate_quat_conj(target, bone->rotation.f);
-}
 static union ik_vec3
 solve_chain_forwards_recurse(struct ik_chain* chain,
                              union ik_vec3** target_store,
-                             const struct ik_bone* root)
+                             const struct ik_bone* base_bone)
 {
     union ik_vec3 target;
     int avg_count;
@@ -177,20 +163,33 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
     avg_count = 0;
     ik_vec3_set_zero(target.f);
     CHAIN_FOR_EACH_CHILD(chain, child)
-        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store, root);
+        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store, base_bone);
         ik_vec3_add_vec3(target.f, base_pos.f);
         ++avg_count;
     CHAIN_END_EACH
 
+    /* Reached a leaf chain. Retrieve target position calculated earlier in
+     * target_store and transform it into the correct space */
     if (avg_count == 0)
     {
-        target = *(*target_store)++;
-        transform_target_to_local_space(target.f, root, chain_get_tip_bone(chain));
+        ik_vec3_copy(target.f, (*target_store)++->f);
+        ik_transform_bone_pos_g2l(target.f, ik_bone_get_parent(base_bone), chain_get_tip_bone(chain));
     }
     else
         ik_vec3_div_scalar(target.f, avg_count);
 
     CHAIN_FOR_EACH_BONE(chain, bone)
+        union ik_quat delta;
+
+        /* Calculate angle towards target position */
+        ik_quat_angle_of(delta.f, target.f);
+
+        /* Transform target into parent space */
+        ik_vec3_rotate_quat(target.f, bone->rotation.f);
+        ik_vec3_add_vec3(target.f, bone->position.f);
+
+        /* Now rotate bone towards target position */
+        ik_quat_mul_quat(bone->rotation.f, delta.f);ksys
 
     CHAIN_END_EACH
 
@@ -252,7 +251,6 @@ static int
 fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 {
     int num_chains;
-    void* buf;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_init(&solver->chain_tree);
@@ -260,7 +258,7 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
         goto build_chain_tree_failed;
 
     solver->num_effectors = subtree_leaves(subtree);
-    num_chains = count_chains(&solver->chain_tree);
+    num_chains = chain_count(&solver->chain_tree);
 
     solver->effector_chains = MALLOC(sizeof(*solver->effector_chains) * solver->num_effectors);
     if (solver->effector_chains == NULL)
@@ -278,7 +276,7 @@ fabrik_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
 
     return 0;
 
-    alloc_target_positions_failed   : FREE(solver->effector_bones);
+    alloc_target_positions_failed   : FREE(solver->effector_chains);
     alloc_effector_bones_failed     :
     build_chain_tree_failed         : chain_tree_deinit(&solver->chain_tree);
     return -1;
@@ -291,7 +289,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_deinit(&solver->chain_tree);
-    FREE(solver->effector_bones);
+    FREE(solver->effector_chains);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -368,7 +366,7 @@ fabrik_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func v
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     for (i = 0; i != solver->num_effectors; ++i)
-        visit(solver->effector_bones[i], param);
+        visit(chain_get_tip_bone(solver->effector_chains[i]), param);
 }
 
 /* ------------------------------------------------------------------------- */

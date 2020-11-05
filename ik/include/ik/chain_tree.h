@@ -63,7 +63,13 @@ chain_tree_build(struct ik_chain* chain, const struct ik_subtree* subtree);
  * @brief Counts all of the chains in the tree.
  */
 IK_PRIVATE_API int
-count_chains(const struct ik_chain* chains);
+chain_count(const struct ik_chain* chain);
+
+/*!
+ * @brief Counts all of the bones in the chain tree.
+ */
+IK_PRIVATE_API int
+chain_count_bones(const struct ik_chain* chain);
 
 /*!
  * @brief Helper macro for retrieving the bone by index.
