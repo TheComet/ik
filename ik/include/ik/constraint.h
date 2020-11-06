@@ -19,7 +19,10 @@ struct ik_constraint
     struct ik_constraint* next;
 
     /*!
-     *
+     * Called by the solver whenever a joint needs to be constrained. The
+     * function receives the current (absolute local rotation) of the bone,
+     * and should write back a new rotation if the current one is outside of
+     * the constraint's range.
      */
     ik_constraint_apply_func apply;
 

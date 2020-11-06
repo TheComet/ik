@@ -104,11 +104,10 @@ class Tree(Updateable):
         self.root = root
         #self.initial_pose = ik.Pose(root)
 
-        font = pygame.font.SysFont(None, 32)
+        self.font = pygame.font.SysFont(None, 32)
 
         tstart = time()
         self.solver = ik.Solver(root)
-        self.build_img = font.render(f"build() took {time()-tstart}", True, (255, 255, 255))
         self.solved = False
 
         self.grabbed_effector = None
@@ -120,9 +119,6 @@ class Tree(Updateable):
             if bone.effector is not None:
                 yield bone.effector
         self.effectors = list(get_effectors(root))
-
-        self.bones_img = font.render(f"bones: {self.root.count}", True, (255, 255, 255))
-        self.effectors_img = font.render(f"end effectors: {len(self.effectors)}", True, (255, 255, 255))
 
     def process_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -157,6 +153,9 @@ class Tree(Updateable):
                 return e
 
     def update(self, time_step):
+        self.root.rotation = ik.Quat()
+        self.root.children[0].rotation = ik.Quat()
+        self.root.children[0].children[0].rotation = ik.Quat()
         #self.initial_pose.apply(self.root)
         tstart = time()
         self.solver.solve()
@@ -164,6 +163,6 @@ class Tree(Updateable):
     def draw(self, surface):
         draw_tree(surface, self.root)
         draw_effectors(surface, self.effectors)
-        surface.blit(self.build_img, (10, 10))
-        surface.blit(self.bones_img, (10, 42))
-        surface.blit(self.effectors_img, (10, 74))
+        img = self.font.render(f"end effectors: {len(self.effectors)}", True, (255, 255, 255))
+        surface.blit(img, (10, 10))
+

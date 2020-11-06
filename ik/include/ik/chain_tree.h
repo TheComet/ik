@@ -124,6 +124,18 @@ chain_count_bones(const struct ik_chain* chain);
     VECTOR_FOR_EACH_R(&(chain_var)->bones, struct ik_bone*, chain_##var_name) \
     struct ik_bone* var_name = *(chain_##var_name); {
 
+#define CHAIN_FOR_EACH_BONE_PAIR(chain_var, parent_var, child_var) {          \
+    cs_vec_idx idx_##parent_var;                                              \
+    for (idx_##parent_var = 0; idx_##parent_var < chain_bone_count(chain_var) - 1; ++idx_##parent_var) { \
+        struct ik_bone* parent_var = chain_get_bone(chain_var, idx_##parent_var + 1); \
+        struct ik_bone* child_var = chain_get_bone(chain_var, idx_##parent_var + 0); {
+
+#define CHAIN_FOR_EACH_BONE_PAIR_R(chain_var, parent_var, child_var) {        \
+    cs_vec_idx idx_##parent_var;                                              \
+    for (idx_##parent_var = chain_bone_count(chain_var) - 1; idx_##parent_var > 0; --idx_##parent_var) { \
+        struct ik_bone* parent_var = chain_get_bone(chain_var, idx_##parent_var - 0); \
+        struct ik_bone* child_var = chain_get_bone(chain_var, idx_##parent_var - 1); {
+
 #define CHAIN_END_EACH \
     VECTOR_END_EACH }
 

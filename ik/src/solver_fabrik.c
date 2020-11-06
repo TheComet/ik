@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <math.h>
 
+#include <stdio.h>
+
 struct ik_solver_fabrik
 {
     IK_SOLVER_HEAD
@@ -178,19 +180,70 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
     else
         ik_vec3_div_scalar(target.f, avg_count);
 
-    CHAIN_FOR_EACH_BONE(chain, bone)
+    /* tip bone is handled slightly differently, as it has no constraints when
+     * doing forward iteration */
+    {
         union ik_quat delta;
+        struct ik_bone* bone = chain_get_tip_bone(chain);
 
-        /* Calculate angle towards target position */
+        /* Rotate bone towards target position */
         ik_quat_angle_of(delta.f, target.f);
-
-        /* Transform target into parent space */
-        ik_vec3_rotate_quat(target.f, bone->rotation.f);
-        ik_vec3_add_vec3(target.f, bone->position.f);
-
-        /* Now rotate bone towards target position */
         ik_quat_mul_quat(bone->rotation.f, delta.f);
 
+        /*
+         * Because the bone has rotated, the target position will have moved
+         * in global space. In local space this equates to the position rotating
+         * around the bone by the same amount in the opposite direction.
+         *
+         * This is slightly faster than a quat mul
+         */
+        ik_vec3_set(target.f, 0, 0, ik_vec3_length(target.f));
+
+        /*
+         * New target position in local space is at the tail end of this bone,
+         * minus the bone's offset position. The offset position is in parent
+         * bone space, so we must move the target to the tail of this bone,
+         * transform it into parent space, then subtract this bone's offset
+         * from it.
+         */
+        target.v.z -= bone->length;
+        ik_vec3_rotate_quat(target.f, bone->rotation.f);
+        ik_vec3_add_vec3(target.f, bone->position.f);
+        /* target is not quite in parent bone space yet, see beginning of
+         * for-loop below */
+    }
+
+    CHAIN_FOR_EACH_BONE_PAIR(chain, bone, child)
+        union ik_quat delta;
+        union ik_quat offset_rot;
+        union ik_vec3 child_tail_pos;
+
+        /* complete transformation into parent space */
+        target.v.z += bone->length;
+
+        child_tail_pos = child->position;
+        child_tail_pos.v.z += bone->length;
+        ik_quat_angle_of(offset_rot.f, child_tail_pos.f);
+
+        /* Rotate bone towards target position */
+        ik_quat_angle_of(delta.f, target.f);
+        ik_quat_mul_quat_conj(delta.f, offset_rot.f);
+        ik_quat_mul_quat(bone->rotation.f, delta.f);
+        ik_quat_mul_quat_conj(child->rotation.f, delta.f);
+
+
+        /*
+         * Because the bone has rotated, the target position will have moved
+         * in global space. In local space this equates to the position rotating
+         * around the bone by the same amount in the opposite direction.
+         *
+         * This is slightly faster than a quat mul
+         */
+        ik_vec3_set(target.f, 0, 0, ik_vec3_length(target.f));
+
+        target.v.z -= bone->length;
+        ik_vec3_rotate_quat(target.f, bone->rotation.f);
+        ik_vec3_add_vec3(target.f, bone->position.f);
     CHAIN_END_EACH
 
     return target;
@@ -289,6 +342,7 @@ fabrik_deinit(struct ik_solver* solver_base)
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
 
     chain_tree_deinit(&solver->chain_tree);
+    FREE(solver->target_positions);
     FREE(solver->effector_chains);
 }
 
