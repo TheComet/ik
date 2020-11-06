@@ -17,7 +17,7 @@ struct ik_bone;
     struct ik_algorithm* algorithm;                                           \
     struct ik_bone* root_bone;
 
-typedef void(*ik_visit_bone_func)(struct ik_bone*, void* param);
+typedef void(*ik_bone_visit_func)(struct ik_bone*, void* param);
 
 struct ik_solver_interface
 {
@@ -41,8 +41,8 @@ struct ik_solver_interface
 
     /*! Call the specified callback function for every node that the solver
      * affects. The order must be from base node to leaf node(s), depth first. */
-    void (*visit_bones)(const struct ik_solver*, ik_visit_bone_func visit, void* param);
-    void (*visit_effectors)(const struct ik_solver*, ik_visit_bone_func visit, void* param);
+    void (*visit_bones)(const struct ik_solver*, ik_bone_visit_func visit, void* param);
+    void (*visit_effectors)(const struct ik_solver*, ik_bone_visit_func visit, void* param);
 };
 
 IK_PUBLIC_API int
@@ -100,10 +100,10 @@ IK_PUBLIC_API int
 ik_solver_solve(struct ik_solver* solver);
 
 IK_PUBLIC_API void
-ik_solver_visit_bones(const struct ik_solver* solver, ik_visit_bone_func visit, void* param);
+ik_solver_visit_bones(const struct ik_solver* solver, ik_bone_visit_func visit, void* param);
 
 IK_PUBLIC_API void
-ik_solver_visit_effectors(const struct ik_solver* solver, ik_visit_bone_func visit, void* param);
+ik_solver_visit_effectors(const struct ik_solver* solver, ik_bone_visit_func visit, void* param);
 
 #if defined(IK_BUILDING)
 

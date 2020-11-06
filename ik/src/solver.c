@@ -458,14 +458,14 @@ ik_solver_solve(struct ik_solver* solver)
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_visit_bones(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
+ik_solver_visit_bones(const struct ik_solver* solver, ik_bone_visit_func visit, void* param)
 {
     solver->impl.visit_bones(solver, visit, param);
 }
 
 /* ------------------------------------------------------------------------- */
 void
-ik_solver_visit_effectors(const struct ik_solver* solver, ik_visit_bone_func visit, void* param)
+ik_solver_visit_effectors(const struct ik_solver* solver, ik_bone_visit_func visit, void* param)
 {
     solver->impl.visit_effectors(solver, visit, param);
 }

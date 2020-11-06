@@ -189,7 +189,7 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         ik_vec3_add_vec3(target.f, bone->position.f);
 
         /* Now rotate bone towards target position */
-        ik_quat_mul_quat(bone->rotation.f, delta.f);ksys
+        ik_quat_mul_quat(bone->rotation.f, delta.f);
 
     CHAIN_END_EACH
 
@@ -341,7 +341,7 @@ fabrik_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-visit_bones_recursive(const struct ik_chain* chain, ik_visit_bone_func visit, void* param)
+visit_bones_recursive(const struct ik_chain* chain, ik_bone_visit_func visit, void* param)
 {
     CHAIN_FOR_EACH_BONE_R(chain, bone)
         visit(bone, param);
@@ -352,7 +352,7 @@ visit_bones_recursive(const struct ik_chain* chain, ik_visit_bone_func visit, vo
     CHAIN_END_EACH
 }
 static void
-fabrik_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+fabrik_visit_bones(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
     visit_bones_recursive(&solver->chain_tree, visit, param);
@@ -360,7 +360,7 @@ fabrik_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit
 
 /* ------------------------------------------------------------------------- */
 static void
-fabrik_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+fabrik_visit_effectors(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     int i;
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;

@@ -264,7 +264,7 @@ solver_b2_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b2_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+solver_b2_visit_bones(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 
@@ -274,7 +274,7 @@ solver_b2_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func vi
 
 /* ------------------------------------------------------------------------- */
 static void
-solver_b2_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+solver_b2_visit_effectors(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     struct ik_solver_b2* solver = (struct ik_solver_b2*)solver_base;
 

@@ -32,14 +32,14 @@ mss_solve(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static void
-mss_visit_bones(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+mss_visit_bones(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     struct ik_solver_mss* solver = (struct ik_solver_mss*)solver_base;
 }
 
 /* ------------------------------------------------------------------------- */
 static void
-mss_visit_effectors(const struct ik_solver* solver_base, ik_visit_bone_func visit, void* param)
+mss_visit_effectors(const struct ik_solver* solver_base, ik_bone_visit_func visit, void* param)
 {
     struct ik_solver_mss* solver = (struct ik_solver_mss*)solver_base;
 }
