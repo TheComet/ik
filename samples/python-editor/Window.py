@@ -21,7 +21,9 @@ def two_bone_example1(pos):
     base = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.18)
     tip = base.create_child(position=ik.Vec3(0, 0, 0), length=0.24)
 
-    base.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=20)
+    base.constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi/5))
+
+    base.algorithm = ik.Algorithm(ik.TWO_BONE, max_iterations=20, constraints=True)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+sqrt(0.1)))
     return base
 
@@ -54,10 +56,11 @@ def long_chain_example(pos, bone_num, bone_len):
     tip = root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=bone_len)
     for i in range(bone_num-1):
         tip = tip.create_child(length=bone_len, position=ik.Vec3(0, 0.05, 0.05))
+        #tip = tip.create_child(length=bone_len)
 
-    #root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi))
+    root.children[0].constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), pi/5))
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=10)
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
     tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+bone_num*bone_len))
     return root
 
@@ -252,7 +255,7 @@ class Window(Updateable):
         self.__updateables = [
             self,
             #Tree(one_bone_example((-0.5, -0.5))),
-            #Tree(two_bone_example1((-0.25, -0.5))),
+            Tree(two_bone_example1((-0.25, -0.5))),
             #Tree(two_bone_example2((0.25, -0.5))),
             #Tree(two_bone_example3((0.5, -0.5))),
             Tree(long_chain_example((0, 0), 3, 0.15))

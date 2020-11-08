@@ -45,9 +45,23 @@ solver_b1_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
     {
         if (solver->bone->constraint == NULL)
-        {
             ik_log_printf(IK_WARN, "1-Bone: IK_ALGORITHM_CONSTRAINTS is set, but the tip bone does not have a constraint attached. Flag will be ignored.");
-        }
+    }
+    else
+    {
+        if (solver->bone->constraint)
+            ik_log_printf(IK_WARN, "1-Bone: Constraint will be ignored because IK_ALGORITHM_CONSTRAINTS is unset.");
+    }
+
+        if (solver->algorithm->features & IK_ALGORITHM_POLES)
+    {
+        if (solver->bone->pole == NULL)
+            ik_log_printf(IK_WARN, "1-Bone: IK_ALGORITHM_POLES is set, but the bone does not have a pole attached. Flag will be ignored.");
+    }
+    else
+    {
+        if (solver->bone->pole)
+            ik_log_printf(IK_WARN, "1-Bone: Pole will be ignored because IK_ALGORITHM_POLES is unset.");
     }
 
     /* Grab references to the bones we access later, in case nothing else

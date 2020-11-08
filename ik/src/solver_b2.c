@@ -52,9 +52,12 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
     if (solver->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
     {
         if (solver->base->constraint == NULL && solver->tip->constraint == NULL)
-        {
             ik_log_printf(IK_WARN, "2-Bone: IK_ALGORITHM_CONSTRAINTS is set, but no constraints were found attached to the tip or base bones. Flag will be ignored.");
-        }
+    }
+    else
+    {
+        if (solver->base->constraint || solver->tip->constraint)
+            ik_log_printf(IK_WARN, "2-Bone: Constraints in tree will be ignored because IK_ALGORITHM_CONSTRAINTS is unset.");
     }
 
     if (solver->algorithm->features & IK_ALGORITHM_POLES)
@@ -63,6 +66,11 @@ solver_b2_init(struct ik_solver* solver_base, const struct ik_subtree* subtree)
             ik_log_printf(IK_WARN, "2-Bone: Pole attached on base bone does nothing.");
         if (solver->tip->pole == NULL)
             ik_log_printf(IK_WARN, "2-Bone: IK_ALGORITHM_POLES is set, but no pole was found attached to the tip bone. Flag will be ignored.");
+    }
+    else
+    {
+        if (solver->tip->pole == NULL)
+            ik_log_printf(IK_WARN, "2-Bone: Pole in tree will be ignored because IK_ALGORITHM_POLES is unset.");
     }
 
     IK_INCREF(solver->base);
@@ -126,7 +134,7 @@ solver_b2_solve(struct ik_solver* solver_base)
      *               o
      *
      */
-    ik_quat_angle_between(base_offset_rot.f, tip_pos_tail.f, base_pos_head.f);
+    ik_quat_angle_of(base_offset_rot.f, tip_pos_tail.f);
 
     /*
      * Form a triangle from the two bones so we can calculate the angles.
@@ -204,8 +212,8 @@ solver_b2_solve(struct ik_solver* solver_base)
         ik_quat_angle_of(delta.f, target_pos.f);
         ik_quat_mul_quat(base->rotation.f, delta.f);
         ik_quat_mul_quat_conj(base->rotation.f, alpha_rot.f);
-        ik_quat_mul_quat(base->rotation.f, base_offset_rot.f);
-        ik_quat_mul_quat_conj(tip->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat_conj(base->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat(tip->rotation.f, base_offset_rot.f);
     }
     else if (c > a + b)
     {
@@ -214,8 +222,8 @@ solver_b2_solve(struct ik_solver* solver_base)
         union ik_quat delta;
         ik_quat_angle_of(delta.f, target_pos.f);
         ik_quat_mul_quat(base->rotation.f, delta.f);
-        ik_quat_mul_quat(base->rotation.f, base_offset_rot.f);
-        ik_quat_copy_conj(tip->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat_conj(base->rotation.f, base_offset_rot.f);
+        ik_quat_copy(tip->rotation.f, base_offset_rot.f);
     }
     else if (a < b)
     {
@@ -226,11 +234,11 @@ solver_b2_solve(struct ik_solver* solver_base)
         union ik_vec3 axis;
         ik_quat_angle_of(delta.f, target_pos.f);
         ik_quat_mul_quat(base->rotation.f, delta.f);
-        ik_quat_mul_quat(base->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat_conj(base->rotation.f, base_offset_rot.f);
 
         ik_vec3_copy(axis.f, base->rotation.f);
         ik_quat_set_axis_angle(tip->rotation.f, axis.v.x, axis.v.y, axis.v.z, M_PI);
-        ik_quat_mul_quat_conj(tip->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat(tip->rotation.f, base_offset_rot.f);
     }
     else
     {
@@ -241,22 +249,13 @@ solver_b2_solve(struct ik_solver* solver_base)
         union ik_vec3 axis;
         ik_quat_angle_of(delta.f, target_pos.f);
         ik_quat_mul_quat(base->rotation.f, delta.f);
-        ik_quat_mul_quat(base->rotation.f, base_offset_rot.f);
+        ik_quat_mul_quat_conj(base->rotation.f, base_offset_rot.f);
 
-        ik_quat_copy_conj(tip->rotation.f, base_offset_rot.f);
+        ik_quat_copy(tip->rotation.f, base_offset_rot.f);
         ik_vec3_copy(axis.f, base->rotation.f);
         ik_quat_set_axis_angle(one_eighty.f, axis.v.x, axis.v.y, axis.v.z, M_PI);
         ik_quat_mul_quat(base->rotation.f, one_eighty.f);
         ik_quat_mul_quat(tip->rotation.f, one_eighty.f);
-    }
-
-    /* Apply constraints */
-    if (s->algorithm->features & IK_ALGORITHM_CONSTRAINTS)
-    {
-        if (base->constraint)
-            base->constraint->apply(base->constraint, base->rotation.f);
-        if (tip->constraint)
-            tip->constraint->apply(tip->constraint, tip->rotation.f);
     }
 
     return 1;

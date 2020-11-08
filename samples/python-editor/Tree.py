@@ -6,6 +6,12 @@ from Updateable import Updateable
 from time import time
 
 
+def reset_rotations(bone):
+    bone.rotation = ik.Quat()
+    for child in bone.children:
+        reset_rotations(child)
+
+
 def rotate_points(points, q):
     cos_a = 1 - 2 * (q.x * q.x + q.y * q.y)
     sin_a = 2 * (q.w * q.x + q.y * q.z)
@@ -153,9 +159,7 @@ class Tree(Updateable):
                 return e
 
     def update(self, time_step):
-        self.root.rotation = ik.Quat()
-        self.root.children[0].rotation = ik.Quat()
-        self.root.children[0].children[0].rotation = ik.Quat()
+        #reset_rotations(self.root)
         #self.initial_pose.apply(self.root)
         tstart = time()
         self.solver.solve()
