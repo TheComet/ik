@@ -207,14 +207,21 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         struct ik_bone* bone = chain_get_tip_bone(chain);
         ik_vec3_div_scalar(target.f, avg_count);
 
-
-        /* Rotate bone towards target position. The offset rotation was already
-         * applied when calculating the target position, i.e. this target
-         * specifies where the bone should actually point to */
+        /*
+         * Calculate delta that rotates bone towards target. The offset rotation
+         * was already applied when calculating the target position, i.e. this
+         * target specifies where the bone should actually point to
+         */
         ik_quat_angle_of(delta.f, target.f);
 
-        /* Each child bone must retain its orientation. Rotate them in the
-         * opposite direction */
+        /*
+         * Each child bone must retain its orientation. Rotate them in the
+         * opposite direction. Each child constraint dictates how far we can
+         * rotate the current bone. Because there are multiple constraints and
+         * it is not guaranteed that their valid regions all overlap, it's
+         * better to take an average of all constrained delta rotations rather
+         * than applying each in order.
+         */
         ik_quat_set(avg_constraint_delta.f, 0, 0, 0, 0);
         CHAIN_FOR_EACH_CHILD(chain, child_chain)
             struct ik_bone* child = chain_get_base_bone(child_chain);
@@ -235,11 +242,14 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
             }
         CHAIN_END_EACH
 
+        /* Apply averaged constraint delta to delta rotation and rotate bone */
         ik_quat_div_scalar(avg_constraint_delta.f, chain_child_count(chain));
         ik_quat_normalize(avg_constraint_delta.f);
         ik_quat_mul_quat(delta.f, avg_constraint_delta.f);
-
         ik_quat_mul_quat(bone->rotation.f, delta.f);
+
+        /* Rotate each child bone in the opposite direction so they retain their
+         * orientation */
         CHAIN_FOR_EACH_CHILD(chain, child_chain)
             struct ik_bone* child = chain_get_base_bone(child_chain);
             ik_quat_mul_quat_conj(child->rotation.f, delta.f);
@@ -249,6 +259,8 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
          * The target position should stay in the same location in global space,
          * so have to rotate it around the bone by the same amount in the
          * opposite direction.
+         *
+         * This is faster than a quat mul.
          */
         ik_vec3_set(target.f, 0, 0, ik_vec3_length(target.f));
 
@@ -301,7 +313,6 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
 
     CHAIN_FOR_EACH_BONE_PAIR(chain, bone, child)
         union ik_quat delta;
-        union ik_quat abs_rot;
         union ik_quat offset_rot;
         union ik_vec3 child_tail_pos;
 
@@ -328,15 +339,16 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         child_tail_pos.v.z += bone->length;
         ik_quat_angle_of(offset_rot.f, child_tail_pos.f);
 
-        /* Rotate bone towards target position. Make sure to apply the before-mentioned
-         * offset rotation. */
+        /* Calculate delta that rotates bone towards target */
         ik_quat_angle_of(delta.f, target.f);
         ik_quat_mul_quat_conj(delta.f, offset_rot.f);
 
-        /* The child bone must retain its orientation. Rotate it in the opposite
-         * direction */
+        /*
+         * The child bone must retain its orientation. Rotate it in the opposite
+         * direction. Child constraint dictates how far we can rotate the current
+         * bone
+         */
         ik_quat_mul_quat_conj(child->rotation.f, delta.f);
-
         if (child->constraint)
         {
             ik_quat_mul_quat(delta.f, child->rotation.f);
@@ -344,6 +356,7 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
             ik_quat_mul_quat_conj(delta.f, child->rotation.f);
         }
 
+        /* Rotate bone towards target */
         ik_quat_mul_quat(bone->rotation.f, delta.f);
 
         /*
@@ -392,10 +405,11 @@ solve_chain_backwards_recurse(struct ik_chain* chain, union ik_vec3 target)
         solve_chain_backwards_recurse(child, target);
     CHAIN_END_EACH
 }
-static void
-solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target)
+static int
+solve_chain_backwards(struct ik_solver_fabrik* solver, union ik_vec3 target, ikreal tol_squared)
 {
     solve_chain_backwards_recurse(&solver->chain_tree, target);
+    return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -447,26 +461,6 @@ fabrik_deinit(struct ik_solver* solver_base)
 
 /* ------------------------------------------------------------------------- */
 static int
-all_targets_reached(struct ik_solver_fabrik* solver, ikreal tol_squared)
-{
-    /* TODO broken
-    int i;
-    for (i = 0; i != solver->num_effectors; ++i)
-    {
-        struct ik_bone* bone = solver->effector_bones[i];
-        struct ik_effector* eff = bone->effector;
-        union ik_vec3 diff = bone->position;
-
-        ik_vec3_sub_vec3(diff.f, eff->target_position.f);
-        if (ik_vec3_length_squared(diff.f) > tol_squared)
-            return 0;
-    }*/
-
-    return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-static int
 fabrik_solve(struct ik_solver* solver_base)
 {
     struct ik_solver_fabrik* solver = (struct ik_solver_fabrik*)solver_base;
@@ -478,14 +472,11 @@ fabrik_solve(struct ik_solver* solver_base)
 
     while (iteration-- > 0)
     {
-        union ik_vec3 base_pos = solve_chain_forwards(solver);
-        //solve_chain_backwards(solver, base_pos);
+        int all_targets_reached =
+            solve_chain_backwards(solver,
+                solve_chain_forwards(solver), tol_squared);
 
-        /*if (alg->features & IK_ALGORITHM_CONSTRAINTS)
-            solve_chain_backwards_constraints(solver, base_pos);
-        else*/
-
-        if (all_targets_reached(solver, tol_squared))
+        if (all_targets_reached)
             break;
     }
 
