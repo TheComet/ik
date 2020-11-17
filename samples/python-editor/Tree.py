@@ -7,12 +7,7 @@ from time import time
 
 
 def reset_rotations(bone):
-    from math import pi
-    if bone.parent and len(bone.parent.children) == 2:
-        bone.parent.children[0].rotation = ik.Quat((1, 0, 0), pi/2)
-        bone.parent.children[1].rotation = ik.Quat((1, 0, 0), -pi/2)
-    else:
-        bone.rotation = ik.Quat()
+    bone.rotation = ik.Quat()
     for child in bone.children:
         reset_rotations(child)
 

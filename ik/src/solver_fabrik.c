@@ -177,14 +177,8 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
 
         /*
          * Averaging each target position is not enough, because child bones
-         * can each have different offsets. We have to compensate these offsets
+         * can each have different offsets. We have to subtract these offsets
          * first before forming an average.
-         *
-         * Calculate a rotation that would point this bone at the target (with
-         * offset rotation), but then instead of rotating the bone, calculate
-         * where the tip of the bone would end up, and use that as the new
-         * target position. This is a position that can be averaged with other
-         * target positions, regardless of child offsets.
          */
 
         /* Offset rotation caused by child position */
@@ -196,32 +190,56 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         ik_quat_angle_of(to_target.f, child_target.f);
         ik_quat_conj_mul_quat(delta.f, to_target.f);
 
-        /* Calculate where tip of this bone would end up if we were to rotate it
-         * by delta */
+        /* Rotate offset position and attach to target */
         pos = child->position;
         ik_vec3_rotate_quat(pos.f, delta.f);
         ik_vec3_sub_vec3(child_target.f, pos.f);
 
-        /* That is the new target position. Average it */
+        /* That is the new target position. Can now average it */
         ik_vec3_add_vec3(target.f, child_target.f);
         ++avg_count;
     CHAIN_END_EACH
 
     if (avg_count > 0)
     {
+        union ik_quat delta;
+        union ik_quat avg_constraint_delta;
         struct ik_bone* bone = chain_get_tip_bone(chain);
         ik_vec3_div_scalar(target.f, avg_count);
 
-        union ik_quat delta;
 
         /* Rotate bone towards target position. The offset rotation was already
          * applied when calculating the target position, i.e. this target
          * specifies where the bone should actually point to */
         ik_quat_angle_of(delta.f, target.f);
-        ik_quat_mul_quat(bone->rotation.f, delta.f);
 
         /* Each child bone must retain its orientation. Rotate them in the
          * opposite direction */
+        ik_quat_set(avg_constraint_delta.f, 0, 0, 0, 0);
+        CHAIN_FOR_EACH_CHILD(chain, child_chain)
+            struct ik_bone* child = chain_get_base_bone(child_chain);
+            union ik_quat constraint_delta = child->rotation;
+
+            ik_quat_mul_quat_conj(constraint_delta.f, delta.f);
+            if (child->constraint)
+            {
+                union ik_quat constrained_rot = constraint_delta;
+                child->constraint->apply(child->constraint, constrained_rot.f);
+                ik_quat_mul_quat_conj(constraint_delta.f, constrained_rot.f);
+                ik_quat_ensure_positive_sign(constraint_delta.f);
+                ik_quat_add_quat(avg_constraint_delta.f, constraint_delta.f);
+            }
+            else
+            {
+                avg_constraint_delta.q.w += 1;
+            }
+        CHAIN_END_EACH
+
+        ik_quat_div_scalar(avg_constraint_delta.f, chain_child_count(chain));
+        ik_quat_normalize(avg_constraint_delta.f);
+        ik_quat_mul_quat(delta.f, avg_constraint_delta.f);
+
+        ik_quat_mul_quat(bone->rotation.f, delta.f);
         CHAIN_FOR_EACH_CHILD(chain, child_chain)
             struct ik_bone* child = chain_get_base_bone(child_chain);
             ik_quat_mul_quat_conj(child->rotation.f, delta.f);
@@ -283,6 +301,7 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
 
     CHAIN_FOR_EACH_BONE_PAIR(chain, bone, child)
         union ik_quat delta;
+        union ik_quat abs_rot;
         union ik_quat offset_rot;
         union ik_vec3 child_tail_pos;
 
@@ -313,11 +332,19 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
          * offset rotation. */
         ik_quat_angle_of(delta.f, target.f);
         ik_quat_mul_quat_conj(delta.f, offset_rot.f);
-        ik_quat_mul_quat(bone->rotation.f, delta.f);
 
         /* The child bone must retain its orientation. Rotate it in the opposite
          * direction */
         ik_quat_mul_quat_conj(child->rotation.f, delta.f);
+
+        if (child->constraint)
+        {
+            ik_quat_mul_quat(delta.f, child->rotation.f);
+            child->constraint->apply(child->constraint, child->rotation.f);
+            ik_quat_mul_quat_conj(delta.f, child->rotation.f);
+        }
+
+        ik_quat_mul_quat(bone->rotation.f, delta.f);
 
         /*
          * The target position should stay in the same location in global space,

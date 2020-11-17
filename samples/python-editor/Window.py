@@ -72,29 +72,19 @@ def double_effectors_example(pos, chain_len):
 
     tip1 = mid1
     for i in range(chain_len):
-        tip1 = tip1.create_child(length=0.15, position=ik.Vec3(0, 0.1, 0.1))
+        #tip1 = tip1.create_child(length=0.15, position=ik.Vec3(0, 0.1, 0.1))
+        tip1 = tip1.create_child(length=0.15)
 
     tip2 = mid1
     for i in range(chain_len):
         tip2 = tip2.create_child(length=0.15)
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=40)
+    for child in mid1.children:
+        child.constraints = ik.StiffConstraint(rotation=ik.Quat((1, 0, 0), 0))
+
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=40, constraints=True)
     tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+.4, pos[1]+.2))
     tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-.2, pos[1]+.2))
-
-    return root
-
-
-def double_effectors_example2(pos):
-    root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.1)
-    b1 = root.create_child(length=0.1)
-    b2 = b1.create_child(length=0.1)
-    b3 = b2.create_child(length=0.1)
-    b4 = b2.create_child(length=0.1, position=ik.Vec3(0, 0.1, 0.1))
-
-    root.algorithm = ik.Algorithm(ik.FABRIK)
-    b3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-0.45, pos[1]+0.45))
-    b4.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-.2, pos[1]+.2))
 
     return root
 
@@ -269,13 +259,13 @@ class Window(Updateable):
             #Tree(two_bone_example1((-0.25, -0.5))),
             #Tree(two_bone_example2((0.25, -0.5))),
             #Tree(two_bone_example3((0.5, -0.5))),
-            #Tree(long_chain_example((0, 0), 3, 0.15))
+            #Tree(long_chain_example((0, 0), 3, 0.15)),
             Tree(double_effectors_example((0, 0), 2)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))
             #Tree(human_example((width/2, height-200)))
-            Tree(embedded_effectors((-0.8, -0.8)))
+            #Tree(embedded_effectors((-0.8, -0.8)))
             #Tree(double_embedded_effectors((width/2, height-200), 3))
         ]
 
