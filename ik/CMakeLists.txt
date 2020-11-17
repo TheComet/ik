@@ -305,7 +305,6 @@ if (IK_TESTS)
         "src/tests/test_solver_b1.cpp"
         "src/tests/test_solver_b2.cpp"
         "src/tests/test_solver_build.cpp"
-        "src/tests/test_solver_combine.cpp"
         "src/tests/test_transform_bone.cpp"
         "src/tests/test_tree_object.cpp"
         "src/tests/test_vec3.cpp"

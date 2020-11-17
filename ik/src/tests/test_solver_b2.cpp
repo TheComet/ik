@@ -53,10 +53,11 @@ protected:
 
 TEST_F(NAME, unreachable_1)
 {
-    ik::Ref<ik_bone> base = ik_bone_create();
-    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
-    base->length = 0.2;  ik_quat_set_axis_angle(base->rotation.f, 1, 0, 0, M_PI/4);
-    tip->length = 0.3; ik_vec3_set(tip->position.f, 0, 0.2, 0);
+    ik::Ref<ik_bone> base = ik_bone_create(0.2);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base, 0.3);
+
+    ik_quat_set_axis_angle(base->rotation.f, 1, 0, 0, M_PI/4);
+    ik_vec3_set(tip->position.f, 0, 0.2, 0);
 
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik_vec3_set(e->target_position.f, 0, 0, 10);
@@ -68,11 +69,9 @@ TEST_F(NAME, unreachable_1)
 
 TEST_F(NAME, reachable_1)
 {
-    ik::Ref<ik_bone> base = ik_bone_create();
-    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_bone> base = ik_bone_create(1);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base, 1);
     ik_quat_set_axis_angle(base->rotation.f, 1, 0, 0, M_PI/4);
-    base->length = 1;
-    tip->length = 1;
 
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik_vec3_set(e->target_position.f, 0, 0, sqrt(2));
@@ -84,9 +83,9 @@ TEST_F(NAME, reachable_1)
 
 TEST_F(NAME, reach_target_colinear_segments)
 {
-    ik::Ref<ik_bone> root = ik_bone_create();
-    ik::Ref<ik_bone> base = ik_bone_create_child(root);
-    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_bone> root = ik_bone_create(2);
+    ik::Ref<ik_bone> base = ik_bone_create_child(root, 2);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base, 2);
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 
@@ -114,9 +113,9 @@ TEST_F(NAME, reach_target_colinear_segments)
 
 TEST_F(NAME, reach_target_coplanar_segments)
 {
-    ik::Ref<ik_bone> root = ik_bone_create();
-    ik::Ref<ik_bone> base = ik_bone_create_child(root);
-    ik::Ref<ik_bone> tip = ik_bone_create_child(base);
+    ik::Ref<ik_bone> root = ik_bone_create(2);
+    ik::Ref<ik_bone> base = ik_bone_create_child(root, 2);
+    ik::Ref<ik_bone> tip = ik_bone_create_child(base, 2);
     ik::Ref<ik_effector> e = ik_bone_create_effector(tip);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(base, IK_TWO_BONE);
 

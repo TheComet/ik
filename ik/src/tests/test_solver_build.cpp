@@ -77,15 +77,15 @@ public:
         //         0
         //         .
         //
-        ik_bone* tree = ik_bone_create();          tree->user_data = (void*)0;
-        ik_bone* b1 = ik_bone_create_child(tree);  b1->user_data = (void*)1;
-        ik_bone* b2 = ik_bone_create_child(b1);    b2->user_data = (void*)2;
-        ik_bone* b3 = ik_bone_create_child(b2);    b3->user_data = (void*)3;
-        ik_bone* b4 = ik_bone_create_child(b3);    b4->user_data = (void*)4;
-        ik_bone* b5 = ik_bone_create_child(b4);    b5->user_data = (void*)5;
-        ik_bone* b6 = ik_bone_create_child(b2);    b6->user_data = (void*)6;
-        ik_bone* b7 = ik_bone_create_child(b6);    b7->user_data = (void*)7;
-        ik_bone* b8 = ik_bone_create_child(b7);    b8->user_data = (void*)8;
+        ik_bone* tree = ik_bone_create(2);            tree->user_data = (void*)0;
+        ik_bone* b1 = ik_bone_create_child(tree, 2);  b1->user_data = (void*)1;
+        ik_bone* b2 = ik_bone_create_child(b1, 2);    b2->user_data = (void*)2;
+        ik_bone* b3 = ik_bone_create_child(b2, 2);    b3->user_data = (void*)3;
+        ik_bone* b4 = ik_bone_create_child(b3, 2);    b4->user_data = (void*)4;
+        ik_bone* b5 = ik_bone_create_child(b4, 2);    b5->user_data = (void*)5;
+        ik_bone* b6 = ik_bone_create_child(b2, 2);    b6->user_data = (void*)6;
+        ik_bone* b7 = ik_bone_create_child(b6, 2);    b7->user_data = (void*)7;
+        ik_bone* b8 = ik_bone_create_child(b7, 2);    b8->user_data = (void*)8;
         return tree;
     }
 
@@ -335,12 +335,12 @@ TEST_F(NAME, choose_next_available_algorithm_after_chain_ends_2)
 
 TEST_F(NAME, split_trees_on_effectors)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2);
-    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3);
-    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2, 2);
+    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3, 2);
+    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4, 2);
 
     ik_effector* e1 = ik_bone_create_effector(b1);
     ik_effector* e2 = ik_bone_create_effector(b2);
@@ -389,12 +389,12 @@ TEST_F(NAME, split_trees_on_effectors)
 
 TEST_F(NAME, split_trees_on_effectors_and_choose_new_algorithm)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2);
-    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3);
-    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2, 2);
+    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3, 2);
+    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4, 2);
 
     ik_effector* e1 = ik_bone_create_effector(b1);
     ik_effector* e2 = ik_bone_create_effector(b2);
@@ -447,12 +447,12 @@ TEST_F(NAME, split_trees_on_effectors_and_choose_new_algorithm)
 
 TEST_F(NAME, missing_root_algorithm)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2);
-    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3);
-    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2, 2);
+    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3, 2);
+    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4, 2);
 
     ik_effector* e1 = ik_bone_create_effector(b1);
     ik_effector* e2 = ik_bone_create_effector(b2);
@@ -498,10 +498,10 @@ TEST_F(NAME, missing_root_algorithm)
 
 TEST_F(NAME, ignore_parents_of_root_bone)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2, 2);
 
     ik_effector* e = ik_bone_create_effector(b3);
     ik_algorithm* a = ik_bone_create_algorithm(tree, "dummy1");
@@ -527,10 +527,10 @@ TEST_F(NAME, ignore_parents_of_root_bone)
 
 TEST_F(NAME, chain_ending_in_middle_of_second_chain_creates_two_solvers)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(b2, 2);
 
     ik_effector* e1 = ik_bone_create_effector(b2);
     ik_effector* e2 = ik_bone_create_effector(b3);
@@ -570,12 +570,12 @@ TEST_F(NAME, chain_ending_in_middle_of_second_chain_creates_two_solvers)
 
 TEST_F(NAME, split_trees_with_dead_bones)
 {
-    ik::Ref<ik_bone> tree = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
-    ik::Ref<ik_bone> b3 = ik_bone_create_child(tree);
-    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3);
-    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4);
+    ik::Ref<ik_bone> tree = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
+    ik::Ref<ik_bone> b3 = ik_bone_create_child(tree, 2);
+    ik::Ref<ik_bone> b4 = ik_bone_create_child(b3, 2);
+    ik::Ref<ik_bone> b5 = ik_bone_create_child(b4, 2);
 
     ik_effector* e1 = ik_bone_create_effector(b2);
     ik_effector* e2 = ik_bone_create_effector(b5);

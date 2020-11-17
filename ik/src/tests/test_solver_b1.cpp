@@ -56,8 +56,8 @@ protected:
 
 TEST_F(NAME, rotate_90_degrees)
 {
-    ik::Ref<ik_bone> root = ik_bone_create();
-    ik::Ref<ik_bone> bone = ik_bone_create_child(root);
+    ik::Ref<ik_bone> root = ik_bone_create(2);
+    ik::Ref<ik_bone> bone = ik_bone_create_child(root, 2);
     ik::Ref<ik_effector> e = ik_bone_create_effector(bone);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(bone, IK_ONE_BONE);
 
@@ -65,7 +65,7 @@ TEST_F(NAME, rotate_90_degrees)
     ik_vec3_set(bone->position.f, 0, 2, 1);
     ik_vec3_set(e->target_position.f, 0, 4, 1);
 
-    ik::Ref<ik_solver> s = ik_solver_build(bone);
+    ik::Ref<ik_solver> s = ik_solver_build(root);
     ik_solver_solve(s);
 
     // Base and root position should not change
@@ -78,8 +78,8 @@ TEST_F(NAME, rotate_90_degrees)
 
 TEST_F(NAME, already_pointing_at_target)
 {
-    ik::Ref<ik_bone> root = ik_bone_create();
-    ik::Ref<ik_bone> bone = ik_bone_create_child(root);
+    ik::Ref<ik_bone> root = ik_bone_create(2);
+    ik::Ref<ik_bone> bone = ik_bone_create_child(root, 2);
     ik::Ref<ik_effector> e = ik_bone_create_effector(bone);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(bone, IK_ONE_BONE);
 
@@ -98,8 +98,8 @@ TEST_F(NAME, already_pointing_at_target)
 
 TEST_F(NAME, rotate_90_degrees_with_constraint)
 {
-    ik::Ref<ik_bone> root = ik_bone_create();
-    ik::Ref<ik_bone> bone = ik_bone_create_child(root);
+    ik::Ref<ik_bone> root = ik_bone_create(2);
+    ik::Ref<ik_bone> bone = ik_bone_create_child(root, 2);
     ik::Ref<ik_effector> e = ik_bone_create_effector(bone);
     ik::Ref<ik_algorithm> a = ik_bone_create_algorithm(bone, IK_ONE_BONE);
     ik::Ref<ik_constraint> c = ik_bone_create_constraint(bone);

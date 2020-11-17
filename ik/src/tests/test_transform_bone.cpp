@@ -22,7 +22,7 @@ using namespace testing;
 
 TEST(NAME, src_and_dst_are_same)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
     b0->length = 2.0;
 
     ik_vec3 v;
@@ -37,9 +37,9 @@ TEST(NAME, src_and_dst_are_same)
 
 TEST(NAME, g2l_2_bones_with_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;
     b1->length = 3.0;
     b2->length = 4.0;
@@ -53,9 +53,9 @@ TEST(NAME, g2l_2_bones_with_parent)
 
 TEST(NAME, g2l_3_bones_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;
     b1->length = 3.0;
     b2->length = 4.0;
@@ -69,9 +69,9 @@ TEST(NAME, g2l_3_bones_without_parent)
 
 TEST(NAME, g2l_2_disconnected_bones_with_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);
@@ -85,9 +85,9 @@ TEST(NAME, g2l_2_disconnected_bones_with_parent)
 
 TEST(NAME, g2l_3_disconnected_bones_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);
@@ -101,9 +101,9 @@ TEST(NAME, g2l_3_disconnected_bones_without_parent)
 
 TEST(NAME, g2l_2_disconnected_bones_with_rotation_and_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);  ik_quat_set_axis_angle(b0->rotation.f, 1, 0, 0, M_PI/4);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);  ik_quat_set_axis_angle(b1->rotation.f, 0, 1, 0, M_PI/4);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);  ik_quat_set_axis_angle(b2->rotation.f, 0, 0, 1, M_PI/4);
@@ -117,9 +117,9 @@ TEST(NAME, g2l_2_disconnected_bones_with_rotation_and_parent)
 
 TEST(NAME, g2l_3_disconnected_bones_rotation_and_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);  ik_quat_set_axis_angle(b0->rotation.f, 1, 0, 0, M_PI/4);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);  ik_quat_set_axis_angle(b1->rotation.f, 0, 1, 0, M_PI/4);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);  ik_quat_set_axis_angle(b2->rotation.f, 0, 0, 1, M_PI/4);
@@ -133,9 +133,9 @@ TEST(NAME, g2l_3_disconnected_bones_rotation_and_without_parent)
 
 TEST(NAME, l2g_2_bones_with_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;
     b1->length = 3.0;
     b2->length = 4.0;
@@ -149,9 +149,9 @@ TEST(NAME, l2g_2_bones_with_parent)
 
 TEST(NAME, l2g_3_bones_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;
     b1->length = 3.0;
     b2->length = 4.0;
@@ -165,9 +165,9 @@ TEST(NAME, l2g_3_bones_without_parent)
 
 TEST(NAME, l2g_2_disconnected_bones_with_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);
@@ -181,9 +181,9 @@ TEST(NAME, l2g_2_disconnected_bones_with_parent)
 
 TEST(NAME, l2g_3_disconnected_bones_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);
@@ -197,9 +197,9 @@ TEST(NAME, l2g_3_disconnected_bones_without_parent)
 
 TEST(NAME, l2g_2_disconnected_bones_with_rotation_and_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);  ik_quat_set_axis_angle(b0->rotation.f, 1, 0, 0, M_PI/4);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);  ik_quat_set_axis_angle(b1->rotation.f, 0, 1, 0, M_PI/4);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);  ik_quat_set_axis_angle(b2->rotation.f, 0, 0, 1, M_PI/4);
@@ -213,9 +213,9 @@ TEST(NAME, l2g_2_disconnected_bones_with_rotation_and_parent)
 
 TEST(NAME, l2g_3_disconnected_bones_rotation_and_without_parent)
 {
-    ik::Ref<ik_bone> b0 = ik_bone_create();
-    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0);
-    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1);
+    ik::Ref<ik_bone> b0 = ik_bone_create(2);
+    ik::Ref<ik_bone> b1 = ik_bone_create_child(b0, 2);
+    ik::Ref<ik_bone> b2 = ik_bone_create_child(b1, 2);
     b0->length = 2.0;  ik_vec3_set(b0->position.f, 1, 1, 1);  ik_quat_set_axis_angle(b0->rotation.f, 1, 0, 0, M_PI/4);
     b1->length = 3.0;  ik_vec3_set(b1->position.f, 2, 2, 2);  ik_quat_set_axis_angle(b1->rotation.f, 0, 1, 0, M_PI/4);
     b2->length = 4.0;  ik_vec3_set(b2->position.f, 3, 3, 3);  ik_quat_set_axis_angle(b2->rotation.f, 0, 0, 1, M_PI/4);

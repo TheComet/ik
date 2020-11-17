@@ -32,7 +32,7 @@ Bone_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     Py_ssize_t i;
 
     /* Allocate internal bone */
-    if ((bone = ik_bone_create()) == NULL)
+    if ((bone = ik_bone_create(0)) == NULL)
     {
         PyErr_SetString(PyExc_RuntimeError, "Failed to allocate internal bone");
         goto alloc_bone_failed;

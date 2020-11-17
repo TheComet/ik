@@ -17,10 +17,10 @@ struct ik_bone
 };
 
 IK_PUBLIC_API struct ik_bone*
-ik_bone_create(void);
+ik_bone_create(ikreal length);
 
 IK_PUBLIC_API struct ik_bone*
-ik_bone_create_child(struct ik_bone* parent);
+ik_bone_create_child(struct ik_bone* parent, ikreal length);
 
 static inline int
 ik_bone_link(struct ik_bone* parent, struct ik_bone* child) {

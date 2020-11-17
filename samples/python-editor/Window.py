@@ -66,24 +66,35 @@ def long_chain_example(pos, bone_num, bone_len):
 
 
 def double_effectors_example(pos, chain_len):
-    mid1 = root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.08)
-    for i in range(chain_len):
-        mid1 = mid1.create_child(length=0.08)
+    mid1 = root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.2)
+    for i in range(chain_len-1):
+        mid1 = mid1.create_child(length=0.15)
 
     tip1 = mid1
     for i in range(chain_len):
-        tip1 = tip1.create_child(length=0.08)
+        tip1 = tip1.create_child(length=0.15, position=ik.Vec3(0, 0.1, 0.1))
 
     tip2 = mid1
     for i in range(chain_len):
-        tip2 = tip2.create_child(length=0.08)
+        tip2 = tip2.create_child(length=0.15)
 
-    mid1.children[0].rotation = ik.Quat((1, 0, 0), pi/4)
-    mid1.children[1].rotation = ik.Quat((1, 0, 0), -pi/4)
+    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=40)
+    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]+.4, pos[1]+.2))
+    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-.2, pos[1]+.2))
 
-    root.algorithm = ik.Algorithm(ik.FABRIK, max_iterations=50)
-    tip1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]))
-    tip2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]))
+    return root
+
+
+def double_effectors_example2(pos):
+    root = ik.Bone(position=ik.Vec3(0, pos[0], pos[1]), length=0.1)
+    b1 = root.create_child(length=0.1)
+    b2 = b1.create_child(length=0.1)
+    b3 = b2.create_child(length=0.1)
+    b4 = b2.create_child(length=0.1, position=ik.Vec3(0, 0.1, 0.1))
+
+    root.algorithm = ik.Algorithm(ik.FABRIK)
+    b3.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-0.45, pos[1]+0.45))
+    b4.effector = ik.Effector(target_position=ik.Vec3(0, pos[0]-.2, pos[1]+.2))
 
     return root
 
@@ -157,29 +168,29 @@ def combined_solvers(pos, segment_len):
 
 
 def embedded_effectors(pos):
-    root = ik.Node(position=ik.Vec3(0, pos[0], pos[1]), rotation=ik.Quat((1, 0, 0), pi))
-    n1 = root.create_child(position=ik.Vec3(0, 0, 50))
-    n2 = n1.create_child(position=ik.Vec3(0, 0, 50))
-    n3 = n2.create_child(position=ik.Vec3(0, 0, 50))
-    n4 = n3.create_child(position=ik.Vec3(0, 0, 50))
-    n5 = n4.create_child(position=ik.Vec3(0, 0, 50))
-    n6 = n5.create_child(position=ik.Vec3(0, 0, 50))
-    n7 = n6.create_child(position=ik.Vec3(0, 0, 50))
-    tip = n7.create_child(position=ik.Vec3(0, 0, 50))
+    def random_pos():
+        return ik.Vec3(0, random.random()*0.0, random.random()*0.0)
+    root = ik.Bone(length=0.1, position=ik.Vec3(0, pos[0], pos[1]))
+    b1 = root.create_child(length=0.1, position=random_pos())
+    b2 = b1.create_child(length=0.1, position=random_pos())
+    b3 = b2.create_child(length=0.1, position=random_pos())
+    b4 = b3.create_child(length=0.1, position=random_pos())
+    b5 = b4.create_child(length=0.1, position=random_pos())
+    b6 = b5.create_child(length=0.1, position=random_pos())
+    tip = b6.create_child(length=0.1, position=random_pos())
 
     root.algorithm = ik.Algorithm(ik.FABRIK)
-    n1.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]-50))
+    root.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.1))
 
-    n1.algorithm = ik.Algorithm(ik.FABRIK)
-    n2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]-100))
+    b1.algorithm = ik.Algorithm(ik.FABRIK)
+    b2.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.3))
 
-    n2.algorithm = ik.Algorithm(ik.FABRIK)
-    n5.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 250))
+    b3.algorithm = ik.Algorithm(ik.FABRIK)
+    b5.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.6))
 
-    n5.algorithm = ik.Algorithm(ik.FABRIK)
-    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1] - 400))
+    b6.algorithm = ik.Algorithm(ik.FABRIK)
+    tip.effector = ik.Effector(target_position=ik.Vec3(0, pos[0], pos[1]+0.8))
 
-    n4.create_child(position=ik.Vec3(0, 50, 0))
     return root
 
 
@@ -255,16 +266,16 @@ class Window(Updateable):
         self.__updateables = [
             self,
             #Tree(one_bone_example((-0.5, -0.5))),
-            Tree(two_bone_example1((-0.25, -0.5))),
+            #Tree(two_bone_example1((-0.25, -0.5))),
             #Tree(two_bone_example2((0.25, -0.5))),
             #Tree(two_bone_example3((0.5, -0.5))),
-            Tree(long_chain_example((0, 0), 3, 0.15))
-            #Tree(double_effectors_example((0, 0), 3)),
+            #Tree(long_chain_example((0, 0), 3, 0.15))
+            Tree(double_effectors_example((0, 0), 2)),
             #Tree(multiple_effectors_example((900, height - 200), 4))
             #Tree(too_many_effectors_example((width/2, height-100), 8, 8, 11))
             #Tree(combined_solvers((width/2, height-200), 80))
             #Tree(human_example((width/2, height-200)))
-            #Tree(embedded_effectors((width/2, height-200)))
+            Tree(embedded_effectors((-0.8, -0.8)))
             #Tree(double_embedded_effectors((width/2, height-200), 3))
         ]
 

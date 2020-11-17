@@ -14,7 +14,7 @@ ik_bone_destroy(struct ik_bone* bone)
 
 /* ------------------------------------------------------------------------- */
 struct ik_bone*
-ik_bone_create(void)
+ik_bone_create(ikreal length)
 {
     struct ik_bone* bone = (struct ik_bone*)
         ik_tree_object_create(sizeof *bone);
@@ -23,17 +23,17 @@ ik_bone_create(void)
 
     ik_vec3_set_zero(bone->position.f);
     ik_quat_set_identity(bone->rotation.f);
-    bone->length = 0.0;
+    bone->length = length;
 
     return bone;
 }
 
 /* ------------------------------------------------------------------------- */
 struct ik_bone*
-ik_bone_create_child(struct ik_bone* parent)
+ik_bone_create_child(struct ik_bone* parent, ikreal length)
 {
     struct ik_bone* child;
-    if ((child = ik_bone_create()) == NULL)
+    if ((child = ik_bone_create(length)) == NULL)
         goto create_child_failed;
     if (ik_bone_link(parent, child) != 0)
         goto add_child_failed;

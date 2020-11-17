@@ -120,8 +120,8 @@ chain_tree_build_recursive(struct ik_chain* chain,
 
                 if (chain_tree_build_recursive(child_chain, child_bone, subtree) != 0)
                     return -1;
-                if (chain_add_bone(child_chain, bone) != 0)
-                    return -1;
+                /*if (chain_add_bone(child_chain, bone) != 0)
+                    return -1;*/
             BONE_END_EACH
         } break;
 

@@ -161,55 +161,123 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
     int avg_count;
 
     /* Target position for the tip of each chain is the average position of all
-     * solved base bone positions */
+     * solved child chain target positions */
     avg_count = 0;
     ik_vec3_set_zero(target.f);
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        union ik_vec3 base_pos = solve_chain_forwards_recurse(child, target_store, base_bone);
-        ik_vec3_add_vec3(target.f, base_pos.f);
+    CHAIN_FOR_EACH_CHILD(chain, child_chain)
+        union ik_quat delta;
+        union ik_quat to_target;
+        union ik_vec3 pos;
+        union ik_vec3 child_target = solve_chain_forwards_recurse(child_chain, target_store, base_bone);
+        struct ik_bone* bone = chain_get_tip_bone(chain);
+        struct ik_bone* child = chain_get_base_bone(child_chain);
+
+        /* Complete transformation into parent space */
+        child_target.v.z += bone->length;
+
+        /*
+         * Averaging each target position is not enough, because child bones
+         * can each have different offsets. We have to compensate these offsets
+         * first before forming an average.
+         *
+         * Calculate a rotation that would point this bone at the target (with
+         * offset rotation), but then instead of rotating the bone, calculate
+         * where the tip of the bone would end up, and use that as the new
+         * target position. This is a position that can be averaged with other
+         * target positions, regardless of child offsets.
+         */
+
+        /* Offset rotation caused by child position */
+        pos = child->position;
+        pos.v.z += bone->length;
+        ik_quat_angle_of(delta.f, pos.f);
+
+        /* Calculate rotation with offset applied */
+        ik_quat_angle_of(to_target.f, child_target.f);
+        ik_quat_conj_mul_quat(delta.f, to_target.f);
+
+        /* Calculate where tip of this bone would end up if we were to rotate it
+         * by delta */
+        pos = child->position;
+        ik_vec3_rotate_quat(pos.f, delta.f);
+        ik_vec3_sub_vec3(child_target.f, pos.f);
+
+        /* That is the new target position. Average it */
+        ik_vec3_add_vec3(target.f, child_target.f);
         ++avg_count;
     CHAIN_END_EACH
 
-    /* Reached a leaf chain. Retrieve target position calculated earlier in
-     * target_store and transform it into the correct space */
-    if (avg_count == 0)
+    if (avg_count > 0)
     {
-        ik_vec3_copy(target.f, (*target_store)++->f);
-        ik_transform_bone_pos_g2l(target.f, ik_bone_get_parent(base_bone), chain_get_tip_bone(chain));
-    }
-    else
+        struct ik_bone* bone = chain_get_tip_bone(chain);
         ik_vec3_div_scalar(target.f, avg_count);
 
-    /* tip bone is handled slightly differently, as it has no constraints when
-     * doing forward iteration */
+        union ik_quat delta;
+
+        /* Rotate bone towards target position. The offset rotation was already
+         * applied when calculating the target position, i.e. this target
+         * specifies where the bone should actually point to */
+        ik_quat_angle_of(delta.f, target.f);
+        ik_quat_mul_quat(bone->rotation.f, delta.f);
+
+        /* Each child bone must retain its orientation. Rotate them in the
+         * opposite direction */
+        CHAIN_FOR_EACH_CHILD(chain, child_chain)
+            struct ik_bone* child = chain_get_base_bone(child_chain);
+            ik_quat_mul_quat_conj(child->rotation.f, delta.f);
+        CHAIN_END_EACH
+
+        /*
+         * The target position should stay in the same location in global space,
+         * so have to rotate it around the bone by the same amount in the
+         * opposite direction.
+         */
+        ik_vec3_set(target.f, 0, 0, ik_vec3_length(target.f));
+
+        /* New target position is at the tail end of this bone */
+        target.v.z -= bone->length;
+
+        /* Transform into parent space */
+        ik_vec3_rotate_quat(target.f, bone->rotation.f);
+        ik_vec3_add_vec3(target.f, bone->position.f);
+        /* Target is not quite in parent bone space yet, see beginning of
+         * for-loop below */
+    }
+    else
     {
+        /*
+         * Reached a leaf chain. End effector bone is handled slightly differently,
+         * as it has no constraints when doing forward iteration, and its target
+         * position is initialized by retrieving it from the target data store
+         * calculated earlier.
+         */
         union ik_quat delta;
         struct ik_bone* bone = chain_get_tip_bone(chain);
+
+        /* Get target and transform into correct space */
+        ik_vec3_copy(target.f, (*target_store)++->f);
+        ik_transform_bone_pos_g2l(target.f, ik_bone_get_parent(base_bone), chain_get_tip_bone(chain));
 
         /* Rotate bone towards target position */
         ik_quat_angle_of(delta.f, target.f);
         ik_quat_mul_quat(bone->rotation.f, delta.f);
 
         /*
-         * Because the bone has rotated, the target position will have moved
-         * in global space. In local space this equates to the position rotating
-         * around the bone by the same amount in the opposite direction.
+         * The target position should stay in the same location in global space,
+         * so have to rotate it around the bone by the same amount in the
+         * opposite direction.
          *
-         * This is slightly faster than a quat mul
+         * This is faster than a quat mul
          */
         ik_vec3_set(target.f, 0, 0, ik_vec3_length(target.f));
 
-        /*
-         * New target position in local space is at the tail end of this bone,
-         * minus the bone's offset position. The offset position is in parent
-         * bone space, so we must move the target to the tail of this bone,
-         * transform it into parent space, then subtract this bone's offset
-         * from it.
-         */
+        /* New target position is at the tail end of this bone */
         target.v.z -= bone->length;
+
+        /* Transform into parent space */
         ik_vec3_rotate_quat(target.f, bone->rotation.f);
         ik_vec3_add_vec3(target.f, bone->position.f);
-        /* target is not quite in parent bone space yet, see beginning of
+        /* Target is not quite in parent bone space yet, see beginning of
          * for-loop below */
     }
 
@@ -218,7 +286,7 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         union ik_quat offset_rot;
         union ik_vec3 child_tail_pos;
 
-        /* complete transformation into parent space */
+        /* Complete transformation into parent space */
         target.v.z += bone->length;
 
         /*
@@ -226,14 +294,14 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
          * bone's head position, which introduces an offset rotation that has
          * to be compensated. Calculate this rotation now.
          *
-         *                   o <- tip_pos_head
-         *       tip bone -> |
-         *                   o <- tip_pos_tail
+         *                   o
+         *     child bone -> |
+         *                   o <- child_tail_pos
          *                  .
          *                 .
          *                .
-         *               o <- base_pos_head
-         *  base bone -> |
+         *               o
+         *  this bone -> |
          *               o
          *
          */
@@ -252,24 +320,20 @@ solve_chain_forwards_recurse(struct ik_chain* chain,
         ik_quat_mul_quat_conj(child->rotation.f, delta.f);
 
         /*
-         * Because the bone has rotated, the target position will have moved
-         * in global space. In local space this equates to the position rotating
-         * around the bone by the same amount in the opposite direction.
+         * The target position should stay in the same location in global space,
+         * so have to rotate it around the bone by the same amount in the
+         * opposite direction.
          */
         ik_vec3_rotate_quat_conj(target.f, delta.f);
 
-        /*
-         * New target position in local space is at the tail end of this bone,
-         * minus the bone's offset position. The offset position is in parent
-         * bone space, so we must move the target to the tail of this bone,
-         * transform it into parent space, then subtract this bone's offset
-         * from it.
-         */
+        /* New target position is at the tail end of this bone */
         ik_vec3_sub_vec3(target.f, child_tail_pos.f);
+
+        /* Transform into parent space */
         ik_vec3_rotate_quat(target.f, bone->rotation.f);
         ik_vec3_add_vec3(target.f, bone->position.f);
-        /* target is not quite in parent bone space yet, the transformation is
-         * completed at the start of this for-loop */
+        /* Target is not quite in parent bone space yet, see beginning of
+         * for-loop below */
     CHAIN_END_EACH
 
     return target;
@@ -287,24 +351,6 @@ solve_chain_forwards(struct ik_solver_fabrik* solver)
     ik_vec3_add_vec3(target.f, base_bone->position.f);
 
     return target;
-}
-
-/* ------------------------------------------------------------------------- */
-static void
-solve_chain_backwards_constraints_recurse(struct ik_chain* chain, union ik_vec3 target)
-{
-    CHAIN_FOR_EACH_BONE_R(chain, bone)
-
-    CHAIN_END_EACH
-
-    CHAIN_FOR_EACH_CHILD(chain, child)
-        solve_chain_backwards_constraints_recurse(child, target);
-    CHAIN_END_EACH
-}
-static void
-solve_chain_backwards_constraints(struct ik_solver_fabrik* solver, union ik_vec3 target)
-{
-    solve_chain_backwards_constraints_recurse(&solver->chain_tree, target);
 }
 
 /* ------------------------------------------------------------------------- */
